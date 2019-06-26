@@ -35,8 +35,13 @@ func main() {
 
 	ctx := server.NewDefaultContext()
 
-	viper.Set("consensus.create_empty_blocks_interval", "55s")
+	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
+	viper.Set("consensus.timeout_commit", "0s")
+
+
+
+
 
 	rootCmd := &cobra.Command{
 		Use:               "daemon",

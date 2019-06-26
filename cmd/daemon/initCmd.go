@@ -28,8 +28,7 @@ func initCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *co
 		Short: "Initialize genesis configuration",
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			chainID := fmt.Sprintf("sandbox-%v", common.RandStr(6))
-			fmt.Println("Naming chain", chainID)
+			chainID := fmt.Sprintf("emoney-%v", common.RandStr(6))
 
 			config := ctx.Config
 			config.Moniker = "Node1"
