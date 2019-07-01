@@ -39,10 +39,6 @@ func main() {
 	viper.Set("consensus.create_empty_blocks", false)
 	viper.Set("consensus.timeout_commit", "0s")
 
-
-
-
-
 	rootCmd := &cobra.Command{
 		Use:               "daemon",
 		Short:             "e-money validator node",
@@ -51,6 +47,7 @@ func main() {
 
 	rootCmd.AddCommand(initCmd(ctx, cdc, app.ModuleBasics))
 	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, DefaultNodeHome, DefaultNodeHome))
+	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics, nil))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)
 
