@@ -23,11 +23,11 @@ import (
 )
 
 const (
-	flagNumValidators = "validators"
-	flagOutputDir     = "output-dir"
+	flagNumValidators     = "validators"
+	flagOutputDir         = "output-dir"
+	flagStartingIPAddress = "starting-ip-address"
 
-	nodeMonikerTemplate  = "node%v"
-	IPAddress = "192.168.10.2" // TODO Stop relying on hard coded IP address
+	nodeMonikerTemplate = "node%v"
 )
 
 func testnetCmd(ctx *server.Context, cdc *codec.Codec,
@@ -51,30 +51,27 @@ Example:
 
 			//chainID := viper.GetString(client.FlagChainID)
 			//minGasPrices := viper.GetString(server.FlagMinGasPrices)
-			//nodeDirPrefix := viper.GetString(flagNodeDirPrefix)
 			//nodeDaemonHome := viper.GetString(flagNodeDaemonHome)
 			//nodeCLIHome := viper.GetString(flagNodeCLIHome)
-			//startingIPAddress := viper.GetString(flagStartingIPAddress)
+			startingIPAddress := viper.GetString(flagStartingIPAddress)
 			numValidators := viper.GetInt(flagNumValidators)
 			//
 			//return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
 			//	minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
-			return initializeTestnet(cdc, mbm, config, outputDir, numValidators)
+			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress)
 		},
 	}
 
 	cmd.Flags().IntP(flagNumValidators, "v", 4,
 		"Number of validators to initialize the testnet with")
-	cmd.Flags().StringP(flagOutputDir, "o", "./mytestnet",
+	cmd.Flags().StringP(flagOutputDir, "o", "./testnet",
 		"Directory to store initialization data for the testnet")
-	//cmd.Flags().String(flagNodeDirPrefix, "node",
-	//	"Prefix the directory name for each node with (node results in node0, node1, ...)")
 	//cmd.Flags().String(flagNodeDaemonHome, "gaiad",
 	//	"Home directory of the node's daemon configuration")
 	//cmd.Flags().String(flagNodeCLIHome, "gaiacli",
 	//	"Home directory of the node's cli configuration")
-	//cmd.Flags().String(flagStartingIPAddress, "192.168.0.1",
-	//	"Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
+	cmd.Flags().String(flagStartingIPAddress, "192.168.10.2",
+		"Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	//cmd.Flags().String(
 	//	client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	//cmd.Flags().String(
@@ -83,13 +80,9 @@ Example:
 	return cmd
 }
 
-func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int) error {
-	//fmt.Printf("%+v\n", config)
-
+func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config,
+	outputDir string, validatorCount int, baseIPAddress string) error {
 	config.Genesis = "genesis.json"
-
-	// TODO Generate validators and a unified genesis.json.
-	// TODO Generate validator config files with seed peers.
 
 	appState, err := codec.MarshalJSONIndent(cdc, mbm.DefaultGenesis())
 	if err != nil {
@@ -106,7 +99,7 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	validators := make([]tmtypes.GenesisValidator, validatorCount)
 	nodeIDs := make([]string, validatorCount)
 
-	for i := 0 ; i < validatorCount ; i++ {
+	for i := 0; i < validatorCount; i++ {
 		nodeMoniker := fmt.Sprintf(nodeMonikerTemplate, i)
 		nodeDir := filepath.Join(outputDir, nodeMoniker)
 		config.SetRoot(nodeDir)
@@ -133,7 +126,7 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 
 	genDoc.Validators = validators
 
-	for i := 0 ; i < validatorCount ; i++ {
+	for i := 0; i < validatorCount; i++ {
 		// Add genesis file to each node directory
 		nodeMoniker := fmt.Sprintf(nodeMonikerTemplate, i)
 		nodeDir := filepath.Join(outputDir, nodeMoniker)
@@ -144,14 +137,16 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		}
 
 		// Update config.toml with peer lists
-		updateConfigWithPeers(nodeDir, i, nodeIDs)
-
+		err = updateConfigWithPeers(nodeDir, i, nodeIDs, baseIPAddress)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func updateConfigWithPeers(nodeDir string, i int,  nodeIDs []string) {
+func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) error {
 	configFilePath := filepath.Join(nodeDir, "config/config.toml")
 
 	configFile := viper.New()
@@ -162,24 +157,24 @@ func updateConfigWithPeers(nodeDir string, i int,  nodeIDs []string) {
 	}
 
 	peers := make([]string, 0)
-	for j := 0 ; j < len(nodeIDs) ; j++ {
+	for j := 0; j < len(nodeIDs); j++ {
 		if j == i {
 			continue
 		}
 
-		peer := fmt.Sprintf("%v@%v:%v", nodeIDs[j], nodeIPAddress(j), 26656)
+		peer := fmt.Sprintf("%v@%v:%v", nodeIDs[j], nodeIPAddress(j, baseIPAddress), 26656)
 		peers = append(peers, peer)
 	}
 
 	peerList := strings.Join(peers, ",")
 
 	configFile.Set("p2p.persistent_peers", peerList)
-	configFile.Set("p2p.laddr", fmt.Sprintf("tcp://%v:%v", nodeIPAddress(i), 26656))
-	configFile.WriteConfig()
+	configFile.Set("p2p.laddr", fmt.Sprintf("tcp://%v:%v", nodeIPAddress(i, baseIPAddress), 26656))
+	return configFile.WriteConfig()
 }
 
-func nodeIPAddress(i int) string {
-	ip := net.ParseIP(IPAddress).To4() // Only IPv4 for now.
+func nodeIPAddress(i int, baseIPAddress string) string {
+	ip := net.ParseIP(baseIPAddress).To4() // Only IPv4 for now.
 	ip[3] += byte(i)
 
 	return ip.String()

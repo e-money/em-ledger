@@ -13,3 +13,5 @@ run-single-node: clean
 
 clean:
 	rm -rf ./build ./data ./config
+
+.PHONY: build build-linux
