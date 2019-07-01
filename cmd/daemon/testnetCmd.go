@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/server/config"
+	"net"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ const (
 	flagOutputDir     = "output-dir"
 
 	nodeMonikerTemplate  = "node%v"
-	IPAddress = "192.168.1.251" // TODO Stop relying on hard coded IP address
+	IPAddress = "192.168.10.2" // TODO Stop relying on hard coded IP address
 )
 
 func testnetCmd(ctx *server.Context, cdc *codec.Codec,
@@ -143,14 +144,14 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		}
 
 		// Update config.toml with peer lists
-		loadConfig(nodeDir, i, nodeIDs)
+		updateConfigWithPeers(nodeDir, i, nodeIDs)
 
 	}
 
 	return nil
 }
 
-func loadConfig(nodeDir string, i int,  nodeIDs []string) {
+func updateConfigWithPeers(nodeDir string, i int,  nodeIDs []string) {
 	configFilePath := filepath.Join(nodeDir, "config/config.toml")
 
 	configFile := viper.New()
@@ -166,22 +167,22 @@ func loadConfig(nodeDir string, i int,  nodeIDs []string) {
 			continue
 		}
 
-		// TODO IP Address configurable.
-
-		peer := fmt.Sprintf("%v@%v:%v", nodeIDs[j], IPAddress, 26656 + j * 1000)
+		peer := fmt.Sprintf("%v@%v:%v", nodeIDs[j], nodeIPAddress(j), 26656)
 		peers = append(peers, peer)
 	}
 
-	peerList := strings.Join(peers, ";")
+	peerList := strings.Join(peers, ",")
 
 	configFile.Set("p2p.persistent_peers", peerList)
-	configFile.Set("p2p.laddr", fmt.Sprintf("tcp://%v:%v", IPAddress, 26656 + i * 1000))
-
-	//for _, k := range configFile.Sub("p2p").AllKeys() {
-	//	fmt.Printf("%v = %v\n", k, configFile.Sub("p2p").Get(k))
-	//}
-
+	configFile.Set("p2p.laddr", fmt.Sprintf("tcp://%v:%v", nodeIPAddress(i), 26656))
 	configFile.WriteConfig()
+}
+
+func nodeIPAddress(i int) string {
+	ip := net.ParseIP(IPAddress).To4() // Only IPv4 for now.
+	ip[3] += byte(i)
+
+	return ip.String()
 }
 
 func createConfigurationFiles(rootDir string) {
