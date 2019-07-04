@@ -51,8 +51,6 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)
 
-	//rootCmd.AddCommand(testnet.TestnetFilesCmd(ctx, cdc))
-
 	executor := cli.PrepareBaseCmd(rootCmd, "TMSND", ".")
 	err := executor.Execute()
 	if err != nil {
