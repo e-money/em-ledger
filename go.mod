@@ -3,7 +3,7 @@ module tmsandbox
 go 1.12
 
 require (
-	github.com/cosmos/cosmos-sdk v0.34.3-204-g84de1cf8b
+	github.com/cosmos/cosmos-sdk v0.36.0-rc1
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/tendermint/go-amino v0.15.0
