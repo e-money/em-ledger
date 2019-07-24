@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/x/auth/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	//"github.com/cosmos/cosmos-sdk/x/supply"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/db"
@@ -27,6 +28,7 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
+		//supply.AppModuleBasic{},
 	)
 )
 
@@ -40,10 +42,10 @@ type sandboxApp struct {
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
 
-	accountKeeper       auth.AccountKeeper
-	feeCollectionKeeper auth.FeeCollectionKeeper
-	paramsKeeper        params.Keeper
-	bankKeeper          bank.Keeper
+	accountKeeper auth.AccountKeeper
+	paramsKeeper  params.Keeper
+	bankKeeper    bank.Keeper
+	//supplyKeeper        supply.Keeper
 
 	mm *module.Manager
 }
@@ -57,13 +59,12 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 	bApp := bam.NewBaseApp(appName, logger, db, txDecoder)
 
 	application := &sandboxApp{
-		BaseApp:          bApp,
-		cdc:              cdc,
-		keyMain:          sdk.NewKVStoreKey("main"),
-		keyAccount:       sdk.NewKVStoreKey(auth.StoreKey),
-		keyFeeCollection: sdk.NewKVStoreKey(auth.FeeStoreKey),
-		keyParams:        sdk.NewKVStoreKey(params.StoreKey),
-		tkeyParams:       sdk.NewTransientStoreKey(params.TStoreKey),
+		BaseApp:    bApp,
+		cdc:        cdc,
+		keyMain:    sdk.NewKVStoreKey("main"),
+		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
+		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
+		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 	}
 
 	application.paramsKeeper = params.NewKeeper(cdc, application.keyParams, application.tkeyParams, params.DefaultCodespace)
@@ -72,14 +73,13 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 	bankSubspace := application.paramsKeeper.Subspace(bank.DefaultParamspace)
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
-	application.feeCollectionKeeper = auth.NewFeeCollectionKeeper(cdc, application.keyFeeCollection)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.keyFeeCollection, application.tkeyParams, application.keyParams)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
-		auth.NewAppModule(application.accountKeeper, application.feeCollectionKeeper),
+		auth.NewAppModule(application.accountKeeper),
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 	)
 
