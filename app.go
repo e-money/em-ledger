@@ -36,11 +36,10 @@ type sandboxApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
-	keyMain          *sdk.KVStoreKey
-	keyAccount       *sdk.KVStoreKey
-	keyFeeCollection *sdk.KVStoreKey
-	keyParams        *sdk.KVStoreKey
-	tkeyParams       *sdk.TransientStoreKey
+	keyMain    *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keyParams  *sdk.KVStoreKey
+	tkeyParams *sdk.TransientStoreKey
 
 	accountKeeper auth.AccountKeeper
 	paramsKeeper  params.Keeper
@@ -75,7 +74,7 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
 
-	application.MountStores(application.keyMain, application.keyAccount, application.keyFeeCollection, application.tkeyParams, application.keyParams)
+	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
