@@ -1,8 +1,9 @@
-package tmsandbox
+package emoney
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 
@@ -13,23 +14,31 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	//"github.com/cosmos/cosmos-sdk/x/supply"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
 const (
-	appName = "sandbox"
+	appName = "emoneyd"
 )
 
 var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
-		//supply.AppModuleBasic{},
+		supply.AppModuleBasic{},
 	)
+
+	// module account permissions
+	maccPerms = map[string][]string{
+		auth.FeeCollectorName: nil,
+		//distr.ModuleName:          nil,
+		//mint.ModuleName:           {supply.Minter},
+		//staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		//staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		//gov.ModuleName:            {supply.Burner},
+	}
 )
 
 type sandboxApp struct {
@@ -39,12 +48,14 @@ type sandboxApp struct {
 	keyMain    *sdk.KVStoreKey
 	keyAccount *sdk.KVStoreKey
 	keyParams  *sdk.KVStoreKey
+	keySupply  *sdk.KVStoreKey
+
 	tkeyParams *sdk.TransientStoreKey
 
 	accountKeeper auth.AccountKeeper
 	paramsKeeper  params.Keeper
 	bankKeeper    bank.Keeper
-	//supplyKeeper        supply.Keeper
+	supplyKeeper  supply.Keeper
 
 	mm *module.Manager
 }
@@ -64,6 +75,7 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
+		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
 	}
 
 	application.paramsKeeper = params.NewKeeper(cdc, application.keyParams, application.tkeyParams, params.DefaultCodespace)
@@ -73,20 +85,23 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
+	application.supplyKeeper = supply.NewKeeper(cdc, application.keySupply, application.accountKeeper, application.bankKeeper, supply.DefaultCodespace, maccPerms)
 
-	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams)
+	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams, application.keySupply)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
 		auth.NewAppModule(application.accountKeeper),
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
+		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 	)
 
-	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, auth.ModuleName, bank.ModuleName)
+	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, auth.ModuleName, bank.ModuleName, supply.ModuleName)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
 	application.SetInitChainer(application.InitChainer)
+	application.SetAnteHandler(auth.NewAnteHandler(application.accountKeeper, application.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
 	application.SetEndBlocker(application.EndBlocker)
 
 	err := application.LoadLatestVersion(application.keyMain)
