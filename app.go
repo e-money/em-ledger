@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
@@ -154,6 +155,22 @@ func (app *sandboxApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (
 	}
 
 	return res
+}
+
+func init() {
+	setGenesisDefaults()
+}
+
+func setGenesisDefaults() {
+	// Override module defaults for use in testnets and the default init functionality.
+	staking.DefaultGenesisState = stakingGenesisState
+}
+
+func stakingGenesisState() stakingtypes.GenesisState {
+	genesisState := stakingtypes.DefaultGenesisState()
+	genesisState.Params.BondDenom = "ungm"
+
+	return genesisState
 }
 
 func MakeCodec() *codec.Codec {

@@ -1,4 +1,4 @@
-module tmsandbox
+module emoney
 
 go 1.12
 
