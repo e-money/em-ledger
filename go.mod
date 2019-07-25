@@ -9,3 +9,5 @@ require (
 	github.com/tendermint/go-amino v0.15.0
 	github.com/tendermint/tendermint v0.32.1
 )
+
+// replace github.com/cosmos/cosmos-sdk => ./tmpvendor/cosmos-sdk

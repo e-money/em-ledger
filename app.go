@@ -3,6 +3,7 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
@@ -28,6 +29,7 @@ var (
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		supply.AppModuleBasic{},
+		staking.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -35,8 +37,8 @@ var (
 		auth.FeeCollectorName: nil,
 		//distr.ModuleName:          nil,
 		//mint.ModuleName:           {supply.Minter},
-		//staking.BondedPoolName:    {supply.Burner, supply.Staking},
-		//staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		//gov.ModuleName:            {supply.Burner},
 	}
 )
@@ -49,13 +51,16 @@ type sandboxApp struct {
 	keyAccount *sdk.KVStoreKey
 	keyParams  *sdk.KVStoreKey
 	keySupply  *sdk.KVStoreKey
+	keyStaking *sdk.KVStoreKey
 
-	tkeyParams *sdk.TransientStoreKey
+	tkeyParams  *sdk.TransientStoreKey
+	tkeyStaking *sdk.TransientStoreKey
 
 	accountKeeper auth.AccountKeeper
 	paramsKeeper  params.Keeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
+	stakingKeeper staking.Keeper
 
 	mm *module.Manager
 }
@@ -69,34 +74,43 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 	bApp := bam.NewBaseApp(appName, logger, db, txDecoder)
 
 	application := &sandboxApp{
-		BaseApp:    bApp,
-		cdc:        cdc,
-		keyMain:    sdk.NewKVStoreKey("main"),
-		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
-		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
-		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
-		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		BaseApp:     bApp,
+		cdc:         cdc,
+		keyMain:     sdk.NewKVStoreKey("main"),
+		keyAccount:  sdk.NewKVStoreKey(auth.StoreKey),
+		keyParams:   sdk.NewKVStoreKey(params.StoreKey),
+		tkeyParams:  sdk.NewTransientStoreKey(params.TStoreKey),
+		keyStaking:  sdk.NewKVStoreKey(staking.StoreKey),
+		tkeyStaking: sdk.NewTransientStoreKey(staking.TStoreKey),
+		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
 	}
 
 	application.paramsKeeper = params.NewKeeper(cdc, application.keyParams, application.tkeyParams, params.DefaultCodespace)
 
 	authSubspace := application.paramsKeeper.Subspace(auth.DefaultParamspace)
 	bankSubspace := application.paramsKeeper.Subspace(bank.DefaultParamspace)
+	stakingSubspace := application.paramsKeeper.Subspace(staking.DefaultParamspace)
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
 	application.supplyKeeper = supply.NewKeeper(cdc, application.keySupply, application.accountKeeper, application.bankKeeper, supply.DefaultCodespace, maccPerms)
 
-	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams, application.keySupply)
+	application.stakingKeeper = staking.NewKeeper(cdc, application.keyStaking, application.tkeyStaking, application.supplyKeeper,
+		stakingSubspace, staking.DefaultCodespace)
+
+	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
+		application.keySupply, application.keyStaking, application.tkeyStaking)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
 		auth.NewAppModule(application.accountKeeper),
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
+		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
 	)
 
-	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, auth.ModuleName, bank.ModuleName, supply.ModuleName)
+	application.mm.SetOrderEndBlockers(staking.ModuleName)
+	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, supply.ModuleName)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
