@@ -134,7 +134,7 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 			panic(err)
 		}
 
-		tx, validatorAccountAddress := createValidatorTransaction(validator, chainID)
+		tx, validatorAccountAddress := createValidatorTransaction(i, validator, chainID)
 		createValidatorTXs[i] = tx
 		validatorAccounts[i] = createValidatorAccounts(validatorAccountAddress)
 		validators[i] = validator
@@ -186,26 +186,28 @@ func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []ty
 	genDoc.AppState = cdc.MustMarshalJSON(appState)
 }
 
-func createValidatorTransaction(validator tmtypes.GenesisValidator, chainID string) (types.StdTx, crypto.Address) {
+func createValidatorTransaction(i int, validator tmtypes.GenesisValidator, chainID string) (types.StdTx, crypto.Address) {
 	kb := keys.NewInMemoryKeyBase()
 	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, "12345678", ckeys.Secp256k1)
 	if err != nil {
 		panic(err)
 	}
 
+	moniker := fmt.Sprintf("Validator-%v", i)
+	valTokens := sdk.TokensFromConsensusPower(1)
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validator.PubKey,
-		sdk.NewCoin("ungm", sdk.OneInt()),
-		staking.NewDescription("MyValidator", "", "", ""),
+		sdk.NewCoin("ungm", valTokens),
+		staking.NewDescription(moniker, "", "", ""),
 		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
 		sdk.OneInt())
 
 	// TODO Write mnemonic to file in the validator directory.
-	fmt.Println("Key mnemonic :", secret)
+	fmt.Printf("Key mnemonic for %v : %v\n", moniker, secret)
 
-	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, "no memo")
-	txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo("no memo").WithKeybase(kb)
+	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, " - ")
+	txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo(" - ").WithKeybase(kb)
 	signedTx, err := txBldr.SignStdTx("nodename", client.DefaultKeyPass, tx, false)
 
 	if err != nil {
