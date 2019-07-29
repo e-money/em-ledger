@@ -1,15 +1,24 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server/config"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"net"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
+	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/spf13/cobra"
@@ -98,6 +107,8 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 
 	validators := make([]tmtypes.GenesisValidator, validatorCount)
 	nodeIDs := make([]string, validatorCount)
+	createValidatorTXs := make([]types.StdTx, validatorCount)
+	validatorAccounts := make([]genaccounts.GenesisAccount, validatorCount)
 
 	for i := 0; i < validatorCount; i++ {
 		nodeMoniker := fmt.Sprintf(nodeMonikerTemplate, i)
@@ -108,23 +119,28 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		createConfigurationFiles(nodeDir)
 		_, pk, err := genutil.InitializeNodeValidatorFiles(config)
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
 		if err != nil {
-			return err
+			panic(err)
 		}
 		nodeIDs[i] = string(nodeKey.ID())
 
 		_, _, validator, err := simpleAppGenTx(cdc, pk)
 		if err != nil {
-			return err
+			panic(err)
 		}
+
+		createValidatorTXs[i] = createValidatorTransaction(validator, chainID)
+		validatorAccounts[i] = createValidatorAccounts(validator)
 		validators[i] = validator
 	}
 
+	// Update genesis file with the created validators
 	genDoc.Validators = validators
+	addGenesisValidatorTransactions(cdc, genDoc, createValidatorTXs)
 
 	for i := 0; i < validatorCount; i++ {
 		// Add genesis file to each node directory
@@ -144,6 +160,56 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	}
 
 	return nil
+}
+
+func createValidatorAccounts(validator tmtypes.GenesisValidator) genaccounts.GenesisAccount {
+	accStakingTokens := sdk.TokensFromConsensusPower(500)
+	account := genaccounts.GenesisAccount{
+		Address: sdk.AccAddress(validator.Address),
+		Coins: sdk.Coins{
+			sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
+		},
+	}
+
+	return account
+}
+
+func addGenesisValidatorTransactions(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []types.StdTx) {
+	var appState map[string]json.RawMessage
+	if err := cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
+		panic(err)
+	}
+	genutil.SetGenesisStateInAppState(cdc, appState, genutil.NewGenesisStateFromStdTx(txs))
+	genDoc.AppState = cdc.MustMarshalJSON(appState)
+}
+
+func createValidatorTransaction(validator tmtypes.GenesisValidator, chainID string) types.StdTx {
+	msg := staking.NewMsgCreateValidator(
+		sdk.ValAddress(validator.Address),
+		validator.PubKey,
+		sdk.NewCoin(sdk.DefaultBondDenom, sdk.ZeroInt()),
+		staking.NewDescription("MyValidator", "", "", ""),
+		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
+		sdk.ZeroInt())
+
+	kb := keys.NewInMemoryKeyBase()
+	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, "12345678", ckeys.Secp256k1)
+	if err != nil {
+		panic(err)
+	}
+	// TODO Write mnemonic to file in the validator directory.
+	fmt.Println("Key name:", info.GetName())
+	fmt.Println("Key mnemonic :", secret)
+
+	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, "no memo")
+	txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo("no memo").WithKeybase(kb)
+	signedTx, err := txBldr.SignStdTx("nodename", client.DefaultKeyPass, tx, false)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return signedTx
 }
 
 func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) error {
