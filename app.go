@@ -47,7 +47,7 @@ var (
 	}
 )
 
-type sandboxApp struct {
+type emoneyApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
@@ -71,13 +71,13 @@ type sandboxApp struct {
 
 type GenesisState map[string]json.RawMessage
 
-func NewApp(logger log.Logger, db db.DB) *sandboxApp {
+func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	cdc := MakeCodec()
 	txDecoder := auth.DefaultTxDecoder(cdc)
 
 	bApp := bam.NewBaseApp(appName, logger, db, txDecoder)
 
-	application := &sandboxApp{
+	application := &emoneyApp{
 		BaseApp:     bApp,
 		cdc:         cdc,
 		keyMain:     sdk.NewKVStoreKey("main"),
@@ -132,23 +132,27 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 }
 
 // application updates every end block
-func (app *sandboxApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	fmt.Println(" *** Iterating accounts")
-	for _, acc := range app.accountKeeper.GetAllAccounts(ctx) {
-		fmt.Println(acc)
-		//coins := acc.GetCoins()
-		//for _, c := range coins {
-		//	one := sdk.NewInt64Coin(c.Denom, 1)
-		//	coins = coins.Add(sdk.NewCoins(one))
-		//}
-		//
-		//app.bankKeeper.SetCoins(ctx, acc.GetAddress(), coins)
-	}
+func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	//for _, acc := range app.accountKeeper.GetAllAccounts(ctx) {
+	//	fmt.Printf("%v : %v [%T]\n", acc.GetAddress(), acc.GetCoins(), acc)
+	//	//coins := acc.GetCoins()
+	//	//for _, c := range coins {
+	//	//	one := sdk.NewInt64Coin(c.Denom, 1)
+	//	//	coins = coins.Add(sdk.NewCoins(one))
+	//	//}
+	//	//
+	//	//app.bankKeeper.SetCoins(ctx, acc.GetAddress(), coins)
+	//}
+
+	block := ctx.BlockHeader()
+	proposerAddress := block.GetProposerAddress()
+	fmt.Printf(" *** Block %v proposed by: %v\n", ctx.BlockHeight(), sdk.ValAddress(proposerAddress))
+
 	return app.mm.EndBlock(ctx, req)
 }
 
 // application update at chain initialization
-func (app *sandboxApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
+func (app *emoneyApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
 	var genesisState GenesisState
 	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
 	return app.mm.InitGenesis(ctx, genesisState)
