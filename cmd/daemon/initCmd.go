@@ -105,8 +105,9 @@ func simpleAppGenTx(cdc *codec.Codec, pk crypto.PubKey) (
 	cliPrint = json.RawMessage(bz)
 
 	validator = tmtypes.GenesisValidator{
-		PubKey: pk,
-		Power:  10,
+		Address: pk.Address(),
+		PubKey:  pk,
+		Power:   10,
 	}
 
 	return

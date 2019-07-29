@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/tendermint/tendermint/crypto"
 	"net"
 	"path/filepath"
 	"strings"
@@ -133,14 +134,14 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 			panic(err)
 		}
 
-		createValidatorTXs[i] = createValidatorTransaction(validator, chainID)
-		validatorAccounts[i] = createValidatorAccounts(validator)
+		tx, validatorAccountAddress := createValidatorTransaction(validator, chainID)
+		createValidatorTXs[i] = tx
+		validatorAccounts[i] = createValidatorAccounts(validatorAccountAddress)
 		validators[i] = validator
 	}
 
 	// Update genesis file with the created validators
-	genDoc.Validators = validators
-	addGenesisValidatorTransactions(cdc, genDoc, createValidatorTXs)
+	addGenesisValidators(cdc, genDoc, createValidatorTXs, validatorAccounts)
 
 	for i := 0; i < validatorCount; i++ {
 		// Add genesis file to each node directory
@@ -162,43 +163,45 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	return nil
 }
 
-func createValidatorAccounts(validator tmtypes.GenesisValidator) genaccounts.GenesisAccount {
+func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount {
 	accStakingTokens := sdk.TokensFromConsensusPower(500)
 	account := genaccounts.GenesisAccount{
-		Address: sdk.AccAddress(validator.Address),
+		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
-			sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
+			sdk.NewCoin("ungm", accStakingTokens),
 		},
 	}
 
 	return account
 }
 
-func addGenesisValidatorTransactions(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []types.StdTx) {
+func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []types.StdTx, accounts []genaccounts.GenesisAccount) {
 	var appState map[string]json.RawMessage
 	if err := cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
 		panic(err)
 	}
 	genutil.SetGenesisStateInAppState(cdc, appState, genutil.NewGenesisStateFromStdTx(txs))
+	genaccounts.SetGenesisStateInAppState(cdc, appState, accounts)
+
 	genDoc.AppState = cdc.MustMarshalJSON(appState)
 }
 
-func createValidatorTransaction(validator tmtypes.GenesisValidator, chainID string) types.StdTx {
-	msg := staking.NewMsgCreateValidator(
-		sdk.ValAddress(validator.Address),
-		validator.PubKey,
-		sdk.NewCoin(sdk.DefaultBondDenom, sdk.ZeroInt()),
-		staking.NewDescription("MyValidator", "", "", ""),
-		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
-		sdk.ZeroInt())
-
+func createValidatorTransaction(validator tmtypes.GenesisValidator, chainID string) (types.StdTx, crypto.Address) {
 	kb := keys.NewInMemoryKeyBase()
 	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, "12345678", ckeys.Secp256k1)
 	if err != nil {
 		panic(err)
 	}
+
+	msg := staking.NewMsgCreateValidator(
+		sdk.ValAddress(info.GetPubKey().Address()),
+		validator.PubKey,
+		sdk.NewCoin("ungm", sdk.OneInt()),
+		staking.NewDescription("MyValidator", "", "", ""),
+		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
+		sdk.OneInt())
+
 	// TODO Write mnemonic to file in the validator directory.
-	fmt.Println("Key name:", info.GetName())
 	fmt.Println("Key mnemonic :", secret)
 
 	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, "no memo")
@@ -209,7 +212,7 @@ func createValidatorTransaction(validator tmtypes.GenesisValidator, chainID stri
 		panic(err)
 	}
 
-	return signedTx
+	return signedTx, info.GetPubKey().Address()
 }
 
 func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) error {

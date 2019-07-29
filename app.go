@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -27,6 +28,8 @@ const (
 
 var (
 	ModuleBasics = module.NewBasicManager(
+		genaccounts.AppModuleBasic{},
+		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		supply.AppModuleBasic{},
@@ -104,6 +107,7 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
+		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
 		auth.NewAppModule(application.accountKeeper),
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
@@ -111,7 +115,7 @@ func NewApp(logger log.Logger, db db.DB) *sandboxApp {
 	)
 
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
-	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, supply.ModuleName)
+	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, supply.ModuleName, genutil.ModuleName)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
@@ -147,14 +151,7 @@ func (app *sandboxApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abc
 func (app *sandboxApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
 	var genesisState GenesisState
 	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
-
-	res = app.mm.InitGenesis(ctx, genesisState)
-	if len(req.Validators) > 0 {
-		// NOTE : Initially manually set the list of validators here. Should eventually be set by the Staking module.
-		res.Validators = req.Validators
-	}
-
-	return res
+	return app.mm.InitGenesis(ctx, genesisState)
 }
 
 func init() {
