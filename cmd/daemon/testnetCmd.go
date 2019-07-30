@@ -261,7 +261,7 @@ func createConfigurationFiles(rootDir string) {
 	conf.P2P.RecvRate = 5120000
 	conf.P2P.SendRate = 5120000
 	conf.TxIndex.IndexAllTags = true
-	conf.Consensus.TimeoutCommit = 5 * time.Second
+	conf.Consensus.TimeoutCommit = 2 * time.Second
 	conf.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
 	cfg.WriteConfigFile(configFilePath, conf)
