@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"os"
 
 	"github.com/tendermint/go-amino"
@@ -56,6 +57,17 @@ func txCmds(cdc *amino.Codec) *cobra.Command {
 	}
 
 	txCmd.AddCommand(bankcmd.SendTxCmd(cdc))
+
+	app.ModuleBasics.AddTxCommands(txCmd, cdc)
+
+	// remove bank command as it's already mounted under the root tx command
+	for _, cmd := range txCmd.Commands() {
+		if cmd.Use == bank.ModuleName {
+			txCmd.RemoveCommand(cmd)
+			break
+		}
+	}
+
 	return txCmd
 }
 
