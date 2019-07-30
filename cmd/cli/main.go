@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	DefaultCLIHome = os.ExpandEnv(".")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.emcli")
 )
 
 func main() {

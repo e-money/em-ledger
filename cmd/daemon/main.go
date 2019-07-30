@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	DefaultNodeHome = os.ExpandEnv(".")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
 )
 
 func main() {
