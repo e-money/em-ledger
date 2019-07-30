@@ -2,3 +2,7 @@
 /data
 /build
 /config
+/keys
+
+# Used for temporarily adding local dependencies during debugging.
+/tmpvendor

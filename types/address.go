@@ -6,8 +6,6 @@ const (
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
 	Bech32MainPrefix = "emoney"
 
-	// PrefixAccount is the prefix for account keys
-	PrefixAccount = "acc"
 	// PrefixValidator is the prefix for validator keys
 	PrefixValidator = "val"
 	// PrefixConsensus is the prefix for consensus keys
@@ -16,9 +14,6 @@ const (
 	PrefixPublic = "pub"
 	// PrefixOperator is the prefix for operator keys
 	PrefixOperator = "oper"
-
-	// PrefixAddress is the prefix for addresses
-	PrefixAddress = "addr"
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
 	Bech32PrefixAccAddr = Bech32MainPrefix

@@ -28,9 +28,6 @@ func initCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *co
 		Short: "Initialize genesis configuration",
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			chainID := fmt.Sprintf("sandbox-%v", common.RandStr(6))
-			fmt.Println("Naming chain", chainID)
-
 			config := ctx.Config
 			config.Moniker = "Node1"
 			config.SetRoot(viper.GetString(cli.HomeFlag))
@@ -51,6 +48,7 @@ func initCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *co
 				return err
 			}
 
+			chainID := fmt.Sprintf("emoney-%v", common.RandStr(6))
 			genDoc := &tmtypes.GenesisDoc{
 				Validators: []tmtypes.GenesisValidator{validator},
 				ChainID:    chainID,
@@ -107,8 +105,9 @@ func simpleAppGenTx(cdc *codec.Codec, pk crypto.PubKey) (
 	cliPrint = json.RawMessage(bz)
 
 	validator = tmtypes.GenesisValidator{
-		PubKey: pk,
-		Power:  10,
+		Address: pk.Address(),
+		PubKey:  pk,
+		Power:   10,
 	}
 
 	return

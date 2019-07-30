@@ -1,17 +1,16 @@
 package main
 
 import (
+	app "emoney"
+	"emoney/types"
 	"io"
 	"os"
-	app "tmsandbox"
-	"tmsandbox/types"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	//testnet "github.com/cosmos/cosmos-sdk/cmd/gaia/init"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
@@ -35,8 +34,10 @@ func main() {
 
 	ctx := server.NewDefaultContext()
 
-	viper.Set("consensus.create_empty_blocks_interval", "55s")
+	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
+	viper.Set("consensus.timeout_commit", "0s")
+	viper.Set("consensus.timeout_propose", "2s")
 
 	rootCmd := &cobra.Command{
 		Use:               "daemon",
@@ -46,10 +47,9 @@ func main() {
 
 	rootCmd.AddCommand(initCmd(ctx, cdc, app.ModuleBasics))
 	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, DefaultNodeHome, DefaultNodeHome))
+	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics, nil))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)
-
-	//rootCmd.AddCommand(testnet.TestnetFilesCmd(ctx, cdc))
 
 	executor := cli.PrepareBaseCmd(rootCmd, "TMSND", ".")
 	err := executor.Execute()

@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 
 	"github.com/spf13/cobra"
@@ -20,7 +20,7 @@ const (
 	flagClientHome = "home-client"
 )
 
-// Adapted from Cosmos-sdk : x/auth/genaccounts/client/cli/genesis_accts.go
+// Adapted from Cosmos-sdk : x/genaccounts/client/cli/genesis_accts.go
 func addGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-genesis-account [address_or_key_name] [coin][,[coin]]",
@@ -50,7 +50,7 @@ func addGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome
 				return err
 			}
 
-			genAcc := genaccounts.NewGenesisAccountRaw(addr, coins, sdk.NewCoins(), 0, 0)
+			genAcc := genaccounts.NewGenesisAccountRaw(addr, coins, sdk.NewCoins(), 0, 0, "")
 			if err := genAcc.Validate(); err != nil {
 				return err
 			}
