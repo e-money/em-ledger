@@ -1,17 +1,16 @@
 package main
 
 import (
+	app "emoney"
+	"emoney/types"
 	"io"
 	"os"
-	app "tmsandbox"
-	"tmsandbox/types"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	//testnet "github.com/cosmos/cosmos-sdk/cmd/gaia/init"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
