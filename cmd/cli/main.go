@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 
@@ -21,7 +22,7 @@ import (
 )
 
 var (
-	DefaultCLIHome = os.ExpandEnv(".")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.emcli")
 )
 
 func main() {
@@ -40,7 +41,12 @@ func main() {
 	}
 	rootCmd.PersistentFlags().String(client.FlagChainID, "", "Chain ID of tendermint node")
 
-	rootCmd.AddCommand(queryCmds(cdc), txCmds(cdc), keys.Commands())
+	rootCmd.AddCommand(
+		queryCmds(cdc),
+		txCmds(cdc),
+		keys.Commands(),
+		version.Cmd,
+	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "GA", DefaultCLIHome)
 	err := executor.Execute()
