@@ -31,7 +31,7 @@ func main() {
 
 	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
-	viper.Set("consensus.timeout_commit", "0s")
+	viper.Set("consensus.timeout_commit", "250ms")
 	viper.Set("consensus.timeout_propose", "2s")
 
 	rootCmd := &cobra.Command{
