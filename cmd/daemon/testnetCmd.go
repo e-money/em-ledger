@@ -106,7 +106,6 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		AppState:   appState,
 	}
 
-	validators := make([]tmtypes.GenesisValidator, validatorCount)
 	nodeIDs := make([]string, validatorCount)
 	createValidatorTXs := make([]types.StdTx, validatorCount)
 	validatorAccounts := make([]genaccounts.GenesisAccount, validatorCount)
@@ -129,15 +128,9 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		}
 		nodeIDs[i] = string(nodeKey.ID())
 
-		_, _, validator, err := simpleAppGenTx(cdc, pk)
-		if err != nil {
-			panic(err)
-		}
-
-		tx, validatorAccountAddress := createValidatorTransaction(i, validator, chainID)
+		tx, validatorAccountAddress := createValidatorTransaction(i, pk, chainID)
 		createValidatorTXs[i] = tx
 		validatorAccounts[i] = createValidatorAccounts(validatorAccountAddress)
-		validators[i] = validator
 	}
 
 	// Update genesis file with the created validators
@@ -186,7 +179,7 @@ func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []ty
 	genDoc.AppState = cdc.MustMarshalJSON(appState)
 }
 
-func createValidatorTransaction(i int, validator tmtypes.GenesisValidator, chainID string) (types.StdTx, crypto.Address) {
+func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string) (types.StdTx, crypto.Address) {
 	kb := keys.NewInMemoryKeyBase()
 	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, "12345678", ckeys.Secp256k1)
 	if err != nil {
@@ -197,7 +190,7 @@ func createValidatorTransaction(i int, validator tmtypes.GenesisValidator, chain
 	valTokens := sdk.TokensFromConsensusPower(1)
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
-		validator.PubKey,
+		validatorpk,
 		sdk.NewCoin("ungm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
 		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
@@ -269,37 +262,4 @@ func createConfigurationFiles(rootDir string) {
 	appConfigFilePath := filepath.Join(rootDir, "config/app.toml")
 	appConf, _ := config.ParseConfig()
 	config.WriteConfigFile(appConfigFilePath, appConf)
-}
-
-func simpleAppGenTx(cdc *codec.Codec, pk crypto.PubKey) (
-	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
-
-	addr, secret, err := server.GenerateCoinKey()
-	if err != nil {
-		return
-	}
-
-	bz, err := cdc.MarshalJSON(struct {
-		Addr sdk.AccAddress `json:"addr"`
-	}{addr})
-	if err != nil {
-		return
-	}
-
-	appGenTx = json.RawMessage(bz)
-
-	bz, err = cdc.MarshalJSON(map[string]string{"secret": secret})
-	if err != nil {
-		return
-	}
-
-	cliPrint = json.RawMessage(bz)
-
-	validator = tmtypes.GenesisValidator{
-		Address: pk.Address(),
-		PubKey:  pk,
-		Power:   10,
-	}
-
-	return
 }

@@ -43,6 +43,7 @@ func main() {
 
 	rootCmd.AddCommand(
 		queryCmds(cdc),
+		client.ConfigCmd(DefaultCLIHome),
 		txCmds(cdc),
 		keys.Commands(),
 		version.Cmd,
@@ -88,5 +89,6 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 		authcmd.GetAccountCmd(cdc),
 	)
 
+	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
 	return queryCmd
 }
