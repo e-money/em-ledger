@@ -21,10 +21,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	DefaultCLIHome = os.ExpandEnv("$HOME/.emcli")
-)
-
 func main() {
 	cobra.EnableCommandSorting = false
 	cdc := app.MakeCodec()
@@ -43,13 +39,13 @@ func main() {
 
 	rootCmd.AddCommand(
 		queryCmds(cdc),
-		client.ConfigCmd(DefaultCLIHome),
+		client.ConfigCmd(app.DefaultCLIHome),
 		txCmds(cdc),
 		keys.Commands(),
 		version.Cmd,
 	)
 
-	executor := cli.PrepareMainCmd(rootCmd, "GA", DefaultCLIHome)
+	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)

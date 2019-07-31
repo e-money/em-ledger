@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -27,6 +28,9 @@ const (
 )
 
 var (
+	DefaultCLIHome  = os.ExpandEnv("$HOME/.emcli")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
+
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
