@@ -3,23 +3,17 @@ package main
 import (
 	app "emoney"
 	"emoney/types"
-	"io"
-	"os"
-
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	"io"
 
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-var (
-	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
 )
 
 func main() {
@@ -37,7 +31,7 @@ func main() {
 
 	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
-	viper.Set("consensus.timeout_commit", "0s")
+	viper.Set("consensus.timeout_commit", "250ms")
 	viper.Set("consensus.timeout_propose", "2s")
 
 	rootCmd := &cobra.Command{
@@ -46,8 +40,8 @@ func main() {
 		PersistentPreRunE: persistentPreRunEFn(ctx),
 	}
 
-	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, DefaultNodeHome))
-	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, DefaultNodeHome, DefaultNodeHome))
+	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
+	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics, nil))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)

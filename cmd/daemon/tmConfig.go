@@ -73,9 +73,6 @@ func interceptLoadConfig() (conf *cfg.Config, err error) {
 		conf, err = tcmd.ParseConfig() // NOTE: ParseConfig() creates dir/files as necessary.
 	}
 
-	//conf.Consensus.CreateEmptyBlocks = false
-	//conf.Consensus.CreateEmptyBlocksInterval = 55 * time.Second
-
 	appConfigFilePath := filepath.Join(rootDir, "config/app.toml")
 	if _, err := os.Stat(appConfigFilePath); os.IsNotExist(err) {
 		appConf, _ := config.ParseConfig()

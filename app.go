@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -27,6 +28,9 @@ const (
 )
 
 var (
+	DefaultCLIHome  = os.ExpandEnv("$HOME/.emcli")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
+
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
@@ -146,7 +150,7 @@ func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 
 	block := ctx.BlockHeader()
 	proposerAddress := block.GetProposerAddress()
-	fmt.Printf(" *** Block %v proposed by: %v\n", ctx.BlockHeight(), sdk.ValAddress(proposerAddress))
+	app.BaseApp.Logger().Info(fmt.Sprintf("Block %v proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
 	return app.mm.EndBlock(ctx, req)
 }
