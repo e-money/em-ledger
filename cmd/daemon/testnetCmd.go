@@ -270,3 +270,36 @@ func createConfigurationFiles(rootDir string) {
 	appConf, _ := config.ParseConfig()
 	config.WriteConfigFile(appConfigFilePath, appConf)
 }
+
+func simpleAppGenTx(cdc *codec.Codec, pk crypto.PubKey) (
+	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
+
+	addr, secret, err := server.GenerateCoinKey()
+	if err != nil {
+		return
+	}
+
+	bz, err := cdc.MarshalJSON(struct {
+		Addr sdk.AccAddress `json:"addr"`
+	}{addr})
+	if err != nil {
+		return
+	}
+
+	appGenTx = json.RawMessage(bz)
+
+	bz, err = cdc.MarshalJSON(map[string]string{"secret": secret})
+	if err != nil {
+		return
+	}
+
+	cliPrint = json.RawMessage(bz)
+
+	validator = tmtypes.GenesisValidator{
+		Address: pk.Address(),
+		PubKey:  pk,
+		Power:   10,
+	}
+
+	return
+}
