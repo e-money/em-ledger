@@ -150,7 +150,7 @@ func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 
 	block := ctx.BlockHeader()
 	proposerAddress := block.GetProposerAddress()
-	fmt.Printf(" *** Block %v proposed by: %v\n", ctx.BlockHeight(), sdk.ValAddress(proposerAddress))
+	app.BaseApp.Logger().Info(fmt.Sprintf("Block %v proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
 	return app.mm.EndBlock(ctx, req)
 }
