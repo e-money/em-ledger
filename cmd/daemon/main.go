@@ -13,6 +13,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -45,7 +46,7 @@ func main() {
 		PersistentPreRunE: persistentPreRunEFn(ctx),
 	}
 
-	rootCmd.AddCommand(initCmd(ctx, cdc, app.ModuleBasics))
+	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, DefaultNodeHome))
 	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, DefaultNodeHome, DefaultNodeHome))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics, nil))
 
