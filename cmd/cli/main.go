@@ -43,6 +43,7 @@ func main() {
 
 	rootCmd.AddCommand(
 		queryCmds(cdc),
+		client.ConfigCmd(DefaultCLIHome),
 		txCmds(cdc),
 		keys.Commands(),
 		version.Cmd,
