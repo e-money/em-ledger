@@ -1,6 +1,7 @@
 package emoney
 
 import (
+	"emoney/x/mint"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -17,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/db"
@@ -198,7 +198,9 @@ func mintDefaultParameters() func() mint.Params {
 	return func() mint.Params {
 		fmt.Println(" *** Overriding default mint module parameters")
 		params := mintDefaultParameters()
-		params.InflationRateChange = sdk.NewDec(1000)
+		params.InflationMin = sdk.NewDec(0)
+		params.InflationMax = sdk.NewDec(0)
+		params.InflationRateChange = sdk.NewDec(0)
 		params.MintDenom = "ungm"
 		return params
 	}
@@ -210,7 +212,9 @@ func mintGenesisState() func() mint.Minter {
 	return func() mint.Minter {
 		fmt.Println(" *** Creating default minter")
 		minter := defaultMinterFn()
-		minter.AnnualProvisions = sdk.NewDecWithPrec(13, 2)
+		minter.AnnualProvisions = sdk.NewDec(0)
+		minter.Inflation = sdk.NewDec(0)
+
 		return minter
 	}
 }
