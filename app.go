@@ -134,6 +134,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 
 	application.SetInitChainer(application.InitChainer)
 	application.SetAnteHandler(auth.NewAnteHandler(application.accountKeeper, application.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
+	application.SetBeginBlocker(application.BeginBlocker)
 	application.SetEndBlocker(application.EndBlocker)
 
 	err := application.LoadLatestVersion(application.keyMain)
@@ -146,6 +147,10 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 
 func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "emz")
+}
+
+func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	return app.mm.BeginBlock(ctx, req)
 }
 
 // application updates every end block
