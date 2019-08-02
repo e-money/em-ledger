@@ -45,7 +45,7 @@ func main() {
 
 	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
 	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics, nil))
+	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)
 
