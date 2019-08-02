@@ -33,6 +33,9 @@ func main() {
 	viper.Set("consensus.create_empty_blocks", false)
 	viper.Set("consensus.timeout_commit", "250ms")
 	viper.Set("consensus.timeout_propose", "2s")
+	viper.Set("consensus.peer_gossip_sleep_duration", "25ms")
+
+	viper.Set("p2p.flush_throttle_timeout", "25ms")
 
 	rootCmd := &cobra.Command{
 		Use:               "daemon",
