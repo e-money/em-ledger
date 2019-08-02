@@ -157,7 +157,7 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 
 		// Update config.toml with peer lists
 		updateConfigWithPeers(nodeDir, i, nodeIDs, baseIPAddress)
-		if i == 0 {
+		if i != 0 {
 			updateLoggingConfig(nodeDir)
 		}
 	}
@@ -244,7 +244,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	return signedTx, info.GetPubKey().Address()
 }
 
-// Change log_level setting to include emz-module, but only for first node.
+// Remove emz-module logging from all but the first node.
 func updateLoggingConfig(nodeDir string) {
 	configFilePath := filepath.Join(nodeDir, "config/config.toml")
 
@@ -255,8 +255,8 @@ func updateLoggingConfig(nodeDir string) {
 		panic(err)
 	}
 
-	logLevel := configFile.Get("log_level")
-	configFile.Set("log_level", fmt.Sprintf("emz:info,%v", logLevel))
+	logLevel := configFile.Get("log_level").(string)
+	configFile.Set("log_level", strings.Replace(logLevel, "emz:info,", "", 1))
 
 	err = configFile.WriteConfig()
 	if err != nil {
