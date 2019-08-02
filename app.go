@@ -144,6 +144,10 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	return application
 }
 
+func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "emz")
+}
+
 // application updates every end block
 func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	//for _, acc := range app.accountKeeper.GetAllAccounts(ctx) {
@@ -159,7 +163,7 @@ func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 
 	block := ctx.BlockHeader()
 	proposerAddress := block.GetProposerAddress()
-	app.BaseApp.Logger().Info(fmt.Sprintf("Block %v proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
+	app.Logger(ctx).Info(fmt.Sprintf("Block %v proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
 	return app.mm.EndBlock(ctx, req)
 }

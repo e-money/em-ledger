@@ -156,9 +156,9 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		}
 
 		// Update config.toml with peer lists
-		err = updateConfigWithPeers(nodeDir, i, nodeIDs, baseIPAddress)
-		if err != nil {
-			return err
+		updateConfigWithPeers(nodeDir, i, nodeIDs, baseIPAddress)
+		if i == 0 {
+			updateLoggingConfig(nodeDir)
 		}
 	}
 
@@ -244,7 +244,27 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	return signedTx, info.GetPubKey().Address()
 }
 
-func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) error {
+// Change log_level setting to include emz-module, but only for first node.
+func updateLoggingConfig(nodeDir string) {
+	configFilePath := filepath.Join(nodeDir, "config/config.toml")
+
+	configFile := viper.New()
+	configFile.SetConfigFile(configFilePath)
+	err := configFile.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	logLevel := configFile.Get("log_level")
+	configFile.Set("log_level", fmt.Sprintf("emz:info,%v", logLevel))
+
+	err = configFile.WriteConfig()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) {
 	configFilePath := filepath.Join(nodeDir, "config/config.toml")
 
 	configFile := viper.New()
@@ -268,7 +288,10 @@ func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddres
 
 	configFile.Set("p2p.persistent_peers", peerList)
 	configFile.Set("p2p.laddr", fmt.Sprintf("tcp://%v:%v", nodeIPAddress(i, baseIPAddress), 26656))
-	return configFile.WriteConfig()
+	err = configFile.WriteConfig()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func nodeIPAddress(i int, baseIPAddress string) string {
