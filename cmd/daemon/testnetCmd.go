@@ -33,15 +33,15 @@ import (
 )
 
 const (
-	flagNumValidators     = "validators"
-	flagOutputDir         = "output-dir"
-	flagStartingIPAddress = "starting-ip-address"
+	flagNumValidators      = "validators"
+	flagOutputDir          = "output-dir"
+	flagStartingIPAddress  = "starting-ip-address"
+	flagAddKeybaseAccounts = "keyaccounts"
 
 	nodeMonikerTemplate = "node%v"
 )
 
-func testnetCmd(ctx *server.Context, cdc *codec.Codec,
-	mbm module.BasicManager, genAccIterator genutil.GenesisAccountsIterator) *cobra.Command {
+func testnetCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "testnet",
@@ -65,10 +65,11 @@ Example:
 			//nodeCLIHome := viper.GetString(flagNodeCLIHome)
 			startingIPAddress := viper.GetString(flagStartingIPAddress)
 			numValidators := viper.GetInt(flagNumValidators)
-			//
+			addKeybaseAccounts := viper.GetString(flagAddKeybaseAccounts)
+
 			//return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
 			//	minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
-			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress)
+			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress, addKeybaseAccounts)
 		},
 	}
 
@@ -76,6 +77,9 @@ Example:
 		"Number of validators to initialize the testnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./testnet",
 		"Directory to store initialization data for the testnet")
+	cmd.Flags().String(flagAddKeybaseAccounts, "", "Generate accounts for each key in the keystore at the specified path.")
+	cmd.Flags().Lookup(flagAddKeybaseAccounts).NoOptDefVal = ""
+
 	//cmd.Flags().String(flagNodeDaemonHome, "gaiad",
 	//	"Home directory of the node's daemon configuration")
 	//cmd.Flags().String(flagNodeCLIHome, "gaiacli",
@@ -90,8 +94,7 @@ Example:
 	return cmd
 }
 
-func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config,
-	outputDir string, validatorCount int, baseIPAddress string) error {
+func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int, baseIPAddress string, addRandomAccounts string) error {
 	config.Genesis = "genesis.json"
 
 	appState, err := codec.MarshalJSONIndent(cdc, mbm.DefaultGenesis())
@@ -133,8 +136,14 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		validatorAccounts[i] = createValidatorAccounts(validatorAccountAddress)
 	}
 
+	var genaccounts genaccounts.GenesisAccounts
+	if addRandomAccounts != "" {
+		genaccounts = addRandomTestAccounts(addRandomAccounts)
+	}
+
 	// Update genesis file with the created validators
-	addGenesisValidators(cdc, genDoc, createValidatorTXs, validatorAccounts)
+	allAccounts := append(validatorAccounts, genaccounts...)
+	addGenesisValidators(cdc, genDoc, createValidatorTXs, allAccounts)
 
 	for i := 0; i < validatorCount; i++ {
 		// Add genesis file to each node directory
@@ -154,6 +163,31 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	}
 
 	return nil
+}
+
+func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
+	kb, err := keys.NewKeyBaseFromDir(keystorepath)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, err := kb.List()
+	if err != nil {
+		panic(err)
+	}
+
+	result := make(genaccounts.GenesisAccounts, len(keys))
+	for i, k := range keys {
+		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
+		coins := sdk.NewCoins(
+			sdk.NewCoin("ungm", sdk.TokensFromConsensusPower(100)),
+		)
+
+		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
+		result[i] = genAcc
+	}
+
+	return result
 }
 
 func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount {
