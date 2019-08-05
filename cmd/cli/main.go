@@ -13,9 +13,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/client/lcd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 
 	"github.com/spf13/cobra"
@@ -41,6 +43,7 @@ func main() {
 		queryCmds(cdc),
 		client.ConfigCmd(app.DefaultCLIHome),
 		txCmds(cdc),
+		lcd.ServeCommand(cdc, registerLCDRoutes),
 		keys.Commands(),
 		version.Cmd,
 	)
@@ -87,4 +90,10 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
 	return queryCmd
+}
+
+func registerLCDRoutes(rs *lcd.RestServer) {
+	client.RegisterRoutes(rs.CliCtx, rs.Mux)
+	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
