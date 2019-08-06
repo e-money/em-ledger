@@ -8,73 +8,56 @@ import (
 )
 
 const (
-	accrualSlots = 365 * 24 * 60
+	// Apply interest every minute
+	AccrualSlots = 365 * 24 * 60
 )
 
 // BeginBlocker mints new tokens for the previous block.
 func BeginBlocker(ctx sdk.Context, k Keeper) {
-	// Temporary calculation of interest accrual for a 1-minute slot:
-
-	annualInterest := sdk.NewDec(1)
-	periodInterest := annualInterest.QuoInt(sdk.NewInt(accrualSlots))
-	fmt.Println("PeriodInterest determined to be : ", periodInterest)
-
 	// fetch stored minter & params
 	minter := k.GetMinter(ctx)
-	params := k.GetParams(ctx)
-
-	// recalculate inflation rate
-	//totalStakingSupply := k.StakingTokenSupply(ctx)
-	//fmt.Println(" *** TotalStakingSupply", totalStakingSupply)
-	//bondedRatio := k.BondedRatio(ctx)
-
-	var modifiedMinter bool
-	//nextInflation := minter.NextInflationRate(params, bondedRatio)
-	//
-	//if !nextInflation.Equal(minter.Inflation) {
-	//	fmt.Println("Inflation: ", nextInflation, minter.Inflation)
-	//	minter.Inflation = nextInflation
-	//	modifiedMinter = true
-	//}
-	//
-	//nextAnnualProvisions := minter.NextAnnualProvisions(params, totalStakingSupply)
-	//
-	//if !nextAnnualProvisions.Equal(minter.AnnualProvisions) {
-	//	fmt.Println("Annual provisions: ", nextAnnualProvisions, minter.AnnualProvisions)
-	//	minter.AnnualProvisions = nextAnnualProvisions
-	//	modifiedMinter = true
-	//}
+	//params := k.GetParams(ctx)
 
 	// TODO
 	// Is it time to accrue interest?
 	t := ctx.BlockTime().Truncate(time.Minute)
-	fmt.Println(" *** Last minute", t)
-
-	if !t.Equal(minter.LastAccrual) {
-		minter.LastAccrual = t
-		modifiedMinter = true
-	}
-
-	if modifiedMinter {
-		fmt.Println(" *** Minter modified!", minter.LastAccrual)
-		k.SetMinter(ctx, minter)
-	}
-
-	// mint coins, update supply
-	mintedCoin := minter.BlockProvision(params)
-
-	if mintedCoin.Amount.IsZero() {
-		//fmt.Println(" *** No new coins minted")
+	if t.Equal(minter.LastAccrual) {
+		// A full interest accrual period has not elapsed since last block
+		fmt.Println(" *** No accrual for this block.")
 		return
 	}
 
+	fmt.Println(" *** Minute time difference for block height: ", minter.LastAccrual.Minute(), ctx.BlockTime().Minute(), ctx.BlockHeight())
+
+	// TODO Calculate number of accrual periods since the last one executed
+	duration := t.Sub(minter.LastAccrual)
+	fmt.Println(" *** Minutes since last accrual", int(duration.Minutes()))
+	// TODO Set a genesis value for minter.LastAccrual
+
+	minter.LastAccrual = t
+	k.SetMinter(ctx, minter)
+
+	// mint coins, update supply
+	annualInterest := sdk.NewDecWithPrec(1, 2) // TODO Store in params
+	periodInterest := annualInterest.QuoInt(sdk.NewInt(AccrualSlots))
+
+	ungmSupply := k.TotalTokenSupply(ctx, "ungm")
+	fmt.Println(" *** Total ungm supply", ungmSupply)
+
+	coinIncrease := periodInterest.MulInt(ungmSupply)
+
+	mintedCoin := sdk.NewCoin("ungm", coinIncrease.RoundInt())
 	mintedCoins := sdk.NewCoins(mintedCoin)
+
 	fmt.Println(" *** mintedCoins", mintedCoins)
 
 	err := k.MintCoins(ctx, mintedCoins)
 	if err != nil {
 		panic(err)
 	}
+
+	ungmSupply = k.TotalTokenSupply(ctx, "ungm")
+	fmt.Println(" *** Total supply after accrual", ungmSupply)
 
 	// send the minted coins to the fee collector account
 	err = k.AddCollectedFees(ctx, mintedCoins)
