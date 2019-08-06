@@ -8,6 +8,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"os"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -198,9 +199,6 @@ func mintDefaultParameters() func() mint.Params {
 	return func() mint.Params {
 		fmt.Println(" *** Overriding default mint module parameters")
 		params := mintDefaultParameters()
-		params.InflationMin = sdk.NewDec(0)
-		params.InflationMax = sdk.NewDec(0)
-		params.InflationRateChange = sdk.NewDec(0)
 		params.MintDenom = "ungm"
 		return params
 	}
@@ -214,6 +212,8 @@ func mintGenesisState() func() mint.Minter {
 		minter := defaultMinterFn()
 		minter.AnnualProvisions = sdk.NewDec(0)
 		minter.Inflation = sdk.NewDec(0)
+		minter.LastAccrual = time.Now().UTC().Truncate(time.Minute)
+		fmt.Println(" *** Minter genesis time", minter.LastAccrual)
 
 		return minter
 	}

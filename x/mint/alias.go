@@ -34,14 +34,9 @@ var (
 	ValidateParams       = types.ValidateParams
 
 	// variable aliases
-	ModuleCdc              = types.ModuleCdc
-	MinterKey              = types.MinterKey
-	KeyMintDenom           = types.KeyMintDenom
-	KeyInflationRateChange = types.KeyInflationRateChange
-	KeyInflationMax        = types.KeyInflationMax
-	KeyInflationMin        = types.KeyInflationMin
-	KeyGoalBonded          = types.KeyGoalBonded
-	KeyBlocksPerYear       = types.KeyBlocksPerYear
+	ModuleCdc    = types.ModuleCdc
+	MinterKey    = types.MinterKey
+	KeyMintDenom = types.KeyMintDenom
 )
 
 type (
