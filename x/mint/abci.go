@@ -12,8 +12,9 @@ const (
 	//AccrualSlots = 365 * 24 * 60
 
 	// DEBUG value where interest is accrued 4 times per minute
-	AccrualsPerMinute = 4
-	AccrualSlots      = 365 * 24 * 60 * AccrualsPerMinute
+	accrualPeriod = 15 * time.Second
+	//accrualPeriod = time.Minute
+	AccrualSlots = int64(time.Duration(365*24*time.Hour) / accrualPeriod)
 )
 
 // BeginBlocker mints new tokens for the previous block.
@@ -21,44 +22,49 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 	// fetch stored minter
 	minter := k.GetMinter(ctx)
 
-	// TODO
 	// Is it time to accrue interest?
-	//t := ctx.BlockTime().Truncate(time.Minute)
-	t := truncateTimestamp(ctx.BlockTime(), 60/AccrualsPerMinute)
-	if t.Equal(minter.LastAccrual) {
+
+	blocktimeTruncated := truncateTimestamp(ctx.BlockTime(), int(accrualPeriod.Seconds()))
+	if blocktimeTruncated.Sub(minter.LastAccrual) < accrualPeriod {
 		// A full interest accrual period has not elapsed since last block
 		fmt.Println(" *** No accrual for this block.")
 		return
 	}
 
-	// TODO Calculate number of accrual periods since the last one executed
-	// TODO Set a genesis value for minter.LastAccrual
+	// Determine the number of accrual periods since the last one.
+	diff := blocktimeTruncated.Sub(minter.LastAccrual)
+	accrualPeriodCount := sdk.NewInt(int64(diff / accrualPeriod))
+	fmt.Println(" *** Estimated number of missing accrual periods: ", accrualPeriodCount)
 
-	minter.LastAccrual = t
+	minter.LastAccrual = blocktimeTruncated
 	k.SetMinter(ctx, minter)
 
 	params := k.GetParams(ctx)
 
+	mintedCoins := sdk.Coins{}
 	for _, asset := range params.InflationAssets {
 		annualInterest := asset.Inflation
 
 		periodInterest := annualInterest.QuoInt(sdk.NewInt(AccrualSlots))
 
 		supply := k.TotalTokenSupply(ctx, asset.Denom)
-		increase := periodInterest.MulInt(supply)
+		increase := periodInterest.MulInt(supply).MulInt(accrualPeriodCount)
+		fmt.Printf(" *** Inflating supply of %v by %v%%. Current supply: %v Increase: %v\n'", asset.Denom, periodInterest, supply, increase.RoundInt())
 
 		mintedCoin := sdk.NewCoin(asset.Denom, increase.RoundInt())
-		mintedCoins := sdk.NewCoins(mintedCoin)
+		mintedCoins = append(mintedCoins, mintedCoin)
+	}
 
-		err := k.MintCoins(ctx, mintedCoins)
-		if err != nil {
-			panic(err)
-		}
+	fmt.Println(" *** Mintedcoins:", mintedCoins)
 
-		err = k.AddCollectedFees(ctx, mintedCoins)
-		if err != nil {
-			panic(err)
-		}
+	err := k.MintCoins(ctx, mintedCoins)
+	if err != nil {
+		panic(err)
+	}
+
+	err = k.AddMintedCoins(ctx, mintedCoins)
+	if err != nil {
+		panic(err)
 	}
 
 	/*

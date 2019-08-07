@@ -212,7 +212,7 @@ func mintGenesisState() func() mint.Minter {
 		minter := defaultMinterFn()
 		minter.AnnualProvisions = sdk.NewDec(0)
 		minter.Inflation = sdk.NewDec(0)
-		minter.LastAccrual = time.Now().UTC().Truncate(time.Minute)
+		minter.LastAccrual = time.Now().UTC().Add(-2 * time.Minute).Truncate(time.Minute)
 		fmt.Println(" *** Minter genesis time", minter.LastAccrual)
 
 		return minter
