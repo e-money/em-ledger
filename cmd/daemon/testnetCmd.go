@@ -181,6 +181,8 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
 			sdk.NewCoin("ungm", sdk.TokensFromConsensusPower(100)),
+			sdk.NewCoin("caps", sdk.TokensFromConsensusPower(5000)),
+			sdk.NewCoin("kredits", sdk.TokensFromConsensusPower(2700)),
 		)
 
 		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")

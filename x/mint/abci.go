@@ -9,60 +9,56 @@ import (
 
 const (
 	// Apply interest every minute
-	AccrualSlots = 365 * 24 * 60
+	//AccrualSlots = 365 * 24 * 60
+
+	// DEBUG value where interest is accrued 4 times per minute
+	AccrualsPerMinute = 4
+	AccrualSlots      = 365 * 24 * 60 * AccrualsPerMinute
 )
 
 // BeginBlocker mints new tokens for the previous block.
 func BeginBlocker(ctx sdk.Context, k Keeper) {
-	// fetch stored minter & params
+	// fetch stored minter
 	minter := k.GetMinter(ctx)
-	//params := k.GetParams(ctx)
 
 	// TODO
 	// Is it time to accrue interest?
-	t := ctx.BlockTime().Truncate(time.Minute)
+	//t := ctx.BlockTime().Truncate(time.Minute)
+	t := truncateTimestamp(ctx.BlockTime(), 60/AccrualsPerMinute)
 	if t.Equal(minter.LastAccrual) {
 		// A full interest accrual period has not elapsed since last block
 		fmt.Println(" *** No accrual for this block.")
 		return
 	}
 
-	fmt.Println(" *** Minute time difference for block height: ", minter.LastAccrual.Minute(), ctx.BlockTime().Minute(), ctx.BlockHeight())
-
 	// TODO Calculate number of accrual periods since the last one executed
-	duration := t.Sub(minter.LastAccrual)
-	fmt.Println(" *** Minutes since last accrual", int(duration.Minutes()))
 	// TODO Set a genesis value for minter.LastAccrual
 
 	minter.LastAccrual = t
 	k.SetMinter(ctx, minter)
 
-	// mint coins, update supply
-	annualInterest := sdk.NewDecWithPrec(1, 2) // TODO Store in params
-	periodInterest := annualInterest.QuoInt(sdk.NewInt(AccrualSlots))
+	params := k.GetParams(ctx)
 
-	ungmSupply := k.TotalTokenSupply(ctx, "ungm")
-	fmt.Println(" *** Total ungm supply", ungmSupply)
+	for _, asset := range params.InflationAssets {
+		annualInterest := asset.Inflation
 
-	coinIncrease := periodInterest.MulInt(ungmSupply)
+		periodInterest := annualInterest.QuoInt(sdk.NewInt(AccrualSlots))
 
-	mintedCoin := sdk.NewCoin("ungm", coinIncrease.RoundInt())
-	mintedCoins := sdk.NewCoins(mintedCoin)
+		supply := k.TotalTokenSupply(ctx, asset.Denom)
+		increase := periodInterest.MulInt(supply)
 
-	fmt.Println(" *** mintedCoins", mintedCoins)
+		mintedCoin := sdk.NewCoin(asset.Denom, increase.RoundInt())
+		mintedCoins := sdk.NewCoins(mintedCoin)
 
-	err := k.MintCoins(ctx, mintedCoins)
-	if err != nil {
-		panic(err)
-	}
+		err := k.MintCoins(ctx, mintedCoins)
+		if err != nil {
+			panic(err)
+		}
 
-	ungmSupply = k.TotalTokenSupply(ctx, "ungm")
-	fmt.Println(" *** Total supply after accrual", ungmSupply)
-
-	// send the minted coins to the fee collector account
-	err = k.AddCollectedFees(ctx, mintedCoins)
-	if err != nil {
-		panic(err)
+		err = k.AddCollectedFees(ctx, mintedCoins)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	/*
@@ -76,4 +72,13 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 			),
 		)
 	*/
+}
+
+func truncateTimestamp(ts time.Time, second int) time.Time {
+	diff := ts.Second() % second
+
+	ts = ts.Add(-time.Duration(diff) * time.Second)
+	ts = ts.Add(-time.Duration(ts.Nanosecond()))
+
+	return ts
 }
