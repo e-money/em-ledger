@@ -112,7 +112,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	application.stakingKeeper = staking.NewKeeper(cdc, application.keyStaking, application.tkeyStaking, application.supplyKeeper,
 		stakingSubspace, staking.DefaultCodespace)
 
-	application.mintKeeper = mint.NewKeeper(application.cdc, application.keyMint, mintSubspace, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName)
+	application.mintKeeper = mint.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
 		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint)

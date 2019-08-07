@@ -1,3 +1,5 @@
+// +build ignore
+
 // nolint:deadcode unused
 package keeper
 
