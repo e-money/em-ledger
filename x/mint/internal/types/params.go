@@ -25,7 +25,7 @@ type InflationAsset struct {
 type InflationAssets = []InflationAsset
 
 type InflationState struct {
-	LastAccrual     time.Time       `json:"last_accrual" yaml:"last_accrual"`
+	LastApplied     time.Time       `json:"last_applied" yaml:"last_applied"`
 	InflationAssets InflationAssets `json:"assets" yaml:"assets"`
 }
 
@@ -56,7 +56,7 @@ func NewInflationState(assets ...string) InflationState {
 
 	return InflationState{
 		InflationAssets: result,
-		LastAccrual:     time.Now().UTC(),
+		LastApplied:     time.Now().UTC(),
 	}
 }
 
@@ -78,7 +78,7 @@ func ValidateInflationState(is InflationState) error {
 func (is InflationState) String() string {
 	var result strings.Builder
 
-	result.WriteString(fmt.Sprintf("Last Accrual time: %v\n", is.LastAccrual))
+	result.WriteString(fmt.Sprintf("Last inflation: %v\n", is.LastApplied))
 	result.WriteString("Inflation state:\n")
 	for _, asset := range is.InflationAssets {
 		result.WriteString(fmt.Sprintf("\tDenom: %v\t\t\tInflation: %v\t\tAccum: %v\n", asset.Denom, asset.Inflation, asset.Accum))

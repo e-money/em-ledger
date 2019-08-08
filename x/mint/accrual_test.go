@@ -1,7 +1,6 @@
 package mint
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -10,36 +9,21 @@ import (
 )
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
-func TestSingleCoinFullYear(t *testing.T) {
-	accum := sdk.NewDec(0)
-	minted := sdk.ZeroInt()
-	supply := sdk.NewInt(2300000000)
-	annualInterest := sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2)
-
-	lastAccrual := time.Now()
-
-	accum, minted = calculateAccrual(accum, supply, annualInterest, lastAccrual, lastAccrual.Add(365*24*time.Hour))
-
-	assert.Equal(t, sdk.NewInt(23000000), minted)
-	assert.True(t, sdk.NewDec(0).Equal(accum))
-}
-
 func TestYearHourlyAccrual(t *testing.T) {
 	accum := sdk.NewDec(0)
 	minted := sdk.ZeroInt()
 	supply := sdk.NewInt(2300000000)
-	annualInterest := sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2)
+	annualInflation := sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2)
 
 	lastAccrual := time.Now()
 
 	totalMinted := sdk.ZeroInt()
 	for i := 0; i < 365*24; i++ {
-		accum, minted = calculateAccrual(accum, supply, annualInterest, lastAccrual, lastAccrual.Add(time.Hour))
+		accum, minted = calculateInflation(accum, supply, annualInflation, lastAccrual, lastAccrual.Add(time.Hour))
 		lastAccrual = lastAccrual.Add(time.Hour)
 		totalMinted = totalMinted.Add(minted)
 	}
 
-	fmt.Println(totalMinted)
 	assert.Equal(t, sdk.NewInt(23000000), totalMinted, "minted %v", totalMinted)
 	assert.True(t, sdk.NewDec(0).Equal(accum), "accum", accum.String())
 
@@ -71,7 +55,7 @@ func TestRandomBlockTimes(t *testing.T) {
 
 		totalDuration = totalDuration + d
 
-		accum, minted = calculateAccrual(accum, supply, annualInterest, lastAccrual, lastAccrual.Add(d))
+		accum, minted = calculateInflation(accum, supply, annualInterest, lastAccrual, lastAccrual.Add(d))
 		lastAccrual = lastAccrual.Add(d)
 		totalMinted = totalMinted.Add(minted)
 
@@ -80,8 +64,33 @@ func TestRandomBlockTimes(t *testing.T) {
 		}
 	}
 
-	fmt.Println("Total minted: ", totalMinted)
-	fmt.Println("Remaining accum: ", accum)
-	fmt.Println("Total duration: ", totalDuration)
-	fmt.Println("Block count", blockCount)
+	// Sanity check test
+	assert.Equal(t, 365*24*time.Hour, totalDuration)
+
+	assert.Equal(t, sdk.NewInt(23000000), totalMinted, "minted %v", totalMinted)
+	assert.True(t, sdk.NewDec(0).Equal(accum), "accum", accum.String())
+}
+
+// Simulate an entire years worth of compounded inflation when calculated each minute
+func TestMultipleCoinsAccrual(t *testing.T) {
+	currentTime := time.Now().UTC()
+	state := NewInflationState("credit", "0.001", "buck", "0.03")
+
+	supply := sdk.NewCoins(
+		sdk.NewCoin("buck", sdk.NewInt(1000000000)),
+		sdk.NewCoin("credit", sdk.NewInt(1000)),
+	)
+
+	state.LastApplied = currentTime
+
+	for i := 0; i < 365*24*60; i++ {
+		currentTime = currentTime.Add(time.Minute)
+		mintedCoins := applyInflation(&state, supply, currentTime)
+
+		// Add the minted coins to the total supply
+		supply = supply.Add(mintedCoins)
+	}
+
+	assert.Equal(t, sdk.NewInt(1001), supply.AmountOf("credit"))
+	assert.Equal(t, sdk.NewInt(1030454533), supply.AmountOf("buck"))
 }

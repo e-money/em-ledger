@@ -194,9 +194,6 @@ func mintDefaultInflationState() func() mint.InflationState {
 
 	return func() mint.InflationState {
 		state := mintDefaultInflationStateFn()
-
-		fmt.Println(" *** Default inflation state:\n", state)
-
 		return state
 	}
 }
