@@ -22,16 +22,19 @@ const (
 
 var (
 	// functions aliases
-	NewKeeper            = keeper.NewKeeper
-	NewQuerier           = keeper.NewQuerier
-	NewMinter            = types.NewMinter
-	InitialMinter        = types.InitialMinter
-	DefaultInitialMinter = types.DefaultInitialMinter
-	ValidateMinter       = types.ValidateMinter
-	ParamKeyTable        = types.ParamKeyTable
-	NewParams            = types.NewParams
-	DefaultParams        = types.DefaultParams
-	ValidateParams       = types.ValidateParams
+	NewKeeper = keeper.NewKeeper
+	//NewQuerier           = keeper.NewQuerier
+	//NewMinter            = types.NewMinter
+	//InitialMinter        = types.InitialMinter
+	//DefaultInitialMinter = types.DefaultInitialMinter
+	//ValidateMinter       = types.ValidateMinter
+	ParamKeyTable          = types.ParamKeyTable
+	NewInflationState      = types.NewInflationState
+	DefaultInflationState  = types.DefaultInflationState
+	ValidateInflationState = types.ValidateInflationState
+	//NewParams            = types.NewParams
+	//DefaultParams        = types.DefaultParams
+	//ValidateParams       = types.ValidateParams
 
 	// variable aliases
 	ModuleCdc    = types.ModuleCdc
@@ -41,6 +44,10 @@ var (
 
 type (
 	Keeper = keeper.Keeper
-	Minter = types.Minter
-	Params = types.Params
+	//Minter          = types.Minter
+	//AssetState      = types.AssetState
+	//Params          = types.Params
+	InflationState  = types.InflationState
+	InflationAsset  = types.InflationAsset
+	InflationAssets = types.InflationAssets
 )

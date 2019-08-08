@@ -1,53 +1,46 @@
 package mint
 
 import (
+	"emoney/x/mint/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // GenesisState - minter state
 type GenesisState struct {
-	Minter Minter `json:"minter" yaml:"minter"` // minter object
-	Params Params `json:"params" yaml:"params"` // inflation params
+	//Minter Minter `json:"minter" yaml:"minter"` // minter object
+	//Params Params `json:"params" yaml:"params"` // inflation params
+	InflationState InflationState `json:"assets" yaml:"assets"`
 }
 
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(minter Minter, params Params) GenesisState {
+func NewGenesisState(state InflationState) GenesisState {
 	return GenesisState{
-		Minter: minter,
-		Params: params,
+		InflationState: state,
 	}
 }
 
 // DefaultGenesisState creates a default GenesisState object
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Minter: DefaultInitialMinter(),
-		Params: DefaultParams(),
+		InflationState: DefaultInflationState(),
 	}
 }
 
 // InitGenesis new mint genesis
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
-	keeper.SetMinter(ctx, data.Minter)
-	keeper.SetParams(ctx, data.Params)
+	keeper.SetState(ctx, data.InflationState)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
-	minter := keeper.GetMinter(ctx)
-	params := keeper.GetParams(ctx)
-	return NewGenesisState(minter, params)
+	state := keeper.GetState(ctx)
+	return NewGenesisState(state)
 }
 
 // ValidateGenesis validates the provided genesis state to ensure the
 // expected invariants holds.
 func ValidateGenesis(data GenesisState) error {
-	err := ValidateParams(data.Params)
-	if err != nil {
-		return err
-	}
-
-	err = ValidateMinter(data.Minter)
+	err := types.ValidateInflationState(data.InflationState)
 	if err != nil {
 		return err
 	}

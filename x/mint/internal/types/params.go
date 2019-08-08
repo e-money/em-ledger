@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -14,25 +15,27 @@ var (
 	KeyParams    = []byte("MintParameters")
 )
 
+// TODO Divide into two? One "base class" holding Denom and inflation for use in Genesis and a "subclass" with current state
 type InflationAsset struct {
-	Denom     string  `json:"denom" yaml:"denom"`
-	Inflation sdk.Dec `json:"inflation" yaml:"inflation"`
+	Denom       string    `json:"denom" yaml:"denom"`
+	Inflation   sdk.Dec   `json:"inflation" yaml:"inflation"`
+	LastAccrual time.Time `json:"last_accrual" yaml:"last_accrual"`
+	Accum       sdk.Dec   `json:"accum" yaml:"accum"`
 }
 
 type InflationAssets = []InflationAsset
 
-// mint parameters
-type Params struct {
-	MintDenom       string          `json:"mint_denom" yaml:"mint_denom"` // type of coin to mint
+type InflationState struct {
 	InflationAssets InflationAssets `json:"assets" yaml:"assets"`
 }
 
 // ParamTable for minting module.
 func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterParamSet(&Params{}).RegisterType(KeyParams, Params{})
+	return params.NewKeyTable().RegisterType(KeyParams, InflationState{})
+	//.RegisterParamSet(&Params{})
 }
 
-func NewParams(mintDenom string, assets ...string) Params {
+func NewInflationState(assets ...string) InflationState {
 	if len(assets)%2 != 0 {
 		panic("Unable to parse asset parameters")
 	}
@@ -44,43 +47,47 @@ func NewParams(mintDenom string, assets ...string) Params {
 			panic(err)
 		}
 
-		result = append(result, InflationAsset{assets[i], inflation})
+		result = append(result, InflationAsset{
+			Denom:       assets[i],
+			Inflation:   inflation,
+			LastAccrual: time.Now().UTC(),
+			Accum:       sdk.NewDec(0),
+		})
 	}
 
-	return Params{
-		MintDenom:       mintDenom,
+	return InflationState{
 		InflationAssets: result,
 	}
 }
 
-// default minting module parameters
-func DefaultParams() Params {
-	return NewParams("", "caps", "0.01", "kredits", "0.05")
+func DefaultInflationState() InflationState {
+	return NewInflationState("caps", "0.01", "kredits", "0.05")
 }
 
 // validate params
-func ValidateParams(params Params) error {
+func ValidateInflationState(is InflationState) error {
 	// TODO No duplicate denoms
 
-	if params.MintDenom == "" {
-		return fmt.Errorf("mint parameter MintDenom can't be an empty string")
-	}
+	//if params.MintDenom == "" {
+	//	return fmt.Errorf("mint parameter MintDenom can't be an empty string")
+	//}
+
 	return nil
 }
 
-func (p Params) String() string {
+func (is InflationState) String() string {
 	var result strings.Builder
 
 	result.WriteString("Minting params:\n")
-	for _, asset := range p.InflationAssets {
+	for _, asset := range is.InflationAssets {
 		result.WriteString(fmt.Sprintf("	 Denom: %v	 	 Inflation: %v\n", asset.Denom, asset.Inflation))
 	}
 	return result.String()
 }
 
 // Implements params.ParamSet
-func (p *Params) ParamSetPairs() params.ParamSetPairs {
+func (is *InflationState) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
-		{KeyMintDenom, &p.MintDenom},
+		//{KeyMintDenom, &p.MintDenom},
 	}
 }

@@ -8,7 +8,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"emoney/x/mint/client/cli"
 	"emoney/x/mint/client/rest"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -59,7 +58,8 @@ func (AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command { return nil }
 
 // get the root query command of this module
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(cdc)
+	//return cli.GetQueryCmd(cdc)
+	return nil
 }
 
 //___________________________
@@ -98,7 +98,8 @@ func (AppModule) QuerierRoute() string {
 
 // module querier
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
+	//return NewQuerier(am.keeper)
+	return nil
 }
 
 // module init-genesis

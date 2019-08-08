@@ -4,25 +4,22 @@ import (
 	"emoney/x/mint"
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-	"os"
-	"time"
-
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	"os"
 )
 
 const (
@@ -189,35 +186,65 @@ func setGenesisDefaults() {
 	// Override module defaults for use in testnets and the default init functionality.
 	staking.DefaultGenesisState = stakingGenesisState
 
-	mint.DefaultInitialMinter = mintGenesisState()
-	mint.DefaultParams = mintDefaultParameters()
+	mint.DefaultInflationState = mintDefaultInflationState()
 }
 
-func mintDefaultParameters() func() mint.Params {
-	mintDefaultParameters := mint.DefaultParams
+func mintDefaultInflationState() func() mint.InflationState {
+	mintDefaultInflationStateFn := mint.DefaultInflationState
 
-	return func() mint.Params {
-		fmt.Println(" *** Overriding default mint module parameters")
-		params := mintDefaultParameters()
-		params.MintDenom = "ungm"
-		return params
+	return func() mint.InflationState {
+		state := mintDefaultInflationStateFn()
+
+		fmt.Println(" *** Default inflation state:\n", state)
+
+		return state
 	}
 }
 
-func mintGenesisState() func() mint.Minter {
-	defaultMinterFn := mint.DefaultInitialMinter
-
-	return func() mint.Minter {
-		fmt.Println(" *** Creating default minter")
-		minter := defaultMinterFn()
-		minter.AnnualProvisions = sdk.NewDec(0)
-		minter.Inflation = sdk.NewDec(0)
-		minter.LastAccrual = time.Now().UTC().Add(-2 * time.Minute).Truncate(time.Minute)
-		fmt.Println(" *** Minter genesis time", minter.LastAccrual)
-
-		return minter
-	}
-}
+//func mintDefaultParameters() func() mint.Params {
+//	mintDefaultParameters := mint.DefaultParams
+//
+//	return func() mint.Params {
+//		fmt.Println(" *** Overriding default mint module parameters")
+//		params := mintDefaultParameters()
+//
+//		assets := append(mint.InflationAssets{}, mint.InflationAsset{
+//			Denom:     "caps",
+//			Inflation: sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2),
+//		})
+//
+//		assets = append(assets, mint.InflationAsset{
+//			Denom:     "kredits",
+//			Inflation: sdk.NewDecFromIntWithPrec(sdk.NewInt(5), 2)},
+//		)
+//
+//		params.InflationAssets = assets
+//		return params
+//	}
+//}
+//
+//func mintGenesisState() func() mint.Minter {
+//	defaultMinterFn := mint.DefaultInitialMinter
+//
+//	return func() mint.Minter {
+//		fmt.Println(" *** Creating default minter")
+//		minter := defaultMinterFn()
+//
+//		// TOOD Make a factory function
+//		minter.AssetsInflationState = make(map[string]mint.AssetState)
+//		minter.AssetsInflationState["caps"] = mint.AssetState{
+//			LastAccrual: time.Now().UTC().Add(-20 * time.Second),
+//			Accum:       sdk.NewDec(0),
+//		}
+//
+//		minter.AssetsInflationState["kredits"] = mint.AssetState{
+//			LastAccrual: time.Now().UTC().Add(-time.Minute),
+//			Accum:       sdk.NewDec(0),
+//		}
+//
+//		return minter
+//	}
+//}
 
 func stakingGenesisState() stakingtypes.GenesisState {
 	genesisState := stakingtypes.DefaultGenesisState()

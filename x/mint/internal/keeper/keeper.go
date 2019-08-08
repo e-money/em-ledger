@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-
 	"github.com/tendermint/tendermint/libs/log"
 
 	"emoney/x/mint/internal/types"
@@ -47,42 +46,41 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // get the minter
-func (k Keeper) GetMinter(ctx sdk.Context) (minter types.Minter) {
+func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.MinterKey)
 	if b == nil {
-		panic("stored minter should not have been nil")
+		panic("stored inflation state should not have been nil")
 	}
 
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &minter)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &is)
 	return
 }
 
 // set the minter
-func (k Keeper) SetMinter(ctx sdk.Context, minter types.Minter) {
+func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(minter)
+	b := k.cdc.MustMarshalBinaryLengthPrefixed(is)
 	store.Set(types.MinterKey, b)
 }
 
 //______________________________________________________________________
 
 // GetParams returns the total set of minting parameters.
-func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramSpace.Get(ctx, types.KeyParams, &params)
-	return params
-}
-
-// SetParams sets the total set of minting parameters.
-func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
-	k.paramSpace.Set(ctx, types.KeyParams, params)
-}
+//func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
+//	k.paramSpace.Get(ctx, types.KeyParams, &params)
+//	return params
+//}
+//
+//// SetParams sets the total set of minting parameters.
+//func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
+//	k.paramSpace.Set(ctx, types.KeyParams, params)
+//}
 
 //______________________________________________________________________
 
-func (k Keeper) TotalTokenSupply(ctx sdk.Context, denom string) sdk.Int {
-	supply := k.supplyKeeper.GetSupply(ctx)
-	return supply.Total.AmountOf(denom)
+func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {
+	return k.supplyKeeper.GetSupply(ctx).Total
 }
 
 // MintCoins implements an alias call to the underlying supply keeper's

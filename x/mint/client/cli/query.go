@@ -1,5 +1,6 @@
 package cli
 
+/*
 import (
 	"fmt"
 
@@ -110,3 +111,4 @@ func GetCmdQueryAnnualProvisions(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 }
+*/
