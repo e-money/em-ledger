@@ -198,51 +198,6 @@ func mintDefaultInflationState() func() mint.InflationState {
 	}
 }
 
-//func mintDefaultParameters() func() mint.Params {
-//	mintDefaultParameters := mint.DefaultParams
-//
-//	return func() mint.Params {
-//		fmt.Println(" *** Overriding default mint module parameters")
-//		params := mintDefaultParameters()
-//
-//		assets := append(mint.InflationAssets{}, mint.InflationAsset{
-//			Denom:     "caps",
-//			Inflation: sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2),
-//		})
-//
-//		assets = append(assets, mint.InflationAsset{
-//			Denom:     "kredits",
-//			Inflation: sdk.NewDecFromIntWithPrec(sdk.NewInt(5), 2)},
-//		)
-//
-//		params.InflationAssets = assets
-//		return params
-//	}
-//}
-//
-//func mintGenesisState() func() mint.Minter {
-//	defaultMinterFn := mint.DefaultInitialMinter
-//
-//	return func() mint.Minter {
-//		fmt.Println(" *** Creating default minter")
-//		minter := defaultMinterFn()
-//
-//		// TOOD Make a factory function
-//		minter.AssetsInflationState = make(map[string]mint.AssetState)
-//		minter.AssetsInflationState["caps"] = mint.AssetState{
-//			LastAccrual: time.Now().UTC().Add(-20 * time.Second),
-//			Accum:       sdk.NewDec(0),
-//		}
-//
-//		minter.AssetsInflationState["kredits"] = mint.AssetState{
-//			LastAccrual: time.Now().UTC().Add(-time.Minute),
-//			Accum:       sdk.NewDec(0),
-//		}
-//
-//		return minter
-//	}
-//}
-
 func stakingGenesisState() stakingtypes.GenesisState {
 	genesisState := stakingtypes.DefaultGenesisState()
 	genesisState.Params.BondDenom = "ungm"
