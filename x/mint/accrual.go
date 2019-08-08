@@ -1,54 +1,35 @@
 package mint
 
 import (
-	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
-	// Apply interest every minute
-	//AccrualSlots = 365 * 24 * 60
-
-	// DEBUG value where interest is accrued 4 times per minute
-	accrualPeriod = 15 * time.Second
-	//accrualPeriod = time.Minute
-	AccrualSlots = int64(time.Duration(365*24*time.Hour) / accrualPeriod)
+	// Do not accrue interest if less than this period has elapsed since last accrual
+	minimumAccrualPeriod = 30 * time.Second
 )
 
 // BeginBlocker mints new tokens for the previous block.
 func BeginBlocker(ctx sdk.Context, k Keeper) {
 	state := k.GetState(ctx)
+	blockTime := ctx.BlockTime()
 
-	// Gate-keep this functionality based on time since last block
-
-	mintedCoins := sdk.Coins{}
-
-	fmt.Println(state)
+	if blockTime.Sub(state.LastAccrual) < minimumAccrualPeriod {
+		return
+	}
 
 	totalTokenSupply := k.TotalTokenSupply(ctx)
-	for i, asset := range state.InflationAssets {
-		supply := totalTokenSupply.AmountOf(asset.Denom)
 
-		currentTime := ctx.BlockTime()
-		accum := asset.Accum
-		lastAccrual := asset.LastAccrual
-
-		accum, minted := calculateAccrual(accum, supply, asset.Inflation, lastAccrual, currentTime)
-
-		mintedCoins = append(mintedCoins, sdk.NewCoin(asset.Denom, minted))
-		asset.Accum = accum
-		asset.LastAccrual = ctx.BlockTime()
-		state.InflationAssets[i] = asset
-	}
+	// Gate-keep this functionality based on time since last block
+	mintedCoins := accrueInterest(&state, totalTokenSupply, blockTime)
 
 	if mintedCoins.IsZero() {
 		return
 	}
 
-	fmt.Println("MintedCoins:\n", mintedCoins)
-
+	k.SetState(ctx, state)
 	err := k.MintCoins(ctx, mintedCoins)
 	if err != nil {
 		panic(err)
@@ -59,52 +40,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		panic(err)
 	}
 
-	k.SetState(ctx, state)
-
-	/*
-		blocktimeTruncated := truncateTimestamp(ctx.BlockTime(), int(accrualPeriod.Seconds()))
-		if blocktimeTruncated.Sub(minter.LastAccrual) < accrualPeriod {
-			// A full interest accrual period has not elapsed since last block
-			fmt.Println(" *** No accrual for this block.")
-			return
-		}
-
-		// Determine the number of accrual periods since the last one.
-		diff := blocktimeTruncated.Sub(minter.LastAccrual)
-		accrualPeriodCount := sdk.NewInt(int64(diff / accrualPeriod))
-		fmt.Println(" *** Estimated number of missing accrual periods: ", accrualPeriodCount)
-
-		minter.LastAccrual = blocktimeTruncated
-		k.SetMinter(ctx, minter)
-
-		params := k.GetParams(ctx)
-
-		mintedCoins := sdk.Coins{}
-		for _, asset := range params.InflationAssets {
-			annualInterest := asset.Inflation
-
-			periodInterest := annualInterest.QuoInt(sdk.NewInt(AccrualSlots))
-
-			supply := k.TotalTokenSupply(ctx, asset.Denom)
-			increase := periodInterest.MulInt(supply).MulInt(accrualPeriodCount)
-			fmt.Printf(" *** Inflating supply of %v by %v%%. Current supply: %v Increase: %v\n'", asset.Denom, periodInterest, supply, increase.RoundInt())
-
-			mintedCoin := sdk.NewCoin(asset.Denom, increase.RoundInt())
-			mintedCoins = append(mintedCoins, mintedCoin)
-		}
-
-		fmt.Println(" *** Mintedcoins:", mintedCoins)
-
-		err := k.MintCoins(ctx, mintedCoins)
-		if err != nil {
-			panic(err)
-		}
-
-		err = k.AddMintedCoins(ctx, mintedCoins)
-		if err != nil {
-			panic(err)
-		}
-	*/
 	/*
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
@@ -116,6 +51,25 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 			),
 		)
 	*/
+}
+
+func accrueInterest(state *InflationState, totalTokenSupply sdk.Coins, currentTime time.Time) sdk.Coins {
+	lastAccrual := state.LastAccrual
+	state.LastAccrual = currentTime
+	mintedCoins := sdk.Coins{}
+
+	for i, asset := range state.InflationAssets {
+		supply := totalTokenSupply.AmountOf(asset.Denom)
+
+		accum, minted := calculateAccrual(asset.Accum, supply, asset.Inflation, lastAccrual, currentTime)
+
+		mintedCoins = append(mintedCoins, sdk.NewCoin(asset.Denom, minted))
+
+		asset.Accum = accum
+		state.InflationAssets[i] = asset
+	}
+
+	return mintedCoins
 }
 
 func calculateAccrual(prevAccum sdk.Dec, supply sdk.Int, annualInterest sdk.Dec, lastAccrual, currentTime time.Time) (accum sdk.Dec, minted sdk.Int) {

@@ -17,15 +17,15 @@ var (
 
 // TODO Divide into two? One "base class" holding Denom and inflation for use in Genesis and a "subclass" with current state
 type InflationAsset struct {
-	Denom       string    `json:"denom" yaml:"denom"`
-	Inflation   sdk.Dec   `json:"inflation" yaml:"inflation"`
-	LastAccrual time.Time `json:"last_accrual" yaml:"last_accrual"`
-	Accum       sdk.Dec   `json:"accum" yaml:"accum"`
+	Denom     string  `json:"denom" yaml:"denom"`
+	Inflation sdk.Dec `json:"inflation" yaml:"inflation"`
+	Accum     sdk.Dec `json:"accum" yaml:"accum"`
 }
 
 type InflationAssets = []InflationAsset
 
 type InflationState struct {
+	LastAccrual     time.Time       `json:"last_accrual" yaml:"last_accrual"`
 	InflationAssets InflationAssets `json:"assets" yaml:"assets"`
 }
 
@@ -48,15 +48,15 @@ func NewInflationState(assets ...string) InflationState {
 		}
 
 		result = append(result, InflationAsset{
-			Denom:       assets[i],
-			Inflation:   inflation,
-			LastAccrual: time.Now().UTC(),
-			Accum:       sdk.NewDec(0),
+			Denom:     assets[i],
+			Inflation: inflation,
+			Accum:     sdk.NewDec(0),
 		})
 	}
 
 	return InflationState{
 		InflationAssets: result,
+		LastAccrual:     time.Now().UTC(),
 	}
 }
 
@@ -78,9 +78,10 @@ func ValidateInflationState(is InflationState) error {
 func (is InflationState) String() string {
 	var result strings.Builder
 
-	result.WriteString("Minting params:\n")
+	result.WriteString(fmt.Sprintf("Last Accrual time: %v\n", is.LastAccrual))
+	result.WriteString("Inflation state:\n")
 	for _, asset := range is.InflationAssets {
-		result.WriteString(fmt.Sprintf("	 Denom: %v	 	 Inflation: %v\n", asset.Denom, asset.Inflation))
+		result.WriteString(fmt.Sprintf("\tDenom: %v\t\t\tInflation: %v\t\tAccum: %v\n", asset.Denom, asset.Inflation, asset.Accum))
 	}
 	return result.String()
 }

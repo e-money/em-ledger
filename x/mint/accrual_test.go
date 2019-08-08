@@ -10,7 +10,7 @@ import (
 )
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
-func TestFullYear(t *testing.T) {
+func TestSingleCoinFullYear(t *testing.T) {
 	accum := sdk.NewDec(0)
 	minted := sdk.ZeroInt()
 	supply := sdk.NewInt(2300000000)
@@ -24,7 +24,7 @@ func TestFullYear(t *testing.T) {
 	assert.True(t, sdk.NewDec(0).Equal(accum))
 }
 
-func TestOneYearPerHour(t *testing.T) {
+func TestYearHourlyAccrual(t *testing.T) {
 	accum := sdk.NewDec(0)
 	minted := sdk.ZeroInt()
 	supply := sdk.NewInt(2300000000)
