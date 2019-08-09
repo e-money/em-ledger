@@ -202,8 +202,18 @@ func init() {
 func setGenesisDefaults() {
 	// Override module defaults for use in testnets and the default init functionality.
 	staking.DefaultGenesisState = stakingGenesisState
-
+	distr.DefaultGenesisState = distrDefaultGenesisState()
 	mint.DefaultInflationState = mintDefaultInflationState()
+}
+
+func distrDefaultGenesisState() func() distr.GenesisState {
+	distrDefaultGenesisStateFn := distr.DefaultGenesisState
+
+	return func() distr.GenesisState {
+		state := distrDefaultGenesisStateFn()
+		state.CommunityTax = sdk.NewDec(0)
+		return state
+	}
 }
 
 func mintDefaultInflationState() func() mint.InflationState {
