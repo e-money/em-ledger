@@ -1,7 +1,9 @@
 package emoney
 
 import (
+	emdistr "emoney/hooks/distribution"
 	"emoney/x/mint"
+
 	"encoding/json"
 	"fmt"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -135,7 +137,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
 	)
 
-	application.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName)
+	application.mm.SetOrderBeginBlockers(mint.ModuleName)
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
 	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, distr.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, mint.ModuleName, supply.ModuleName, genutil.ModuleName)
 
@@ -159,7 +161,11 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	return app.mm.BeginBlock(ctx, req)
+	responseBeginBlock := app.mm.BeginBlock(ctx, req)
+
+	emdistr.BeginBlocker(ctx, req, app.distrKeeper)
+
+	return responseBeginBlock
 }
 
 // application updates every end block
