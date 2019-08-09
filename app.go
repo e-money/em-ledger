@@ -64,7 +64,6 @@ type emoneyApp struct {
 	keyStaking *sdk.KVStoreKey
 	keyMint    *sdk.KVStoreKey
 	keyDistr   *sdk.KVStoreKey
-	tkeyDistr  *sdk.TransientStoreKey
 
 	tkeyParams  *sdk.TransientStoreKey
 	tkeyStaking *sdk.TransientStoreKey
@@ -99,7 +98,6 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		tkeyStaking: sdk.NewTransientStoreKey(staking.TStoreKey),
 		keyMint:     sdk.NewKVStoreKey(mint.StoreKey),
 		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
-		tkeyDistr:   sdk.NewTransientStoreKey(distr.TStoreKey),
 		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
 	}
 
@@ -122,8 +120,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	application.mintKeeper = mint.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
-		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.tkeyDistr,
-		application.keyDistr)
+		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr)
 
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks()))
 
