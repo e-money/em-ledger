@@ -163,7 +163,7 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	responseBeginBlock := app.mm.BeginBlock(ctx, req)
 
-	emdistr.BeginBlocker(ctx, req, app.distrKeeper)
+	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper)
 
 	return responseBeginBlock
 }
