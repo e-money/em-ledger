@@ -229,7 +229,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 		validatorpk,
 		sdk.NewCoin("ungm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
-		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
+		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())
 
 	// TODO Write mnemonic to file in the validator directory.
