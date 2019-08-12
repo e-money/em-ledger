@@ -6,7 +6,7 @@ var MinterKey = []byte{0x00}
 // nolint
 const (
 	// module name
-	ModuleName = "mint"
+	ModuleName = "inflation"
 
 	// default paramspace for params keeper
 	DefaultParamspace = ModuleName
