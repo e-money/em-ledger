@@ -33,7 +33,7 @@ func main() {
 	logLevel := ctx.Config.BaseConfig.LogLevel
 	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,%v", logLevel)
 
-	viper.Set("consensus.create_empty_blocks_interval", "10s")
+	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
 	viper.Set("consensus.timeout_commit", "250ms")
 	viper.Set("consensus.timeout_propose", "2s")
