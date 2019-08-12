@@ -10,6 +10,7 @@ import (
 
 	app "emoney"
 	"emoney/types"
+	"emoney/util"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -19,7 +20,6 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-
 	"github.com/spf13/cobra"
 )
 
@@ -46,6 +46,11 @@ func main() {
 		lcd.ServeCommand(cdc, registerLCDRoutes),
 		keys.Commands(),
 		version.Cmd,
+	)
+
+	// Remove commands for functionality that is not supported or superfluous to the e-money zone
+	util.RemoveCobraCommands(rootCmd,
+		"query.distribution.community-pool",
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
