@@ -66,11 +66,26 @@ func DefaultInflationState() InflationState {
 
 // validate params
 func ValidateInflationState(is InflationState) error {
-	// TODO No duplicate denoms
+	// Check for duplicates
+	{
+		duplicateDenoms := make(map[string]interface{})
+		for _, asset := range is.InflationAssets {
+			duplicateDenoms[strings.ToLower(asset.Denom)] = true
+		}
 
-	//if params.MintDenom == "" {
-	//	return fmt.Errorf("mint parameter MintDenom can't be an empty string")
-	//}
+		if len(duplicateDenoms) != len(is.InflationAssets) {
+			return fmt.Errorf("inflation parameters contain duplicate denominations")
+		}
+	}
+
+	// Check for negative inflation
+	{
+		for _, asset := range is.InflationAssets {
+			if asset.Inflation.IsNegative() {
+				return fmt.Errorf("inflation parameters contain an asset with negative interest: %v", asset.Denom)
+			}
+		}
+	}
 
 	return nil
 }
