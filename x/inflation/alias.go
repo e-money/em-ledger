@@ -11,19 +11,17 @@ import (
 )
 
 const (
-	ModuleName            = types.ModuleName
-	DefaultParamspace     = types.DefaultParamspace
-	StoreKey              = types.StoreKey
-	QuerierRoute          = types.QuerierRoute
-	QueryParameters       = types.QueryParameters
-	QueryInflation        = types.QueryInflation
-	QueryAnnualProvisions = types.QueryAnnualProvisions
+	ModuleName        = types.ModuleName
+	DefaultParamspace = types.DefaultParamspace
+	StoreKey          = types.StoreKey
+	QuerierRoute      = types.QuerierRoute
+	QueryInflation    = types.QueryInflation
 )
 
 var (
 	// functions aliases
-	NewKeeper = keeper.NewKeeper
-	//NewQuerier           = keeper.NewQuerier
+	NewKeeper  = keeper.NewKeeper
+	NewQuerier = keeper.NewQuerier
 	//NewMinter            = types.NewMinter
 	//InitialMinter        = types.InitialMinter
 	//DefaultInitialMinter = types.DefaultInitialMinter

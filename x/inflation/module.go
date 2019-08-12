@@ -2,12 +2,12 @@ package inflation
 
 import (
 	"encoding/json"
-
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"emoney/x/inflation/client/cli"
 	"emoney/x/inflation/client/rest"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -58,8 +58,7 @@ func (AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command { return nil }
 
 // get the root query command of this module
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	//return cli.GetQueryCmd(cdc)
-	return nil
+	return cli.GetQueryCmd(cdc)
 }
 
 //___________________________
@@ -98,8 +97,7 @@ func (AppModule) QuerierRoute() string {
 
 // module querier
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	//return NewQuerier(am.keeper)
-	return nil
+	return NewQuerier(am.keeper)
 }
 
 // module init-genesis
