@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"emoney/x/mint/internal/types"
+	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )

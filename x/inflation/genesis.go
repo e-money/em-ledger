@@ -1,7 +1,7 @@
-package mint
+package inflation
 
 import (
-	"emoney/x/mint/internal/types"
+	"emoney/x/inflation/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 

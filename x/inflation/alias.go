@@ -3,11 +3,11 @@
 // aliases generated for the following subdirectories:
 // ALIASGEN: github.com/cosmos/cosmos-sdk/x/mint/internal/keeper
 // ALIASGEN: github.com/cosmos/cosmos-sdk/x/mint/internal/types
-package mint
+package inflation
 
 import (
-	"emoney/x/mint/internal/keeper"
-	"emoney/x/mint/internal/types"
+	"emoney/x/inflation/internal/keeper"
+	"emoney/x/inflation/internal/types"
 )
 
 const (

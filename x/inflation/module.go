@@ -1,4 +1,4 @@
-package mint
+package inflation
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"emoney/x/mint/client/rest"
+	"emoney/x/inflation/client/rest"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"

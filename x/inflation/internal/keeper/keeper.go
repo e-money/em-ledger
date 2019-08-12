@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"emoney/x/mint/internal/types"
+	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"

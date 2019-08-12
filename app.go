@@ -2,7 +2,7 @@ package emoney
 
 import (
 	emdistr "emoney/hooks/distribution"
-	"emoney/x/mint"
+	"emoney/x/inflation"
 
 	"encoding/json"
 	"fmt"
@@ -40,7 +40,7 @@ var (
 		bank.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		staking.AppModuleBasic{},
-		mint.AppModuleBasic{},
+		inflation.AppModuleBasic{},
 		distr.AppModuleBasic{},
 	)
 
@@ -48,7 +48,7 @@ var (
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
 		distr.ModuleName:          nil,
-		mint.ModuleName:           {supply.Minter},
+		inflation.ModuleName:      {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		//gov.ModuleName:            {supply.Burner},
@@ -75,7 +75,7 @@ type emoneyApp struct {
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	stakingKeeper staking.Keeper
-	mintKeeper    mint.Keeper
+	mintKeeper    inflation.Keeper
 	distrKeeper   distr.Keeper
 
 	mm *module.Manager
@@ -98,7 +98,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		tkeyParams:  sdk.NewTransientStoreKey(params.TStoreKey),
 		keyStaking:  sdk.NewKVStoreKey(staking.StoreKey),
 		tkeyStaking: sdk.NewTransientStoreKey(staking.TStoreKey),
-		keyMint:     sdk.NewKVStoreKey(mint.StoreKey),
+		keyMint:     sdk.NewKVStoreKey(inflation.StoreKey),
 		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
 		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
 	}
@@ -108,7 +108,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	authSubspace := application.paramsKeeper.Subspace(auth.DefaultParamspace)
 	bankSubspace := application.paramsKeeper.Subspace(bank.DefaultParamspace)
 	stakingSubspace := application.paramsKeeper.Subspace(staking.DefaultParamspace)
-	mintSubspace := application.paramsKeeper.Subspace(mint.DefaultParamspace)
+	mintSubspace := application.paramsKeeper.Subspace(inflation.DefaultParamspace)
 	distrSubspace := application.paramsKeeper.Subspace(distr.DefaultParamspace)
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
@@ -119,7 +119,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	application.distrKeeper = distr.NewKeeper(application.cdc, application.keyDistr, distrSubspace, &application.stakingKeeper,
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
 
-	application.mintKeeper = mint.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
+	application.mintKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
 		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr)
@@ -133,13 +133,13 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
-		mint.NewAppModule(application.mintKeeper),
+		inflation.NewAppModule(application.mintKeeper),
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
 	)
 
-	application.mm.SetOrderBeginBlockers(mint.ModuleName)
+	application.mm.SetOrderBeginBlockers(inflation.ModuleName)
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
-	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, distr.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, mint.ModuleName, supply.ModuleName, genutil.ModuleName)
+	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, distr.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, inflation.ModuleName, supply.ModuleName, genutil.ModuleName)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
@@ -203,7 +203,7 @@ func setGenesisDefaults() {
 	// Override module defaults for use in testnets and the default init functionality.
 	staking.DefaultGenesisState = stakingGenesisState
 	distr.DefaultGenesisState = distrDefaultGenesisState()
-	mint.DefaultInflationState = mintDefaultInflationState()
+	inflation.DefaultInflationState = mintDefaultInflationState()
 }
 
 func distrDefaultGenesisState() func() distr.GenesisState {
@@ -216,10 +216,10 @@ func distrDefaultGenesisState() func() distr.GenesisState {
 	}
 }
 
-func mintDefaultInflationState() func() mint.InflationState {
-	mintDefaultInflationStateFn := mint.DefaultInflationState
+func mintDefaultInflationState() func() inflation.InflationState {
+	mintDefaultInflationStateFn := inflation.DefaultInflationState
 
-	return func() mint.InflationState {
+	return func() inflation.InflationState {
 		state := mintDefaultInflationStateFn()
 		return state
 	}

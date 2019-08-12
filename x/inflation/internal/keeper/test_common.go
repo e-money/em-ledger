@@ -15,7 +15,7 @@ import (
 
 	dbm "github.com/tendermint/tendermint/libs/db"
 
-	"emoney/x/mint/internal/types"
+	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
