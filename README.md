@@ -11,7 +11,7 @@ cd em-ledger
 make build
 ```
 
-## Keep updated
+## Stay updated
 Website: [https://e-money.com](https://e-money.com)  
 Twitter: [https://twitter.com/emoney_com](https://twitter.com/emoney_com)  
 Telegram: [https://t.me/emoney_com](https://t.me/emoney_com)  

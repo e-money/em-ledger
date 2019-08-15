@@ -3,6 +3,7 @@ package main
 import (
 	app "emoney"
 	"emoney/types"
+	"fmt"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/db"
@@ -28,6 +29,9 @@ func main() {
 	config.Seal()
 
 	ctx := server.NewDefaultContext()
+	// Add application to logging configuration
+	logLevel := ctx.Config.BaseConfig.LogLevel
+	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,%v", logLevel)
 
 	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)

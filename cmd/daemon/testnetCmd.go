@@ -156,9 +156,9 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		}
 
 		// Update config.toml with peer lists
-		err = updateConfigWithPeers(nodeDir, i, nodeIDs, baseIPAddress)
-		if err != nil {
-			return err
+		updateConfigWithPeers(nodeDir, i, nodeIDs, baseIPAddress)
+		if i != 0 {
+			updateLoggingConfig(nodeDir)
 		}
 	}
 
@@ -181,6 +181,8 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
 			sdk.NewCoin("ungm", sdk.TokensFromConsensusPower(100)),
+			sdk.NewCoin("caps", sdk.TokensFromConsensusPower(5000)),
+			sdk.NewCoin("kredits", sdk.TokensFromConsensusPower(2700)),
 		)
 
 		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
@@ -227,7 +229,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 		validatorpk,
 		sdk.NewCoin("ungm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
-		staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
+		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())
 
 	// TODO Write mnemonic to file in the validator directory.
@@ -244,7 +246,27 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	return signedTx, info.GetPubKey().Address()
 }
 
-func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) error {
+// Remove emz-module logging from all but the first node.
+func updateLoggingConfig(nodeDir string) {
+	configFilePath := filepath.Join(nodeDir, "config/config.toml")
+
+	configFile := viper.New()
+	configFile.SetConfigFile(configFilePath)
+	err := configFile.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	logLevel := configFile.Get("log_level").(string)
+	configFile.Set("log_level", strings.Replace(logLevel, "emz:info,", "", 1))
+
+	err = configFile.WriteConfig()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddress string) {
 	configFilePath := filepath.Join(nodeDir, "config/config.toml")
 
 	configFile := viper.New()
@@ -268,7 +290,10 @@ func updateConfigWithPeers(nodeDir string, i int, nodeIDs []string, baseIPAddres
 
 	configFile.Set("p2p.persistent_peers", peerList)
 	configFile.Set("p2p.laddr", fmt.Sprintf("tcp://%v:%v", nodeIPAddress(i, baseIPAddress), 26656))
-	return configFile.WriteConfig()
+	err = configFile.WriteConfig()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func nodeIPAddress(i int, baseIPAddress string) string {
