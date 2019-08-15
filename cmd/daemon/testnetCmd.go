@@ -145,6 +145,10 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	allAccounts := append(validatorAccounts, genaccounts...)
 	addGenesisValidators(cdc, genDoc, createValidatorTXs, allAccounts)
 
+	// Update consensus-parameters
+	genDoc.ConsensusParams = tmtypes.DefaultConsensusParams()
+	genDoc.ConsensusParams.Block.MaxBytes = 1024 * 1024
+
 	for i := 0; i < validatorCount; i++ {
 		// Add genesis file to each node directory
 		nodeMoniker := fmt.Sprintf(nodeMonikerTemplate, i)
