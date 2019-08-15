@@ -17,12 +17,14 @@ The exponent was placed at the second position as this is trivial to parse. In a
 Placing the exponent at the beginning or the end of the identifier was ruled out as unsafe. It would be confusing if it was displayed verbatim next to an amount ("EUR2 1000" or "1000 2EUR").
 
 ### Examples
-* E2UR: Euro backed token with exponent 2 and 10^2 minor units (cents).
-* G2BP: Pound sterling backed token with exponent 2 and 10^2 minor units (penny).
-* U2SD: US Dollar backed token with exponent 2 and 10^2 minor units (cents).
-* J0PY: Japanese Yen backed token with exponent 0 and 10^0 minor unit.
+The following examples related to tokens issued by e-Money, where our currency-backed tokens are prefixed with "E" for e-Money.
+
+* E2EUR: Euro backed token with exponent 2 and 10^2 minor units (cents).
+* E2GBP: Pound sterling backed token with exponent 2 and 10^2 minor units (penny).
+* E2USD: US Dollar backed token with exponent 2 and 10^2 minor units (cents).
+* E0JPY: Japanese Yen backed token with exponent 0 and 10^0 minor unit.
 * N3GM: NGM staking token for the e-Money zone, exponent 3 and 10^3 minor units.
 
-Existing tokens with longer identifiers could potentially also be presented like this:
+Existing tokens with longer identifiers could also be identified like this:
 * A8TOM: [Cosmos Hub](https://cosmos.network) ATOM staking tokens with exponent 8 and 10^8 minor units (uatom).
 * I18RIS: [IRISNet](https://irisnet.org) IRIS staking token with exponent 18 and 10^18 minor units (iris-atto).
