@@ -145,6 +145,11 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	allAccounts := append(validatorAccounts, genaccounts...)
 	addGenesisValidators(cdc, genDoc, createValidatorTXs, allAccounts)
 
+	// Update consensus-parameters
+	genDoc.ConsensusParams = tmtypes.DefaultConsensusParams()
+	genDoc.ConsensusParams.Block.MaxBytes = 1024 * 1024
+	genDoc.ConsensusParams.Block.TimeIotaMs = 1
+
 	for i := 0; i < validatorCount; i++ {
 		// Add genesis file to each node directory
 		nodeMoniker := fmt.Sprintf(nodeMonikerTemplate, i)
@@ -180,9 +185,10 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 	for i, k := range keys {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
-			sdk.NewCoin("ungm", sdk.TokensFromConsensusPower(100)),
-			sdk.NewCoin("caps", sdk.TokensFromConsensusPower(5000)),
-			sdk.NewCoin("kredits", sdk.TokensFromConsensusPower(2700)),
+			sdk.NewCoin("x3ngm", sdk.TokensFromConsensusPower(100)),
+			sdk.NewCoin("x2eur", sdk.NewInt(25000)),
+			sdk.NewCoin("x0jpy", sdk.NewInt(3500000)),
+			sdk.NewCoin("x2chf", sdk.NewInt(10000)),
 		)
 
 		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
@@ -197,7 +203,7 @@ func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount 
 	account := genaccounts.GenesisAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
-			sdk.NewCoin("ungm", accStakingTokens),
+			sdk.NewCoin("x3ngm", accStakingTokens),
 		},
 	}
 
@@ -217,7 +223,7 @@ func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []ty
 
 func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string) (types.StdTx, crypto.Address) {
 	kb := keys.NewInMemoryKeyBase()
-	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, "12345678", ckeys.Secp256k1)
+	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, client.DefaultKeyPass, ckeys.Secp256k1)
 	if err != nil {
 		panic(err)
 	}
@@ -227,7 +233,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,
-		sdk.NewCoin("ungm", valTokens),
+		sdk.NewCoin("x3ngm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
 		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())

@@ -66,7 +66,9 @@ func applyInflation(state *InflationState, totalTokenSupply sdk.Coins, currentTi
 
 		accum, minted := calculateInflation(asset.Accum, supply, asset.Inflation, lastAccrual, currentTime)
 
-		mintedCoins = append(mintedCoins, sdk.NewCoin(asset.Denom, minted))
+		if minted.IsPositive() { // Coins.IsValid() considers any coin of amount 0 to be invalid, so filter 0 coins.
+			mintedCoins = append(mintedCoins, sdk.NewCoin(asset.Denom, minted))
+		}
 
 		asset.Accum = accum
 		state.InflationAssets[i] = asset

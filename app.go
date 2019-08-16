@@ -3,7 +3,6 @@ package emoney
 import (
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
-
 	"encoding/json"
 	"fmt"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -197,6 +196,8 @@ func (app *emoneyApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (r
 
 func init() {
 	setGenesisDefaults()
+
+	sdk.PowerReduction = sdk.OneInt()
 }
 
 func setGenesisDefaults() {
@@ -227,7 +228,7 @@ func mintDefaultInflationState() func() inflation.InflationState {
 
 func stakingGenesisState() stakingtypes.GenesisState {
 	genesisState := stakingtypes.DefaultGenesisState()
-	genesisState.Params.BondDenom = "ungm"
+	genesisState.Params.BondDenom = "x3ngm"
 
 	return genesisState
 }
