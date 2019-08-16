@@ -44,7 +44,7 @@ const (
 func testnetCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "testnet",
+		Use:   "testnet [chain-id]",
 		Short: "Initialize files for an e-money testnet",
 		Long: `testnet will create "v" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
@@ -54,8 +54,13 @@ Note, strict routability for addresses is turned off in the config file.
 Example:
 	emd testnet -v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
+
+			chainID := ""
+			if len(args) == 1 {
+				chainID = args[0]
+			}
 
 			outputDir := viper.GetString(flagOutputDir)
 
@@ -69,8 +74,9 @@ Example:
 
 			//return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
 			//	minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
-			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress, addKeybaseAccounts)
+			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress, addKeybaseAccounts, chainID)
 		},
+		Args: cobra.RangeArgs(0, 1), // First argument will be used as chain-id.
 	}
 
 	cmd.Flags().IntP(flagNumValidators, "v", 4,
@@ -94,7 +100,7 @@ Example:
 	return cmd
 }
 
-func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int, baseIPAddress string, addRandomAccounts string) error {
+func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int, baseIPAddress, addRandomAccounts, chainID string) error {
 	config.Genesis = "genesis.json"
 
 	appState, err := codec.MarshalJSONIndent(cdc, mbm.DefaultGenesis())
@@ -102,7 +108,10 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 		return err
 	}
 
-	chainID := fmt.Sprintf("emoney-%v", common.RandStr(6))
+	if chainID == "" {
+		chainID = fmt.Sprintf("emoney-%v", common.RandStr(6))
+	}
+
 	genDoc := &tmtypes.GenesisDoc{
 		Validators: []tmtypes.GenesisValidator{},
 		ChainID:    chainID,
