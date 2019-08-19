@@ -69,7 +69,11 @@ func txCmds(cdc *amino.Codec) *cobra.Command {
 		Short: "Transactions subcommands",
 	}
 
-	txCmd.AddCommand(bankcmd.SendTxCmd(cdc))
+	txCmd.AddCommand(bankcmd.SendTxCmd(cdc),
+		authcmd.GetSignCommand(cdc),
+		authcmd.GetMultiSignCommand(cdc),
+		authcmd.GetBroadcastCommand(cdc),
+	)
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)
 
