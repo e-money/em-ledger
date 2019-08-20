@@ -25,8 +25,9 @@ type InflationAsset struct {
 type InflationAssets = []InflationAsset
 
 type InflationState struct {
-	LastApplied     time.Time       `json:"last_applied" yaml:"last_applied"`
-	InflationAssets InflationAssets `json:"assets" yaml:"assets"`
+	LastAppliedTime   time.Time       `json:"last_applied" yaml:"last_applied"`
+	LastAppliedHeight int64           `json:"last_applied_height" yaml:"last_applied_height"`
+	InflationAssets   InflationAssets `json:"assets" yaml:"assets"`
 }
 
 // ParamTable for minting module.
@@ -55,8 +56,9 @@ func NewInflationState(assets ...string) InflationState {
 	}
 
 	return InflationState{
-		InflationAssets: result,
-		LastApplied:     time.Now().UTC(),
+		InflationAssets:   result,
+		LastAppliedTime:   time.Now().UTC(),
+		LastAppliedHeight: 0,
 	}
 }
 
@@ -93,7 +95,7 @@ func ValidateInflationState(is InflationState) error {
 func (is InflationState) String() string {
 	var result strings.Builder
 
-	result.WriteString(fmt.Sprintf("Last inflation: %v\n", is.LastApplied))
+	result.WriteString(fmt.Sprintf("Last inflation: %v\n", is.LastAppliedTime))
 	result.WriteString("Inflation state:\n")
 	for _, asset := range is.InflationAssets {
 		result.WriteString(fmt.Sprintf("\tDenom: %v\t\t\tInflation: %v\t\tAccum: %v\n", asset.Denom, asset.Inflation, asset.Accum))
