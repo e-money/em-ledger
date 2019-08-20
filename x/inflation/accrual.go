@@ -30,7 +30,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
-	fmt.Println(" *** Inflation minted coins:", mintedCoins)
+	fmt.Printf(" *** Inflation minted coins: %v (Blocktime: %v)\n", mintedCoins, fmt.Sprint(blockTime.Format("15:04:05")))
 
 	k.SetState(ctx, state)
 	err := k.MintCoins(ctx, mintedCoins)
