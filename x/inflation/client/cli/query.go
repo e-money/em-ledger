@@ -3,6 +3,7 @@ package cli
 import (
 	"emoney/x/inflation/internal/types"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -33,6 +34,8 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(is)
 		},
 	}
+
+	inflationQueryCmd = client.GetCommands(inflationQueryCmd)[0]
 
 	return inflationQueryCmd
 }

@@ -27,3 +27,17 @@ func TestValidation(t *testing.T) {
 		assert.Error(t, err)
 	}
 }
+
+func TestFindAndChangeAssetByDenom(t *testing.T) {
+	is := NewInflationState("caps", "0.04", "kredits", "0.0")
+
+	kroner := is.FindByDenom("kroner")
+	assert.Nil(t, kroner)
+
+	caps := is.FindByDenom("caps")
+	assert.NotNil(t, caps)
+	caps.Inflation, _ = sdk.NewDecFromStr("0.25")
+
+	assert.Equal(t, sdk.NewDecWithPrec(25, 2), is.FindByDenom("caps").Inflation)
+
+}

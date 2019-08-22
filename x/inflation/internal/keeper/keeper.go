@@ -57,6 +57,20 @@ func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 	return
 }
 
+func (k Keeper) IsInflationAdministrator(ctx sdk.Context, account sdk.AccAddress) bool {
+	state := k.GetState(ctx)
+
+	for _, a := range state.Administrators {
+		adminAddress := sdk.AccAddress(a.Address().Bytes())
+
+		if adminAddress.Equals(account) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // set the minter
 func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)

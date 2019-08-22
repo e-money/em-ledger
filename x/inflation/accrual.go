@@ -21,7 +21,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
-	if ctx.BlockHeight() == state.LastAppliedHeight+1 {
+	if ctx.BlockHeight() == state.LastAppliedHeight.Int64()+1 {
 		return
 	}
 
@@ -29,7 +29,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	// Gate-keep this functionality based on time since last block
 	mintedCoins := applyInflation(&state, totalTokenSupply, blockTime)
-	state.LastAppliedHeight = ctx.BlockHeight()
+	state.LastAppliedHeight = sdk.NewInt(ctx.BlockHeight())
 
 	if mintedCoins.IsZero() {
 		return

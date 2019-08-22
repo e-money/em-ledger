@@ -1,6 +1,7 @@
 package main
 
 import (
+	"emoney/x/inflation"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -103,7 +104,9 @@ Example:
 func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int, baseIPAddress, addRandomAccounts, chainID string) error {
 	config.Genesis = "genesis.json"
 
-	appState, err := codec.MarshalJSONIndent(cdc, mbm.DefaultGenesis())
+	gen := mbm.DefaultGenesis()
+	gen["inflation"] = setInflationAdministrators(cdc, addRandomAccounts, gen["inflation"])
+	appState, err := codec.MarshalJSONIndent(cdc, gen)
 	if err != nil {
 		return err
 	}
@@ -177,6 +180,35 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	}
 
 	return nil
+}
+
+func setInflationAdministrators(cdc *codec.Codec, keystorepath string, gen json.RawMessage) json.RawMessage {
+	if keystorepath == "" {
+		return gen
+	}
+
+	kb, err := keys.NewKeyBaseFromDir(keystorepath)
+	if err != nil {
+		panic(err)
+	}
+
+	var genstate inflation.GenesisState
+	cdc.MustUnmarshalJSON(gen, &genstate)
+
+	keys, err := kb.List()
+	if err != nil {
+		panic(err)
+	}
+
+	if len(keys) == 0 {
+		return gen
+	}
+
+	key := keys[0]
+	genstate.InflationState.Administrators = []crypto.PubKey{key.GetPubKey()}
+
+	fmt.Println("Setting inflation module administrator", key.GetName())
+	return cdc.MustMarshalJSON(genstate)
 }
 
 func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {

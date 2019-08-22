@@ -3,6 +3,8 @@ package emoney
 import (
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
+	"emoney/x/issuance"
+
 	"encoding/json"
 	"fmt"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -41,6 +43,7 @@ var (
 		staking.AppModuleBasic{},
 		inflation.AppModuleBasic{},
 		distr.AppModuleBasic{},
+		issuance.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -134,6 +137,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.mintKeeper),
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
+		issuance.NewAppModule(),
 	)
 
 	application.mm.SetOrderBeginBlockers(inflation.ModuleName)

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"strings"
 	"time"
 
@@ -26,14 +27,13 @@ type InflationAssets = []InflationAsset
 
 type InflationState struct {
 	LastAppliedTime   time.Time       `json:"last_applied" yaml:"last_applied"`
-	LastAppliedHeight int64           `json:"last_applied_height" yaml:"last_applied_height"`
+	LastAppliedHeight sdk.Int         `json:"last_applied_height" yaml:"last_applied_height"`
 	InflationAssets   InflationAssets `json:"assets" yaml:"assets"`
+	Administrators    []crypto.PubKey `json:"administrators" yaml:"administrators,omitempty,flow"`
 }
 
-// ParamTable for minting module.
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable().RegisterType(KeyParams, InflationState{})
-	//.RegisterParamSet(&Params{})
 }
 
 func NewInflationState(assets ...string) InflationState {
@@ -58,7 +58,7 @@ func NewInflationState(assets ...string) InflationState {
 	return InflationState{
 		InflationAssets:   result,
 		LastAppliedTime:   time.Now().UTC(),
-		LastAppliedHeight: 0,
+		LastAppliedHeight: sdk.ZeroInt(),
 	}
 }
 
@@ -100,12 +100,22 @@ func (is InflationState) String() string {
 	for _, asset := range is.InflationAssets {
 		result.WriteString(fmt.Sprintf("\tDenom: %v\t\t\tInflation: %v\t\tAccum: %v\n", asset.Denom, asset.Inflation, asset.Accum))
 	}
+
+	if len(is.Administrators) > 0 {
+		result.WriteString("Administrative keys:\n")
+		for _, key := range is.Administrators {
+			result.WriteString(fmt.Sprintf("\t%v\n", key))
+		}
+	}
+
 	return result.String()
 }
 
-// Implements params.ParamSet
-func (is *InflationState) ParamSetPairs() params.ParamSetPairs {
-	return params.ParamSetPairs{
-		//{KeyMintDenom, &p.MintDenom},
+func (is *InflationState) FindByDenom(denom string) *InflationAsset {
+	for i, a := range is.InflationAssets {
+		if a.Denom == denom {
+			return &is.InflationAssets[i]
+		}
 	}
+	return nil
 }
