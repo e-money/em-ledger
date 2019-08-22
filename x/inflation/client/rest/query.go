@@ -13,7 +13,7 @@ import (
 
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(
-		"/inflation/inflation",
+		"/inflation/current",
 		queryInflationHandlerFn(cliCtx),
 	).Methods("GET")
 }
