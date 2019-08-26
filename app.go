@@ -4,6 +4,7 @@ import (
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
 	"emoney/x/issuance"
+	"emoney/x/slashing"
 
 	"encoding/json"
 	"fmt"
@@ -17,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
