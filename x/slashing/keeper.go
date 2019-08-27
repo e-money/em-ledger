@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -22,16 +23,20 @@ type Keeper struct {
 
 	// codespace
 	codespace sdk.CodespaceType
+
+	// Replacement for IAVL KV storage.
+	signedBlocks db.DB // Attempt to use a store that is not part of the global state
 }
 
 // NewKeeper creates a slashing keeper
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, paramspace params.Subspace, codespace sdk.CodespaceType) Keeper {
 	keeper := Keeper{
-		storeKey:   key,
-		cdc:        cdc,
-		sk:         sk,
-		paramspace: paramspace.WithKeyTable(ParamKeyTable()),
-		codespace:  codespace,
+		storeKey:     key,
+		cdc:          cdc,
+		sk:           sk,
+		paramspace:   paramspace.WithKeyTable(ParamKeyTable()),
+		codespace:    codespace,
+		signedBlocks: db.NewMemDB(),
 	}
 	return keeper
 }
