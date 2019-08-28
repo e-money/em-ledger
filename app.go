@@ -5,7 +5,6 @@ import (
 	"emoney/x/inflation"
 	"emoney/x/issuance"
 	"emoney/x/slashing"
-
 	"encoding/json"
 	"fmt"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -227,6 +226,18 @@ func setGenesisDefaults() {
 	staking.DefaultGenesisState = stakingGenesisState
 	distr.DefaultGenesisState = distrDefaultGenesisState()
 	inflation.DefaultInflationState = mintDefaultInflationState()
+	slashing.DefaultGenesisState = slashingDefaultGenesisState()
+}
+
+func slashingDefaultGenesisState() func() slashing.GenesisState {
+	slashingDefaultGenesisStateFn := slashing.DefaultGenesisState
+
+	return func() slashing.GenesisState {
+		state := slashingDefaultGenesisStateFn()
+		state.Params.MinSignedPerWindow = sdk.NewDecWithPrec(90, 2)
+		state.Params.SignedBlocksWindow = 10
+		return state
+	}
 }
 
 func distrDefaultGenesisState() func() distr.GenesisState {
