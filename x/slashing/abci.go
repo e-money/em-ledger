@@ -15,14 +15,12 @@ var (
 	blockTimes []time.Time
 )
 
-const (
-	signedBlocksWindow = 4 * time.Minute // TODO Add as a genesis parameter
-)
-
 // slashing begin block functionality
 func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
+	signedBlocksWindow := sk.SignedBlocksWindowDuration(ctx)
+
 	blockTimes = append(blockTimes, ctx.BlockTime())
-	blockTimes = truncateByWindow(blockTimes)
+	blockTimes = truncateByWindow(blockTimes, signedBlocksWindow)
 
 	printBlocktimes() // DEBUG
 
@@ -30,7 +28,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	// store whether or not they have actually signed it and slash/unbond any
 	// which have missed too many blocks in a row (downtime slashing)
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
-		sk.HandleValidatorSignature2(ctx, voteInfo.Validator.Address, voteInfo.Validator.Power, voteInfo.SignedLastBlock, len(blockTimes))
+		sk.HandleValidatorSignature2(ctx, voteInfo.Validator.Address, voteInfo.Validator.Power, voteInfo.SignedLastBlock, int64(len(blockTimes)))
 	}
 
 	// Iterate through any newly discovered evidence of infraction
@@ -54,7 +52,7 @@ func printBlocktimes() {
 	fmt.Println()
 }
 
-func truncateByWindow(times []time.Time) []time.Time {
+func truncateByWindow(times []time.Time, signedBlocksWindow time.Duration) []time.Time {
 	if len(times) == 0 {
 		return times
 	}
