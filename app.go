@@ -234,8 +234,6 @@ func slashingDefaultGenesisState() func() slashing.GenesisState {
 
 	return func() slashing.GenesisState {
 		state := slashingDefaultGenesisStateFn()
-		state.Params.MinSignedPerWindow = sdk.NewDecWithPrec(90, 2)
-		state.Params.SignedBlocksWindow = 10
 		return state
 	}
 }

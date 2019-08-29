@@ -1,8 +1,8 @@
 package slashing
 
 import (
+	"emoney/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 // Stored by *validator* address (not operator address)
@@ -55,24 +55,24 @@ func (k Keeper) getValidatorMissedBlockBitArray(_ sdk.Context, address sdk.ConsA
 }
 
 // Stored by *validator* address (not operator address)
-func (k Keeper) IterateValidatorMissedBlockBitArray(ctx sdk.Context,
-	address sdk.ConsAddress, handler func(index int64, missed bool) (stop bool)) {
-
-	index := int64(0)
-	// Array may be sparse
-	signedBlockWindow := k.SignedBlocksWindow(ctx)
-	for ; index < signedBlockWindow; index++ {
-		var missed bool
-		bz := k.signedBlocks.Get(types.GetValidatorMissedBlockBitArrayKey(address, index))
-		if bz == nil {
-			continue
-		}
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &missed)
-		if handler(index, missed) {
-			break
-		}
-	}
-}
+//func (k Keeper) IterateValidatorMissedBlockBitArray(ctx sdk.Context,
+//	address sdk.ConsAddress, handler func(index int64, missed bool) (stop bool)) {
+//
+//	index := int64(0)
+//	// Array may be sparse
+//	signedBlockWindow := k.SignedBlocksWindow(ctx)
+//	for ; index < signedBlockWindow; index++ {
+//		var missed bool
+//		bz := k.signedBlocks.Get(types.GetValidatorMissedBlockBitArrayKey(address, index))
+//		if bz == nil {
+//			continue
+//		}
+//		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &missed)
+//		if handler(index, missed) {
+//			break
+//		}
+//	}
+//}
 
 // Stored by *validator* address (not operator address)
 func (k Keeper) setValidatorMissedBlockBitArray(_ sdk.Context, address sdk.ConsAddress, index int64, missed bool) {

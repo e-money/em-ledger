@@ -3,6 +3,10 @@ package slashing
 import (
 	"encoding/json"
 
+	"emoney/x/slashing/client/cli"
+	"emoney/x/slashing/client/rest"
+	"emoney/x/slashing/types"
+
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
@@ -12,9 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/slashing/client/cli"
-	"github.com/cosmos/cosmos-sdk/x/slashing/client/rest"
-	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 var (

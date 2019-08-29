@@ -5,28 +5,28 @@
 package slashing
 
 import (
-	"github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"emoney/x/slashing/types"
 )
 
 const (
-	DefaultCodespace            = types.DefaultCodespace
-	CodeInvalidValidator        = types.CodeInvalidValidator
-	CodeValidatorJailed         = types.CodeValidatorJailed
-	CodeValidatorNotJailed      = types.CodeValidatorNotJailed
-	CodeMissingSelfDelegation   = types.CodeMissingSelfDelegation
-	CodeSelfDelegationTooLow    = types.CodeSelfDelegationTooLow
-	CodeMissingSigningInfo      = types.CodeMissingSigningInfo
-	ModuleName                  = types.ModuleName
-	StoreKey                    = types.StoreKey
-	RouterKey                   = types.RouterKey
-	QuerierRoute                = types.QuerierRoute
-	QueryParameters             = types.QueryParameters
-	QuerySigningInfo            = types.QuerySigningInfo
-	QuerySigningInfos           = types.QuerySigningInfos
-	DefaultParamspace           = types.DefaultParamspace
-	DefaultMaxEvidenceAge       = types.DefaultMaxEvidenceAge
-	DefaultSignedBlocksWindow   = types.DefaultSignedBlocksWindow
-	DefaultDowntimeJailDuration = types.DefaultDowntimeJailDuration
+	DefaultCodespace                  = types.DefaultCodespace
+	CodeInvalidValidator              = types.CodeInvalidValidator
+	CodeValidatorJailed               = types.CodeValidatorJailed
+	CodeValidatorNotJailed            = types.CodeValidatorNotJailed
+	CodeMissingSelfDelegation         = types.CodeMissingSelfDelegation
+	CodeSelfDelegationTooLow          = types.CodeSelfDelegationTooLow
+	CodeMissingSigningInfo            = types.CodeMissingSigningInfo
+	ModuleName                        = types.ModuleName
+	StoreKey                          = types.StoreKey
+	RouterKey                         = types.RouterKey
+	QuerierRoute                      = types.QuerierRoute
+	QueryParameters                   = types.QueryParameters
+	QuerySigningInfo                  = types.QuerySigningInfo
+	QuerySigningInfos                 = types.QuerySigningInfos
+	DefaultParamspace                 = types.DefaultParamspace
+	DefaultMaxEvidenceAge             = types.DefaultMaxEvidenceAge
+	DefaultSignedBlocksWindowDuration = types.DefaultSignedBlocksWindowDuration
+	DefaultDowntimeJailDuration       = types.DefaultDowntimeJailDuration
 )
 
 var (
@@ -65,7 +65,7 @@ var (
 	DefaultSlashFractionDoubleSign  = types.DefaultSlashFractionDoubleSign
 	DefaultSlashFractionDowntime    = types.DefaultSlashFractionDowntime
 	KeyMaxEvidenceAge               = types.KeyMaxEvidenceAge
-	KeySignedBlocksWindow           = types.KeySignedBlocksWindow
+	KeySignedBlocksWindowDuration   = types.KeySignedBlocksWindowDuration
 	KeyMinSignedPerWindow           = types.KeyMinSignedPerWindow
 	KeyDowntimeJailDuration         = types.KeyDowntimeJailDuration
 	KeySlashFractionDoubleSign      = types.KeySlashFractionDoubleSign
