@@ -153,7 +153,7 @@ var (
 	missedBlocksByVal map[string][]time.Time = make(map[string][]time.Time)
 )
 
-func (k Keeper) HandleValidatorSignature2(ctx sdk.Context, addr crypto.Address, power int64, signed bool, blockCount int64) {
+func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, power int64, signed bool, blockCount int64) {
 	logger := k.Logger(ctx)
 	height := ctx.BlockHeight()
 	consAddr := sdk.ConsAddress(addr)
