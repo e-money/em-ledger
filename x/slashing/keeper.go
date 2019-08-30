@@ -160,7 +160,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	consAddr := sdk.ConsAddress(addr)
 
 	missedBlocks := missedBlocksByVal[consAddr.String()]
-	missedBlocks = truncateByWindow(missedBlocks, k.SignedBlocksWindowDuration(ctx))
+	missedBlocks = truncateByWindow(ctx.BlockTime(), missedBlocks, k.SignedBlocksWindowDuration(ctx))
 
 	if !signed {
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
@@ -176,9 +176,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	minSignedPerWindow := k.MinSignedPerWindow(ctx)
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
-	// if height > minHeight && signInfo.MissedBlocksCounter > maxMissed {
 	if minSignedPerWindow.LT(missedRatio) {
-		fmt.Println(" *** Time to jail", consAddr)
 		validator := k.sk.ValidatorByConsAddr(ctx, consAddr)
 		if validator != nil && !validator.IsJailed() {
 

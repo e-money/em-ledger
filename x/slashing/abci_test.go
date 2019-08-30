@@ -50,7 +50,6 @@ func TestBeginBlocker(t *testing.T) {
 	height := int64(0)
 
 	// for 1000 blocks, mark the validator as having signed
-	//for ; height < keeper.SignedBlocksWindow(ctx); height++ {
 	now := time.Now()
 	for ; height < 1000; height++ {
 		now = now.Add(5 * time.Second)

@@ -2,7 +2,13 @@ package slashing
 
 import (
 	"emoney/x/slashing/types"
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Have to change these parameters for tests
@@ -367,108 +373,127 @@ func TestHandleAlreadyJailed(t *testing.T) {
 // Ensure that missed blocks are tracked correctly and that
 // the start height of the signing info is reset correctly
 func TestValidatorDippingInAndOut(t *testing.T) {
-	t.Fatal("Fix this test")
+	nextBlocktime, incrementBlockTime := blockTimeGenerator(time.Minute)
+	blockWindow := int64(30) // Number of blocks in uptime window. This is contingent upon blocktime being about 1 minute.
 
 	// initial setup
 	// keeperTestParams set the SignedBlocksWindow to 1000 and MaxMissedBlocksPerWindow to 500
-	//ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
-	//params := sk.GetParams(ctx)
-	//params.MaxValidators = 1
-	//sk.SetParams(ctx, params)
-	//power := int64(100)
-	//amt := sdk.TokensFromConsensusPower(power)
-	//addr, val := addrs[0], pks[0]
-	//consAddr := sdk.ConsAddress(addr)
-	//sh := staking.NewHandler(sk)
-	//got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	//require.True(t, got.IsOK())
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// 100 first blocks OK
-	//height := int64(0)
-	//for ; height < int64(100); height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, true)
-	//}
-	//
-	//// kick first validator out of validator set
-	//newAmt := sdk.TokensFromConsensusPower(101)
-	//got = sh(ctx, NewTestMsgCreateValidator(addrs[1], pks[1], newAmt))
-	//require.True(t, got.IsOK())
-	//validatorUpdates := staking.EndBlocker(ctx, sk)
-	//require.Equal(t, 2, len(validatorUpdates))
-	//validator, _ := sk.GetValidator(ctx, addr)
-	//require.Equal(t, sdk.Unbonding, validator.Status)
-	//
-	//// 600 more blocks happened
-	//height = int64(700)
-	//ctx = ctx.WithBlockHeight(height)
-	//
-	//// validator added back in
-	//delTokens := sdk.TokensFromConsensusPower(50)
-	//got = sh(ctx, newTestMsgDelegate(sdk.AccAddress(addrs[2]), addrs[0], delTokens))
-	//require.True(t, got.IsOK())
-	//validatorUpdates = staking.EndBlocker(ctx, sk)
-	//require.Equal(t, 2, len(validatorUpdates))
-	//validator, _ = sk.GetValidator(ctx, addr)
-	//require.Equal(t, sdk.Bonded, validator.Status)
-	//newPower := int64(150)
-	//
-	//// validator misses a block
-	//keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
-	//height++
-	//
-	//// shouldn't be jailed/kicked yet
-	//validator, _ = sk.GetValidator(ctx, addr)
-	//require.Equal(t, sdk.Bonded, validator.Status)
-	//
-	//// validator misses 500 more blocks, 501 total
-	//latest := height
-	//for ; height < latest+500; height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
-	//}
-	//
-	//// should now be jailed & kicked
-	//staking.EndBlocker(ctx, sk)
-	//validator, _ = sk.GetValidator(ctx, addr)
-	//require.Equal(t, sdk.Unbonding, validator.Status)
-	//
-	//// check all the signing information
-	//signInfo, found := keeper.getValidatorSigningInfo(ctx, consAddr)
-	//require.True(t, found)
+	ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
+	params := sk.GetParams(ctx)
+	params.MaxValidators = 1
+	sk.SetParams(ctx, params)
+	power := int64(100)
+	amt := sdk.TokensFromConsensusPower(power)
+	addr, val := addrs[0], pks[0]
+	consAddr := sdk.ConsAddress(addr)
+	sh := staking.NewHandler(sk)
+	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.True(t, got.IsOK())
+	staking.EndBlocker(ctx, sk)
+
+	// 100 first blocks OK
+	height := int64(1)
+	for ; height < int64(100); height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, true, height)
+	}
+
+	// kick first validator out of validator set
+	newAmt := sdk.TokensFromConsensusPower(101)
+	got = sh(ctx, NewTestMsgCreateValidator(addrs[1], pks[1], newAmt))
+	require.True(t, got.IsOK())
+	validatorUpdates := staking.EndBlocker(ctx, sk)
+	require.Equal(t, 2, len(validatorUpdates))
+	validator, _ := sk.GetValidator(ctx, addr)
+	require.Equal(t, sdk.Unbonding, validator.Status)
+
+	// 600 more blocks happened
+	height = int64(700)
+	incrementBlockTime(600)
+	ctx = ctx.WithBlockHeight(height)
+
+	// validator added back in
+	delTokens := sdk.TokensFromConsensusPower(50)
+	got = sh(ctx, newTestMsgDelegate(sdk.AccAddress(addrs[2]), addrs[0], delTokens))
+	require.True(t, got.IsOK())
+	validatorUpdates = staking.EndBlocker(ctx, sk)
+	require.Equal(t, 2, len(validatorUpdates))
+	validator, _ = sk.GetValidator(ctx, addr)
+	require.Equal(t, sdk.Bonded, validator.Status)
+	newPower := int64(150)
+
+	// validator misses a block
+	keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, blockWindow)
+	height++
+
+	// shouldn't be jailed/kicked yet
+	validator, _ = sk.GetValidator(ctx, addr)
+	require.Equal(t, sdk.Bonded, validator.Status)
+
+	// validator misses 500 more blocks, 501 total
+	latest := height
+	for ; height < latest+500; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, blockWindow)
+	}
+
+	// should now be jailed & kicked
+	staking.EndBlocker(ctx, sk)
+	validator, _ = sk.GetValidator(ctx, addr)
+	require.Equal(t, sdk.Unbonding, validator.Status)
+
+	// check all the signing information
+	signInfo, found := keeper.getValidatorSigningInfo(ctx, consAddr)
+	require.True(t, found)
+	require.Equal(t, consAddr, signInfo.Address)
 	//require.Equal(t, int64(0), signInfo.MissedBlocksCounter)
 	//require.Equal(t, int64(0), signInfo.IndexOffset)
-	//// array should be cleared
+	// array should be cleared
+	// TODO Check that the validators missed blocks registration have been purged.
 	//for offset := int64(0); offset < keeper.SignedBlocksWindow(ctx); offset++ {
 	//	missed := keeper.getValidatorMissedBlockBitArray(ctx, consAddr, offset)
 	//	require.False(t, missed)
 	//}
-	//
-	//// some blocks pass
-	//height = int64(5000)
-	//ctx = ctx.WithBlockHeight(height)
-	//
-	//// validator rejoins and starts signing again
-	//sk.Unjail(ctx, consAddr)
-	//keeper.HandleValidatorSignature(ctx, val.Address(), newPower, true)
-	//height++
-	//
-	//// validator should not be kicked since we reset counter/array when it was jailed
-	//staking.EndBlocker(ctx, sk)
-	//validator, _ = sk.GetValidator(ctx, addr)
-	//require.Equal(t, sdk.Bonded, validator.Status)
-	//
-	//// validator misses 501 blocks
-	//latest = height
-	//for ; height < latest+501; height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
-	//}
-	//
-	//// validator should now be jailed & kicked
-	//staking.EndBlocker(ctx, sk)
-	//validator, _ = sk.GetValidator(ctx, addr)
-	//require.Equal(t, sdk.Unbonding, validator.Status)
 
+	// some blocks pass
+	height = int64(5000)
+	incrementBlockTime(4000)
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+
+	// validator rejoins and starts signing again
+	sk.Unjail(ctx, consAddr)
+
+	fmt.Println(" *** Unjailing validator!")
+
+	keeper.HandleValidatorSignature(ctx, val.Address(), newPower, true, blockWindow)
+	height++
+
+	// validator should not be kicked since we reset counter/array when it was jailed
+	staking.EndBlocker(ctx, sk)
+	validator, _ = sk.GetValidator(ctx, addr)
+	require.Equal(t, sdk.Bonded, validator.Status)
+
+	// validator misses 501 blocks
+	latest = height
+	for ; height < latest+501; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, blockWindow)
+	}
+
+	// validator should now be jailed & kicked
+	staking.EndBlocker(ctx, sk)
+	validator, _ = sk.GetValidator(ctx, addr)
+	require.Equal(t, sdk.Unbonding, validator.Status)
+}
+
+func blockTimeGenerator(blocktime time.Duration) (func() time.Time, func(blockcount int)) {
+	now := time.Now()
+
+	return func() time.Time {
+			now = now.Add(blocktime)
+			return now
+		},
+		func(blockcount int) {
+			now = now.Add(time.Duration(blockcount) * blocktime)
+		}
 }

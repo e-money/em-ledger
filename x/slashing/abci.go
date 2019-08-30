@@ -20,7 +20,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	signedBlocksWindow := sk.SignedBlocksWindowDuration(ctx)
 
 	blockTimes = append(blockTimes, ctx.BlockTime())
-	blockTimes = truncateByWindow(blockTimes, signedBlocksWindow)
+	blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 	// Iterate over all the validators which *should* have signed this block
 	// store whether or not they have actually signed it and slash/unbond any
@@ -42,13 +42,13 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	}
 }
 
-func truncateByWindow(times []time.Time, signedBlocksWindow time.Duration) []time.Time {
+func truncateByWindow(blockTime time.Time, times []time.Time, signedBlocksWindow time.Duration) []time.Time {
 	if len(times) == 0 {
 		return times
 	}
 
 	// Remove timestamps outside of the time window we are watching
-	threshold := times[len(times)-1].Add(-1 * signedBlocksWindow)
+	threshold := blockTime.Add(-1 * signedBlocksWindow)
 
 	index := sort.Search(len(times), func(i int) bool {
 		return times[i].After(threshold)
