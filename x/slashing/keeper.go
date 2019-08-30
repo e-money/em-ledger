@@ -150,6 +150,7 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 }
 
 var (
+	// TODO Move to keeper
 	missedBlocksByVal map[string][]time.Time = make(map[string][]time.Time)
 )
 
@@ -166,12 +167,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	}
 
 	missedBlocksByVal[consAddr.String()] = missedBlocks
-	fmt.Println(" *** height", ctx.BlockHeight())
-
-	if len(missedBlocks) > 0 {
-		fmt.Println(" *** Missedblocks", missedBlocks)
-	}
-
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
@@ -188,8 +183,8 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 		if validator != nil && !validator.IsJailed() {
 
 			// Downtime confirmed: slash and jail the validator
-			//logger.Info(fmt.Sprintf("Validator %s past min height of %d and below signed blocks threshold of %d",
-			//	consAddr, minHeight, k.MinSignedPerWindow(ctx)))
+			logger.Info(fmt.Sprintf("Validator %s is below signed blocks threshold of %d during the last %d",
+				consAddr, k.MinSignedPerWindow(ctx), k.SignedBlocksWindowDuration(ctx)))
 
 			// We need to retrieve the stake distribution which signed the block, so we subtract ValidatorUpdateDelay from the evidence height,
 			// and subtract an additional 1 since this is the LastCommit.
@@ -218,11 +213,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 
 			signInfo.JailedUntil = ctx.BlockHeader().Time.Add(k.DowntimeJailDuration(ctx))
 
-			// We need to reset the counter & array so that the validator won't be immediately slashed for downtime upon rebonding.
-			//signInfo.MissedBlocksCounter = 0
-			//signInfo.IndexOffset = 0
-			//k.clearValidatorMissedBlockBitArray(ctx, consAddr)
-
 			// Reset number of blocks missed.
 			missedBlocksByVal[consAddr.String()] = make([]time.Time, 0)
 			k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
@@ -233,106 +223,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			)
 		}
 	}
-
-	return
-
-	// fetch signing info
-	//signInfo, found := k.getValidatorSigningInfo(ctx, consAddr)
-	//if !found {
-	//	panic(fmt.Sprintf("Expected signing info for validator %s but not found", consAddr))
-	//}
-	//
-	//// this is a relative index, so it counts blocks the validator *should* have signed
-	//// will use the 0-value default signing info if not present, except for start height
-	//index := signInfo.IndexOffset % k.SignedBlocksWindow(ctx)
-	//signInfo.IndexOffset++
-	//
-	//// Update signed block bit array & counter
-	//// This counter just tracks the sum of the bit array
-	//// That way we avoid needing to read/write the whole array each time
-	//previous := k.getValidatorMissedBlockBitArray(ctx, consAddr, index)
-	//missed := !signed
-	//switch {
-	//case !previous && missed:
-	//	// Array value has changed from not missed to missed, increment counter
-	//	k.setValidatorMissedBlockBitArray(ctx, consAddr, index, true)
-	//	signInfo.MissedBlocksCounter++
-	//case previous && !missed:
-	//	// Array value has changed from missed to not missed, decrement counter
-	//	k.setValidatorMissedBlockBitArray(ctx, consAddr, index, false)
-	//	signInfo.MissedBlocksCounter--
-	//default:
-	//	// Array value at this index has not changed, no need to update counter
-	//}
-	//
-	//if missed {
-	//	ctx.EventManager().EmitEvent(
-	//		sdk.NewEvent(
-	//			types.EventTypeLiveness,
-	//			sdk.NewAttribute(types.AttributeKeyAddress, consAddr.String()),
-	//			sdk.NewAttribute(types.AttributeKeyMissedBlocks, fmt.Sprintf("%d", signInfo.MissedBlocksCounter)),
-	//			sdk.NewAttribute(types.AttributeKeyHeight, fmt.Sprintf("%d", height)),
-	//		),
-	//	)
-	//
-	//	logger.Info(
-	//		fmt.Sprintf("Absent validator %s (%s) at height %d, %d missed, threshold %d", consAddr, pubkey, height, signInfo.MissedBlocksCounter, k.MinSignedPerWindow(ctx)))
-	//}
-	//
-	//minHeight := signInfo.StartHeight + k.SignedBlocksWindow(ctx)
-	//maxMissed := k.SignedBlocksWindow(ctx) - k.MinSignedPerWindow(ctx)
-	//
-	//if missed || previous {
-	//	fmt.Println(" *** MaxMissed - SignedBlocksWindow", maxMissed, k.SignedBlocksWindow(ctx))
-	//	fmt.Println(" *** height - minheight ", height, minHeight)
-	//}
-	//
-	//// if we are past the minimum height and the validator has missed too many blocks, punish them
-	//if height > minHeight && signInfo.MissedBlocksCounter > maxMissed {
-	//	fmt.Println(" *** Time to jail", consAddr)
-	//	validator := k.sk.ValidatorByConsAddr(ctx, consAddr)
-	//	if validator != nil && !validator.IsJailed() {
-	//
-	//		// Downtime confirmed: slash and jail the validator
-	//		logger.Info(fmt.Sprintf("Validator %s past min height of %d and below signed blocks threshold of %d",
-	//			consAddr, minHeight, k.MinSignedPerWindow(ctx)))
-	//
-	//		// We need to retrieve the stake distribution which signed the block, so we subtract ValidatorUpdateDelay from the evidence height,
-	//		// and subtract an additional 1 since this is the LastCommit.
-	//		// Note that this *can* result in a negative "distributionHeight" up to -ValidatorUpdateDelay-1,
-	//		// i.e. at the end of the pre-genesis block (none) = at the beginning of the genesis block.
-	//		// That's fine since this is just used to filter unbonding delegations & redelegations.
-	//		distributionHeight := height - sdk.ValidatorUpdateDelay - 1
-	//
-	//		ctx.EventManager().EmitEvent(
-	//			sdk.NewEvent(
-	//				types.EventTypeSlash,
-	//				sdk.NewAttribute(types.AttributeKeyAddress, consAddr.String()),
-	//				sdk.NewAttribute(types.AttributeKeyPower, fmt.Sprintf("%d", power)),
-	//				sdk.NewAttribute(types.AttributeKeyReason, types.AttributeValueMissingSignature),
-	//				sdk.NewAttribute(types.AttributeKeyJailed, consAddr.String()),
-	//			),
-	//		)
-	//		k.sk.Slash(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
-	//		k.sk.Jail(ctx, consAddr)
-	//
-	//		signInfo.JailedUntil = ctx.BlockHeader().Time.Add(k.DowntimeJailDuration(ctx))
-	//
-	//		// We need to reset the counter & array so that the validator won't be immediately slashed for downtime upon rebonding.
-	//		signInfo.MissedBlocksCounter = 0
-	//		signInfo.IndexOffset = 0
-	//		k.clearValidatorMissedBlockBitArray(ctx, consAddr)
-	//	} else {
-	//		// Validator was (a) not found or (b) already jailed, don't slash
-	//		logger.Info(
-	//			fmt.Sprintf("Validator %s would have been slashed for downtime, but was either not found in store or already jailed", consAddr),
-	//		)
-	//	}
-	//}
-	//
-	//// Set the updated signing info
-	//fmt.Println(" *** Missed blocks", signInfo.MissedBlocksCounter)
-	//k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 }
 
 func (k Keeper) addPubkey(ctx sdk.Context, pubkey crypto.PubKey) {

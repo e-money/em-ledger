@@ -22,8 +22,6 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	blockTimes = append(blockTimes, ctx.BlockTime())
 	blockTimes = truncateByWindow(blockTimes, signedBlocksWindow)
 
-	printBlocktimes() // DEBUG
-
 	// Iterate over all the validators which *should* have signed this block
 	// store whether or not they have actually signed it and slash/unbond any
 	// which have missed too many blocks in a row (downtime slashing)
@@ -44,14 +42,6 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	}
 }
 
-func printBlocktimes() {
-	fmt.Print(" *** Current block times: ")
-	for _, ts := range blockTimes {
-		fmt.Print(ts.Format("04:05 "))
-	}
-	fmt.Println()
-}
-
 func truncateByWindow(times []time.Time, signedBlocksWindow time.Duration) []time.Time {
 	if len(times) == 0 {
 		return times
@@ -59,7 +49,6 @@ func truncateByWindow(times []time.Time, signedBlocksWindow time.Duration) []tim
 
 	// Remove timestamps outside of the time window we are watching
 	threshold := times[len(times)-1].Add(-1 * signedBlocksWindow)
-	fmt.Println(" *** Threshold : ", threshold.Format("04:05"))
 
 	index := sort.Search(len(times), func(i int) bool {
 		return times[i].After(threshold)
