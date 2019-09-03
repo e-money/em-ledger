@@ -11,12 +11,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const (
+	blockWindow = int64(30) // Number of blocks in uptime window. This is contingent upon blocktime being about 1 minute.
+)
+
 // Have to change these parameters for tests
 // lest the tests take forever
 func keeperTestParams() types.Params {
 	params := types.DefaultParams()
-	//params.SignedBlocksWindow = 1000
-	params.DowntimeJailDuration = 60 * 60
+	params.DowntimeJailDuration = 5 * time.Minute
 	return params
 }
 
@@ -125,256 +128,259 @@ func TestPastMaxEvidenceAge(t *testing.T) {
 // Test a validator through uptime, downtime, revocation,
 // unrevocation, starting height reset, and revocation again
 func TestHandleAbsentValidator(t *testing.T) {
-	t.Fatal("Fix this test")
-
 	// initial setup
-	//ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
-	//power := int64(100)
-	//amt := sdk.TokensFromConsensusPower(power)
-	//addr, val := addrs[0], pks[0]
-	//sh := staking.NewHandler(sk)
-	//slh := NewHandler(keeper)
-	//got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	//require.True(t, got.IsOK())
-	//staking.EndBlocker(ctx, sk)
-	//
-	//require.Equal(
-	//	t, ck.GetCoins(ctx, sdk.AccAddress(addr)),
-	//	sdk.NewCoins(sdk.NewCoin(sk.GetParams(ctx).BondDenom, initTokens.Sub(amt))),
-	//)
-	//require.Equal(t, amt, sk.Validator(ctx, addr).GetBondedTokens())
-	//
-	//// will exist since the validator has been bonded
-	//info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
+	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	power := int64(100)
+	amt := sdk.TokensFromConsensusPower(power)
+	addr, val := addrs[0], pks[0]
+	sh := staking.NewHandler(sk)
+	slh := NewHandler(keeper)
+	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.True(t, got.IsOK())
+	staking.EndBlocker(ctx, sk)
+
+	require.Equal(
+		t, ck.GetCoins(ctx, sdk.AccAddress(addr)),
+		sdk.NewCoins(sdk.NewCoin(sk.GetParams(ctx).BondDenom, initTokens.Sub(amt))),
+	)
+	require.Equal(t, amt, sk.Validator(ctx, addr).GetBondedTokens())
+
+	// will exist since the validator has been bonded
+	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(0), info.IndexOffset)
 	//require.Equal(t, int64(0), info.MissedBlocksCounter)
-	//require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
-	//height := int64(0)
-	//
-	//// 1000 first blocks OK
-	//for ; height < keeper.SignedBlocksWindow(ctx); height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, true)
-	//}
-	//info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
+	require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
+	height := int64(0)
+	nextBlocktime := blockTimeGenerator(time.Minute)
+
+	// 1000 first blocks OK
+	for ; height < 1000; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, true, blockWindow)
+	}
+	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(0), info.MissedBlocksCounter)
-	//
-	//// 500 blocks missed
+
+	fmt.Println("BondedPool:", sk.GetBondedPool(ctx).GetCoins())
+
 	//for ; height < keeper.SignedBlocksWindow(ctx)+(keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx)); height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//}
-	//info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
+	nextHeight := height + blockWindow - 3 // Approach the limit of missed signed blocks
+	for ; height < nextHeight; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	}
+	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx), info.MissedBlocksCounter)
-	//
-	//// validator should be bonded still
-	//validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Bonded, validator.GetStatus())
-	//bondPool := sk.GetBondedPool(ctx)
-	//require.True(sdk.IntEq(t, amt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx))))
-	//
-	//// 501st block missed
-	//ctx = ctx.WithBlockHeight(height)
-	//keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
+
+	// validator should be bonded still
+	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Bonded, validator.GetStatus())
+	bondPool := sk.GetBondedPool(ctx)
+	require.True(sdk.IntEq(t, amt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx))))
+
+	// 501st block missed
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
-	//// counter now reset to zero
+	// counter now reset to zero
 	//require.Equal(t, int64(0), info.MissedBlocksCounter)
-	//
-	//// end block
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// validator should have been jailed
-	//validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Unbonding, validator.GetStatus())
-	//
-	//slashAmt := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).RoundInt64()
-	//
-	//// validator should have been slashed
-	//require.Equal(t, amt.Int64()-slashAmt, validator.GetTokens().Int64())
-	//
-	//// 502nd block *also* missed (since the LastCommit would have still included the just-unbonded validator)
-	//height++
-	//ctx = ctx.WithBlockHeight(height)
-	//keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
+
+	// end block
+	staking.EndBlocker(ctx, sk)
+
+	// validator should have been jailed
+	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Unbonding, validator.GetStatus())
+
+	slashAmt := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).RoundInt64()
+
+	// validator should have been slashed
+	require.Equal(t, amt.Int64()-slashAmt, validator.GetTokens().Int64())
+
+	// 502nd block *also* missed (since the LastCommit would have still included the just-unbonded validator)
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(1), info.MissedBlocksCounter)
-	//
-	//// end block
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// validator should not have been slashed any more, since it was already jailed
-	//validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, amt.Int64()-slashAmt, validator.GetTokens().Int64())
-	//
-	//// unrevocation should fail prior to jail expiration
-	//got = slh(ctx, NewMsgUnjail(addr))
-	//require.False(t, got.IsOK())
-	//
-	//// unrevocation should succeed after jail expiration
-	//ctx = ctx.WithBlockHeader(abci.Header{Time: time.Unix(1, 0).Add(keeper.DowntimeJailDuration(ctx))})
-	//got = slh(ctx, NewMsgUnjail(addr))
-	//require.True(t, got.IsOK())
-	//
-	//// end block
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// validator should be rebonded now
-	//validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Bonded, validator.GetStatus())
-	//
-	//// validator should have been slashed
-	//bondPool = sk.GetBondedPool(ctx)
-	//require.Equal(t, amt.Int64()-slashAmt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
-	//
-	//// Validator start height should not have been changed
-	//info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
+
+	// end block
+	staking.EndBlocker(ctx, sk)
+
+	// validator should not have been slashed any more, since it was already jailed
+	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, amt.Int64()-slashAmt, validator.GetTokens().Int64())
+	require.True(t, validator.Jailed)
+
+	// unrevocation should fail prior to jail expiration
+	got = slh(ctx, NewMsgUnjail(addr))
+	require.False(t, got.IsOK())
+
+	// unrevocation should succeed after jail expiration
+	height++
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(5))
+
+	got = slh(ctx, NewMsgUnjail(addr))
+	require.True(t, got.IsOK())
+
+	// end block
+	staking.EndBlocker(ctx, sk)
+
+	// validator should be rebonded now
+	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Bonded, validator.GetStatus())
+
+	// validator should have been slashed
+	bondPool = sk.GetBondedPool(ctx)
+	require.Equal(t, amt.Int64()-slashAmt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+
+	// Validator start height should not have been changed
+	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
-	//// we've missed 2 blocks more than the maximum, so the counter was reset to 0 at 1 block more and is now 1
+	// we've missed 2 blocks more than the maximum, so the counter was reset to 0 at 1 block more and is now 1
 	//require.Equal(t, int64(1), info.MissedBlocksCounter)
-	//
-	//// validator should not be immediately jailed again
-	//height++
-	//ctx = ctx.WithBlockHeight(height)
-	//keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Bonded, validator.GetStatus())
-	//
-	//// 500 signed blocks
-	//nextHeight := height + keeper.MinSignedPerWindow(ctx) + 1
-	//for ; height < nextHeight; height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//}
-	//
-	//// end block
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// validator should be jailed again after 500 unsigned blocks
-	//nextHeight = height + keeper.MinSignedPerWindow(ctx) + 1
-	//for ; height <= nextHeight; height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//}
-	//
-	//// end block
-	//staking.EndBlocker(ctx, sk)
-	//
-	//validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Unbonding, validator.GetStatus())
+
+	// validator should not be immediately jailed again
+	height++
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Bonded, validator.GetStatus())
+
+	// 500 signed blocks
+	nextHeight = height + 501
+	for ; height < nextHeight; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	}
+
+	// end block
+	staking.EndBlocker(ctx, sk)
+
+	// validator should be jailed again after 500 unsigned blocks
+	nextHeight = height + blockWindow + 1
+	for ; height <= nextHeight; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	}
+
+	// end block
+	staking.EndBlocker(ctx, sk)
+
+	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Unbonding, validator.GetStatus())
+	require.True(t, validator.IsJailed())
 }
 
 // Test a new validator entering the validator set
 // Ensure that SigningInfo.StartHeight is set correctly
 // and that they are not immediately jailed
 func TestHandleNewValidator(t *testing.T) {
-	t.Fatal("Fix this test")
+	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// initial setup
-	//ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
-	//addr, val := addrs[0], pks[0]
-	//amt := sdk.TokensFromConsensusPower(100)
-	//sh := staking.NewHandler(sk)
-	//
-	//// 1000 first blocks not a validator
-	//ctx = ctx.WithBlockHeight(keeper.SignedBlocksWindow(ctx) + 1)
-	//
-	//// Validator created
-	//got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	//require.True(t, got.IsOK())
-	//staking.EndBlocker(ctx, sk)
-	//
-	//require.Equal(
-	//	t, ck.GetCoins(ctx, sdk.AccAddress(addr)),
-	//	sdk.NewCoins(sdk.NewCoin(sk.GetParams(ctx).BondDenom, initTokens.Sub(amt))),
-	//)
-	//require.Equal(t, amt, sk.Validator(ctx, addr).GetBondedTokens())
-	//
-	//// Now a validator, for two blocks
-	//keeper.HandleValidatorSignature(ctx, val.Address(), 100, true)
-	//ctx = ctx.WithBlockHeight(keeper.SignedBlocksWindow(ctx) + 2)
-	//keeper.HandleValidatorSignature(ctx, val.Address(), 100, false)
-	//
-	//info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
-	//require.True(t, found)
-	//require.Equal(t, keeper.SignedBlocksWindow(ctx)+1, info.StartHeight)
+	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	addr, val := addrs[0], pks[0]
+	amt := sdk.TokensFromConsensusPower(100)
+	sh := staking.NewHandler(sk)
+
+	// 1000 first blocks not a validator
+	ctx = ctx.WithBlockHeight(1001).WithBlockTime(nextBlocktime(1001))
+
+	// Validator created
+	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.True(t, got.IsOK())
+	staking.EndBlocker(ctx, sk)
+
+	require.Equal(
+		t, ck.GetCoins(ctx, sdk.AccAddress(addr)),
+		sdk.NewCoins(sdk.NewCoin(sk.GetParams(ctx).BondDenom, initTokens.Sub(amt))),
+	)
+	require.Equal(t, amt, sk.Validator(ctx, addr).GetBondedTokens())
+
+	// Now a validator, for two blocks
+	keeper.HandleValidatorSignature(ctx, val.Address(), 100, true, blockWindow)
+	ctx = ctx.WithBlockHeight(blockWindow + 2).WithBlockTime(nextBlocktime(2))
+	keeper.HandleValidatorSignature(ctx, val.Address(), 100, false, blockWindow)
+
+	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	require.True(t, found)
+	//require.Equal(t, blockWindow+1, info.StartHeight)
 	//require.Equal(t, int64(2), info.IndexOffset)
 	//require.Equal(t, int64(1), info.MissedBlocksCounter)
-	//require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
-	//
-	//// validator should be bonded still, should not have been jailed or slashed
-	//validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Bonded, validator.GetStatus())
-	//bondPool := sk.GetBondedPool(ctx)
-	//expTokens := sdk.TokensFromConsensusPower(100)
-	//require.Equal(t, expTokens.Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
+	require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
+
+	// validator should be bonded still, should not have been jailed or slashed
+	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Bonded, validator.GetStatus())
+	bondPool := sk.GetBondedPool(ctx)
+	expTokens := sdk.TokensFromConsensusPower(100)
+	require.Equal(t, expTokens.Int64(), bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
 }
 
 // Test a jailed validator being "down" twice
 // Ensure that they're only slashed once
 func TestHandleAlreadyJailed(t *testing.T) {
-	t.Fatal("Fix this test")
+	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// initial setup
-	//ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
-	//power := int64(100)
-	//amt := sdk.TokensFromConsensusPower(power)
-	//addr, val := addrs[0], pks[0]
-	//sh := staking.NewHandler(sk)
-	//got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	//require.True(t, got.IsOK())
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// 1000 first blocks OK
-	//height := int64(0)
-	//for ; height < keeper.SignedBlocksWindow(ctx); height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, true)
-	//}
-	//
-	//// 501 blocks missed
-	//for ; height < keeper.SignedBlocksWindow(ctx)+(keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx))+1; height++ {
-	//	ctx = ctx.WithBlockHeight(height)
-	//	keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//}
-	//
-	//// end block
-	//staking.EndBlocker(ctx, sk)
-	//
-	//// validator should have been jailed and slashed
-	//validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, sdk.Unbonding, validator.GetStatus())
-	//
-	//// validator should have been slashed
-	//resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
-	//require.Equal(t, resultingTokens, validator.GetTokens())
-	//
-	//// another block missed
-	//ctx = ctx.WithBlockHeight(height)
-	//keeper.HandleValidatorSignature(ctx, val.Address(), power, false)
-	//
-	//// validator should not have been slashed twice
-	//validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
-	//require.Equal(t, resultingTokens, validator.GetTokens())
+	ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
+	power := int64(100)
+	amt := sdk.TokensFromConsensusPower(power)
+	addr, val := addrs[0], pks[0]
+	sh := staking.NewHandler(sk)
+	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.True(t, got.IsOK())
+	staking.EndBlocker(ctx, sk)
 
+	// 1000 first blocks OK
+	height := int64(0)
+	for ; height < 1000; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, true, blockWindow)
+	}
+
+	// 501 blocks missed
+	for ; height < 1501; height++ {
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+	}
+
+	// end block
+	staking.EndBlocker(ctx, sk)
+
+	// validator should have been jailed and slashed
+	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, sdk.Unbonding, validator.GetStatus())
+
+	// validator should have been slashed
+	resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
+	require.Equal(t, resultingTokens, validator.GetTokens())
+
+	// another block missed
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
+
+	// validator should not have been slashed twice
+	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	require.Equal(t, resultingTokens, validator.GetTokens())
 }
 
 // Test a validator dipping in and out of the validator set
 // Ensure that missed blocks are tracked correctly and that
 // the start height of the signing info is reset correctly
 func TestValidatorDippingInAndOut(t *testing.T) {
-	nextBlocktime, incrementBlockTime := blockTimeGenerator(time.Minute)
-	blockWindow := int64(30) // Number of blocks in uptime window. This is contingent upon blocktime being about 1 minute.
+	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// initial setup
 	// keeperTestParams set the SignedBlocksWindow to 1000 and MaxMissedBlocksPerWindow to 500
@@ -394,7 +400,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	// 100 first blocks OK
 	height := int64(1)
 	for ; height < int64(100); height++ {
-		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 		keeper.HandleValidatorSignature(ctx, val.Address(), power, true, height)
 	}
 
@@ -409,7 +415,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// 600 more blocks happened
 	height = int64(700)
-	incrementBlockTime(600)
+	nextBlocktime(600)
 	ctx = ctx.WithBlockHeight(height)
 
 	// validator added back in
@@ -433,7 +439,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	// validator misses 500 more blocks, 501 total
 	latest := height
 	for ; height < latest+500; height++ {
-		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, blockWindow)
 	}
 
@@ -457,8 +463,8 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// some blocks pass
 	height = int64(5000)
-	incrementBlockTime(4000)
-	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+	nextBlocktime(4000)
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(0))
 
 	// validator rejoins and starts signing again
 	sk.Unjail(ctx, consAddr)
@@ -476,7 +482,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	// validator misses 501 blocks
 	latest = height
 	for ; height < latest+501; height++ {
-		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime())
+		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 		keeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, blockWindow)
 	}
 
@@ -486,14 +492,12 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	require.Equal(t, sdk.Unbonding, validator.Status)
 }
 
-func blockTimeGenerator(blocktime time.Duration) (func() time.Time, func(blockcount int)) {
+func blockTimeGenerator(blocktime time.Duration) func(int) time.Time {
+	// TODO This might be a tiny bit over-engineered. Move to a simple struct?
 	now := time.Now()
 
-	return func() time.Time {
-			now = now.Add(blocktime)
-			return now
-		},
-		func(blockcount int) {
-			now = now.Add(time.Duration(blockcount) * blocktime)
-		}
+	return func(blockcount int) time.Time {
+		now = now.Add(time.Duration(blockcount) * blocktime)
+		return now
+	}
 }
