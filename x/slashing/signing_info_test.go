@@ -3,30 +3,29 @@ package slashing
 import (
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestGetSetValidatorSigningInfo(t *testing.T) {
-	t.Fatal("Fix this test")
-
-	//ctx, _, _, _, keeper := createTestInput(t, DefaultParams())
-	//info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
-	//require.False(t, found)
-	//newInfo := NewValidatorSigningInfo(
-	//	sdk.ConsAddress(addrs[0]),
-	//	int64(4),
-	//	int64(3),
-	//	time.Unix(2, 0),
-	//	false,
-	//	int64(10),
-	//)
-	//keeper.SetValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]), newInfo)
-	//info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
-	//require.True(t, found)
+	ctx, _, _, _, keeper := createTestInput(t, DefaultParams())
+	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
+	require.False(t, found)
+	newInfo := NewValidatorSigningInfo(
+		sdk.ConsAddress(addrs[0]),
+		int64(4),
+		int64(3),
+		time.Unix(2, 0),
+		false,
+		int64(10),
+	)
+	keeper.SetValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]), newInfo)
+	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
+	require.True(t, found)
 	//require.Equal(t, info.StartHeight, int64(4))
 	//require.Equal(t, info.IndexOffset, int64(3))
-	//require.Equal(t, info.JailedUntil, time.Unix(2, 0).UTC())
+	require.Equal(t, info.JailedUntil, time.Unix(2, 0).UTC())
 	//require.Equal(t, info.MissedBlocksCounter, int64(10))
 }
 
