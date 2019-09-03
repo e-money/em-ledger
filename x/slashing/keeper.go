@@ -26,18 +26,20 @@ type Keeper struct {
 	codespace sdk.CodespaceType
 
 	// Replacement for IAVL KV storage.
-	signedBlocks db.DB // Attempt to use a store that is not part of the global state
+	signedBlocks      db.DB // Attempt to use a store that is not part of the global state
+	missedBlocksByVal map[string][]time.Time
 }
 
 // NewKeeper creates a slashing keeper
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, paramspace params.Subspace, codespace sdk.CodespaceType) Keeper {
 	keeper := Keeper{
-		storeKey:     key,
-		cdc:          cdc,
-		sk:           sk,
-		paramspace:   paramspace.WithKeyTable(ParamKeyTable()),
-		codespace:    codespace,
-		signedBlocks: db.NewMemDB(),
+		storeKey:          key,
+		cdc:               cdc,
+		sk:                sk,
+		paramspace:        paramspace.WithKeyTable(ParamKeyTable()),
+		codespace:         codespace,
+		signedBlocks:      db.NewMemDB(),
+		missedBlocksByVal: make(map[string][]time.Time),
 	}
 	return keeper
 }
@@ -149,24 +151,19 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 }
 
-var (
-	// TODO Move to keeper
-	missedBlocksByVal map[string][]time.Time = make(map[string][]time.Time)
-)
-
 func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, power int64, signed bool, blockCount int64) {
 	logger := k.Logger(ctx)
 	height := ctx.BlockHeight()
 	consAddr := sdk.ConsAddress(addr)
 
-	missedBlocks := missedBlocksByVal[consAddr.String()]
+	missedBlocks := k.missedBlocksByVal[consAddr.String()]
 	missedBlocks = truncateByWindow(ctx.BlockTime(), missedBlocks, k.SignedBlocksWindowDuration(ctx))
 
 	if !signed {
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
 	}
 
-	missedBlocksByVal[consAddr.String()] = missedBlocks
+	k.missedBlocksByVal[consAddr.String()] = missedBlocks
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
@@ -212,7 +209,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			signInfo.JailedUntil = ctx.BlockHeader().Time.Add(k.DowntimeJailDuration(ctx))
 
 			// Reset number of blocks missed.
-			missedBlocksByVal[consAddr.String()] = make([]time.Time, 0)
+			k.missedBlocksByVal[consAddr.String()] = make([]time.Time, 0)
 			k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 		} else {
 			// Validator was (a) not found or (b) already jailed, don't slash
