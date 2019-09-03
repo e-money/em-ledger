@@ -167,7 +167,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
-	fmt.Println(" *** Current ratio of missed blocks:", missedRatio, missedBlockCount, blockCount)
 
 	// TODO Only do this if missing is true?
 	minSignedPerWindow := k.MinSignedPerWindow(ctx)

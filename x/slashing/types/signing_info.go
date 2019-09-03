@@ -15,11 +15,7 @@ type ValidatorSigningInfo struct {
 }
 
 // Construct a new `ValidatorSigningInfo` struct
-func NewValidatorSigningInfo(
-	condAddr sdk.ConsAddress, _, _ int64,
-	jailedUntil time.Time, tombstoned bool, _ int64,
-) ValidatorSigningInfo {
-
+func NewValidatorSigningInfo(condAddr sdk.ConsAddress, jailedUntil time.Time, tombstoned bool) ValidatorSigningInfo {
 	return ValidatorSigningInfo{
 		Address:     condAddr,
 		JailedUntil: jailedUntil,

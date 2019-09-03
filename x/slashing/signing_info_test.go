@@ -14,11 +14,8 @@ func TestGetSetValidatorSigningInfo(t *testing.T) {
 	require.False(t, found)
 	newInfo := NewValidatorSigningInfo(
 		sdk.ConsAddress(addrs[0]),
-		int64(4),
-		int64(3),
 		time.Unix(2, 0),
 		false,
-		int64(10),
 	)
 	keeper.SetValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]), newInfo)
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
