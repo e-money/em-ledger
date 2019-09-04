@@ -47,7 +47,7 @@ func handleMsgUnjail(ctx sdk.Context, msg MsgUnjail, k Keeper) sdk.Result {
 
 	consAddr := sdk.ConsAddress(validator.GetConsPubKey().Address())
 
-	info, found := k.getValidatorSigningInfo(ctx, consAddr)
+	info, found := k.getValidatorSigningInfo(consAddr)
 	if !found {
 		return ErrNoValidatorForAddress(k.codespace).Result()
 	}

@@ -87,7 +87,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 
 	// set dummy signing info
 	newInfo := NewValidatorSigningInfo(consAddr, time.Unix(0, 0), false)
-	slashingKeeper.SetValidatorSigningInfo(ctx, consAddr, newInfo)
+	slashingKeeper.SetValidatorSigningInfo(consAddr, newInfo)
 
 	// delegate tokens to the validator
 	delAddr := sdk.AccAddress(addrs[2])

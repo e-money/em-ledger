@@ -95,7 +95,7 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	}
 
 	// fetch the validator signing info
-	signInfo, found := k.getValidatorSigningInfo(ctx, consAddr)
+	signInfo, found := k.getValidatorSigningInfo(consAddr)
 	if !found {
 		panic(fmt.Sprintf("Expected signing info for validator %s but not found", consAddr))
 	}
@@ -152,7 +152,7 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	signInfo.JailedUntil = types.DoubleSignJailEndTime
 
 	// Set validator signing info
-	k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
+	k.SetValidatorSigningInfo(consAddr, signInfo)
 }
 
 func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, power int64, signed bool, blockCount int64) {
@@ -205,7 +205,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			k.sk.Jail(ctx, consAddr)
 
 			// fetch signing info
-			signInfo, found := k.getValidatorSigningInfo(ctx, consAddr)
+			signInfo, found := k.getValidatorSigningInfo(consAddr)
 			if !found {
 				panic(fmt.Sprintf("Expected signing info for validator %s but not found", consAddr))
 			}
@@ -214,7 +214,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 
 			// Reset number of blocks missed.
 			k.missedBlocksByVal[consAddr.String()] = make([]time.Time, 0)
-			k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
+			k.SetValidatorSigningInfo(consAddr, signInfo)
 		} else {
 			// Validator was (a) not found or (b) already jailed, don't slash
 			logger.Info(

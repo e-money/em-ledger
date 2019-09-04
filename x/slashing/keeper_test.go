@@ -154,7 +154,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.Equal(t, amt, sk.Validator(ctx, addr).GetBondedTokens())
 
 	// will exist since the validator has been bonded
-	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found := keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(0), info.IndexOffset)
@@ -168,7 +168,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 		keeper.HandleValidatorSignature(ctx, val.Address(), power, true, blockWindow)
 	}
-	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(0), info.MissedBlocksCounter)
@@ -179,7 +179,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 		keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
 	}
-	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx), info.MissedBlocksCounter)
@@ -193,7 +193,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	// 501st block missed
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 	keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
-	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	// counter now reset to zero
@@ -214,7 +214,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	// 502nd block *also* missed (since the LastCommit would have still included the just-unbonded validator)
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 	keeper.HandleValidatorSignature(ctx, val.Address(), power, false, blockWindow)
-	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(1), info.MissedBlocksCounter)
@@ -250,7 +250,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.Equal(t, amt.Int64()-slashAmt, bondPool.GetCoins().AmountOf(sk.BondDenom(ctx)).Int64())
 
 	// Validator start height should not have been changed
-	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	// we've missed 2 blocks more than the maximum, so the counter was reset to 0 at 1 block more and is now 1
@@ -319,7 +319,7 @@ func TestHandleNewValidator(t *testing.T) {
 	ctx = ctx.WithBlockHeight(blockWindow + 2).WithBlockTime(nextBlocktime(2))
 	keeper.HandleValidatorSignature(ctx, val.Address(), 100, false, blockWindow)
 
-	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found := keeper.getValidatorSigningInfo(sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, blockWindow+1, info.StartHeight)
 	//require.Equal(t, int64(2), info.IndexOffset)
@@ -458,7 +458,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	require.Equal(t, sdk.Unbonding, validator.Status)
 
 	// check all the signing information
-	signInfo, found := keeper.getValidatorSigningInfo(ctx, consAddr)
+	signInfo, found := keeper.getValidatorSigningInfo(consAddr)
 	require.True(t, found)
 	require.Equal(t, consAddr, signInfo.Address)
 	//require.Equal(t, int64(0), signInfo.MissedBlocksCounter)

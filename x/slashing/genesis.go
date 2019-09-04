@@ -21,7 +21,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, stakingKeeper types.StakingKeep
 		if err != nil {
 			panic(err)
 		}
-		keeper.SetValidatorSigningInfo(ctx, address, info)
+		keeper.SetValidatorSigningInfo(address, info)
 	}
 
 	for addr, array := range data.MissedBlocks {
@@ -30,7 +30,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, stakingKeeper types.StakingKeep
 			panic(err)
 		}
 		for _, missed := range array {
-			keeper.setValidatorMissedBlockBitArray(ctx, address, missed.Index, missed.Missed)
+			keeper.setValidatorMissedBlockBitArray(address, missed.Index, missed.Missed)
 		}
 	}
 
@@ -40,30 +40,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, stakingKeeper types.StakingKeep
 // ExportGenesis writes the current store values
 // to a genesis file, which can be imported again
 // with InitGenesis
-func ExportGenesis(ctx sdk.Context, keeper Keeper) (data types.GenesisState) {
-	panic("Slashing export not yet supported")
-	//var params types.Params
-	//keeper.paramspace.GetParamSet(ctx, &params)
-	//
-	//signingInfos := make(map[string]types.ValidatorSigningInfo)
-	//missedBlocks := make(map[string][]types.MissedBlock)
-	//keeper.IterateValidatorSigningInfos(ctx, func(address sdk.ConsAddress, info types.ValidatorSigningInfo) (stop bool) {
-	//	bechAddr := address.String()
-	//	signingInfos[bechAddr] = info
-	//	localMissedBlocks := []types.MissedBlock{}
-	//
-	//	keeper.IterateValidatorMissedBlockBitArray(ctx, address, func(index int64, missed bool) (stop bool) {
-	//		localMissedBlocks = append(localMissedBlocks, types.MissedBlock{index, missed})
-	//		return false
-	//	})
-	//	missedBlocks[bechAddr] = localMissedBlocks
-	//
-	//	return false
-	//})
-	//
-	//return types.GenesisState{
-	//	Params:       params,
-	//	SigningInfos: signingInfos,
-	//	MissedBlocks: missedBlocks,
-	//}
+func ExportGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
+	return types.GenesisState{}
 }
