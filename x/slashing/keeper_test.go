@@ -2,7 +2,6 @@ package slashing
 
 import (
 	"emoney/x/slashing/types"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/magiconair/properties/assert"
@@ -341,7 +340,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// initial setup
-	ctx, _, sk, _, keeper, _ := createTestInput(t, DefaultParams())
+	ctx, _, sk, _, keeper, supplyKeeper := createTestInput(t, DefaultParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -349,6 +348,8 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
 	require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
+
+	preSlashingSupply := supplyKeeper.GetSupply(ctx)
 
 	// 1000 first blocks OK
 	height := int64(0)
@@ -381,6 +382,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	// validator should not have been slashed twice
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, resultingTokens, validator.GetTokens())
+	require.Equal(t, preSlashingSupply, supplyKeeper.GetSupply(ctx))
 }
 
 // Test a validator dipping in and out of the validator set
@@ -423,7 +425,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	// 600 more blocks happened
 	height = int64(700)
 	nextBlocktime(600)
-	ctx = ctx.WithBlockHeight(height)
+	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(0))
 
 	// validator added back in
 	delTokens := sdk.TokensFromConsensusPower(50)
@@ -475,8 +477,6 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// validator rejoins and starts signing again
 	sk.Unjail(ctx, consAddr)
-
-	fmt.Println(" *** Unjailing validator!")
 
 	keeper.HandleValidatorSignature(ctx, val.Address(), newPower, true, blockWindow)
 	height++
