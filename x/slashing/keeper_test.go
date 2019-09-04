@@ -3,7 +3,9 @@ package slashing
 import (
 	"emoney/x/slashing/types"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/magiconair/properties/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"testing"
@@ -30,7 +32,7 @@ func keeperTestParams() types.Params {
 // when we discover evidence of infraction
 func TestHandleDoubleSign(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	ctx, ck, sk, _, keeper, supplyKeeper := createTestInput(t, keeperTestParams())
 	// validator added pre-genesis
 	ctx = ctx.WithBlockHeight(-1)
 	power := int64(100)
@@ -47,6 +49,11 @@ func TestHandleDoubleSign(t *testing.T) {
 
 	// handle a signature to set signing info
 	keeper.HandleValidatorSignature(ctx, val.Address(), amt.Int64(), true, blockWindow)
+
+	// Keep track of token supplies before the slashing
+	preSlashSupply := supplyKeeper.GetSupply(ctx)
+	feeAccount := supplyKeeper.GetModuleAccount(ctx, auth.FeeCollectorName)
+	require.True(t, feeAccount.GetCoins().IsZero())
 
 	oldTokens := sk.Validator(ctx, operatorAddr).GetTokens()
 
@@ -69,6 +76,11 @@ func TestHandleDoubleSign(t *testing.T) {
 	// Jump to past the unbonding period
 	ctx = ctx.WithBlockHeader(abci.Header{Time: time.Unix(1, 0).Add(sk.GetParams(ctx).UnbondingTime)})
 
+	// No tokens should have been burned, but rather sent to the fee distribution account
+	require.Equal(t, preSlashSupply, supplyKeeper.GetSupply(ctx))
+	feeAccount = supplyKeeper.GetModuleAccount(ctx, auth.FeeCollectorName)
+	assert.Equal(t, sdk.NewInt(5000000), feeAccount.GetCoins().AmountOf(sk.BondDenom(ctx)))
+
 	// Still shouldn't be able to unjail
 	msgUnjail := types.NewMsgUnjail(operatorAddr)
 	res := handleMsgUnjail(ctx, msgUnjail, keeper)
@@ -90,7 +102,7 @@ func TestHandleDoubleSign(t *testing.T) {
 // when we discover evidence of infraction
 func TestPastMaxEvidenceAge(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	ctx, ck, sk, _, keeper, _ := createTestInput(t, keeperTestParams())
 	// validator added pre-genesis
 	ctx = ctx.WithBlockHeight(-1)
 	power := int64(100)
@@ -126,7 +138,7 @@ func TestPastMaxEvidenceAge(t *testing.T) {
 // unrevocation, starting height reset, and revocation again
 func TestHandleAbsentValidator(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	ctx, ck, sk, _, keeper, _ := createTestInput(t, keeperTestParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -161,8 +173,6 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
 	//require.Equal(t, int64(0), info.MissedBlocksCounter)
-
-	fmt.Println("BondedPool:", sk.GetBondedPool(ctx).GetCoins())
 
 	//for ; height < keeper.SignedBlocksWindow(ctx)+(keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx)); height++ {
 	nextHeight := height + blockWindow - 3 // Approach the limit of missed signed blocks
@@ -286,7 +296,7 @@ func TestHandleNewValidator(t *testing.T) {
 	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// initial setup
-	ctx, ck, sk, _, keeper := createTestInput(t, keeperTestParams())
+	ctx, ck, sk, _, keeper, _ := createTestInput(t, keeperTestParams())
 	addr, val := addrs[0], pks[0]
 	amt := sdk.TokensFromConsensusPower(100)
 	sh := staking.NewHandler(sk)
@@ -331,7 +341,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// initial setup
-	ctx, _, sk, _, keeper := createTestInput(t, DefaultParams())
+	ctx, _, sk, _, keeper, _ := createTestInput(t, DefaultParams())
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
@@ -381,7 +391,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// initial setup
 	// keeperTestParams set the SignedBlocksWindow to 1000 and MaxMissedBlocksPerWindow to 500
-	ctx, _, sk, _, keeper := createTestInput(t, keeperTestParams())
+	ctx, _, sk, _, keeper, _ := createTestInput(t, keeperTestParams())
 	params := sk.GetParams(ctx)
 	params.MaxValidators = 1
 	sk.SetParams(ctx, params)

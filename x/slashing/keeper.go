@@ -228,11 +228,18 @@ func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infrac
 	k.sk.Slash(ctx, consAddr, infractionHeight, power, slashFactor)
 
 	// Mint the slashed coins and assign them to the distribution pool.
-	slashAmount := calculateSlashingAmount(power, k.SlashFractionDowntime(ctx))
+	slashAmount := calculateSlashingAmount(power, slashFactor)
 	stakingDenom := k.sk.BondDenom(ctx)
 	coins := sdk.NewCoins(sdk.NewCoin(stakingDenom, slashAmount))
-	k.supplyKeeper.MintCoins(ctx, types.ModuleName, coins)
-	k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeModuleName, coins)
+	err := k.supplyKeeper.MintCoins(ctx, types.ModuleName, coins)
+	if err != nil {
+		panic(err)
+	}
+
+	err = k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeModuleName, coins)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Adopted from cosmos-sdk/x/staking/keeper/slash.go
