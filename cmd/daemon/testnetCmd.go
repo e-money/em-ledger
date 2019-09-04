@@ -240,7 +240,7 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 }
 
 func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount {
-	accStakingTokens := sdk.TokensFromConsensusPower(500)
+	accStakingTokens := sdk.TokensFromConsensusPower(100000)
 	account := genaccounts.GenesisAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
@@ -270,7 +270,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	}
 
 	moniker := fmt.Sprintf("Validator-%v", i)
-	valTokens := sdk.TokensFromConsensusPower(1)
+	valTokens := sdk.TokensFromConsensusPower(50000)
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,
