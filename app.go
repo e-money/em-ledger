@@ -54,6 +54,7 @@ var (
 		inflation.ModuleName:      {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		slashing.ModuleName:       {supply.Minter},
 		//gov.ModuleName:            {supply.Burner},
 	}
 )
@@ -127,7 +128,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
 
 	application.mintKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
-	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, slashingSubspace, slashing.DefaultCodespace)
+	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
 		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing)

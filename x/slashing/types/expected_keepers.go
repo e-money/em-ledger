@@ -19,6 +19,7 @@ type StakingKeeper interface {
 
 	Validator(sdk.Context, sdk.ValAddress) exported.ValidatorI            // get a particular validator by operator address
 	ValidatorByConsAddr(sdk.Context, sdk.ConsAddress) exported.ValidatorI // get a particular validator by consensus address
+	BondDenom(sdk.Context) string
 
 	// slash the validator and delegators of the validator, specifying offence height, offence power, and slash fraction
 	Slash(sdk.Context, sdk.ConsAddress, int64, int64, sdk.Dec)
@@ -39,4 +40,10 @@ type StakingHooks interface {
 	AfterValidatorRemoved(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) // Must be called when a validator is deleted
 
 	AfterValidatorBonded(ctx sdk.Context, consAddr sdk.ConsAddress, valAddr sdk.ValAddress) // Must be called when a validator is bonded
+}
+
+// SupplyKeeper defines the expected supply keeper
+type SupplyKeeper interface {
+	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) sdk.Error
+	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) sdk.Error
 }

@@ -17,10 +17,12 @@ import (
 
 // Keeper of the slashing store
 type Keeper struct {
-	storeKey   sdk.StoreKey
-	cdc        *codec.Codec
-	sk         types.StakingKeeper
-	paramspace params.Subspace
+	storeKey      sdk.StoreKey
+	cdc           *codec.Codec
+	sk            types.StakingKeeper
+	supplyKeeper  types.SupplyKeeper
+	feeModuleName string
+	paramspace    params.Subspace
 
 	// codespace
 	codespace sdk.CodespaceType
@@ -31,11 +33,13 @@ type Keeper struct {
 }
 
 // NewKeeper creates a slashing keeper
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, paramspace params.Subspace, codespace sdk.CodespaceType) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, supplyKeeper types.SupplyKeeper, feeModuleName string, paramspace params.Subspace, codespace sdk.CodespaceType) Keeper {
 	keeper := Keeper{
 		storeKey:          key,
 		cdc:               cdc,
 		sk:                sk,
+		supplyKeeper:      supplyKeeper,
+		feeModuleName:     feeModuleName,
 		paramspace:        paramspace.WithKeyTable(ParamKeyTable()),
 		codespace:         codespace,
 		signedBlocks:      db.NewMemDB(),
@@ -127,7 +131,7 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 			sdk.NewAttribute(types.AttributeKeyReason, types.AttributeValueDoubleSign),
 		),
 	)
-	k.sk.Slash(ctx, consAddr, distributionHeight, power, fraction)
+	k.slashValidator(ctx, consAddr, distributionHeight, power, fraction)
 
 	// Jail validator if not already jailed
 	// begin unbonding validator if not already unbonding (tombstone)
@@ -196,7 +200,8 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 					sdk.NewAttribute(types.AttributeKeyJailed, consAddr.String()),
 				),
 			)
-			k.sk.Slash(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
+
+			k.slashValidator(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
 			k.sk.Jail(ctx, consAddr)
 
 			// fetch signing info
@@ -217,6 +222,25 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			)
 		}
 	}
+}
+
+func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeight int64, power int64, slashFactor sdk.Dec) {
+	k.sk.Slash(ctx, consAddr, infractionHeight, power, slashFactor)
+
+	// Mint the slashed coins and assign them to the distribution pool.
+	slashAmount := calculateSlashingAmount(power, k.SlashFractionDowntime(ctx))
+	stakingDenom := k.sk.BondDenom(ctx)
+	coins := sdk.NewCoins(sdk.NewCoin(stakingDenom, slashAmount))
+	k.supplyKeeper.MintCoins(ctx, types.ModuleName, coins)
+	k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeModuleName, coins)
+}
+
+// Adopted from cosmos-sdk/x/staking/keeper/slash.go
+func calculateSlashingAmount(power int64, slashFactor sdk.Dec) sdk.Int {
+	amount := sdk.TokensFromConsensusPower(power)
+	slashAmountDec := amount.ToDec().Mul(slashFactor)
+	slashAmount := slashAmountDec.TruncateInt()
+	return slashAmount
 }
 
 func (k Keeper) addPubkey(ctx sdk.Context, pubkey crypto.PubKey) {
