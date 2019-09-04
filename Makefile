@@ -58,7 +58,10 @@ run-single-node: clean
 	go run cmd/daemon/*.go init
 	go run cmd/daemon/*.go start
 
+test:
+	go test ./...
+
 clean:
 	rm -rf ./build ./data ./config
 
-.PHONY: build build-linux
+.PHONY: build build-linux clean test
