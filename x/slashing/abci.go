@@ -22,6 +22,8 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	blockTimes = append(blockTimes, ctx.BlockTime())
 	blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
+	sk.handlePendingPenalties(ctx, validatorset(req.LastCommitInfo.Votes))
+
 	// Iterate over all the validators which *should* have signed this block
 	// store whether or not they have actually signed it and slash/unbond any
 	// which have missed too many blocks in a row (downtime slashing)
@@ -39,6 +41,18 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 		default:
 			sk.Logger(ctx).Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
+	}
+}
+
+// Make a set containing all validators that are part of the set
+func validatorset(validators []abci.VoteInfo) func() map[string]bool {
+	return func() map[string]bool {
+		res := make(map[string]bool)
+		for _, v := range validators {
+			res[sdk.ConsAddress(v.Validator.Address).String()] = true
+		}
+
+		return res
 	}
 }
 

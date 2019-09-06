@@ -55,6 +55,7 @@ var (
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		slashing.ModuleName:       {supply.Minter},
+		slashing.PenaltyAccount:   nil,
 		//gov.ModuleName:            {supply.Burner},
 	}
 )
@@ -75,14 +76,14 @@ type emoneyApp struct {
 	tkeyParams  *sdk.TransientStoreKey
 	tkeyStaking *sdk.TransientStoreKey
 
-	accountKeeper  auth.AccountKeeper
-	paramsKeeper   params.Keeper
-	bankKeeper     bank.Keeper
-	supplyKeeper   supply.Keeper
-	stakingKeeper  staking.Keeper
-	mintKeeper     inflation.Keeper
-	distrKeeper    distr.Keeper
-	slashingKeeper slashing.Keeper
+	accountKeeper   auth.AccountKeeper
+	paramsKeeper    params.Keeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	stakingKeeper   staking.Keeper
+	inflationKeeper inflation.Keeper
+	distrKeeper     distr.Keeper
+	slashingKeeper  slashing.Keeper
 
 	mm *module.Manager
 }
@@ -127,7 +128,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	application.distrKeeper = distr.NewKeeper(application.cdc, application.keyDistr, distrSubspace, &application.stakingKeeper,
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
 
-	application.mintKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
+	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
 	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
@@ -142,7 +143,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
-		inflation.NewAppModule(application.mintKeeper),
+		inflation.NewAppModule(application.inflationKeeper),
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
 		issuance.NewAppModule(),
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
@@ -183,9 +184,7 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	responseBeginBlock := app.mm.BeginBlock(ctx, req)
-
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper)
-
 	return responseBeginBlock
 }
 
@@ -204,7 +203,7 @@ func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 
 	block := ctx.BlockHeader()
 	proposerAddress := block.GetProposerAddress()
-	app.Logger(ctx).Info(fmt.Sprintf("Block %v proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
+	app.Logger(ctx).Info(fmt.Sprintf("Endblock: Block %v was proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
 	return app.mm.EndBlock(ctx, req)
 }

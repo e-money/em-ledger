@@ -30,6 +30,7 @@ type Keeper struct {
 	// Replacement for IAVL KV storage.
 	signedBlocks      db.DB // Attempt to use a store that is not part of the global state
 	missedBlocksByVal map[string][]time.Time
+	activePenalties   map[string]sdk.Coins
 }
 
 // NewKeeper creates a slashing keeper
@@ -44,6 +45,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, suppl
 		codespace:         codespace,
 		signedBlocks:      db.NewMemDB(),
 		missedBlocksByVal: make(map[string][]time.Time),
+		activePenalties:   make(map[string]sdk.Coins),
 	}
 	return keeper
 }
@@ -224,6 +226,27 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	}
 }
 
+func (k Keeper) handlePendingPenalties(ctx sdk.Context, vfn func() map[string]bool) {
+	if len(k.activePenalties) == 0 {
+		return
+	}
+
+	validatorSet := vfn()
+	for val, coins := range k.activePenalties {
+		if _, present := validatorSet[val]; present {
+			// Penalized validator is still in the validator set. Do not pay out slashing fine.
+			continue
+		}
+
+		delete(k.activePenalties, val)
+
+		err := k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.PenaltyAccount, k.feeModuleName, coins)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeight int64, power int64, slashFactor sdk.Dec) {
 	k.sk.Slash(ctx, consAddr, infractionHeight, power, slashFactor)
 
@@ -236,10 +259,12 @@ func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infrac
 		panic(err)
 	}
 
-	err = k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeModuleName, coins)
+	err = k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, types.PenaltyAccount, coins)
 	if err != nil {
 		panic(err)
 	}
+
+	k.activePenalties[consAddr.String()] = coins
 }
 
 // Adopted from cosmos-sdk/x/staking/keeper/slash.go

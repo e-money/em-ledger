@@ -4,7 +4,6 @@ import (
 	"emoney/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/magiconair/properties/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"testing"
@@ -75,10 +74,10 @@ func TestHandleDoubleSign(t *testing.T) {
 	// Jump to past the unbonding period
 	ctx = ctx.WithBlockHeader(abci.Header{Time: time.Unix(1, 0).Add(sk.GetParams(ctx).UnbondingTime)})
 
-	// No tokens should have been burned, but rather sent to the fee distribution account
+	// No tokens should have been burned, but rather sent to the penalty account for later distribution
 	require.Equal(t, preSlashSupply, supplyKeeper.GetSupply(ctx))
-	feeAccount = supplyKeeper.GetModuleAccount(ctx, auth.FeeCollectorName)
-	assert.Equal(t, sdk.NewInt(5000000), feeAccount.GetCoins().AmountOf(sk.BondDenom(ctx)))
+	feeAccount = supplyKeeper.GetModuleAccount(ctx, PenaltyAccount)
+	require.Equal(t, sdk.NewInt(5000000), feeAccount.GetCoins().AmountOf(sk.BondDenom(ctx)))
 
 	// Still shouldn't be able to unjail
 	msgUnjail := types.NewMsgUnjail(operatorAddr)

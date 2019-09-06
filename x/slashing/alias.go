@@ -17,6 +17,7 @@ const (
 	CodeSelfDelegationTooLow          = types.CodeSelfDelegationTooLow
 	CodeMissingSigningInfo            = types.CodeMissingSigningInfo
 	ModuleName                        = types.ModuleName
+	PenaltyAccount                    = types.PenaltyAccount
 	StoreKey                          = types.StoreKey
 	RouterKey                         = types.RouterKey
 	QuerierRoute                      = types.QuerierRoute

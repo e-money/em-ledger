@@ -10,6 +10,9 @@ const (
 	// module name
 	ModuleName = "slashing"
 
+	// The module account holding the slashing penalties until they are paid out to the remaining validators.
+	PenaltyAccount = "slashing_penalties"
+
 	// StoreKey is the store key string for slashing
 	StoreKey = ModuleName
 
