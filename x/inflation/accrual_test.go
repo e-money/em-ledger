@@ -81,7 +81,7 @@ func TestMultipleCoinsAccrual(t *testing.T) {
 		sdk.NewCoin("credit", sdk.NewInt(1000)),
 	)
 
-	state.LastApplied = currentTime
+	state.LastAppliedTime = currentTime
 
 	for i := 0; i < 365*24*60; i++ {
 		currentTime = currentTime.Add(time.Minute)

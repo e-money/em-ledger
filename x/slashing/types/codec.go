@@ -4,12 +4,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
-// generic sealed codec to be used throughout this module
-var ModuleCdc *codec.Codec
-
+// Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgSetInflation{}, "inflation/SetInflation", nil)
+	cdc.RegisterConcrete(MsgUnjail{}, "cosmos-sdk/MsgUnjail", nil)
 }
+
+// module codec
+var ModuleCdc *codec.Codec
 
 func init() {
 	ModuleCdc = codec.New()

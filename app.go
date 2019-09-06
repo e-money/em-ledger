@@ -3,6 +3,8 @@ package emoney
 import (
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
+	"emoney/x/issuance"
+	"emoney/x/slashing"
 	"encoding/json"
 	"fmt"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -41,6 +43,8 @@ var (
 		staking.AppModuleBasic{},
 		inflation.AppModuleBasic{},
 		distr.AppModuleBasic{},
+		issuance.AppModuleBasic{},
+		slashing.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -50,6 +54,8 @@ var (
 		inflation.ModuleName:      {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		slashing.ModuleName:       {supply.Minter},
+		slashing.PenaltyAccount:   nil,
 		//gov.ModuleName:            {supply.Burner},
 	}
 )
@@ -58,24 +64,26 @@ type emoneyApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
-	keyMain    *sdk.KVStoreKey
-	keyAccount *sdk.KVStoreKey
-	keyParams  *sdk.KVStoreKey
-	keySupply  *sdk.KVStoreKey
-	keyStaking *sdk.KVStoreKey
-	keyMint    *sdk.KVStoreKey
-	keyDistr   *sdk.KVStoreKey
+	keyMain     *sdk.KVStoreKey
+	keyAccount  *sdk.KVStoreKey
+	keyParams   *sdk.KVStoreKey
+	keySupply   *sdk.KVStoreKey
+	keyStaking  *sdk.KVStoreKey
+	keyMint     *sdk.KVStoreKey
+	keyDistr    *sdk.KVStoreKey
+	keySlashing *sdk.KVStoreKey
 
 	tkeyParams  *sdk.TransientStoreKey
 	tkeyStaking *sdk.TransientStoreKey
 
-	accountKeeper auth.AccountKeeper
-	paramsKeeper  params.Keeper
-	bankKeeper    bank.Keeper
-	supplyKeeper  supply.Keeper
-	stakingKeeper staking.Keeper
-	mintKeeper    inflation.Keeper
-	distrKeeper   distr.Keeper
+	accountKeeper   auth.AccountKeeper
+	paramsKeeper    params.Keeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	stakingKeeper   staking.Keeper
+	inflationKeeper inflation.Keeper
+	distrKeeper     distr.Keeper
+	slashingKeeper  slashing.Keeper
 
 	mm *module.Manager
 }
@@ -100,6 +108,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		keyMint:     sdk.NewKVStoreKey(inflation.StoreKey),
 		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
 		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
+		keySlashing: sdk.NewKVStoreKey(slashing.StoreKey),
 	}
 
 	application.paramsKeeper = params.NewKeeper(cdc, application.keyParams, application.tkeyParams, params.DefaultCodespace)
@@ -109,6 +118,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	stakingSubspace := application.paramsKeeper.Subspace(staking.DefaultParamspace)
 	mintSubspace := application.paramsKeeper.Subspace(inflation.DefaultParamspace)
 	distrSubspace := application.paramsKeeper.Subspace(distr.DefaultParamspace)
+	slashingSubspace := application.paramsKeeper.Subspace(slashing.DefaultParamspace)
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
@@ -118,12 +128,13 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	application.distrKeeper = distr.NewKeeper(application.cdc, application.keyDistr, distrSubspace, &application.stakingKeeper,
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
 
-	application.mintKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
+	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
+	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
-		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr)
+		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing)
 
-	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks()))
+	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
@@ -132,13 +143,25 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
-		inflation.NewAppModule(application.mintKeeper),
+		inflation.NewAppModule(application.inflationKeeper),
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
+		issuance.NewAppModule(),
+		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
 	)
 
-	application.mm.SetOrderBeginBlockers(inflation.ModuleName)
+	application.mm.SetOrderBeginBlockers(inflation.ModuleName, slashing.ModuleName)
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
-	application.mm.SetOrderInitGenesis(genaccounts.ModuleName, distr.ModuleName, staking.ModuleName, auth.ModuleName, bank.ModuleName, inflation.ModuleName, supply.ModuleName, genutil.ModuleName)
+	application.mm.SetOrderInitGenesis(
+		genaccounts.ModuleName,
+		distr.ModuleName,
+		staking.ModuleName,
+		auth.ModuleName,
+		bank.ModuleName,
+		slashing.ModuleName,
+		inflation.ModuleName,
+		supply.ModuleName,
+		genutil.ModuleName,
+	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
@@ -161,9 +184,7 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	responseBeginBlock := app.mm.BeginBlock(ctx, req)
-
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper)
-
 	return responseBeginBlock
 }
 
@@ -182,7 +203,7 @@ func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 
 	block := ctx.BlockHeader()
 	proposerAddress := block.GetProposerAddress()
-	app.Logger(ctx).Info(fmt.Sprintf("Block %v proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
+	app.Logger(ctx).Info(fmt.Sprintf("Endblock: Block %v was proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
 	return app.mm.EndBlock(ctx, req)
 }
@@ -205,6 +226,16 @@ func setGenesisDefaults() {
 	staking.DefaultGenesisState = stakingGenesisState
 	distr.DefaultGenesisState = distrDefaultGenesisState()
 	inflation.DefaultInflationState = mintDefaultInflationState()
+	slashing.DefaultGenesisState = slashingDefaultGenesisState()
+}
+
+func slashingDefaultGenesisState() func() slashing.GenesisState {
+	slashingDefaultGenesisStateFn := slashing.DefaultGenesisState
+
+	return func() slashing.GenesisState {
+		state := slashingDefaultGenesisStateFn()
+		return state
+	}
 }
 
 func distrDefaultGenesisState() func() distr.GenesisState {

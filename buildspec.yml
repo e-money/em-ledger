@@ -6,4 +6,4 @@ phases:
       golang: 1.12
   build:
     commands:
-      - make build
+      - make test

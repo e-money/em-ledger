@@ -9,7 +9,7 @@ import (
 
 const (
 	// Do not apply inflation if less than this period has elapsed since last accrual
-	minimumMintingPeriod = 30 * time.Second
+	minimumMintingPeriod = 10 * time.Second
 )
 
 // BeginBlocker mints new tokens for the previous block.
@@ -17,7 +17,11 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 	state := k.GetState(ctx)
 	blockTime := ctx.BlockTime()
 
-	if blockTime.Sub(state.LastApplied) < minimumMintingPeriod {
+	if blockTime.Sub(state.LastAppliedTime) < minimumMintingPeriod {
+		return
+	}
+
+	if ctx.BlockHeight() == state.LastAppliedHeight.Int64()+1 {
 		return
 	}
 
@@ -25,12 +29,13 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	// Gate-keep this functionality based on time since last block
 	mintedCoins := applyInflation(&state, totalTokenSupply, blockTime)
+	state.LastAppliedHeight = sdk.NewInt(ctx.BlockHeight())
 
 	if mintedCoins.IsZero() {
 		return
 	}
 
-	fmt.Println(" *** Inflation minted coins:", mintedCoins)
+	fmt.Printf(" *** Inflation minted coins: %v (Block: %v %v)\n", mintedCoins, ctx.BlockHeight(), fmt.Sprint(blockTime.Format("15:04:05")))
 
 	k.SetState(ctx, state)
 	err := k.MintCoins(ctx, mintedCoins)
@@ -57,8 +62,8 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 }
 
 func applyInflation(state *InflationState, totalTokenSupply sdk.Coins, currentTime time.Time) sdk.Coins {
-	lastAccrual := state.LastApplied
-	state.LastApplied = currentTime
+	lastAccrual := state.LastAppliedTime
+	state.LastAppliedTime = currentTime
 	mintedCoins := sdk.Coins{}
 
 	for i, asset := range state.InflationAssets {

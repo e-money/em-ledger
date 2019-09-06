@@ -1,6 +1,7 @@
 package main
 
 import (
+	"emoney/x/inflation"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -103,7 +104,9 @@ Example:
 func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int, baseIPAddress, addRandomAccounts, chainID string) error {
 	config.Genesis = "genesis.json"
 
-	appState, err := codec.MarshalJSONIndent(cdc, mbm.DefaultGenesis())
+	gen := mbm.DefaultGenesis()
+	gen["inflation"] = setInflationAdministrators(cdc, addRandomAccounts, gen["inflation"])
+	appState, err := codec.MarshalJSONIndent(cdc, gen)
 	if err != nil {
 		return err
 	}
@@ -179,6 +182,35 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	return nil
 }
 
+func setInflationAdministrators(cdc *codec.Codec, keystorepath string, gen json.RawMessage) json.RawMessage {
+	if keystorepath == "" {
+		return gen
+	}
+
+	kb, err := keys.NewKeyBaseFromDir(keystorepath)
+	if err != nil {
+		panic(err)
+	}
+
+	var genstate inflation.GenesisState
+	cdc.MustUnmarshalJSON(gen, &genstate)
+
+	keys, err := kb.List()
+	if err != nil {
+		panic(err)
+	}
+
+	if len(keys) == 0 {
+		return gen
+	}
+
+	key := keys[0]
+	genstate.InflationState.Administrators = []crypto.PubKey{key.GetPubKey()}
+
+	fmt.Println("Setting inflation module administrator", key.GetName())
+	return cdc.MustMarshalJSON(genstate)
+}
+
 func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 	kb, err := keys.NewKeyBaseFromDir(keystorepath)
 	if err != nil {
@@ -194,10 +226,10 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 	for i, k := range keys {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
-			sdk.NewCoin("x3ngm", sdk.TokensFromConsensusPower(100)),
-			sdk.NewCoin("x2eur", sdk.NewInt(25000)),
-			sdk.NewCoin("x0jpy", sdk.NewInt(3500000)),
-			sdk.NewCoin("x2chf", sdk.NewInt(10000)),
+			sdk.NewCoin("x3ngm", sdk.NewInt(99000000000)),
+			sdk.NewCoin("x2eur", sdk.NewInt(10000000000)),
+			sdk.NewCoin("x0jpy", sdk.NewInt(3500000000000)),
+			sdk.NewCoin("x2chf", sdk.NewInt(10000000000)),
 		)
 
 		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
@@ -208,7 +240,7 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 }
 
 func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount {
-	accStakingTokens := sdk.TokensFromConsensusPower(500)
+	accStakingTokens := sdk.TokensFromConsensusPower(100000)
 	account := genaccounts.GenesisAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
@@ -238,7 +270,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	}
 
 	moniker := fmt.Sprintf("Validator-%v", i)
-	valTokens := sdk.TokensFromConsensusPower(1)
+	valTokens := sdk.TokensFromConsensusPower(50000)
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,

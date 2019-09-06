@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/json"
 	"fmt"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -28,7 +27,7 @@ func queryInflation(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 	inflationState := k.GetState(ctx)
 
 	// TODO Introduce a more presentation-friendly response type
-	res, err := json.Marshal(inflationState)
+	res, err := types.ModuleCdc.MarshalJSON(inflationState)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("failed to marshal JSON", err.Error()))
 	}
