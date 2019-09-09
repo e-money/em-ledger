@@ -62,7 +62,8 @@ var (
 
 type emoneyApp struct {
 	*bam.BaseApp
-	cdc *codec.Codec
+	cdc      *codec.Codec
+	database db.DB
 
 	keyMain     *sdk.KVStoreKey
 	keyAccount  *sdk.KVStoreKey
@@ -99,6 +100,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	application := &emoneyApp{
 		BaseApp:     bApp,
 		cdc:         cdc,
+		database:    db,
 		keyMain:     sdk.NewKVStoreKey("main"),
 		keyAccount:  sdk.NewKVStoreKey(auth.StoreKey),
 		keyParams:   sdk.NewKVStoreKey(params.StoreKey),
@@ -184,7 +186,7 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	responseBeginBlock := app.mm.BeginBlock(ctx, req)
-	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper)
+	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database)
 	return responseBeginBlock
 }
 
