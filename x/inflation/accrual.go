@@ -94,13 +94,9 @@ func calculateInflation(prevAccum sdk.Dec, supply sdk.Int, annualInflation sdk.D
 }
 
 // For use in logging
-func toKeyValuePairs(coins sdk.Coins) []interface{} {
-	res := make([]interface{}, 0)
-
+func toKeyValuePairs(coins sdk.Coins) (res []interface{}) {
 	for _, coin := range coins {
-		res = append(res, coin.Denom)
-		res = append(res, coin.Amount.String())
+		res = append(res, coin.Denom, coin.Amount.String())
 	}
-
-	return res
+	return
 }
