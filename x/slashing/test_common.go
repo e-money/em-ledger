@@ -108,7 +108,7 @@ func createTestInput(t *testing.T, defaults Params) (sdk.Context, bank.Keeper, s
 	}
 	require.Nil(t, err)
 	paramstore := paramsKeeper.Subspace(DefaultParamspace)
-	keeper := NewKeeper(cdc, keySlashing, &sk, supplyKeeper, auth.FeeCollectorName, paramstore, DefaultCodespace)
+	keeper := NewKeeper(cdc, keySlashing, &sk, supplyKeeper, auth.FeeCollectorName, paramstore, DefaultCodespace, dbm.NewMemDB())
 	sk.SetHooks(keeper.Hooks())
 
 	require.NotPanics(t, func() {
