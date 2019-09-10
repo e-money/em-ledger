@@ -1,6 +1,8 @@
 package slashing
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"time"
 
@@ -27,25 +29,26 @@ type Keeper struct {
 	// codespace
 	codespace sdk.CodespaceType
 
-	// Replacement for IAVL KV storage.
-	signedBlocks      db.DB // Attempt to use a store that is not part of the global state
-	missedBlocksByVal map[string][]time.Time
-	activePenalties   map[string]sdk.Coins
+	// Alternative to IAVL KV storage. For data that should not be part of consensus.
+	database db.DB
 }
 
+const (
+	dbKeyMissedByVal      = "%v.missedBlocks"
+	dbKeyPendingPenalties = "activePenalties"
+)
+
 // NewKeeper creates a slashing keeper
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, supplyKeeper types.SupplyKeeper, feeModuleName string, paramspace params.Subspace, codespace sdk.CodespaceType) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, supplyKeeper types.SupplyKeeper, feeModuleName string, paramspace params.Subspace, codespace sdk.CodespaceType, database db.DB) Keeper {
 	keeper := Keeper{
-		storeKey:          key,
-		cdc:               cdc,
-		sk:                sk,
-		supplyKeeper:      supplyKeeper,
-		feeModuleName:     feeModuleName,
-		paramspace:        paramspace.WithKeyTable(ParamKeyTable()),
-		codespace:         codespace,
-		signedBlocks:      db.NewMemDB(),
-		missedBlocksByVal: make(map[string][]time.Time),
-		activePenalties:   make(map[string]sdk.Coins),
+		storeKey:      key,
+		cdc:           cdc,
+		sk:            sk,
+		supplyKeeper:  supplyKeeper,
+		feeModuleName: feeModuleName,
+		paramspace:    paramspace.WithKeyTable(ParamKeyTable()),
+		codespace:     codespace,
+		database:      database,
 	}
 	return keeper
 }
@@ -162,14 +165,14 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	height := ctx.BlockHeight()
 	consAddr := sdk.ConsAddress(addr)
 
-	missedBlocks := k.missedBlocksByVal[consAddr.String()]
+	missedBlocks := k.getMissingBlocksForValidator(consAddr)
 	missedBlocks = truncateByWindow(ctx.BlockTime(), missedBlocks, k.SignedBlocksWindowDuration(ctx))
 
 	if !signed {
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
 	}
 
-	k.missedBlocksByVal[consAddr.String()] = missedBlocks
+	k.setMissingBlocksForValidator(consAddr, missedBlocks)
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
@@ -215,7 +218,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			signInfo.JailedUntil = ctx.BlockHeader().Time.Add(k.DowntimeJailDuration(ctx))
 
 			// Reset number of blocks missed.
-			k.missedBlocksByVal[consAddr.String()] = make([]time.Time, 0)
+			k.deleteMissingBlocksForValidator(consAddr)
 			k.SetValidatorSigningInfo(consAddr, signInfo)
 		} else {
 			// Validator was (a) not found or (b) already jailed, don't slash
@@ -226,25 +229,86 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	}
 }
 
+func (k Keeper) getMissingBlocksForValidator(address sdk.ConsAddress) []time.Time {
+	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
+	bz := k.database.Get(key)
+	if len(bz) == 0 {
+		return nil
+	}
+
+	b := bytes.NewBuffer(bz)
+	dec := gob.NewDecoder(b)
+
+	res := make([]time.Time, 0)
+	err := dec.Decode(&res)
+	if err != nil {
+		panic(err)
+	}
+
+	return res
+}
+
+func (k Keeper) setMissingBlocksForValidator(address sdk.ConsAddress, missingBlocks []time.Time) {
+	bz := new(bytes.Buffer)
+	enc := gob.NewEncoder(bz)
+	err := enc.Encode(missingBlocks)
+	if err != nil {
+		panic(err)
+	}
+
+	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
+	k.database.Set(key, bz.Bytes())
+}
+
+func (k Keeper) deleteMissingBlocksForValidator(address sdk.ConsAddress) {
+	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
+	k.database.Delete(key)
+}
+
 func (k Keeper) handlePendingPenalties(ctx sdk.Context, vfn func() map[string]bool) {
-	if len(k.activePenalties) == 0 {
+	activePenalties := k.getPendingPenalties()
+	if len(activePenalties) == 0 {
 		return
 	}
 
 	validatorSet := vfn()
-	for val, coins := range k.activePenalties {
+	for val, coins := range activePenalties {
 		if _, present := validatorSet[val]; present {
 			// Penalized validator is still in the validator set. Do not pay out slashing fine.
 			continue
 		}
 
-		delete(k.activePenalties, val)
+		delete(activePenalties, val)
 
 		err := k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.PenaltyAccount, k.feeModuleName, coins)
 		if err != nil {
 			panic(err)
 		}
 	}
+
+	k.setPendingPenalties(activePenalties)
+}
+
+func (k Keeper) setPendingPenalties(penalties map[string]sdk.Coins) {
+	if len(penalties) == 0 {
+		k.database.Delete([]byte(dbKeyPendingPenalties))
+		return
+	}
+
+	bz := k.cdc.MustMarshalJSON(penalties)
+	k.database.Set([]byte(dbKeyPendingPenalties), bz)
+}
+
+func (k Keeper) getPendingPenalties() map[string]sdk.Coins {
+	bz := k.database.Get([]byte(dbKeyPendingPenalties))
+	if len(bz) == 0 {
+		return make(map[string]sdk.Coins)
+	}
+
+	activePenalties := make(map[string]sdk.Coins)
+	k.cdc.MustUnmarshalJSON(bz, &activePenalties)
+
+	return activePenalties
 }
 
 func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeight int64, power int64, slashFactor sdk.Dec) {
@@ -264,7 +328,10 @@ func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infrac
 		panic(err)
 	}
 
-	k.activePenalties[consAddr.String()] = coins
+	activePenalties := k.getPendingPenalties()
+	activePenalties[consAddr.String()] = coins
+
+	k.setPendingPenalties(activePenalties)
 }
 
 // Adopted from cosmos-sdk/x/staking/keeper/slash.go

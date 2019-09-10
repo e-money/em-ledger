@@ -9,6 +9,7 @@ import (
 	"fmt"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -24,6 +25,7 @@ import (
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -62,7 +64,8 @@ var (
 
 type emoneyApp struct {
 	*bam.BaseApp
-	cdc *codec.Codec
+	cdc      *codec.Codec
+	database db.DB
 
 	keyMain     *sdk.KVStoreKey
 	keyAccount  *sdk.KVStoreKey
@@ -90,11 +93,11 @@ type emoneyApp struct {
 
 type GenesisState map[string]json.RawMessage
 
-func NewApp(logger log.Logger, db db.DB) *emoneyApp {
+func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyApp {
 	cdc := MakeCodec()
 	txDecoder := auth.DefaultTxDecoder(cdc)
 
-	bApp := bam.NewBaseApp(appName, logger, db, txDecoder)
+	bApp := bam.NewBaseApp(appName, logger, sdkdb, txDecoder)
 
 	application := &emoneyApp{
 		BaseApp:     bApp,
@@ -109,6 +112,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
 		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
 		keySlashing: sdk.NewKVStoreKey(slashing.StoreKey),
+		database:    createApplicationDatabase(serverCtx),
 	}
 
 	application.paramsKeeper = params.NewKeeper(cdc, application.keyParams, application.tkeyParams, params.DefaultCodespace)
@@ -129,7 +133,7 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
 
 	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
-	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace)
+	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
 		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing)
@@ -178,13 +182,24 @@ func NewApp(logger log.Logger, db db.DB) *emoneyApp {
 	return application
 }
 
+func createApplicationDatabase(serverCtx *server.Context) db.DB {
+	datadirectory := filepath.Join(serverCtx.Config.RootDir, "data")
+	fmt.Println(" *** Creating database in", datadirectory)
+	emoneydb, err := db.NewGoLevelDB("emoney", datadirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	return emoneydb
+}
+
 func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "emz")
 }
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	responseBeginBlock := app.mm.BeginBlock(ctx, req)
-	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper)
+	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database)
 	return responseBeginBlock
 }
 

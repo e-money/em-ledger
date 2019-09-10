@@ -51,15 +51,17 @@ func main() {
 	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
 
-	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)
+	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), nil)
 
-	executor := cli.PrepareBaseCmd(rootCmd, "TMSND", ".")
+	executor := cli.PrepareBaseCmd(rootCmd, "EMD", ".")
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func newApp(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
-	return app.NewApp(logger, db)
+func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtypes.Application {
+	return func(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
+		return app.NewApp(logger, db, ctx)
+	}
 }

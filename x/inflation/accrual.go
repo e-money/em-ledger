@@ -17,6 +17,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 	state := k.GetState(ctx)
 	blockTime := ctx.BlockTime()
 
+	// Gate-keep this functionality based on time since last block to prevent a cascade of blocks
 	if blockTime.Sub(state.LastAppliedTime) < minimumMintingPeriod {
 		return
 	}
@@ -27,7 +28,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	totalTokenSupply := k.TotalTokenSupply(ctx)
 
-	// Gate-keep this functionality based on time since last block
 	mintedCoins := applyInflation(&state, totalTokenSupply, blockTime)
 	state.LastAppliedHeight = sdk.NewInt(ctx.BlockHeight())
 
