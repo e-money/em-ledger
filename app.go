@@ -184,7 +184,6 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 
 func createApplicationDatabase(serverCtx *server.Context) db.DB {
 	datadirectory := filepath.Join(serverCtx.Config.RootDir, "data")
-	fmt.Println(" *** Creating database in", datadirectory)
 	emoneydb, err := db.NewGoLevelDB("emoney", datadirectory)
 	if err != nil {
 		panic(err)

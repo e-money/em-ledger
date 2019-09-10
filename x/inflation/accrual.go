@@ -1,7 +1,6 @@
 package inflation
 
 import (
-	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -35,7 +34,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
-	fmt.Printf(" *** Inflation minted coins: %v (Block: %v %v)\n", mintedCoins, ctx.BlockHeight(), fmt.Sprint(blockTime.Format("15:04:05")))
+	k.Logger(ctx).Info("Inflation minted coins", toKeyValuePairs(mintedCoins)...)
 
 	k.SetState(ctx, state)
 	err := k.MintCoins(ctx, mintedCoins)
@@ -92,4 +91,16 @@ func calculateInflation(prevAccum sdk.Dec, supply sdk.Int, annualInflation sdk.D
 	accum = accum.Sub(minted.MulRaw(annualNS).ToDec())
 
 	return
+}
+
+// For use in logging
+func toKeyValuePairs(coins sdk.Coins) []interface{} {
+	res := make([]interface{}, 0)
+
+	for _, coin := range coins {
+		res = append(res, coin.Denom)
+		res = append(res, coin.Amount.String())
+	}
+
+	return res
 }
