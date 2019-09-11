@@ -181,7 +181,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 	minSignedPerWindow := k.MinSignedPerWindow(ctx)
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
-	if minSignedPerWindow.LT(missedRatio) {
+	if sdk.OneDec().Sub(minSignedPerWindow).LT(missedRatio) {
 		validator := k.sk.ValidatorByConsAddr(ctx, consAddr)
 		if validator != nil && !validator.IsJailed() {
 
