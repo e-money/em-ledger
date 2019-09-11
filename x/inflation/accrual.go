@@ -1,7 +1,6 @@
 package inflation
 
 import (
-	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,6 +16,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 	state := k.GetState(ctx)
 	blockTime := ctx.BlockTime()
 
+	// Gate-keep this functionality based on time since last block to prevent a cascade of blocks
 	if blockTime.Sub(state.LastAppliedTime) < minimumMintingPeriod {
 		return
 	}
@@ -27,7 +27,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	totalTokenSupply := k.TotalTokenSupply(ctx)
 
-	// Gate-keep this functionality based on time since last block
 	mintedCoins := applyInflation(&state, totalTokenSupply, blockTime)
 	state.LastAppliedHeight = sdk.NewInt(ctx.BlockHeight())
 
@@ -35,7 +34,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
-	fmt.Printf(" *** Inflation minted coins: %v (Block: %v %v)\n", mintedCoins, ctx.BlockHeight(), fmt.Sprint(blockTime.Format("15:04:05")))
+	k.Logger(ctx).Info("Inflation minted coins", toKeyValuePairs(mintedCoins)...)
 
 	k.SetState(ctx, state)
 	err := k.MintCoins(ctx, mintedCoins)
@@ -91,5 +90,13 @@ func calculateInflation(prevAccum sdk.Dec, supply sdk.Int, annualInflation sdk.D
 	minted = accum.Quo(sdk.NewDec(annualNS)).TruncateInt()
 	accum = accum.Sub(minted.MulRaw(annualNS).ToDec())
 
+	return
+}
+
+// For use in logging
+func toKeyValuePairs(coins sdk.Coins) (res []interface{}) {
+	for _, coin := range coins {
+		res = append(res, coin.Denom, coin.Amount.String())
+	}
 	return
 }

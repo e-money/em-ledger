@@ -31,7 +31,7 @@ func main() {
 	ctx := server.NewDefaultContext()
 	// Add application to logging configuration
 	logLevel := ctx.Config.BaseConfig.LogLevel
-	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,%v", logLevel)
+	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,%v", logLevel)
 
 	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
@@ -51,15 +51,17 @@ func main() {
 	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
 
-	server.AddCommands(ctx, cdc, rootCmd, newApp, nil)
+	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), nil)
 
-	executor := cli.PrepareBaseCmd(rootCmd, "TMSND", ".")
+	executor := cli.PrepareBaseCmd(rootCmd, "EMD", ".")
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func newApp(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
-	return app.NewApp(logger, db)
+func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtypes.Application {
+	return func(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
+		return app.NewApp(logger, db, ctx)
+	}
 }
