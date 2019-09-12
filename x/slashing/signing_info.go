@@ -3,11 +3,13 @@ package slashing
 import (
 	"emoney/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/db"
 )
 
 // Stored by *validator* address (not operator address)
-func (k Keeper) getValidatorSigningInfo(address sdk.ConsAddress) (info types.ValidatorSigningInfo, found bool) {
-	bz := k.database.Get(types.GetValidatorSigningInfoKey(address))
+func (k Keeper) getValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info types.ValidatorSigningInfo, found bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GetValidatorSigningInfoKey(address))
 	if bz == nil {
 		found = false
 		return
@@ -37,9 +39,11 @@ func (k Keeper) IterateValidatorSigningInfos(
 }
 
 // Stored by *validator* address (not operator address)
-func (k Keeper) SetValidatorSigningInfo(address sdk.ConsAddress, info types.ValidatorSigningInfo) {
+func (k Keeper) SetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress, info types.ValidatorSigningInfo) {
+	// NOTE Information regarding missed blocks have been moved away from IAVL.
+	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(info)
-	k.database.Set(types.GetValidatorSigningInfoKey(address), bz)
+	store.Set(types.GetValidatorSigningInfoKey(address), bz)
 }
 
 // Stored by *validator* address (not operator address)
@@ -55,16 +59,16 @@ func (k Keeper) getValidatorMissedBlockBitArray(address sdk.ConsAddress, index i
 }
 
 // Stored by *validator* address (not operator address)
-func (k Keeper) setValidatorMissedBlockBitArray(address sdk.ConsAddress, index int64, missed bool) {
+func (k Keeper) setValidatorMissedBlockBitArray(batch db.Batch, address sdk.ConsAddress, index int64, missed bool) {
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(missed)
-	k.database.Set(types.GetValidatorMissedBlockBitArrayKey(address, index), bz)
+	batch.Set(types.GetValidatorMissedBlockBitArrayKey(address, index), bz)
 }
 
 // Stored by *validator* address (not operator address)
-func (k Keeper) clearValidatorMissedBlockBitArray(address sdk.ConsAddress) {
+func (k Keeper) clearValidatorMissedBlockBitArray(batch db.Batch, address sdk.ConsAddress) {
 	iter := k.database.Iterator(types.GetValidatorMissedBlockBitArrayPrefixKey(address), sdk.PrefixEndBytes(address))
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		k.database.Delete(iter.Key())
+		batch.Delete(iter.Key())
 	}
 }

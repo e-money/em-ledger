@@ -10,16 +10,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (k Keeper) AfterValidatorBonded(_ sdk.Context, address sdk.ConsAddress, _ sdk.ValAddress) {
+func (k Keeper) AfterValidatorBonded(ctx sdk.Context, address sdk.ConsAddress, _ sdk.ValAddress) {
 	// Update the signing info start height or create a new signing info
-	_, found := k.getValidatorSigningInfo(address)
+	_, found := k.getValidatorSigningInfo(ctx, address)
 	if !found {
 		signingInfo := types.NewValidatorSigningInfo(
 			address,
 			time.Unix(0, 0),
 			false,
 		)
-		k.SetValidatorSigningInfo(address, signingInfo)
+		k.SetValidatorSigningInfo(ctx, address, signingInfo)
 	}
 }
 

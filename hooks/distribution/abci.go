@@ -18,7 +18,7 @@ var (
 
 // set the proposer for determining distribution during endblock
 // and distribute rewards for the previous block
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, sk supply.Keeper, db db.DB) {
+func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, sk supply.Keeper, db db.DB, batch db.Batch) {
 	// determine the total power signing the block
 	var previousTotalPower, sumPreviousPrecommitPower int64
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
@@ -43,5 +43,5 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 	}
 
 	previousProposer = sdk.ConsAddress(req.Header.ProposerAddress)
-	db.Set(previousProposerKey, previousProposer)
+	batch.Set(previousProposerKey, previousProposer)
 }

@@ -21,18 +21,19 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, stakingKeeper types.StakingKeep
 		if err != nil {
 			panic(err)
 		}
-		keeper.SetValidatorSigningInfo(address, info)
+		keeper.SetValidatorSigningInfo(ctx, address, info)
 	}
 
-	for addr, array := range data.MissedBlocks {
-		address, err := sdk.ConsAddressFromBech32(addr)
-		if err != nil {
-			panic(err)
-		}
-		for _, missed := range array {
-			keeper.setValidatorMissedBlockBitArray(address, missed.Index, missed.Missed)
-		}
-	}
+	// We omit information about blocks missed in previous net.
+	//for addr, array := range data.MissedBlocks {
+	//	address, err := sdk.ConsAddressFromBech32(addr)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	for _, missed := range array {
+	//		keeper.setValidatorMissedBlockBitArray(address, missed.Index, missed.Missed)
+	//	}
+	//}
 
 	keeper.paramspace.SetParamSet(ctx, &data.Params)
 }

@@ -2,6 +2,7 @@ package slashing
 
 import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/tendermint/tendermint/libs/db"
 	"testing"
 	"time"
 
@@ -12,12 +13,8 @@ import (
 )
 
 func TestBeginBlocker(t *testing.T) {
-	defer func() {
-		// Clean up
-		blockTimes = make([]time.Time, 0)
-	}()
-
-	ctx, ck, sk, _, keeper, supplyKeeper := createTestInput(t, DefaultParams())
+	database := db.NewMemDB()
+	ctx, ck, sk, _, keeper, supplyKeeper := createTestInput(t, DefaultParams(), database)
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr1, pk1 := addrs[2], pks[2]
@@ -65,9 +62,12 @@ func TestBeginBlocker(t *testing.T) {
 			},
 		},
 	}
-	BeginBlocker(ctx, req, keeper)
 
-	info, found := keeper.getValidatorSigningInfo(sdk.ConsAddress(pk1.Address()))
+	batch := database.NewBatch()
+	BeginBlocker(ctx, req, keeper, batch)
+	batch.Write()
+
+	info, found := keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(pk1.Address()))
 	require.True(t, found)
 	require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
 	require.Equal(t, sdk.ConsAddress(pk1.Address()), info.Address)
@@ -93,7 +93,9 @@ func TestBeginBlocker(t *testing.T) {
 				},
 			},
 		}
-		BeginBlocker(ctx, req, keeper)
+		batch = database.NewBatch()
+		BeginBlocker(ctx, req, keeper, batch)
+		batch.Write()
 	}
 	// for 500 blocks, mark the validator as having not signed. Other validator keeps signing.
 	for ; height < 1500; height++ {
@@ -113,7 +115,9 @@ func TestBeginBlocker(t *testing.T) {
 				},
 			},
 		}
-		BeginBlocker(ctx, req, keeper)
+		batch = database.NewBatch()
+		BeginBlocker(ctx, req, keeper, batch)
+		batch.Write()
 	}
 
 	// end block
@@ -141,7 +145,9 @@ func TestBeginBlocker(t *testing.T) {
 			},
 		},
 	}
-	BeginBlocker(ctx, req, keeper)
+	batch = database.NewBatch()
+	BeginBlocker(ctx, req, keeper, batch)
+	batch.Write()
 
 	penalties = supplyKeeper.GetModuleAccount(ctx, PenaltyAccount).GetCoins()
 	require.True(t, penalties.IsZero())

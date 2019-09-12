@@ -1,6 +1,7 @@
 package slashing
 
 import (
+	"github.com/tendermint/tendermint/libs/db"
 	"strings"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ import (
 
 func TestCannotUnjailUnlessJailed(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper, _ := createTestInput(t, DefaultParams())
+	ctx, ck, sk, _, keeper, _ := createTestInput(t, DefaultParams(), db.NewMemDB())
 	slh := NewHandler(keeper)
 	amt := sdk.TokensFromConsensusPower(100)
 	addr, val := addrs[0], pks[0]
@@ -38,7 +39,7 @@ func TestCannotUnjailUnlessJailed(t *testing.T) {
 
 func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 	// initial setup
-	ctx, ck, sk, _, keeper, _ := createTestInput(t, DefaultParams())
+	ctx, ck, sk, _, keeper, _ := createTestInput(t, DefaultParams(), db.NewMemDB())
 	slh := NewHandler(keeper)
 	amtInt := int64(100)
 	addr, val, amt := addrs[0], pks[0], sdk.TokensFromConsensusPower(amtInt)
@@ -67,7 +68,7 @@ func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 }
 
 func TestJailedValidatorDelegations(t *testing.T) {
-	ctx, _, stakingKeeper, _, slashingKeeper, _ := createTestInput(t, DefaultParams())
+	ctx, _, stakingKeeper, _, slashingKeeper, _ := createTestInput(t, DefaultParams(), db.NewMemDB())
 
 	stakingParams := stakingKeeper.GetParams(ctx)
 	stakingParams.UnbondingTime = 0
@@ -87,7 +88,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 
 	// set dummy signing info
 	newInfo := NewValidatorSigningInfo(consAddr, time.Unix(0, 0), false)
-	slashingKeeper.SetValidatorSigningInfo(consAddr, newInfo)
+	slashingKeeper.SetValidatorSigningInfo(ctx, consAddr, newInfo)
 
 	// delegate tokens to the validator
 	delAddr := sdk.AccAddress(addrs[2])

@@ -5,7 +5,7 @@ This should be possible by relying solely on the token identifier, so that token
 
 Referencing the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard for currencies, our token identifiers contain the "Exponent" inserted into the second character of the "Alphabetic Identier": 
 
-Identifier: &lt;first-alpha&gt;&lt;exponent&gt;&lt;subsequent-alpha&gt;
+Identifier: &lt;first-alpha&gt;&lt;exponent&gt;&lt;subsequent-alphas&gt;
 
 Notice that the exponent can consist of multiple digits (> 9), so a parser must consume digits until it reaches the subsequent-alpha.
 
@@ -19,11 +19,12 @@ Placing the exponent at the beginning or the end of the identifier was ruled out
 ### Examples
 The following examples related to tokens issued by e-Money, where our currency-backed tokens are prefixed with "E" for e-Money.
 
-* E2EUR: Euro backed token with exponent 2 and 10^2 minor units (cents).
-* E2GBP: Pound sterling backed token with exponent 2 and 10^2 minor units (penny).
-* E2USD: US Dollar backed token with exponent 2 and 10^2 minor units (cents).
-* E0JPY: Japanese Yen backed token with exponent 0 and 10^0 minor unit.
-* N3GM: NGM staking token for the e-Money zone, exponent 3 and 10^3 minor units.
+
+* E2EUR: Euro backed token "EEUR" with exponent 2 and 10^2 minor units (cents).
+* E2GBP: Pound sterling backed token "EGBP" with exponent 2 and 10^2 minor units (penny).
+* E2USD: US Dollar backed token "EUSD" with exponent 2 and 10^2 minor units (cents).
+* E0JPY: Japanese Yen backed token "EJPY" with exponent 0 and 10^0 minor unit.
+* N3GM: Staking token "NGM" for the e-Money zone with exponent 3 and 10^3 minor units.
 
 Existing tokens with longer identifiers could also be identified like this:
 * A8TOM: [Cosmos Hub](https://cosmos.network) ATOM staking tokens with exponent 8 and 10^8 minor units (uatom).

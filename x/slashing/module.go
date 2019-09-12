@@ -129,7 +129,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 // module begin-block
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
+	ctx.Logger().Error("Slashing module's BeginBlock is not used. Please invoke BeginBlocker directly instead.")
 }
 
 // module end-block

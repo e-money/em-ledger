@@ -52,7 +52,7 @@ func createTestCodec() *codec.Codec {
 	return cdc
 }
 
-func createTestInput(t *testing.T, defaults Params) (sdk.Context, bank.Keeper, staking.Keeper, params.Subspace, Keeper, supply.Keeper) {
+func createTestInput(t *testing.T, defaults Params, database dbm.DB) (sdk.Context, bank.Keeper, staking.Keeper, params.Subspace, Keeper, supply.Keeper) {
 	keyAcc := sdk.NewKVStoreKey(auth.StoreKey)
 	keyStaking := sdk.NewKVStoreKey(staking.StoreKey)
 	tkeyStaking := sdk.NewTransientStoreKey(staking.TStoreKey)
@@ -108,7 +108,7 @@ func createTestInput(t *testing.T, defaults Params) (sdk.Context, bank.Keeper, s
 	}
 	require.Nil(t, err)
 	paramstore := paramsKeeper.Subspace(DefaultParamspace)
-	keeper := NewKeeper(cdc, keySlashing, &sk, supplyKeeper, auth.FeeCollectorName, paramstore, DefaultCodespace, dbm.NewMemDB())
+	keeper := NewKeeper(cdc, keySlashing, &sk, supplyKeeper, auth.FeeCollectorName, paramstore, DefaultCodespace, database)
 	sk.SetHooks(keeper.Hooks())
 
 	require.NotPanics(t, func() {
