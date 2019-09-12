@@ -98,7 +98,8 @@ func checkValidator(t *testing.T, mapp *mock.App, keeper staking.Keeper,
 
 func checkValidatorSigningInfo(t *testing.T, mapp *mock.App, keeper Keeper,
 	addr sdk.ConsAddress, expFound bool) ValidatorSigningInfo {
-	signingInfo, found := keeper.getValidatorSigningInfo(addr)
+	ctxCheck := mapp.BaseApp.NewContext(true, abci.Header{})
+	signingInfo, found := keeper.getValidatorSigningInfo(ctxCheck, addr)
 	require.Equal(t, expFound, found)
 	return signingInfo
 }

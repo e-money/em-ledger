@@ -64,8 +64,9 @@ var (
 
 type emoneyApp struct {
 	*bam.BaseApp
-	cdc      *codec.Codec
-	database db.DB
+	cdc          *codec.Codec
+	database     db.DB
+	currentBatch db.Batch
 
 	keyMain     *sdk.KVStoreKey
 	keyAccount  *sdk.KVStoreKey
@@ -153,7 +154,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
 	)
 
-	application.mm.SetOrderBeginBlockers(inflation.ModuleName, slashing.ModuleName)
+	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
 	application.mm.SetOrderInitGenesis(
 		genaccounts.ModuleName,
@@ -197,9 +198,16 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	responseBeginBlock := app.mm.BeginBlock(ctx, req)
-	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database)
-	return responseBeginBlock
+	app.currentBatch = app.database.NewBatch()
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
+
+	inflation.BeginBlocker(ctx, app.inflationKeeper)
+	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
+	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)
+
+	return abci.ResponseBeginBlock{
+		Events: ctx.EventManager().ABCIEvents(),
+	}
 }
 
 // application updates every end block
@@ -219,7 +227,9 @@ func (app *emoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 	proposerAddress := block.GetProposerAddress()
 	app.Logger(ctx).Info(fmt.Sprintf("Endblock: Block %v was proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
-	return app.mm.EndBlock(ctx, req)
+	response := app.mm.EndBlock(ctx, req)
+	app.currentBatch.Write() // Write non-IAVL state to database
+	return response
 }
 
 // application update at chain initialization

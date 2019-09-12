@@ -30,12 +30,13 @@ type Keeper struct {
 	codespace sdk.CodespaceType
 
 	// Alternative to IAVL KV storage. For data that should not be part of consensus.
-	database db.DB
+	database types.ReadOnlyDB
 }
 
 const (
 	dbKeyMissedByVal      = "%v.missedBlocks"
 	dbKeyPendingPenalties = "activePenalties"
+	dbKeyBlockTimes       = "blocktimes"
 )
 
 // NewKeeper creates a slashing keeper
@@ -60,12 +61,12 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // handle a validator signing two blocks at the same height
 // power: power of the double-signing validator at the height of infraction
-func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) {
+func (k Keeper) HandleDoubleSign(ctx sdk.Context, batch db.Batch, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) {
 	logger := k.Logger(ctx)
 
 	// calculate the age of the evidence
-	time := ctx.BlockHeader().Time
-	age := time.Sub(timestamp)
+	blocktime := ctx.BlockHeader().Time
+	age := blocktime.Sub(timestamp)
 
 	// fetch the validator public key
 	consAddr := sdk.ConsAddress(addr)
@@ -100,7 +101,7 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	}
 
 	// fetch the validator signing info
-	signInfo, found := k.getValidatorSigningInfo(consAddr)
+	signInfo, found := k.getValidatorSigningInfo(ctx, consAddr)
 	if !found {
 		panic(fmt.Sprintf("Expected signing info for validator %s but not found", consAddr))
 	}
@@ -136,7 +137,7 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 			sdk.NewAttribute(types.AttributeKeyReason, types.AttributeValueDoubleSign),
 		),
 	)
-	k.slashValidator(ctx, consAddr, distributionHeight, power, fraction)
+	k.slashValidator(ctx, batch, consAddr, distributionHeight, power, fraction)
 
 	// Jail validator if not already jailed
 	// begin unbonding validator if not already unbonding (tombstone)
@@ -157,10 +158,10 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	signInfo.JailedUntil = types.DoubleSignJailEndTime
 
 	// Set validator signing info
-	k.SetValidatorSigningInfo(consAddr, signInfo)
+	k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 }
 
-func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, power int64, signed bool, blockCount int64) {
+func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr crypto.Address, power int64, signed bool, blockCount int64) {
 	logger := k.Logger(ctx)
 	height := ctx.BlockHeight()
 	consAddr := sdk.ConsAddress(addr)
@@ -172,7 +173,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
 	}
 
-	k.setMissingBlocksForValidator(consAddr, missedBlocks)
+	k.setMissingBlocksForValidator(batch, consAddr, missedBlocks)
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
@@ -206,11 +207,11 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 				),
 			)
 
-			k.slashValidator(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
+			k.slashValidator(ctx, batch, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
 			k.sk.Jail(ctx, consAddr)
 
 			// fetch signing info
-			signInfo, found := k.getValidatorSigningInfo(consAddr)
+			signInfo, found := k.getValidatorSigningInfo(ctx, consAddr)
 			if !found {
 				panic(fmt.Sprintf("Expected signing info for validator %s but not found", consAddr))
 			}
@@ -218,8 +219,8 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr crypto.Address, p
 			signInfo.JailedUntil = ctx.BlockHeader().Time.Add(k.DowntimeJailDuration(ctx))
 
 			// Reset number of blocks missed.
-			k.deleteMissingBlocksForValidator(consAddr)
-			k.SetValidatorSigningInfo(consAddr, signInfo)
+			k.deleteMissingBlocksForValidator(batch, consAddr)
+			k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 		} else {
 			// Validator was (a) not found or (b) already jailed, don't slash
 			logger.Info(
@@ -248,7 +249,7 @@ func (k Keeper) getMissingBlocksForValidator(address sdk.ConsAddress) []time.Tim
 	return res
 }
 
-func (k Keeper) setMissingBlocksForValidator(address sdk.ConsAddress, missingBlocks []time.Time) {
+func (k Keeper) setMissingBlocksForValidator(batch db.Batch, address sdk.ConsAddress, missingBlocks []time.Time) {
 	bz := new(bytes.Buffer)
 	enc := gob.NewEncoder(bz)
 	err := enc.Encode(missingBlocks)
@@ -257,15 +258,15 @@ func (k Keeper) setMissingBlocksForValidator(address sdk.ConsAddress, missingBlo
 	}
 
 	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
-	k.database.Set(key, bz.Bytes())
+	batch.Set(key, bz.Bytes())
 }
 
-func (k Keeper) deleteMissingBlocksForValidator(address sdk.ConsAddress) {
+func (k Keeper) deleteMissingBlocksForValidator(batch db.Batch, address sdk.ConsAddress) {
 	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
-	k.database.Delete(key)
+	batch.Delete(key)
 }
 
-func (k Keeper) handlePendingPenalties(ctx sdk.Context, vfn func() map[string]bool) {
+func (k Keeper) handlePendingPenalties(ctx sdk.Context, batch db.Batch, vfn func() map[string]bool) {
 	activePenalties := k.getPendingPenalties()
 	if len(activePenalties) == 0 {
 		return
@@ -286,17 +287,17 @@ func (k Keeper) handlePendingPenalties(ctx sdk.Context, vfn func() map[string]bo
 		}
 	}
 
-	k.setPendingPenalties(activePenalties)
+	k.setPendingPenalties(batch, activePenalties)
 }
 
-func (k Keeper) setPendingPenalties(penalties map[string]sdk.Coins) {
+func (k Keeper) setPendingPenalties(batch db.Batch, penalties map[string]sdk.Coins) {
 	if len(penalties) == 0 {
-		k.database.Delete([]byte(dbKeyPendingPenalties))
+		batch.Delete([]byte(dbKeyPendingPenalties))
 		return
 	}
 
 	bz := k.cdc.MustMarshalJSON(penalties)
-	k.database.Set([]byte(dbKeyPendingPenalties), bz)
+	batch.Set([]byte(dbKeyPendingPenalties), bz)
 }
 
 func (k Keeper) getPendingPenalties() map[string]sdk.Coins {
@@ -311,7 +312,27 @@ func (k Keeper) getPendingPenalties() map[string]sdk.Coins {
 	return activePenalties
 }
 
-func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeight int64, power int64, slashFactor sdk.Dec) {
+func (k Keeper) getBlockTimes() []time.Time {
+	bz := k.database.Get([]byte(dbKeyBlockTimes))
+	if len(bz) == 0 {
+		return make([]time.Time, 0)
+	}
+
+	b := bytes.NewBuffer(bz)
+	blockTimes := make([]time.Time, 0)
+	dec := gob.NewDecoder(b)
+	_ = dec.Decode(&blockTimes)
+	return blockTimes
+}
+
+func (k Keeper) setBlockTimes(batch db.Batch, blockTimes []time.Time) {
+	bz := new(bytes.Buffer)
+	enc := gob.NewEncoder(bz)
+	_ = enc.Encode(blockTimes)
+	batch.Set([]byte(dbKeyBlockTimes), bz.Bytes())
+}
+
+func (k Keeper) slashValidator(ctx sdk.Context, batch db.Batch, consAddr sdk.ConsAddress, infractionHeight int64, power int64, slashFactor sdk.Dec) {
 	k.sk.Slash(ctx, consAddr, infractionHeight, power, slashFactor)
 
 	// Mint the slashed coins and assign them to the distribution pool.
@@ -331,7 +352,7 @@ func (k Keeper) slashValidator(ctx sdk.Context, consAddr sdk.ConsAddress, infrac
 	activePenalties := k.getPendingPenalties()
 	activePenalties[consAddr.String()] = coins
 
-	k.setPendingPenalties(activePenalties)
+	k.setPendingPenalties(batch, activePenalties)
 }
 
 // Adopted from cosmos-sdk/x/staking/keeper/slash.go

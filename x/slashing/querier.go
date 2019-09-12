@@ -37,7 +37,7 @@ func queryParams(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 	return res, nil
 }
 
-func querySigningInfo(_ sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
+func querySigningInfo(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
 	var params QuerySigningInfoParams
 
 	err := ModuleCdc.UnmarshalJSON(req.Data, &params)
@@ -45,7 +45,7 @@ func querySigningInfo(_ sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, s
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
 	}
 
-	signingInfo, found := k.getValidatorSigningInfo(params.ConsAddress)
+	signingInfo, found := k.getValidatorSigningInfo(ctx, params.ConsAddress)
 	if !found {
 		return nil, ErrNoSigningInfoFound(DefaultCodespace, params.ConsAddress)
 	}

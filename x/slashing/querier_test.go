@@ -1,6 +1,7 @@
 package slashing
 
 import (
+	"github.com/tendermint/tendermint/libs/db"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestNewQuerier(t *testing.T) {
-	ctx, _, _, _, keeper, _ := createTestInput(t, keeperTestParams())
+	ctx, _, _, _, keeper, _ := createTestInput(t, keeperTestParams(), db.NewMemDB())
 	querier := NewQuerier(keeper)
 
 	query := abci.RequestQuery{
@@ -24,7 +25,7 @@ func TestNewQuerier(t *testing.T) {
 
 func TestQueryParams(t *testing.T) {
 	cdc := codec.New()
-	ctx, _, _, _, keeper, _ := createTestInput(t, keeperTestParams())
+	ctx, _, _, _, keeper, _ := createTestInput(t, keeperTestParams(), db.NewMemDB())
 
 	var params Params
 

@@ -2,6 +2,7 @@ package slashing
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/libs/db"
 	"sort"
 	"time"
 
@@ -11,24 +12,22 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var (
-	blockTimes []time.Time
-)
-
 // slashing begin block functionality
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
+func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper, batch db.Batch) {
 	signedBlocksWindow := sk.SignedBlocksWindowDuration(ctx)
 
+	blockTimes := sk.getBlockTimes()
 	blockTimes = append(blockTimes, ctx.BlockTime())
 	blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
+	sk.setBlockTimes(batch, blockTimes)
 
-	sk.handlePendingPenalties(ctx, validatorset(req.LastCommitInfo.Votes))
+	sk.handlePendingPenalties(ctx, batch, validatorset(req.LastCommitInfo.Votes))
 
 	// Iterate over all the validators which *should* have signed this block
 	// store whether or not they have actually signed it and slash/unbond any
 	// which have missed too many blocks in a row (downtime slashing)
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
-		sk.HandleValidatorSignature(ctx, voteInfo.Validator.Address, voteInfo.Validator.Power, voteInfo.SignedLastBlock, int64(len(blockTimes)))
+		sk.HandleValidatorSignature(ctx, batch, voteInfo.Validator.Address, voteInfo.Validator.Power, voteInfo.SignedLastBlock, int64(len(blockTimes)))
 	}
 
 	// Iterate through any newly discovered evidence of infraction
@@ -37,7 +36,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) {
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
-			sk.HandleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power)
+			sk.HandleDoubleSign(ctx, batch, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power)
 		default:
 			sk.Logger(ctx).Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
