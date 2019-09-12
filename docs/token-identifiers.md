@@ -5,7 +5,7 @@ This should be possible by relying solely on the token identifier, so that token
 
 Referencing the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) standard for currencies, our token identifiers contain the "Exponent" inserted into the second character of the "Alphabetic Identier": 
 
-Identifier: &lt;first-alpha&gt;&lt;exponent&gt;&lt;subsequent-alpha&gt;
+Identifier: &lt;first-alpha&gt;&lt;exponent&gt;&lt;subsequent-alphas&gt;
 
 Notice that the exponent can consist of multiple digits (> 9), so a parser must consume digits until it reaches the subsequent-alpha.
 
