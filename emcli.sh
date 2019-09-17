@@ -3,4 +3,4 @@
 # Purpose of this script is to provide easy access to emcli while the executables
 # are compiled for linux in order to run in docker.
 
-go run cmd/cli/*.go "$@" --node tcp://localhost:26657 --chain-id localnet
+go run cmd/cli/*.go "$@"
