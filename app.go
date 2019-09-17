@@ -4,6 +4,7 @@ import (
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
 	"emoney/x/issuance"
+	"emoney/x/liquidityprovider"
 	"emoney/x/slashing"
 	"encoding/json"
 	"fmt"
@@ -47,6 +48,7 @@ var (
 		distr.AppModuleBasic{},
 		issuance.AppModuleBasic{},
 		slashing.AppModuleBasic{},
+		liquidityprovider.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -88,6 +90,7 @@ type emoneyApp struct {
 	inflationKeeper inflation.Keeper
 	distrKeeper     distr.Keeper
 	slashingKeeper  slashing.Keeper
+	lpKeeper        liquidityprovider.Keeper
 
 	mm *module.Manager
 }
@@ -140,6 +143,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing)
 
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
+	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
@@ -152,6 +156,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
 		issuance.NewAppModule(),
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
+		liquidityprovider.NewAppModule(application.lpKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below

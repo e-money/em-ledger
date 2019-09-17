@@ -1,11 +1,12 @@
-package issuance
+package liquidityprovider
 
 import (
-	"emoney/x/issuance/client/cli"
+	"emoney/x/liquidityprovider/types"
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
+
+	"emoney/x/issuance/client/cli"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
+	"emoney/x/liquidityprovider/keeper"
 )
 
 const ModuleName = "issuance"
@@ -33,7 +36,9 @@ func (AppModuleBasic) Name() string {
 }
 
 // register module codec
-func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {}
+func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
+	types.RegisterCodec(cdc)
+}
 
 // default genesis state
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
@@ -72,14 +77,14 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // app module
 type AppModule struct {
 	AppModuleBasic
-	//keeper Keeper
+	keeper keeper.Keeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule() AppModule {
+func NewAppModule(k keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		//keeper:         keeper,
+		keeper:         k,
 	}
 }
 
@@ -92,17 +97,16 @@ func (AppModule) Name() string {
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // module message route name
-func (AppModule) Route() string { return "" }
+func (AppModule) Route() string { return types.ModuleName }
 
 // module handler
 func (am AppModule) NewHandler() sdk.Handler {
-	return newHandler()
+	return newHandler(am.keeper)
 }
 
 // module querier route name
 func (AppModule) QuerierRoute() string {
-	//return QuerierRoute
-	return ModuleName
+	return types.QuerierRoute
 }
 
 // module querier
@@ -118,6 +122,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 	//var genesisState GenesisState
 	//ModuleCdc.MustUnmarshalJSON(data, &genesisState)
 	//InitGenesis(ctx, am.keeper, genesisState)
+
 	return []abci.ValidatorUpdate{}
 }
 
@@ -129,7 +134,6 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 // module begin-block
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
-	fmt.Println(" *** BeginBlock in Issuance module")
 	//BeginBlocker(ctx, am.keeper)
 }
 

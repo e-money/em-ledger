@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"os"
 
@@ -11,6 +14,8 @@ import (
 	app "emoney"
 	"emoney/types"
 	"emoney/util"
+	lpcli "emoney/x/liquidityprovider/client/cli"
+	lptypes "emoney/x/liquidityprovider/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -47,6 +52,7 @@ func main() {
 		txCmds(cdc),
 		lcd.ServeCommand(cdc, registerLCDRoutes),
 		keys.Commands(),
+		lpcli.GetTxCmd(cdc),
 		version.Cmd,
 	)
 
@@ -61,6 +67,22 @@ func main() {
 		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
 		os.Exit(1)
 	}
+}
+
+func init() {
+	registerTypesInAuthModule()
+}
+
+func registerTypesInAuthModule() {
+	// The auth module's codec must be updated with the account types introduced by the liquidityprovider module
+	authcdc := codec.New()
+
+	codec.RegisterCrypto(authcdc)
+	lptypes.RegisterCodec(authcdc)
+	authtypes.RegisterCodec(authcdc)
+
+	authtypes.ModuleCdc = authcdc
+	auth.ModuleCdc = authcdc
 }
 
 func txCmds(cdc *amino.Codec) *cobra.Command {
