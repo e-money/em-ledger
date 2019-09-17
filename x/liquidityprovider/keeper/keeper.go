@@ -49,8 +49,8 @@ func (k Keeper) MintTokensFromCredit(ctx sdk.Context, liquidityProvider sdk.AccA
 		return
 	}
 
-	credit, ok := account.Credit.SafeSub(amount)
-	if !ok {
+	credit, anyNegative := account.Credit.SafeSub(amount)
+	if anyNegative {
 		logger.Debug(fmt.Sprintf("Insufficient credit for minting operation"), "requested", amount, "available", account.Credit)
 		fmt.Println(" *** Insufficient credit for minting", amount, account.Credit)
 		return
