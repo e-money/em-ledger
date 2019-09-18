@@ -56,6 +56,10 @@ func TestCreateAndMint(t *testing.T) {
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
+
+	// Ensure that credit available has been correspondingly reduced
+	lpAcc := keeper.getLiquidityProviderAccount(ctx, acc)
+	assert.Equal(t, defaultCredit.Sub(toMint), lpAcc.Credit)
 }
 
 func TestMintTooMuch(t *testing.T) {
@@ -76,9 +80,13 @@ func TestMintTooMuch(t *testing.T) {
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance, account.GetCoins())
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
+
+	// Ensure that credit of account has not been modified by failed attempt to mint.
+	lpAcc := keeper.getLiquidityProviderAccount(ctx, acc)
+	assert.Equal(t, defaultCredit, lpAcc.Credit)
 }
 
-func TestMintMultiple(t *testing.T) {
+func TestMintMultipleDenoms(t *testing.T) {
 	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
 
 	jpy := sdk.NewCoins(sdk.NewCoin("x0jpy", sdk.NewInt(1000000)))
@@ -102,6 +110,27 @@ func TestMintMultiple(t *testing.T) {
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
+
+	// Ensure that credit available has been correspondingly reduced
+	lpAcc := keeper.getLiquidityProviderAccount(ctx, acc)
+	assert.Equal(t, extendedCredit.Sub(toMint), lpAcc.Credit)
+}
+
+func TestMintWithoutLPAccount(t *testing.T) {
+	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+
+	acc := accAddr1
+	account := ak.NewAccountWithAddress(ctx, acc)
+	_ = account.SetCoins(initialBalance)
+	ak.SetAccount(ctx, account)
+
+	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
+	keeper.MintTokensFromCredit(ctx, acc, toMint)
+
+	account = ak.GetAccount(ctx, acc)
+	assert.IsType(t, &auth.BaseAccount{}, account)
+	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
+	assert.Equal(t, initialBalance, account.GetCoins())
 }
 
 func makeTestCodec() (cdc *codec.Codec) {
