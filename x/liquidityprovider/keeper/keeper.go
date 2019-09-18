@@ -21,14 +21,10 @@ func NewKeeper(ak auth.AccountKeeper, sk supply.Keeper) Keeper {
 	}
 }
 
-func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress) {
+func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress, credit sdk.Coins) {
 	logger := k.Logger(ctx)
 
 	account := k.authKeeper.GetAccount(ctx, address)
-	credit := sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2)),
-	)
-
 	lpAcc := types.NewLiquidityProviderAccount(account, credit)
 	k.authKeeper.SetAccount(ctx, lpAcc)
 
