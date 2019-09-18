@@ -1,7 +1,7 @@
 package issuance
 
 import (
-	"emoney/x/issuance/client/cli"
+	"emoney/x/issuer/client/cli"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"

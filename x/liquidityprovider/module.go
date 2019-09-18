@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
-	"emoney/x/issuance/client/cli"
+	"emoney/x/issuer/client/cli"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 

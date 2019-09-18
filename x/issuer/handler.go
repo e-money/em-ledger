@@ -1,7 +1,7 @@
 package issuance
 
 import (
-	"emoney/x/issuance/types"
+	"emoney/x/issuer/types"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

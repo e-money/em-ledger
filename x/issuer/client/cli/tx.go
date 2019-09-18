@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"emoney/x/issuance/types"
+	"emoney/x/issuer/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 

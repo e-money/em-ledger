@@ -3,7 +3,7 @@ package emoney
 import (
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
-	"emoney/x/issuance"
+	"emoney/x/issuer"
 	"emoney/x/liquidityprovider"
 	"emoney/x/slashing"
 	"encoding/json"
