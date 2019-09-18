@@ -53,13 +53,14 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     nil,
-		distr.ModuleName:          nil,
-		inflation.ModuleName:      {supply.Minter},
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		slashing.ModuleName:       {supply.Minter},
-		slashing.PenaltyAccount:   nil,
+		auth.FeeCollectorName:        nil,
+		distr.ModuleName:             nil,
+		inflation.ModuleName:         {supply.Minter},
+		staking.BondedPoolName:       {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName:    {supply.Burner, supply.Staking},
+		slashing.ModuleName:          {supply.Minter},
+		slashing.PenaltyAccount:      nil,
+		liquidityprovider.ModuleName: {supply.Minter},
 		//gov.ModuleName:            {supply.Burner},
 	}
 )

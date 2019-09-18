@@ -22,49 +22,61 @@ func NewKeeper(ak auth.AccountKeeper, sk supply.Keeper) Keeper {
 }
 
 func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress) {
-	account := k.authKeeper.GetAccount(ctx, address)
-	fmt.Println(" *** Retrieved account\n", account)
+	logger := k.Logger(ctx)
 
+	account := k.authKeeper.GetAccount(ctx, address)
 	credit := sdk.NewCoins(
 		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2)),
 	)
 
 	lpAcc := types.NewLiquidityProviderAccount(account, credit)
-
 	k.authKeeper.SetAccount(ctx, lpAcc)
-	fmt.Println(" *** Created LP account\n", lpAcc)
+
+	logger.Info("Created liquidity provider account.", "account", lpAcc.GetAddress())
 }
 
 func (k Keeper) MintTokensFromCredit(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) {
-	fmt.Println(" *** Mint tokens in keeper")
 	logger := k.Logger(ctx)
 
-	a := k.authKeeper.GetAccount(ctx, liquidityProvider)
-	fmt.Println(" *** Getting account")
-
-	account, ok := a.(types.LiquidityProviderAccount)
-	if !ok {
-		logger.Debug(fmt.Sprintf("Account is not a liquidity provider"), "address", liquidityProvider)
-		fmt.Println(" *** Account is not a liquidity provider!")
+	account := k.getLiquidityProviderAccount(ctx, liquidityProvider)
+	if account == nil {
 		return
 	}
 
-	credit, anyNegative := account.Credit.SafeSub(amount)
+	updatedCredit, anyNegative := account.Credit.SafeSub(amount)
 	if anyNegative {
 		logger.Debug(fmt.Sprintf("Insufficient credit for minting operation"), "requested", amount, "available", account.Credit)
 		fmt.Println(" *** Insufficient credit for minting", amount, account.Credit)
 		return
 	}
 
-	account.Credit = credit
+	err := k.supplyKeeper.MintCoins(ctx, types.ModuleName, amount)
+	if err != nil {
+		panic(err)
+	}
 
-	balance := account.GetCoins()
-	balance = balance.Add(amount)
-	account.SetCoins(balance)
+	err = k.supplyKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, liquidityProvider, amount)
+	if err != nil {
+		panic(err)
+	}
 
-	// TODO Ought to trigger the supply module
-	fmt.Println(" *** Storing account state in IAVL.")
+	account = k.getLiquidityProviderAccount(ctx, liquidityProvider)
+	account.Credit = updatedCredit
 	k.authKeeper.SetAccount(ctx, account)
+}
+
+func (k Keeper) getLiquidityProviderAccount(ctx sdk.Context, liquidityProvider sdk.AccAddress) *types.LiquidityProviderAccount {
+	logger := k.Logger(ctx)
+
+	a := k.authKeeper.GetAccount(ctx, liquidityProvider)
+	account, ok := a.(types.LiquidityProviderAccount)
+	if !ok {
+		logger.Debug(fmt.Sprintf("Account is not a liquidity provider"), "address", liquidityProvider)
+		fmt.Printf(" *** Account is not a liquidity provider: %T\n", a)
+		return nil
+	}
+
+	return &account
 }
 
 // Logger returns a module-specific logger.

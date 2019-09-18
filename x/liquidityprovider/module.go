@@ -18,8 +18,6 @@ import (
 	"emoney/x/liquidityprovider/keeper"
 )
 
-const ModuleName = "issuance"
-
 var (
 	_ module.AppModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}

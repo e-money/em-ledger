@@ -5,9 +5,12 @@ import (
 	"emoney/x/liquidityprovider/types"
 )
 
+const (
+	ModuleName = types.ModuleName
+)
+
 var (
 	ModuleCdc = types.ModuleCdc
-
 	NewKeeper = keeper.NewKeeper
 )
 
