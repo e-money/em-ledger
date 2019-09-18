@@ -53,7 +53,7 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), nil)
 
-	executor := cli.PrepareBaseCmd(rootCmd, "EMD", ".")
+	executor := cli.PrepareBaseCmd(rootCmd, "EMD", app.DefaultNodeHome)
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
