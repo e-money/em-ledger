@@ -27,21 +27,21 @@ var (
 	defaultCredit = sdk.NewCoins(
 		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2)),
 	)
-)
 
-func TestCreateAndMint(t *testing.T) {
-	initialBalance := sdk.NewCoins(
+	initialBalance = sdk.NewCoins(
 		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(50, 2)),
 		sdk.NewCoin("x0jpy", sdk.NewInt(250)),
 	)
+)
 
+func TestCreateAndMint(t *testing.T) {
 	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
 
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
-	account.SetCoins(initialBalance)
+	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
 
 	// Turn account into a LP
@@ -53,6 +53,52 @@ func TestCreateAndMint(t *testing.T) {
 	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
 	keeper.MintTokensFromCredit(ctx, acc, toMint)
 
+	account = ak.GetAccount(ctx, acc)
+	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
+	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
+}
+
+func TestMintTooMuch(t *testing.T) {
+	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+
+	acc := accAddr1
+	account := ak.NewAccountWithAddress(ctx, acc)
+	_ = account.SetCoins(initialBalance)
+	ak.SetAccount(ctx, account)
+
+	// Turn account into a LP
+	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	account = ak.GetAccount(ctx, acc)
+
+	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(5000, 2)))
+	keeper.MintTokensFromCredit(ctx, acc, toMint)
+
+	account = ak.GetAccount(ctx, acc)
+	assert.Equal(t, initialBalance, account.GetCoins())
+	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
+}
+
+func TestMintMultiple(t *testing.T) {
+	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+
+	jpy := sdk.NewCoins(sdk.NewCoin("x0jpy", sdk.NewInt(1000000)))
+	extendedCredit := defaultCredit.Add(jpy)
+
+	acc := accAddr1
+	account := ak.NewAccountWithAddress(ctx, acc)
+	_ = account.SetCoins(initialBalance)
+	ak.SetAccount(ctx, account)
+
+	// Turn account into a LP
+	keeper.CreateLiquidityProvider(ctx, acc, extendedCredit)
+	account = ak.GetAccount(ctx, acc)
+
+	toMint := sdk.NewCoins(
+		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)),
+		sdk.NewCoin("x0jpy", sdk.NewInt(500000)),
+	)
+
+	keeper.MintTokensFromCredit(ctx, acc, toMint)
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
