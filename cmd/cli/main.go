@@ -75,6 +75,8 @@ func init() {
 
 func registerTypesInAuthModule() {
 	// The auth module's codec must be updated with the account types introduced by the liquidityprovider module
+	// When https://github.com/cosmos/cosmos-sdk/pull/5017 is in the used Cosmos-sdk, consider switching to it.
+	// https://github.com/cosmos/cosmos-sdk/blob/1d16d34b1b35cb65405f84b632d228ed8fc329fc/docs/architecture/adr-011-generalize-genesis-accounts.md
 	authcdc := codec.New()
 
 	codec.RegisterCrypto(authcdc)
