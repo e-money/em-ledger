@@ -1,13 +1,17 @@
 package emoney
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+
 	emdistr "emoney/hooks/distribution"
 	"emoney/x/inflation"
 	"emoney/x/issuer"
 	"emoney/x/liquidityprovider"
 	"emoney/x/slashing"
-	"encoding/json"
-	"fmt"
+
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -22,11 +26,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"os"
-	"path/filepath"
 )
 
 const (
@@ -46,9 +49,9 @@ var (
 		staking.AppModuleBasic{},
 		inflation.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		issuance.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		liquidityprovider.AppModuleBasic{},
+		issuer.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -92,6 +95,7 @@ type emoneyApp struct {
 	distrKeeper     distr.Keeper
 	slashingKeeper  slashing.Keeper
 	lpKeeper        liquidityprovider.Keeper
+	issuerKeeper    issuer.Keeper
 
 	mm *module.Manager
 }
@@ -145,6 +149,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
+	application.issuerKeeper = issuer.NewKeeper(application.lpKeeper)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
@@ -155,9 +160,9 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.inflationKeeper),
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
-		issuance.NewAppModule(),
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
 		liquidityprovider.NewAppModule(application.lpKeeper),
+		issuer.NewAppModule(application.issuerKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below

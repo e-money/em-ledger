@@ -1,4 +1,4 @@
-package issuance
+package issuer
 
 type genesisState struct{}
 

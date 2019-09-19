@@ -2,59 +2,46 @@ package types
 
 import (
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var (
-	_ sdk.Msg = MsgMintTokens{}
-	_ sdk.Msg = MsgBurnTokens{}
+	_ sdk.Msg = MsgIncreaseCredit{}
 )
 
-type MsgMintTokens struct {
-	Coins  sdk.Coins      `json:"coins"`
-	Issuer sdk.AccAddress `json:"issuer"`
+// Increase the credit of a liquidity provider. If the account is not previously an LP, it will be made one.
+type MsgIncreaseCredit struct {
+	CreditIncrease    sdk.Coins
+	LiquidityProvider sdk.AccAddress
+	Issuer            sdk.AccAddress
 }
 
-type MsgBurnTokens struct{}
+func (msg MsgIncreaseCredit) Route() string { return ModuleName }
 
-func (m MsgMintTokens) Route() string {
-	return "issuance"
-}
+func (msg MsgIncreaseCredit) Type() string { return "increaseCredit" }
 
-func (m MsgMintTokens) Type() string {
-	return "mint_tokens"
-}
+func (msg MsgIncreaseCredit) ValidateBasic() sdk.Error {
+	if msg.LiquidityProvider.Empty() {
+		return sdk.ErrInvalidAddress("missing liquidity provider address")
+	}
 
-func (m MsgMintTokens) ValidateBasic() sdk.Error {
-	fmt.Println(" *** Validating mint msg.")
+	if msg.Issuer.Empty() {
+		return sdk.ErrInvalidAddress("missing issuer address")
+	}
+
+	if !msg.CreditIncrease.IsValid() {
+		return sdk.ErrInvalidCoins("credit increase is invalid: " + msg.CreditIncrease.String())
+	}
+
+	fmt.Println(" *** Message is valid!")
+
 	return nil
 }
 
-func (m MsgMintTokens) GetSignBytes() []byte {
-	return []byte{}
+func (msg MsgIncreaseCredit) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
-func (m MsgMintTokens) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{}
-}
-
-func (m MsgBurnTokens) Route() string {
-	return "issuance"
-}
-
-func (m MsgBurnTokens) Type() string {
-	return "burn_tokens"
-}
-
-func (m MsgBurnTokens) ValidateBasic() sdk.Error {
-	return nil
-}
-
-func (m MsgBurnTokens) GetSignBytes() []byte {
-	return []byte{}
-}
-
-func (m MsgBurnTokens) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{}
+func (msg MsgIncreaseCredit) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Issuer}
 }

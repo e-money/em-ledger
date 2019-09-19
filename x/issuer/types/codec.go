@@ -8,8 +8,7 @@ import (
 var ModuleCdc *codec.Codec
 
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(LiquidityProviderAccount{}, "e-money/LiquidityProviderAccount", nil)
-	cdc.RegisterConcrete(MsgMintTokens{}, "e-money/MsgMintTokens", nil)
+	cdc.RegisterConcrete(MsgIncreaseCredit{}, "e-money/MsgIncreaseCredit", nil)
 }
 
 func init() {

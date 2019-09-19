@@ -6,13 +6,7 @@ import (
 
 var (
 	_ sdk.Msg = MsgMintTokens{}
-	_ sdk.Msg = MsgDevTracerBullet{}
 )
-
-// DEBUG message that can be used to trigger temporary functionality
-type MsgDevTracerBullet struct {
-	Sender sdk.AccAddress
-}
 
 type MsgMintTokens struct {
 	Amount            sdk.Coins
@@ -45,22 +39,4 @@ func (msg MsgMintTokens) GetSignBytes() []byte {
 
 func (msg MsgMintTokens) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.LiquidityProvider}
-}
-
-func (msg MsgDevTracerBullet) Route() string { return RouterKey }
-
-func (msg MsgDevTracerBullet) Type() string {
-	return "DEBUG"
-}
-
-func (msg MsgDevTracerBullet) ValidateBasic() sdk.Error {
-	return nil
-}
-
-func (msg MsgDevTracerBullet) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
-}
-
-func (msg MsgDevTracerBullet) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
 }

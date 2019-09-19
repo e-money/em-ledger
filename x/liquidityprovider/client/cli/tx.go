@@ -15,7 +15,6 @@ import (
 )
 
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-
 	lpCmds := &cobra.Command{
 		Use:                "liquidityprovider",
 		Aliases:            []string{"lp"},
@@ -24,7 +23,6 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	lpCmds.AddCommand(client.PostCommands(
-		getCmdDebug(cdc),
 		getCmdMint(cdc),
 	)...)
 
@@ -56,28 +54,4 @@ func getCmdMint(cdc *codec.Codec) *cobra.Command {
 			return result
 		},
 	}
-}
-
-func getCmdDebug(cdc *codec.Codec) *cobra.Command {
-	debug := &cobra.Command{
-		Use:  "debug",
-		Args: cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			msg := types.MsgDevTracerBullet{
-				Sender: cliCtx.GetFromAddress(),
-			}
-
-			err := msg.ValidateBasic()
-			if err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-
-	return debug
 }

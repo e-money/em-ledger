@@ -1,12 +1,11 @@
 package liquidityprovider
 
 import (
+	"emoney/x/liquidityprovider/client/cli"
 	"emoney/x/liquidityprovider/types"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-
-	"emoney/x/issuer/client/cli"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -62,7 +61,7 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router
 
 // get the root tx command of this module
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd("", cdc)
+	return cli.GetTxCmd(cdc)
 }
 
 // get the root query command of this module

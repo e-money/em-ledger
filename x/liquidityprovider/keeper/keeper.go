@@ -25,6 +25,10 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress,
 	logger := k.Logger(ctx)
 
 	account := k.authKeeper.GetAccount(ctx, address)
+	if account == nil {
+		logger.Info("Account not found", "account", address)
+		return
+	}
 	lpAcc := types.NewLiquidityProviderAccount(account, credit)
 	k.authKeeper.SetAccount(ctx, lpAcc)
 
@@ -34,7 +38,7 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress,
 func (k Keeper) MintTokensFromCredit(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) {
 	logger := k.Logger(ctx)
 
-	account := k.getLiquidityProviderAccount(ctx, liquidityProvider)
+	account := k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if account == nil {
 		return
 	}
@@ -56,19 +60,22 @@ func (k Keeper) MintTokensFromCredit(ctx sdk.Context, liquidityProvider sdk.AccA
 		panic(err)
 	}
 
-	account = k.getLiquidityProviderAccount(ctx, liquidityProvider)
+	account = k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	account.Credit = updatedCredit
+	k.SetLiquidityProviderAccount(ctx, account)
+}
+
+func (k Keeper) SetLiquidityProviderAccount(ctx sdk.Context, account *types.LiquidityProviderAccount) {
 	k.authKeeper.SetAccount(ctx, account)
 }
 
-func (k Keeper) getLiquidityProviderAccount(ctx sdk.Context, liquidityProvider sdk.AccAddress) *types.LiquidityProviderAccount {
+func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, liquidityProvider sdk.AccAddress) *types.LiquidityProviderAccount {
 	logger := k.Logger(ctx)
 
 	a := k.authKeeper.GetAccount(ctx, liquidityProvider)
 	account, ok := a.(types.LiquidityProviderAccount)
 	if !ok {
 		logger.Debug(fmt.Sprintf("Account is not a liquidity provider"), "address", liquidityProvider)
-		fmt.Printf(" *** Account is not a liquidity provider: %T\n", a)
 		return nil
 	}
 

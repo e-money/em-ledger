@@ -58,7 +58,7 @@ func TestCreateAndMint(t *testing.T) {
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
 
 	// Ensure that credit available has been correspondingly reduced
-	lpAcc := keeper.getLiquidityProviderAccount(ctx, acc)
+	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
 	assert.Equal(t, defaultCredit.Sub(toMint), lpAcc.Credit)
 }
 
@@ -82,7 +82,7 @@ func TestMintTooMuch(t *testing.T) {
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
 
 	// Ensure that credit of account has not been modified by failed attempt to mint.
-	lpAcc := keeper.getLiquidityProviderAccount(ctx, acc)
+	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
 	assert.Equal(t, defaultCredit, lpAcc.Credit)
 }
 
@@ -112,7 +112,7 @@ func TestMintMultipleDenoms(t *testing.T) {
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
 
 	// Ensure that credit available has been correspondingly reduced
-	lpAcc := keeper.getLiquidityProviderAccount(ctx, acc)
+	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
 	assert.Equal(t, extendedCredit.Sub(toMint), lpAcc.Credit)
 }
 
@@ -131,6 +131,14 @@ func TestMintWithoutLPAccount(t *testing.T) {
 	assert.IsType(t, &auth.BaseAccount{}, account)
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
 	assert.Equal(t, initialBalance, account.GetCoins())
+}
+
+func TestAccountNotFound(t *testing.T) {
+	ctx, ak, _, _, keeper := createTestComponents(t, initialBalance)
+
+	acc := accAddr1
+	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	assert.Nil(t, ak.GetAccount(ctx, acc))
 }
 
 func makeTestCodec() (cdc *codec.Codec) {

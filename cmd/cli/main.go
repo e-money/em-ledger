@@ -14,6 +14,7 @@ import (
 	app "emoney"
 	"emoney/types"
 	"emoney/util"
+	issuercli "emoney/x/issuer/client/cli"
 	lpcli "emoney/x/liquidityprovider/client/cli"
 	lptypes "emoney/x/liquidityprovider/types"
 
@@ -53,6 +54,7 @@ func main() {
 		lcd.ServeCommand(cdc, registerLCDRoutes),
 		keys.Commands(),
 		lpcli.GetTxCmd(cdc),
+		issuercli.GetTxCmd(cdc),
 		version.Cmd,
 	)
 
@@ -93,7 +95,8 @@ func txCmds(cdc *amino.Codec) *cobra.Command {
 		Short: "Transactions subcommands",
 	}
 
-	txCmd.AddCommand(bankcmd.SendTxCmd(cdc),
+	txCmd.AddCommand(
+		bankcmd.SendTxCmd(cdc),
 		authcmd.GetSignCommand(cdc),
 		authcmd.GetMultiSignCommand(cdc),
 		authcmd.GetBroadcastCommand(cdc),
