@@ -16,8 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
-const ModuleName = "issuance"
-
 var (
 	_ module.AppModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
@@ -98,9 +96,9 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	//var genesisState GenesisState
-	//ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	//InitGenesis(ctx, am.keeper, genesisState)
+	var genesisState genesisState
+	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
+	initGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
 

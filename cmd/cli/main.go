@@ -12,7 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	app "emoney"
-	"emoney/types"
+	apptypes "emoney/types"
 	"emoney/util"
 	issuercli "emoney/x/issuer/client/cli"
 	lpcli "emoney/x/liquidityprovider/client/cli"
@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
@@ -32,13 +31,9 @@ import (
 
 func main() {
 	cobra.EnableCommandSorting = false
-	cdc := app.MakeCodec()
 
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(types.Bech32PrefixAccAddr, types.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(types.Bech32PrefixValAddr, types.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(types.Bech32PrefixConsAddr, types.Bech32PrefixConsPub)
-	config.Seal()
+	apptypes.ConfigureSDK()
+	cdc := app.MakeCodec()
 
 	rootCmd := &cobra.Command{
 		Use:   "emcli",

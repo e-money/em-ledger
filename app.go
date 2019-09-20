@@ -82,6 +82,7 @@ type emoneyApp struct {
 	keyMint     *sdk.KVStoreKey
 	keyDistr    *sdk.KVStoreKey
 	keySlashing *sdk.KVStoreKey
+	keyIssuer   *sdk.KVStoreKey
 
 	tkeyParams  *sdk.TransientStoreKey
 	tkeyStaking *sdk.TransientStoreKey
@@ -121,6 +122,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
 		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
 		keySlashing: sdk.NewKVStoreKey(slashing.StoreKey),
+		keyIssuer:   sdk.NewKVStoreKey(issuer.StoreKey),
 		database:    createApplicationDatabase(serverCtx),
 	}
 
@@ -143,13 +145,13 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 
 	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
 	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
-
-	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
-		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing)
-
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
-	application.issuerKeeper = issuer.NewKeeper(application.lpKeeper)
+	application.issuerKeeper = issuer.NewKeeper(application.keyIssuer, application.lpKeeper)
+
+	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
+		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing,
+		application.keyIssuer)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
@@ -177,6 +179,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		inflation.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
+		issuer.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())

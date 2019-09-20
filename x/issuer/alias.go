@@ -5,6 +5,11 @@ import (
 	"emoney/x/issuer/types"
 )
 
+const (
+	StoreKey   = types.StoreKey
+	ModuleName = types.ModuleName
+)
+
 var (
 	ModuleCdc = types.ModuleCdc
 	NewKeeper = keeper.NewKeeper

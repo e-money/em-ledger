@@ -21,6 +21,10 @@ func NewLiquidityProviderAccount(baseAccount auth.Account, credit sdk.Coins) *Li
 	}
 }
 
+func (acc *LiquidityProviderAccount) IncreaseCredit(increase sdk.Coins) {
+	acc.Credit = acc.Credit.Add(increase)
+}
+
 func (acc LiquidityProviderAccount) String() string {
 	var pubkey string
 

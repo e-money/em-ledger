@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -21,8 +20,9 @@ func TestBasic(t *testing.T) {
 	credit := sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2))
 	lpAcc := NewLiquidityProviderAccount(baseAcc, sdk.NewCoins(credit))
 
-	fmt.Println(lpAcc)
-
 	// The credit window is not considered spendable.
 	assert.Equal(t, sdk.NewCoins(), lpAcc.SpendableCoins(time.Now()))
+
+	lpAcc.IncreaseCredit(sdk.NewCoins(sdk.NewCoin("x0jpy", sdk.NewInt(400))))
+	assert.Equal(t, sdk.NewInt(400), lpAcc.Credit.AmountOf("x0jpy"))
 }
