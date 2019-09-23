@@ -7,6 +7,7 @@ import (
 var (
 	_ sdk.Msg = MsgIncreaseCredit{}
 	_ sdk.Msg = MsgDecreaseCredit{}
+	_ sdk.Msg = MsgRevokeLiquidityProvider{}
 )
 
 // Increase the credit of a liquidity provider. If the account is not previously an LP, it will be made one.
@@ -20,6 +21,35 @@ type MsgDecreaseCredit struct {
 	CreditDecrease    sdk.Coins
 	LiquidityProvider sdk.AccAddress
 	Issuer            sdk.AccAddress
+}
+
+type MsgRevokeLiquidityProvider struct {
+	LiquidityProvider sdk.AccAddress
+	Issuer            sdk.AccAddress
+}
+
+func (msg MsgRevokeLiquidityProvider) Route() string { return ModuleName }
+
+func (msg MsgRevokeLiquidityProvider) Type() string { return "revokeLiquidityProvider" }
+
+func (msg MsgRevokeLiquidityProvider) ValidateBasic() sdk.Error {
+	if msg.LiquidityProvider.Empty() {
+		return sdk.ErrInvalidAddress("missing liquidity provider address")
+	}
+
+	if msg.Issuer.Empty() {
+		return sdk.ErrInvalidAddress("missing issuer address")
+	}
+
+	return nil
+}
+
+func (msg MsgRevokeLiquidityProvider) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+func (msg MsgRevokeLiquidityProvider) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Issuer}
 }
 
 func (msg MsgDecreaseCredit) Route() string { return ModuleName }

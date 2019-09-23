@@ -3,7 +3,6 @@ package keeper
 import (
 	apptypes "emoney/types"
 	"emoney/x/liquidityprovider"
-	"os"
 	"sort"
 	"testing"
 
@@ -84,12 +83,12 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	credit := MustParseCoins("100000x2eur,5000x0jpy")
 
 	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
-	require.IsType(t, liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
+	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
 	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
 
 	// Verify the two increases in credit
-	a := ak.GetAccount(ctx, lpacc).(liquidityprovider.Account)
+	a := ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
 	expected := MustParseCoins("200000x2eur,10000x0jpy")
 	require.Equal(t, expected, a.Credit)
 
@@ -99,7 +98,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	require.NotNil(t, result)
 
 	// Verify unchanged credit
-	a = ak.GetAccount(ctx, lpacc).(liquidityprovider.Account)
+	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
 	require.Equal(t, expected, a.Credit)
 
 	// Decrease credit.
@@ -108,8 +107,41 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	require.Nil(t, result)
 
 	expected = MustParseCoins("150000x2eur,8000x0jpy")
-	a = ak.GetAccount(ctx, lpacc).(liquidityprovider.Account)
+	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
 	require.Equal(t, expected, a.Credit)
+}
+
+func TestAddAndRevokeLiquidityProvider(t *testing.T) {
+	ctx, ak, _, keeper := createTestComponents(t)
+
+	var (
+		iacc, _      = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		lpacc, _     = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		randomacc, _ = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+	)
+
+	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lpacc))
+
+	keeper.AddIssuer(ctx, types.NewIssuer(iacc, "x2eur", "x0jpy"))
+
+	credit := MustParseCoins("100000x2eur,5000x0jpy")
+
+	// Ensure that a random account can't create a LP
+	require.Panics(t, func() {
+		keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, randomacc, credit)
+	})
+
+	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, iacc, credit)
+	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
+
+	// Make sure a random account can't revoke LP status
+	require.Panics(t, func() {
+		keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
+	})
+
+	err := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
+	require.Nil(t, err, "%v", err)
+	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lpacc))
 }
 
 func TestCollectDenominations(t *testing.T) {
@@ -164,8 +196,8 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	logger := log.NewNopLogger()        // Default
-	logger = log.NewTMLogger(os.Stdout) // Override to see output
+	logger := log.NewNopLogger() // Default
+	//logger = log.NewTMLogger(os.Stdout) // Override to see output
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, logger)
 

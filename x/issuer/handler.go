@@ -16,11 +16,22 @@ func newHandler(k keeper.Keeper) sdk.Handler {
 			return handleMsgIncreaseCredit(ctx, msg, k)
 		case types.MsgDecreaseCredit:
 			return handleMsgDecreaseCredit(ctx, msg, k)
+		case types.MsgRevokeLiquidityProvider:
+			return handleMsgRevokeLiquidityProvider(ctx, msg, k)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized issuance Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
+}
+
+func handleMsgRevokeLiquidityProvider(ctx sdk.Context, msg types.MsgRevokeLiquidityProvider, k keeper.Keeper) sdk.Result {
+	error := k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer)
+	if error != nil {
+		return error.Result()
+	}
+
+	return sdk.Result{}
 }
 
 func handleMsgDecreaseCredit(ctx sdk.Context, msg types.MsgDecreaseCredit, k keeper.Keeper) sdk.Result {

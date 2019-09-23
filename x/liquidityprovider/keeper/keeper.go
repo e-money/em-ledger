@@ -69,17 +69,27 @@ func (k Keeper) SetLiquidityProviderAccount(ctx sdk.Context, account *types.Liqu
 	k.authKeeper.SetAccount(ctx, account)
 }
 
+func (k Keeper) RevokeLiquidityProviderAccount(ctx sdk.Context, account auth.Account) bool {
+	if lpAcc, isLpAcc := account.(*types.LiquidityProviderAccount); isLpAcc {
+		account = lpAcc.Account
+		k.authKeeper.SetAccount(ctx, account)
+		return true
+	}
+
+	return false
+}
+
 func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, liquidityProvider sdk.AccAddress) *types.LiquidityProviderAccount {
 	logger := k.Logger(ctx)
 
 	a := k.authKeeper.GetAccount(ctx, liquidityProvider)
-	account, ok := a.(types.LiquidityProviderAccount)
+	account, ok := a.(*types.LiquidityProviderAccount)
 	if !ok {
 		logger.Debug(fmt.Sprintf("Account is not a liquidity provider"), "address", liquidityProvider)
 		return nil
 	}
 
-	return &account
+	return account
 }
 
 // Logger returns a module-specific logger.

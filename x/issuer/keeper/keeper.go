@@ -76,6 +76,21 @@ func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 	return nil
 }
 
+func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress) sdk.Error {
+	k.mustBeIssuer(ctx, issuer)
+
+	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
+	if lpAcc == nil {
+		return types.ErrNotLiquidityProvider(liquidityProvider)
+	}
+
+	if k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc) {
+		return nil
+	}
+
+	return types.ErrNotLiquidityProvider(liquidityProvider)
+}
+
 func (k Keeper) logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }

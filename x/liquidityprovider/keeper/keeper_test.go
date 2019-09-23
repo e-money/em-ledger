@@ -48,7 +48,7 @@ func TestCreateAndMint(t *testing.T) {
 	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
 	account = ak.GetAccount(ctx, acc)
 
-	assert.IsType(t, types.LiquidityProviderAccount{}, account)
+	assert.IsType(t, &types.LiquidityProviderAccount{}, account)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
 	keeper.MintTokensFromCredit(ctx, acc, toMint)
@@ -131,6 +131,25 @@ func TestMintWithoutLPAccount(t *testing.T) {
 	assert.IsType(t, &auth.BaseAccount{}, account)
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
 	assert.Equal(t, initialBalance, account.GetCoins())
+}
+
+func TestCreateAndRevoke(t *testing.T) {
+	ctx, ak, _, _, keeper := createTestComponents(t, initialBalance)
+	acc := accAddr1
+
+	account := ak.NewAccountWithAddress(ctx, acc)
+	_ = account.SetCoins(initialBalance)
+	ak.SetAccount(ctx, account)
+
+	// Turn account into a LP
+	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	account = ak.GetAccount(ctx, acc)
+
+	assert.IsType(t, &types.LiquidityProviderAccount{}, account)
+
+	keeper.RevokeLiquidityProviderAccount(ctx, account)
+	account = ak.GetAccount(ctx, acc)
+	assert.IsType(t, &auth.BaseAccount{}, account)
 }
 
 func TestAccountNotFound(t *testing.T) {
