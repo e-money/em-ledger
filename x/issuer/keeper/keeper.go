@@ -26,6 +26,7 @@ func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper) Keeper {
 	}
 }
 
+// TODO Return sdk.Results instead of panicking everywhere.
 func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditIncrease sdk.Coins) {
 	log := k.logger(ctx)
 
@@ -38,6 +39,7 @@ func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
+		log.Info("Creating liquidity provider", "account", liquidityProvider, "increase", creditIncrease)
 		// Account was not previously a liquidity provider. Create it
 		k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, creditIncrease)
 	} else {
@@ -45,6 +47,33 @@ func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 		lpAcc.IncreaseCredit(creditIncrease)
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
+}
+
+func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditDecrease sdk.Coins) sdk.Error {
+	log := k.logger(ctx)
+
+	i := k.mustBeIssuer(ctx, issuer)
+	for _, coin := range creditDecrease {
+		if !anyContained(i.Denoms, coin.Denom) {
+			panic(fmt.Errorf("issuer %v cannot control credit in %v", i.Address, coin.Denom))
+		}
+	}
+
+	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
+	if lpAcc == nil {
+		panic(fmt.Errorf("address %v is not a liquidity provider", liquidityProvider))
+	}
+
+	_, anyNegative := lpAcc.Credit.SafeSub(creditDecrease)
+	if anyNegative {
+		return types.ErrNegativeCredit(lpAcc.GetAddress())
+	}
+
+	log.Info("Liquidity provider credit decreased", "account", liquidityProvider, "decrease", creditDecrease)
+	lpAcc.DecreaseCredit(creditDecrease)
+	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
+
+	return nil
 }
 
 func (k Keeper) logger(ctx sdk.Context) log.Logger {

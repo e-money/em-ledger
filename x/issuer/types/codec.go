@@ -9,6 +9,7 @@ var ModuleCdc *codec.Codec
 
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgIncreaseCredit{}, "e-money/MsgIncreaseCredit", nil)
+	cdc.RegisterConcrete(MsgDecreaseCredit{}, "e-money/MsgDecreaseCredit", nil)
 }
 
 func init() {

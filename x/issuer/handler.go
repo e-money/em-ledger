@@ -14,11 +14,22 @@ func newHandler(k keeper.Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case types.MsgIncreaseCredit:
 			return handleMsgIncreaseCredit(ctx, msg, k)
+		case types.MsgDecreaseCredit:
+			return handleMsgDecreaseCredit(ctx, msg, k)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized issuance Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
+}
+
+func handleMsgDecreaseCredit(ctx sdk.Context, msg types.MsgDecreaseCredit, k keeper.Keeper) sdk.Result {
+	error := k.DecreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditDecrease)
+	if error != nil {
+		return error.Result()
+	}
+
+	return sdk.Result{}
 }
 
 func handleMsgIncreaseCredit(ctx sdk.Context, msg types.MsgIncreaseCredit, k keeper.Keeper) sdk.Result {

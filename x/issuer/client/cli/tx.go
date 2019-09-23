@@ -23,6 +23,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	issuanceTxCmd.AddCommand(
 		client.PostCommands(
 			getCmdIncreaseCredit(cdc),
+			getCmdDecreaseCredit(cdc),
 		)...,
 	)
 
@@ -50,6 +51,36 @@ func getCmdIncreaseCredit(cdc *codec.Codec) *cobra.Command {
 
 			msg := types.MsgIncreaseCredit{
 				CreditIncrease:    creditIncrease,
+				LiquidityProvider: lpAcc,
+				Issuer:            cliCtx.GetFromAddress(),
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+func getCmdDecreaseCredit(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "decrease-credit [issuer_key_or_address] [liquidity_provider_address] [amount]",
+		Short: "Decrease the credit of a liquidity provider. Credit cannot be negative",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+
+			lpAcc, err := sdk.AccAddressFromBech32(args[1])
+			if err != nil {
+				return err
+			}
+
+			creditDecrease, err := sdk.ParseCoins(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.MsgDecreaseCredit{
+				CreditDecrease:    creditDecrease,
 				LiquidityProvider: lpAcc,
 				Issuer:            cliCtx.GetFromAddress(),
 			}

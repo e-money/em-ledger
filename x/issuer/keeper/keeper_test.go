@@ -81,10 +81,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	issuer := types.NewIssuer(iacc, "x2eur", "x0jpy")
 
 	keeper.AddIssuer(ctx, issuer)
-	credit := sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2)),
-		sdk.NewCoin("x0jpy", sdk.NewIntWithDecimal(5000, 0)),
-	)
+	credit := MustParseCoins("100000x2eur,5000x0jpy")
 
 	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
 	require.IsType(t, liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
@@ -93,11 +90,26 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	// Verify the two increases in credit
 	a := ak.GetAccount(ctx, lpacc).(liquidityprovider.Account)
-	require.Equal(t, sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(2000, 2)),
-		sdk.NewCoin("x0jpy", sdk.NewIntWithDecimal(10000, 0)),
-	), a.Credit)
+	expected := MustParseCoins("200000x2eur,10000x0jpy")
+	require.Equal(t, expected, a.Credit)
 
+	// Decrease the credit too much
+	credit, _ = sdk.ParseCoins("400000x2eur")
+	result := keeper.DecreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
+	require.NotNil(t, result)
+
+	// Verify unchanged credit
+	a = ak.GetAccount(ctx, lpacc).(liquidityprovider.Account)
+	require.Equal(t, expected, a.Credit)
+
+	// Decrease credit.
+	credit = MustParseCoins("50000x2eur, 2000x0jpy")
+	result = keeper.DecreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
+	require.Nil(t, result)
+
+	expected = MustParseCoins("150000x2eur,8000x0jpy")
+	a = ak.GetAccount(ctx, lpacc).(liquidityprovider.Account)
+	require.Equal(t, expected, a.Credit)
 }
 
 func TestCollectDenominations(t *testing.T) {
@@ -188,4 +200,13 @@ func makeTestCodec() (cdc *codec.Codec) {
 	liquidityprovider.RegisterCodec(cdc)
 
 	return
+}
+
+func MustParseCoins(coins string) sdk.Coins {
+	result, err := sdk.ParseCoins(coins)
+	if err != nil {
+		panic(err)
+	}
+
+	return result
 }

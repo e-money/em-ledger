@@ -25,6 +25,16 @@ func (acc *LiquidityProviderAccount) IncreaseCredit(increase sdk.Coins) {
 	acc.Credit = acc.Credit.Add(increase)
 }
 
+// Function panics if resulting credit is negative. Should be checked prior to invocation for cleaner handling.
+func (acc *LiquidityProviderAccount) DecreaseCredit(decrease sdk.Coins) {
+	if newCredit, anyNegative := acc.Credit.SafeSub(decrease); !anyNegative {
+		acc.Credit = newCredit
+		return
+	}
+
+	panic(fmt.Errorf("credit cannot be negative"))
+}
+
 func (acc LiquidityProviderAccount) String() string {
 	var pubkey string
 
