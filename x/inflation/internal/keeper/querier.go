@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewQuerier returns a minting Querier handler.
+// NewQuerier returns an inflation Querier handler.
 func NewQuerier(k Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, _ abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
@@ -18,7 +18,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 			return queryInflation(ctx, k)
 
 		default:
-			return nil, sdk.ErrUnknownRequest(fmt.Sprintf("unknown minting query endpoint: %s", path[0]))
+			return nil, sdk.ErrUnknownRequest(fmt.Sprintf("unknown inflation query endpoint: %s", path[0]))
 		}
 	}
 }

@@ -1,12 +1,17 @@
 package emoney
 
 import (
-	emdistr "emoney/hooks/distribution"
-	"emoney/x/inflation"
-	"emoney/x/issuance"
-	"emoney/x/slashing"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+
+	emdistr "emoney/hooks/distribution"
+	"emoney/x/inflation"
+	"emoney/x/issuer"
+	"emoney/x/liquidityprovider"
+	"emoney/x/slashing"
+
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -21,11 +26,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"os"
-	"path/filepath"
 )
 
 const (
@@ -45,19 +49,21 @@ var (
 		staking.AppModuleBasic{},
 		inflation.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		issuance.AppModuleBasic{},
 		slashing.AppModuleBasic{},
+		liquidityprovider.AppModuleBasic{},
+		issuer.AppModuleBasic{},
 	)
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     nil,
-		distr.ModuleName:          nil,
-		inflation.ModuleName:      {supply.Minter},
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		slashing.ModuleName:       {supply.Minter},
-		slashing.PenaltyAccount:   nil,
+		auth.FeeCollectorName:        nil,
+		distr.ModuleName:             nil,
+		inflation.ModuleName:         {supply.Minter},
+		staking.BondedPoolName:       {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName:    {supply.Burner, supply.Staking},
+		slashing.ModuleName:          {supply.Minter},
+		slashing.PenaltyAccount:      nil,
+		liquidityprovider.ModuleName: {supply.Minter},
 		//gov.ModuleName:            {supply.Burner},
 	}
 )
@@ -76,6 +82,7 @@ type emoneyApp struct {
 	keyMint     *sdk.KVStoreKey
 	keyDistr    *sdk.KVStoreKey
 	keySlashing *sdk.KVStoreKey
+	keyIssuer   *sdk.KVStoreKey
 
 	tkeyParams  *sdk.TransientStoreKey
 	tkeyStaking *sdk.TransientStoreKey
@@ -88,6 +95,8 @@ type emoneyApp struct {
 	inflationKeeper inflation.Keeper
 	distrKeeper     distr.Keeper
 	slashingKeeper  slashing.Keeper
+	lpKeeper        liquidityprovider.Keeper
+	issuerKeeper    issuer.Keeper
 
 	mm *module.Manager
 }
@@ -113,6 +122,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
 		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
 		keySlashing: sdk.NewKVStoreKey(slashing.StoreKey),
+		keyIssuer:   sdk.NewKVStoreKey(issuer.StoreKey),
 		database:    createApplicationDatabase(serverCtx),
 	}
 
@@ -135,11 +145,13 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 
 	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
 	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
+	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
+	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
+	application.issuerKeeper = issuer.NewKeeper(application.keyIssuer, application.lpKeeper)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
-		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing)
-
-	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
+		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing,
+		application.keyIssuer)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
@@ -150,8 +162,9 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.inflationKeeper),
 		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
-		issuance.NewAppModule(),
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
+		liquidityprovider.NewAppModule(application.lpKeeper),
+		issuer.NewAppModule(application.issuerKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
@@ -166,6 +179,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		inflation.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
+		issuer.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())

@@ -2,7 +2,7 @@ package main
 
 import (
 	app "emoney"
-	"emoney/types"
+	apptypes "emoney/types"
 	"fmt"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -11,7 +11,6 @@ import (
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -20,18 +19,13 @@ import (
 func main() {
 	cobra.EnableCommandSorting = false
 
+	apptypes.ConfigureSDK()
 	cdc := app.MakeCodec()
-
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(types.Bech32PrefixAccAddr, types.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(types.Bech32PrefixValAddr, types.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(types.Bech32PrefixConsAddr, types.Bech32PrefixConsPub)
-	config.Seal()
 
 	ctx := server.NewDefaultContext()
 	// Add application to logging configuration
 	logLevel := ctx.Config.BaseConfig.LogLevel
-	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,%v", logLevel)
+	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,x/liquidityprovider:debug,%v", logLevel)
 
 	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
