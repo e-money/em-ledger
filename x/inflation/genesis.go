@@ -5,10 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// GenesisState - minter state
 type GenesisState struct {
-	//Minter Minter `json:"minter" yaml:"minter"` // minter object
-	//Params Params `json:"params" yaml:"params"` // inflation params
 	InflationState InflationState `json:"assets" yaml:"assets"`
 }
 
