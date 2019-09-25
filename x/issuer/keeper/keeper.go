@@ -95,29 +95,56 @@ func (k Keeper) logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) getIssuers(ctx sdk.Context) (issuers []types.Issuer) {
+func (k Keeper) GetIssuers(ctx sdk.Context) (issuers []types.Issuer) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyIssuerList))
-	types.ModuleCdc.MustUnmarshalBinaryBare(bz, &issuers)
+	if bz == nil {
+		return
+	}
+
+	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &issuers)
 	return
 }
 
 func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store := ctx.KVStore(k.storeKey)
-	bz := types.ModuleCdc.MustMarshalBinaryBare(issuers)
+	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(issuers)
 	store.Set([]byte(keyIssuerList), bz)
 }
 
-func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) {
-	issuers := k.getIssuers(ctx)
+func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Error {
+	issuers := k.GetIssuers(ctx)
 
 	existingDenoms := collectDenoms(issuers)
 	if anyContained(existingDenoms, newIssuer.Denoms...) {
-		panic(fmt.Errorf("denomination is already under control of an issuer"))
+		return types.ErrDenominationAlreadyAssigned()
 	}
 
 	issuers = append(issuers, newIssuer)
 	k.setIssuers(ctx, issuers)
+	return nil
+}
+
+func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) sdk.Error {
+	issuers := k.GetIssuers(ctx)
+
+	updatedIssuers := make([]types.Issuer, 0)
+
+	// This is one way to remove an element from a slice. There are many. This is one.
+	for _, i := range issuers {
+		if i.Address.Equals(issuer) {
+			continue
+		}
+
+		updatedIssuers = append(updatedIssuers, i)
+	}
+
+	if len(updatedIssuers) == len(issuers) {
+		return types.ErrIssuerNotFound(issuer)
+	}
+
+	k.setIssuers(ctx, updatedIssuers)
+	return nil
 }
 
 func anyContained(s []string, searchterms ...string) bool {
@@ -145,7 +172,7 @@ func (k Keeper) mustBeIssuer(ctx sdk.Context, address sdk.AccAddress) types.Issu
 		panic(fmt.Errorf("%v is not an issuer", address))
 	}
 
-	issuers := k.getIssuers(ctx)
+	issuers := k.GetIssuers(ctx)
 
 	for _, issuer := range issuers {
 		if issuer.Address.Equals(address) {
