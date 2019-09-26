@@ -61,7 +61,7 @@ func NewInflationState(assets ...string) InflationState {
 }
 
 func DefaultInflationState() InflationState {
-	return NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01")
+	return NewInflationState()
 }
 
 // validate params

@@ -2,6 +2,7 @@ package main
 
 import (
 	"emoney/x/authority"
+	"emoney/x/inflation"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -108,6 +109,7 @@ func initializeTestnet(
 
 	gen := mbm.DefaultGenesis()
 	gen["authority"] = createAuthorityGenesis(authorityKey)
+	gen["inflation"] = createInflationGenesis()
 
 	appState, err := codec.MarshalJSONIndent(cdc, gen)
 	if err != nil {
@@ -183,6 +185,17 @@ func initializeTestnet(
 	}
 
 	return nil
+}
+
+func createInflationGenesis() json.RawMessage {
+	state := inflation.NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01")
+
+	bz, err := json.Marshal(state)
+	if err != nil {
+		panic(err)
+	}
+
+	return json.RawMessage(bz)
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {

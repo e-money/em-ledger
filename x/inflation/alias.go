@@ -41,10 +41,7 @@ var (
 )
 
 type (
-	Keeper = keeper.Keeper
-	//Minter          = types.Minter
-	//AssetState      = types.AssetState
-	//Params          = types.Params
+	Keeper          = keeper.Keeper
 	InflationState  = types.InflationState
 	InflationAsset  = types.InflationAsset
 	InflationAssets = types.InflationAssets
