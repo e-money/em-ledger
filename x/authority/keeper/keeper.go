@@ -18,8 +18,8 @@ type Keeper struct {
 	ik       issuer.Keeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper) *Keeper {
-	return &Keeper{
+func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper) Keeper {
+	return Keeper{
 		ik:       issuerKeeper,
 		storeKey: storeKey,
 	}

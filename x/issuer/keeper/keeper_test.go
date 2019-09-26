@@ -2,6 +2,7 @@ package keeper
 
 import (
 	apptypes "emoney/types"
+	"emoney/x/inflation"
 	"emoney/x/liquidityprovider"
 	"sort"
 	"testing"
@@ -199,11 +200,12 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	cdc := makeTestCodec()
 
 	var (
-		keyAcc     = sdk.NewKVStoreKey(auth.StoreKey)
-		keyParams  = sdk.NewKVStoreKey(params.StoreKey)
-		keySupply  = sdk.NewKVStoreKey(supply.StoreKey)
-		keyIssuer  = sdk.NewKVStoreKey(types.ModuleName)
-		tkeyParams = sdk.NewTransientStoreKey(params.TStoreKey)
+		keyAcc       = sdk.NewKVStoreKey(auth.StoreKey)
+		keyParams    = sdk.NewKVStoreKey(params.StoreKey)
+		keySupply    = sdk.NewKVStoreKey(supply.StoreKey)
+		keyIssuer    = sdk.NewKVStoreKey(types.StoreKey)
+		keyInflation = sdk.NewKVStoreKey(inflation.StoreKey)
+		tkeyParams   = sdk.NewTransientStoreKey(params.TStoreKey)
 	)
 
 	db := dbm.NewMemDB()
@@ -213,6 +215,8 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
+	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
@@ -222,7 +226,8 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, logger)
 
 	maccPerms := map[string][]string{
-		types.ModuleName: {supply.Minter},
+		types.ModuleName:     {supply.Minter},
+		inflation.ModuleName: {supply.Minter, supply.Burner},
 	}
 
 	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
@@ -234,9 +239,9 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	sk.SetSupply(ctx, supply.NewSupply(sdk.NewCoins()))
 
 	lpk := liquidityprovider.NewKeeper(ak, sk)
+	ik := inflation.NewKeeper(cdc, keyInflation, paramsKeeper.Subspace(inflation.DefaultParamspace), sk, auth.FeeCollectorName)
 
-	keeper := NewKeeper(keySupply, lpk)
-
+	keeper := NewKeeper(keySupply, lpk, ik)
 	return ctx, ak, lpk, keeper
 }
 

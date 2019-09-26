@@ -1,7 +1,7 @@
 package main
 
 import (
-	"emoney/x/inflation"
+	"emoney/x/authority"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -45,7 +45,7 @@ const (
 func testnetCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "testnet [chain-id]",
+		Use:   "testnet [chain-id] [authority_key_or_address] ]",
 		Short: "Initialize files for an e-money testnet",
 		Long: `testnet will create "v" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
@@ -65,19 +65,17 @@ Example:
 
 			outputDir := viper.GetString(flagOutputDir)
 
-			//chainID := viper.GetString(client.FlagChainID)
-			//minGasPrices := viper.GetString(server.FlagMinGasPrices)
-			//nodeDaemonHome := viper.GetString(flagNodeDaemonHome)
-			//nodeCLIHome := viper.GetString(flagNodeCLIHome)
 			startingIPAddress := viper.GetString(flagStartingIPAddress)
 			numValidators := viper.GetInt(flagNumValidators)
 			addKeybaseAccounts := viper.GetString(flagAddKeybaseAccounts)
 
+			authority := getAuthorityKey(args[1], addKeybaseAccounts)
+
 			//return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
 			//	minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
-			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress, addKeybaseAccounts, chainID)
+			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress, addKeybaseAccounts, chainID, authority)
 		},
-		Args: cobra.RangeArgs(0, 1), // First argument will be used as chain-id.
+		Args: cobra.ExactArgs(2),
 	}
 
 	cmd.Flags().IntP(flagNumValidators, "v", 4,
@@ -101,11 +99,16 @@ Example:
 	return cmd
 }
 
-func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config, outputDir string, validatorCount int, baseIPAddress, addRandomAccounts, chainID string) error {
+func initializeTestnet(
+	cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config,
+	outputDir string, validatorCount int, baseIPAddress,
+	addRandomAccounts, chainID string, authorityKey sdk.AccAddress) error {
+
 	config.Genesis = "genesis.json"
 
 	gen := mbm.DefaultGenesis()
-	gen["inflation"] = setInflationAdministrators(cdc, addRandomAccounts, gen["inflation"])
+	gen["authority"] = createAuthorityGenesis(authorityKey)
+
 	appState, err := codec.MarshalJSONIndent(cdc, gen)
 	if err != nil {
 		return err
@@ -182,33 +185,15 @@ func initializeTestnet(cdc *codec.Codec, mbm module.BasicManager, config *cfg.Co
 	return nil
 }
 
-func setInflationAdministrators(cdc *codec.Codec, keystorepath string, gen json.RawMessage) json.RawMessage {
-	if keystorepath == "" {
-		return gen
-	}
+func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
+	gen := authority.NewGenesisState(akey)
 
-	kb, err := keys.NewKeyBaseFromDir(keystorepath)
+	bz, err := json.Marshal(gen)
 	if err != nil {
 		panic(err)
 	}
 
-	var genstate inflation.GenesisState
-	cdc.MustUnmarshalJSON(gen, &genstate)
-
-	keys, err := kb.List()
-	if err != nil {
-		panic(err)
-	}
-
-	if len(keys) == 0 {
-		return gen
-	}
-
-	key := keys[0]
-	genstate.InflationState.Administrators = []crypto.PubKey{key.GetPubKey()}
-
-	fmt.Println("Setting inflation module administrator", key.GetName())
-	return cdc.MustMarshalJSON(genstate)
+	return json.RawMessage(bz)
 }
 
 func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
@@ -368,4 +353,29 @@ func createConfigurationFiles(rootDir string) {
 	appConfigFilePath := filepath.Join(rootDir, "config/app.toml")
 	appConf, _ := config.ParseConfig()
 	config.WriteConfigFile(appConfigFilePath, appConf)
+}
+
+func getAuthorityKey(param string, keystorePath string) sdk.AccAddress {
+	key, err := sdk.AccAddressFromBech32(param)
+	if err == nil {
+		return key
+	}
+
+	kb, err := keys.NewKeyBaseFromDir(keystorePath)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, err := kb.List()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, key := range keys {
+		if key.GetName() == param {
+			return key.GetAddress()
+		}
+	}
+
+	panic(fmt.Errorf("unable to find key %s", param))
 }

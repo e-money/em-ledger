@@ -13,6 +13,7 @@ const (
 	CodeNotLiquidityProvider  sdk.CodeType = 2
 	CodeDuplicateDenomination sdk.CodeType = 3
 	CodeIssuerNotFound        sdk.CodeType = 4
+	CodeNegativeInflation     sdk.CodeType = 5
 )
 
 func ErrNegativeCredit(lp sdk.AccAddress) sdk.Error {
@@ -29,4 +30,8 @@ func ErrDenominationAlreadyAssigned() sdk.Error {
 
 func ErrIssuerNotFound(issuer sdk.AccAddress) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeIssuerNotFound, fmt.Sprintf("unable to find issuer %v", issuer))
+}
+
+func ErrNegativeInflation() sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeNegativeInflation, "cannot set negative inflation")
 }

@@ -1,7 +1,6 @@
 package inflation
 
 import (
-	"emoney/x/inflation/internal/types"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -32,9 +31,7 @@ func (AppModuleBasic) Name() string {
 }
 
 // register module codec
-func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
-}
+func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {}
 
 // default genesis state
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
@@ -57,8 +54,8 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router
 }
 
 // get the root tx command of this module
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+func (AppModuleBasic) GetTxCmd(*codec.Codec) (_ *cobra.Command) {
+	return
 }
 
 // get the root query command of this module
@@ -90,12 +87,10 @@ func (AppModule) Name() string {
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // module message route name
-func (AppModule) Route() string { return types.RouterKey }
+func (AppModule) Route() string { return "" }
 
 // module handler
-func (am AppModule) NewHandler() sdk.Handler {
-	return newHandler(am.keeper)
-}
+func (am AppModule) NewHandler() (_ sdk.Handler) { return }
 
 // module querier route name
 func (AppModule) QuerierRoute() string {

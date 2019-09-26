@@ -1,13 +1,15 @@
 package keeper
 
 import (
-	"emoney/x/issuer/types"
-	lp "emoney/x/liquidityprovider"
 	"fmt"
-	"github.com/tendermint/tendermint/libs/log"
 	"sort"
 
+	"emoney/x/inflation"
+	"emoney/x/issuer/types"
+	lp "emoney/x/liquidityprovider"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 const (
@@ -17,12 +19,14 @@ const (
 type Keeper struct {
 	storeKey sdk.StoreKey
 	lpKeeper lp.Keeper
+	ik       inflation.Keeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik inflation.Keeper) Keeper {
 	return Keeper{
 		storeKey: storeKey,
 		lpKeeper: lpk,
+		ik:       ik,
 	}
 }
 
@@ -89,6 +93,12 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 	}
 
 	return types.ErrNotLiquidityProvider(liquidityProvider)
+}
+
+func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) sdk.Error {
+	k.mustBeIssuer(ctx, issuer)
+
+	return k.ik.SetInflation(ctx, inflationRate, denom)
 }
 
 func (k Keeper) logger(ctx sdk.Context) log.Logger {
