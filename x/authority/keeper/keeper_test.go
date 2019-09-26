@@ -38,13 +38,13 @@ func TestAuthorityBasicPersistence(t *testing.T) {
 
 	require.Panics(t, func() {
 		// Keeper must panic if no authority has been specified
-		keeper.getAuthority(ctx)
+		keeper.GetAuthority(ctx)
 	})
 
 	acc, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
-	keeper.setAuthority(ctx, acc)
+	keeper.SetAuthority(ctx, acc)
 
-	authority := keeper.getAuthority(ctx)
+	authority := keeper.GetAuthority(ctx)
 	require.Equal(t, acc, authority)
 }
 
@@ -61,7 +61,7 @@ func TestMustBeAuthority(t *testing.T) {
 		keeper.MustBeAuthority(ctx, accAuthority)
 	})
 
-	keeper.setAuthority(ctx, accAuthority)
+	keeper.SetAuthority(ctx, accAuthority)
 	keeper.MustBeAuthority(ctx, accAuthority)
 
 	require.Panics(t, func() {
@@ -70,7 +70,7 @@ func TestMustBeAuthority(t *testing.T) {
 
 	// Authority can only be specified once, preferably during genesis
 	require.Panics(t, func() {
-		keeper.setAuthority(ctx, acc2)
+		keeper.SetAuthority(ctx, acc2)
 	})
 }
 
@@ -83,7 +83,7 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 		issuer2      = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
-	keeper.setAuthority(ctx, accAuthority)
+	keeper.SetAuthority(ctx, accAuthority)
 
 	err := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"x2eur", "x0jpy"})
 	require.Nil(t, err)

@@ -23,7 +23,6 @@ func DefaultGenesisState() GenesisState {
 	}
 }
 
-// InitGenesis new mint genesis
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	keeper.SetState(ctx, data.InflationState)
 }

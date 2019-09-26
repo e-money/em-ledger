@@ -15,3 +15,7 @@ func NewGenesisState(authorityKey sdk.AccAddress) GenesisState {
 func DefaultGenesisState() GenesisState {
 	return GenesisState{}
 }
+
+func InitGenesis(ctx sdk.Context, keeper Keeper, state GenesisState) {
+	keeper.SetAuthority(ctx, state.AuthorityKey)
+}

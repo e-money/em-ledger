@@ -190,7 +190,11 @@ func initializeTestnet(
 func createInflationGenesis() json.RawMessage {
 	state := inflation.NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01")
 
-	bz, err := json.Marshal(state)
+	gen := inflation.GenesisState{
+		InflationState: state,
+	}
+
+	bz, err := json.Marshal(gen)
 	if err != nil {
 		panic(err)
 	}

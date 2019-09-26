@@ -56,14 +56,19 @@ func NewAppModule(keeper Keeper) *AppModule {
 	}
 }
 
-func (am AppModule) InitGenesis(sdk.Context, json.RawMessage) (_ []abci.ValidatorUpdate) {
-	// TODO
+func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) (_ []abci.ValidatorUpdate) {
+	var genesisState GenesisState
+	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
+	InitGenesis(ctx, am.keeper, genesisState)
+
 	return
 }
 
-func (am AppModule) ExportGenesis(sdk.Context) json.RawMessage {
-	// TODO
-	return ModuleCdc.MustMarshalJSON(GenesisState{})
+func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	genesis := GenesisState{
+		AuthorityKey: am.keeper.GetAuthority(ctx),
+	}
+	return ModuleCdc.MustMarshalJSON(genesis)
 }
 
 func (am AppModule) RegisterInvariants(sdk.InvariantRegistry) {}

@@ -25,7 +25,7 @@ func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper) Keeper {
 	}
 }
 
-func (k Keeper) setAuthority(ctx sdk.Context, authority sdk.AccAddress) {
+func (k Keeper) SetAuthority(ctx sdk.Context, authority sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 
 	if store.Get([]byte(keyAuthorityAccAddress)) != nil {
@@ -36,7 +36,7 @@ func (k Keeper) setAuthority(ctx sdk.Context, authority sdk.AccAddress) {
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
-func (k Keeper) getAuthority(ctx sdk.Context) (authority sdk.AccAddress) {
+func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyAuthorityAccAddress))
 	types.ModuleCdc.MustUnmarshalBinaryBare(bz, &authority)
@@ -73,7 +73,7 @@ func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerA
 }
 
 func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
-	authority := k.getAuthority(ctx)
+	authority := k.GetAuthority(ctx)
 	if authority == nil {
 		panic("Authority not set")
 	}
