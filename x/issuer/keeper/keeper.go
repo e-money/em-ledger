@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"emoney/x/inflation"
 	"emoney/x/issuer/types"
 	lp "emoney/x/liquidityprovider"
 
@@ -19,10 +18,10 @@ const (
 type Keeper struct {
 	storeKey sdk.StoreKey
 	lpKeeper lp.Keeper
-	ik       inflation.Keeper
+	ik       types.InflationKeeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik inflation.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) Keeper {
 	return Keeper{
 		storeKey: storeKey,
 		lpKeeper: lpk,

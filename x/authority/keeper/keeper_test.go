@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"emoney/x/inflation"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -126,7 +125,6 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 		keyParams    = sdk.NewKVStoreKey(params.StoreKey)
 		keySupply    = sdk.NewKVStoreKey(supply.StoreKey)
 		keyIssuer    = sdk.NewKVStoreKey(issuer.ModuleName)
-		keyInflation = sdk.NewKVStoreKey(inflation.StoreKey)
 		tkeyParams   = sdk.NewTransientStoreKey(params.TStoreKey)
 	)
 
@@ -137,9 +135,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	ms.MountStoreWithDB(keySupply, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyInflation, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
-	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
@@ -147,8 +143,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, logger)
 
 	maccPerms := map[string][]string{
-		types.ModuleName:     {supply.Minter},
-		inflation.ModuleName: {supply.Minter, supply.Burner},
+		types.ModuleName: {supply.Minter},
 	}
 
 	var (
@@ -157,8 +152,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 		bk  = bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace)
 		sk  = supply.NewKeeper(cdc, keySupply, ak, bk, supply.DefaultCodespace, maccPerms)
 		lpk = liquidityprovider.NewKeeper(ak, sk)
-		ink = inflation.NewKeeper(cdc, keyInflation, paramsKeeper.Subspace(inflation.DefaultParamspace), sk, auth.FeeCollectorName)
-		ik  = issuer.NewKeeper(keySupply, lpk, ink)
+		ik  = issuer.NewKeeper(keySupply, lpk, mockInflationKeeper{})
 	)
 
 	// Empty supply
@@ -167,6 +161,12 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	keeper := NewKeeper(keyAuthority, ik)
 
 	return ctx, keeper, ik
+}
+
+type mockInflationKeeper struct{}
+
+func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Error) {
+	return
 }
 
 func makeTestCodec() (cdc *codec.Codec) {
