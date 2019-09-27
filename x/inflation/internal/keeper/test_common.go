@@ -72,7 +72,7 @@ func newTestInput(t *testing.T) testInput {
 	notBondedPool := supply.NewEmptyModuleAccount(staking.NotBondedPoolName, supply.Burner)
 	bondPool := supply.NewEmptyModuleAccount(staking.BondedPoolName, supply.Burner)
 
-	inflationKeeper.SetState(ctx, types.DefaultInflationState())
+	inflationKeeper.SetState(ctx, types.NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01"))
 
 	supplyKeeper.SetModuleAccount(ctx, feeCollectorAcc)
 	supplyKeeper.SetModuleAccount(ctx, minterAcc)

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	emdistr "emoney/hooks/distribution"
+	"emoney/x/authority"
 	"emoney/x/inflation"
 	"emoney/x/issuer"
 	"emoney/x/liquidityprovider"
@@ -52,6 +53,7 @@ var (
 		slashing.AppModuleBasic{},
 		liquidityprovider.AppModuleBasic{},
 		issuer.AppModuleBasic{},
+		authority.AppModule{},
 	)
 
 	// module account permissions
@@ -74,15 +76,16 @@ type emoneyApp struct {
 	database     db.DB
 	currentBatch db.Batch
 
-	keyMain     *sdk.KVStoreKey
-	keyAccount  *sdk.KVStoreKey
-	keyParams   *sdk.KVStoreKey
-	keySupply   *sdk.KVStoreKey
-	keyStaking  *sdk.KVStoreKey
-	keyMint     *sdk.KVStoreKey
-	keyDistr    *sdk.KVStoreKey
-	keySlashing *sdk.KVStoreKey
-	keyIssuer   *sdk.KVStoreKey
+	keyMain      *sdk.KVStoreKey
+	keyAccount   *sdk.KVStoreKey
+	keyParams    *sdk.KVStoreKey
+	keySupply    *sdk.KVStoreKey
+	keyStaking   *sdk.KVStoreKey
+	keyInflation *sdk.KVStoreKey
+	keyDistr     *sdk.KVStoreKey
+	keySlashing  *sdk.KVStoreKey
+	keyIssuer    *sdk.KVStoreKey
+	keyAuthority *sdk.KVStoreKey
 
 	tkeyParams  *sdk.TransientStoreKey
 	tkeyStaking *sdk.TransientStoreKey
@@ -97,6 +100,7 @@ type emoneyApp struct {
 	slashingKeeper  slashing.Keeper
 	lpKeeper        liquidityprovider.Keeper
 	issuerKeeper    issuer.Keeper
+	authorityKeeper authority.Keeper
 
 	mm *module.Manager
 }
@@ -110,30 +114,33 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	bApp := bam.NewBaseApp(appName, logger, sdkdb, txDecoder)
 
 	application := &emoneyApp{
-		BaseApp:     bApp,
-		cdc:         cdc,
-		keyMain:     sdk.NewKVStoreKey("main"),
-		keyAccount:  sdk.NewKVStoreKey(auth.StoreKey),
-		keyParams:   sdk.NewKVStoreKey(params.StoreKey),
-		tkeyParams:  sdk.NewTransientStoreKey(params.TStoreKey),
-		keyStaking:  sdk.NewKVStoreKey(staking.StoreKey),
-		tkeyStaking: sdk.NewTransientStoreKey(staking.TStoreKey),
-		keyMint:     sdk.NewKVStoreKey(inflation.StoreKey),
-		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
-		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
-		keySlashing: sdk.NewKVStoreKey(slashing.StoreKey),
-		keyIssuer:   sdk.NewKVStoreKey(issuer.StoreKey),
-		database:    createApplicationDatabase(serverCtx),
+		BaseApp:      bApp,
+		cdc:          cdc,
+		keyMain:      sdk.NewKVStoreKey("main"),
+		keyAccount:   sdk.NewKVStoreKey(auth.StoreKey),
+		keyParams:    sdk.NewKVStoreKey(params.StoreKey),
+		tkeyParams:   sdk.NewTransientStoreKey(params.TStoreKey),
+		keyStaking:   sdk.NewKVStoreKey(staking.StoreKey),
+		tkeyStaking:  sdk.NewTransientStoreKey(staking.TStoreKey),
+		keyInflation: sdk.NewKVStoreKey(inflation.StoreKey),
+		keyDistr:     sdk.NewKVStoreKey(distr.StoreKey),
+		keySupply:    sdk.NewKVStoreKey(supply.StoreKey),
+		keySlashing:  sdk.NewKVStoreKey(slashing.StoreKey),
+		keyIssuer:    sdk.NewKVStoreKey(issuer.StoreKey),
+		keyAuthority: sdk.NewKVStoreKey(authority.StoreKey),
+		database:     createApplicationDatabase(serverCtx),
 	}
 
 	application.paramsKeeper = params.NewKeeper(cdc, application.keyParams, application.tkeyParams, params.DefaultCodespace)
 
-	authSubspace := application.paramsKeeper.Subspace(auth.DefaultParamspace)
-	bankSubspace := application.paramsKeeper.Subspace(bank.DefaultParamspace)
-	stakingSubspace := application.paramsKeeper.Subspace(staking.DefaultParamspace)
-	mintSubspace := application.paramsKeeper.Subspace(inflation.DefaultParamspace)
-	distrSubspace := application.paramsKeeper.Subspace(distr.DefaultParamspace)
-	slashingSubspace := application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+	var (
+		authSubspace      = application.paramsKeeper.Subspace(auth.DefaultParamspace)
+		bankSubspace      = application.paramsKeeper.Subspace(bank.DefaultParamspace)
+		stakingSubspace   = application.paramsKeeper.Subspace(staking.DefaultParamspace)
+		inflationSubspace = application.paramsKeeper.Subspace(inflation.DefaultParamspace)
+		distrSubspace     = application.paramsKeeper.Subspace(distr.DefaultParamspace)
+		slashingSubspace  = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+	)
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
@@ -143,15 +150,16 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.distrKeeper = distr.NewKeeper(application.cdc, application.keyDistr, distrSubspace, &application.stakingKeeper,
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
 
-	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyMint, mintSubspace, application.supplyKeeper, auth.FeeCollectorName)
+	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyInflation, inflationSubspace, application.supplyKeeper, auth.FeeCollectorName)
 	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
-	application.issuerKeeper = issuer.NewKeeper(application.keyIssuer, application.lpKeeper)
+	application.issuerKeeper = issuer.NewKeeper(application.keyIssuer, application.lpKeeper, application.inflationKeeper)
+	application.authorityKeeper = authority.NewKeeper(application.keyAuthority, application.issuerKeeper)
 
 	application.MountStores(application.keyMain, application.keyAccount, application.tkeyParams, application.keyParams,
-		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyMint, application.keyDistr, application.keySlashing,
-		application.keyIssuer)
+		application.keySupply, application.keyStaking, application.tkeyStaking, application.keyInflation, application.keyDistr, application.keySlashing,
+		application.keyIssuer, application.keyAuthority)
 
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
@@ -165,6 +173,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
 		liquidityprovider.NewAppModule(application.lpKeeper),
 		issuer.NewAppModule(application.issuerKeeper),
+		authority.NewAppModule(application.authorityKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
@@ -180,6 +189,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		supply.ModuleName,
 		genutil.ModuleName,
 		issuer.ModuleName,
+		authority.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())

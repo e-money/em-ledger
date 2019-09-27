@@ -23,7 +23,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 }
 
 func listIssuers(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
-	issuers := k.getIssuers(ctx)
+	issuers := k.GetIssuers(ctx)
 	res, err := types.ModuleCdc.MarshalJSON(issuers)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("failed to marshal JSON", err.Error()))

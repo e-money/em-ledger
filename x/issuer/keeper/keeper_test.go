@@ -41,17 +41,16 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, issuer1.IsValid())
 	require.True(t, issuer2.IsValid())
 
-	keeper.AddIssuer(ctx, issuer1)
-	require.Panics(t, func() {
-		// Duplicate denominations must cause panic
-		keeper.AddIssuer(ctx, issuer1)
-	})
+	err := keeper.AddIssuer(ctx, issuer1)
+	require.Nil(t, err)
+	err = keeper.AddIssuer(ctx, issuer1)
+	require.NotNil(t, err)
 
-	require.Len(t, keeper.getIssuers(ctx), 1)
+	require.Len(t, keeper.GetIssuers(ctx), 1)
 
 	keeper.AddIssuer(ctx, issuer2)
-	require.Len(t, keeper.getIssuers(ctx), 2)
-	require.Len(t, collectDenoms(keeper.getIssuers(ctx)), 3)
+	require.Len(t, keeper.GetIssuers(ctx), 2)
+	require.Len(t, collectDenoms(keeper.GetIssuers(ctx)), 3)
 
 	issuer := keeper.mustBeIssuer(ctx, acc1)
 	require.Equal(t, issuer1, issuer)
@@ -65,6 +64,27 @@ func TestAddIssuer(t *testing.T) {
 		// Function must panic if somehow provided with a nil address
 		keeper.mustBeIssuer(ctx, nil)
 	})
+}
+
+func TestRemoveIssuer(t *testing.T) {
+	ctx, _, _, keeper := createTestComponents(t)
+
+	acc1, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+	acc2, _ := sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+
+	issuer := types.NewIssuer(acc1, "x2eur", "x0jpy")
+
+	err := keeper.AddIssuer(ctx, issuer)
+	require.Nil(t, err)
+	require.Len(t, keeper.GetIssuers(ctx), 1)
+
+	err = keeper.RemoveIssuer(ctx, acc2)
+	require.NotNil(t, err)
+	require.Len(t, keeper.GetIssuers(ctx), 1)
+
+	err = keeper.RemoveIssuer(ctx, acc1)
+	require.Nil(t, err)
+	require.Empty(t, keeper.GetIssuers(ctx))
 }
 
 func TestIssuerModifyLiquidityProvider(t *testing.T) {
@@ -182,7 +202,7 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 		keyAcc     = sdk.NewKVStoreKey(auth.StoreKey)
 		keyParams  = sdk.NewKVStoreKey(params.StoreKey)
 		keySupply  = sdk.NewKVStoreKey(supply.StoreKey)
-		keyIssuer  = sdk.NewKVStoreKey(types.ModuleName)
+		keyIssuer  = sdk.NewKVStoreKey(types.StoreKey)
 		tkeyParams = sdk.NewTransientStoreKey(params.TStoreKey)
 	)
 
@@ -193,6 +213,7 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
+
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
@@ -215,9 +236,14 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 
 	lpk := liquidityprovider.NewKeeper(ak, sk)
 
-	keeper := NewKeeper(keySupply, lpk)
-
+	keeper := NewKeeper(keySupply, lpk, mockInflationKeeper{})
 	return ctx, ak, lpk, keeper
+}
+
+type mockInflationKeeper struct{}
+
+func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Error) {
+	return
 }
 
 func makeTestCodec() (cdc *codec.Codec) {

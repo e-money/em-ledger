@@ -24,11 +24,40 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		client.PostCommands(
 			getCmdIncreaseCredit(cdc),
 			getCmdDecreaseCredit(cdc),
+			getCmdSetInflation(cdc),
 			getCmdRevokeLiquidityProvider(cdc),
 		)...,
 	)
 
 	return issuanceTxCmd
+}
+
+func getCmdSetInflation(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:     "set-inflation [issuer_key_or_address] [denomination] [inflation]",
+		Example: "emcli issuer set-inflation issuerkey x2eur 0.02",
+		Short:   "Set the inflation rate for a denomination",
+		Args:    cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+
+			denom := args[1]
+
+			inflation, err := sdk.NewDecFromStr(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.MsgSetInflation{
+				Denom:         denom,
+				InflationRate: inflation,
+				Issuer:        cliCtx.GetFromAddress(),
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 func getCmdIncreaseCredit(cdc *codec.Codec) *cobra.Command {

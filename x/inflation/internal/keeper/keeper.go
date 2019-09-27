@@ -26,7 +26,7 @@ func NewKeeper(
 
 	// ensure mint module account is set
 	if addr := supplyKeeper.GetModuleAddress(types.ModuleName); addr == nil {
-		panic("the mint module account has not been set")
+		panic("the inflation module account has not been set")
 	}
 
 	return Keeper{
@@ -57,41 +57,26 @@ func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 	return
 }
 
-func (k Keeper) IsInflationAdministrator(ctx sdk.Context, account sdk.AccAddress) bool {
-	state := k.GetState(ctx)
-
-	for _, a := range state.Administrators {
-		adminAddress := sdk.AccAddress(a.Address().Bytes())
-
-		if adminAddress.Equals(account) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// set the minter
+// TODO Should really be internal
 func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryLengthPrefixed(is)
 	store.Set(types.MinterKey, b)
 }
 
-//______________________________________________________________________
+func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string) sdk.Error {
+	state := k.GetState(ctx)
+	asset := state.FindByDenom(denom)
+	if asset == nil {
+		errMsg := fmt.Sprintf("Unrecognized asset denomination: %v", denom)
+		return sdk.ErrUnknownRequest(errMsg)
+	}
 
-// GetParams returns the total set of minting parameters.
-//func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-//	k.paramSpace.Get(ctx, types.KeyParams, &params)
-//	return params
-//}
-//
-//// SetParams sets the total set of minting parameters.
-//func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
-//	k.paramSpace.Set(ctx, types.KeyParams, params)
-//}
+	asset.Inflation = newInflation
+	k.SetState(ctx, state)
 
-//______________________________________________________________________
+	return nil
+}
 
 func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {
 	return k.supplyKeeper.GetSupply(ctx).Total

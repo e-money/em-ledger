@@ -8,24 +8,57 @@ var (
 	_ sdk.Msg = MsgIncreaseCredit{}
 	_ sdk.Msg = MsgDecreaseCredit{}
 	_ sdk.Msg = MsgRevokeLiquidityProvider{}
+	_ sdk.Msg = MsgSetInflation{}
 )
 
 // Increase the credit of a liquidity provider. If the account is not previously an LP, it will be made one.
-type MsgIncreaseCredit struct {
-	CreditIncrease    sdk.Coins
-	LiquidityProvider sdk.AccAddress
-	Issuer            sdk.AccAddress
+type (
+	MsgIncreaseCredit struct {
+		CreditIncrease    sdk.Coins
+		LiquidityProvider sdk.AccAddress
+		Issuer            sdk.AccAddress
+	}
+
+	MsgDecreaseCredit struct {
+		CreditDecrease    sdk.Coins
+		LiquidityProvider sdk.AccAddress
+		Issuer            sdk.AccAddress
+	}
+
+	MsgRevokeLiquidityProvider struct {
+		LiquidityProvider sdk.AccAddress
+		Issuer            sdk.AccAddress
+	}
+
+	MsgSetInflation struct {
+		Denom         string
+		InflationRate sdk.Dec
+		Issuer        sdk.AccAddress
+	}
+)
+
+func (msg MsgSetInflation) Route() string { return ModuleName }
+
+func (msg MsgSetInflation) Type() string { return "setInflation" }
+
+func (msg MsgSetInflation) ValidateBasic() sdk.Error {
+	if msg.InflationRate.IsNegative() {
+		return ErrNegativeInflation()
+	}
+
+	if msg.Issuer.Empty() {
+		return sdk.ErrInvalidAddress("missing issuer address")
+	}
+
+	return nil
 }
 
-type MsgDecreaseCredit struct {
-	CreditDecrease    sdk.Coins
-	LiquidityProvider sdk.AccAddress
-	Issuer            sdk.AccAddress
+func (msg MsgSetInflation) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
-type MsgRevokeLiquidityProvider struct {
-	LiquidityProvider sdk.AccAddress
-	Issuer            sdk.AccAddress
+func (msg MsgSetInflation) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Issuer}
 }
 
 func (msg MsgRevokeLiquidityProvider) Route() string { return ModuleName }

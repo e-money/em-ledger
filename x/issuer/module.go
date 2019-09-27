@@ -100,12 +100,11 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	cdc := codec.New()
-	return cdc.MustMarshalJSON(defaultGenesisState())
+	return ModuleCdc.MustMarshalJSON(defaultGenesisState())
 }
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) (res []abci.ValidatorUpdate) {
+func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) (_ []abci.ValidatorUpdate) {
 	return
 }

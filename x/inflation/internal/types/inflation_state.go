@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"strings"
 	"time"
 
@@ -29,7 +28,6 @@ type InflationState struct {
 	LastAppliedTime   time.Time       `json:"last_applied" yaml:"last_applied"`
 	LastAppliedHeight sdk.Int         `json:"last_applied_height" yaml:"last_applied_height"`
 	InflationAssets   InflationAssets `json:"assets" yaml:"assets"`
-	Administrators    []crypto.PubKey `json:"administrators" yaml:"administrators,omitempty,flow"`
 }
 
 func ParamKeyTable() params.KeyTable {
@@ -63,7 +61,7 @@ func NewInflationState(assets ...string) InflationState {
 }
 
 func DefaultInflationState() InflationState {
-	return NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01")
+	return NewInflationState()
 }
 
 // validate params
@@ -99,13 +97,6 @@ func (is InflationState) String() string {
 	result.WriteString("Inflation state:\n")
 	for _, asset := range is.InflationAssets {
 		result.WriteString(fmt.Sprintf("\tDenom: %v\t\t\tInflation: %v\t\tAccum: %v\n", asset.Denom, asset.Inflation, asset.Accum))
-	}
-
-	if len(is.Administrators) > 0 {
-		result.WriteString("Administrative keys:\n")
-		for _, key := range is.Administrators {
-			result.WriteString(fmt.Sprintf("\t%v\n", key))
-		}
 	}
 
 	return result.String()

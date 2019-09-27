@@ -13,8 +13,10 @@ const (
 var (
 	ModuleCdc = types.ModuleCdc
 	NewKeeper = keeper.NewKeeper
+	NewIssuer = types.NewIssuer
 )
 
 type (
 	Keeper = keeper.Keeper
+	Issuer = types.Issuer
 )
