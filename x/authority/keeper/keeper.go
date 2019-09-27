@@ -47,7 +47,7 @@ func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
-		if !validateDenom(denom) {
+		if !types.ValidateDenom(denom) {
 			return types.ErrInvalidDenom(denom)
 		}
 	}
@@ -83,14 +83,4 @@ func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
 	}
 
 	panic(fmt.Errorf("address is not the authority: %v", address))
-}
-
-// The denomination validation functions are buried deep inside the Coin struct, so use this approach to validate names.
-func validateDenom(denomination string) bool {
-	defer func() {
-		recover()
-	}()
-	// Function panics when encountering an invalid denomination
-	sdk.NewCoin(denomination, sdk.ZeroInt())
-	return true
 }

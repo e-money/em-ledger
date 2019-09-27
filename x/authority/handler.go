@@ -23,10 +23,20 @@ func newHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgDestroyIssuer(ctx sdk.Context, k Keeper, msgDestroyIssuer types.MsgDestroyIssuer) sdk.Result {
+func handleMsgDestroyIssuer(ctx sdk.Context, k Keeper, msg types.MsgDestroyIssuer) sdk.Result {
+	err := k.DestroyIssuer(ctx, msg.Authority, msg.Issuer)
+	if err != nil {
+		return err.Result()
+	}
+
 	return sdk.Result{}
 }
 
 func handleMsgCreateIssuer(ctx sdk.Context, k Keeper, msg types.MsgCreateIssuer) sdk.Result {
+	err := k.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
+	if err != nil {
+		return err.Result()
+	}
+
 	return sdk.Result{}
 }

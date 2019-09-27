@@ -14,6 +14,7 @@ import (
 	app "emoney"
 	apptypes "emoney/types"
 	"emoney/util"
+	authoritycli "emoney/x/authority/client/cli"
 	issuercli "emoney/x/issuer/client/cli"
 	lpcli "emoney/x/liquidityprovider/client/cli"
 	lptypes "emoney/x/liquidityprovider/types"
@@ -50,6 +51,8 @@ func main() {
 		keys.Commands(),
 		lpcli.GetTxCmd(cdc),
 		issuercli.GetTxCmd(cdc),
+		authoritycli.GetTxCmd(cdc),
+
 		version.Cmd,
 	)
 

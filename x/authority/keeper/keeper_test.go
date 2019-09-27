@@ -27,12 +27,6 @@ func init() {
 	apptypes.ConfigureSDK()
 }
 
-func TestDenoms(t *testing.T) {
-	require.True(t, validateDenom("x2eur"))
-	require.False(t, validateDenom("X2EUR"))
-	require.False(t, validateDenom("123456"))
-}
-
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _ := createTestComponents(t)
 
@@ -179,7 +173,6 @@ func makeTestCodec() (cdc *codec.Codec) {
 	supply.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	liquidityprovider.RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
 
 	return
 }

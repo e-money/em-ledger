@@ -58,11 +58,7 @@ Example:
 	`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
-
-			chainID := ""
-			if len(args) == 1 {
-				chainID = args[0]
-			}
+			chainID := args[0]
 
 			outputDir := viper.GetString(flagOutputDir)
 
