@@ -3,11 +3,10 @@
 package network_test
 
 import (
-	"fmt"
 	"io/ioutil"
 )
 
 func init() {
-	fmt.Println(" *** Silencing test output")
+	// Silence the output of the testnet component
 	output = ioutil.Discard
 }
