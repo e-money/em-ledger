@@ -17,3 +17,26 @@
 13:14:11.844630 db@open done T·19.820273ms
 13:14:12.076643 db@close closing
 13:14:12.077037 db@close done T·391.398µs
+=============== Oct 2, 2019 (CEST) ===============
+15:05:47.207013 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+15:05:47.207279 version@stat F·[] S·0B[] Sc·[]
+15:05:47.207312 db@open opening
+15:05:47.207383 journal@recovery F·1
+15:05:47.207641 journal@recovery recovering @2
+15:05:47.222489 memdb@flush created L0@4 N·2 S·473B "aut..nfo,v1":"emo..ess,v2"
+15:05:47.226167 version@stat F·[1] S·473B[473B] Sc·[0.25]
+15:05:47.255127 db@janitor F·3 G·0
+15:05:47.255187 db@open done T·47.853665ms
+15:05:47.255588 db@close closing
+15:05:47.255791 db@close done T·199.261µs
+=============== Oct 2, 2019 (CEST) ===============
+15:05:55.081935 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+15:05:55.082693 version@stat F·[1] S·473B[473B] Sc·[0.25]
+15:05:55.082789 db@open opening
+15:05:55.083173 journal@recovery F·1
+15:05:55.088552 journal@recovery recovering @5
+15:05:55.088900 version@stat F·[1] S·473B[473B] Sc·[0.25]
+15:05:55.110546 db@janitor F·3 G·0
+15:05:55.110595 db@open done T·27.764817ms
+15:05:55.340823 db@close closing
+15:05:55.341787 db@close done T·960.524µs
