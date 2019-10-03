@@ -1,6 +1,6 @@
 // +build bdd,quiet
 
-package network_test
+package networktest
 
 import (
 	"io/ioutil"

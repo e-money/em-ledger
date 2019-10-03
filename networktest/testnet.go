@@ -1,6 +1,6 @@
 // +build bdd
 
-package network_test
+package networktest
 
 import (
 	"bufio"
@@ -11,8 +11,10 @@ import (
 	"os/exec"
 )
 
+// Handles running a testnet using docker-compose.
 type Testnet struct {
-	ctx context.Context
+	ctx      context.Context
+	keystore *KeyStore
 }
 
 const (
@@ -47,28 +49,28 @@ func init() {
 }
 
 func NewTestnetWithContext(ctx context.Context) Testnet {
+	ks, err := NewKeystore()
+	if err != nil {
+		panic(err)
+	}
+
 	return Testnet{
-		ctx: ctx,
+		ctx:      ctx,
+		keystore: ks,
 	}
 }
 
 func NewTestnet() Testnet {
-	return Testnet{}
+	return NewTestnetWithContext(nil)
 }
 
 func (t Testnet) Setup() error {
-	//make clean build-linux && ./emd.sh testnet localnet faucet -o build  --keyaccounts ~/.emcli/
-	fns := []func() error{
-		compileBinaries,
-		makeTestnet,
+	err := compileBinaries()
+	if err != nil {
+		return err
 	}
 
-	for _, fn := range fns {
-		err := fn()
-		if err != nil {
-			return err
-		}
-	}
+	t.makeTestnet()
 
 	return nil
 }
@@ -107,12 +109,21 @@ func (t Testnet) Teardown() error {
 
 func (t Testnet) WaitFor() {} // Wait for an event, e.g. blocks, special output or ...
 
-func makeTestnet() error {
-	return execCmdAndWait(EMD, "testnet", "localnet", "master", "-o", "build", "--keyaccounts", "./network_test/testdata/")
+func (t Testnet) makeTestnet() error {
+	return execCmdAndWait(EMD,
+		"testnet",
+		"localnet",
+		t.keystore.Authority.name,
+		"-o", "build",
+		"--keyaccounts", t.keystore.path)
 }
 
 func compileBinaries() error {
-	return execCmdAndWait(makePath, "clean", "build-all")
+	err := execCmdAndWait(makePath, "clean", "build-all")
+	if err != nil {
+		fmt.Println("Compilation step caused error: ", err)
+	}
+	return err
 }
 
 func dockerComposeUp() error {
@@ -154,7 +165,7 @@ func execCmdAndWait(name string, arguments ...string) error {
 	return nil
 }
 
-func writeoutput(cmd *exec.Cmd) error {
+func writeoutput(cmd *exec.Cmd, scanners ...func(string)) error {
 	stderrReader, err := cmd.StderrPipe()
 	if err != nil {
 		return err

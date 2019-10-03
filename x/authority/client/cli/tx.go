@@ -34,6 +34,7 @@ func getCmdCreateIssuer(cdc *codec.Codec) *cobra.Command {
 		Use:     "create-issuer [authority_key_or_address] [issuer_address] [denominations]",
 		Example: "emcli authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu x2eur,x0jpy",
 		Short:   "Create a new issuer",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
@@ -64,6 +65,7 @@ func getCmdDestroyIssuer(cdc *codec.Codec) *cobra.Command {
 		Use:     "destroy-issuer [authority_key_or_address] [issuer_address]",
 		Example: "emcli authority destory-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu",
 		Short:   "Delete an issuer",
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
