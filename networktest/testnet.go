@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 )
 
 // Handles running a testnet using docker-compose.
@@ -75,7 +76,7 @@ func (t Testnet) Setup() error {
 	return nil
 }
 
-func (t Testnet) Start() error {
+func (t Testnet) Start() (func() bool, error) {
 	if t.ctx != nil {
 		go func() {
 			<-t.ctx.Done()
@@ -86,16 +87,16 @@ func (t Testnet) Start() error {
 	return dockerComposeUp()
 }
 
-func (t Testnet) Restart() error {
+func (t Testnet) Restart() (func() bool, error) {
 	err := dockerComposeDown()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for i := 0; i < ContainerCount; i++ {
 		err := execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -126,17 +127,18 @@ func compileBinaries() error {
 	return err
 }
 
-func dockerComposeUp() error {
-	return execCmdAndRun(dockerComposePath, "up")
+func dockerComposeUp() (func() bool, error) {
+	wait, scanner := createOutputScanner("] Committed state", 20*time.Second)
+	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
 func dockerComposeDown() error {
 	return execCmdAndWait(dockerComposePath, "down")
 }
 
-func execCmdAndRun(name string, arguments ...string) error {
+func execCmdAndRun(name string, arguments []string, scanner func(string)) error {
 	cmd := exec.Command(name, arguments...)
-	err := writeoutput(cmd)
+	err := writeoutput(cmd, scanner)
 	if err != nil {
 		return err
 	}
@@ -165,7 +167,7 @@ func execCmdAndWait(name string, arguments ...string) error {
 	return nil
 }
 
-func writeoutput(cmd *exec.Cmd, scanners ...func(string)) error {
+func writeoutput(cmd *exec.Cmd, filters ...func(string)) error {
 	stderrReader, err := cmd.StderrPipe()
 	if err != nil {
 		return err
@@ -176,6 +178,10 @@ func writeoutput(cmd *exec.Cmd, scanners ...func(string)) error {
 		for scanner.Scan() {
 			s := scanner.Text()
 			fmt.Fprintf(output, "stderr | %s\n", s)
+
+			for _, filter := range filters {
+				filter(s)
+			}
 		}
 	}()
 
@@ -189,6 +195,10 @@ func writeoutput(cmd *exec.Cmd, scanners ...func(string)) error {
 		for scanner.Scan() {
 			s := scanner.Text()
 			fmt.Fprintf(output, "stdout | %s\n", s)
+
+			for _, filter := range filters {
+				filter(s)
+			}
 		}
 	}()
 

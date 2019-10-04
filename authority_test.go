@@ -23,18 +23,15 @@ var _ = Describe("Authority", func() {
 	emcli := nt.NewEmcli()
 
 	BeforeSuite(func() {
-		fmt.Println("Beforesuite!")
 		err := testnet.Setup()
 		Expect(err).ShouldNot(HaveOccurred())
 
-		err = testnet.Start()
+		awaitReady, err := testnet.Start()
 		Expect(err).ShouldNot(HaveOccurred())
-
-		time.Sleep(5 * time.Second)
+		Expect(awaitReady()).To(BeTrue())
 	})
 
 	AfterSuite(func() {
-		fmt.Println("Aftersuite!")
 		err := testnet.Teardown()
 		Expect(err).ShouldNot(HaveOccurred())
 	})
