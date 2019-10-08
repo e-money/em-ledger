@@ -40,7 +40,7 @@ func (i Issuers) String() string {
 	var sb strings.Builder
 
 	for _, issuer := range i {
-		sb.WriteString(fmt.Sprintf("%v : %v\n", issuer.Address, issuer.Address))
+		sb.WriteString(fmt.Sprintf("%v : %v\n", issuer.Address.String(), issuer.Denoms))
 	}
 
 	return sb.String()
