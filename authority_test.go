@@ -5,7 +5,8 @@ package emoney
 import (
 	nt "emoney/networktest"
 	apptypes "emoney/types"
-	"fmt"
+	"emoney/x/issuer/types"
+	"encoding/json"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"testing"
@@ -40,20 +41,25 @@ var _ = Describe("Authority", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 	})
 
-	Describe("Authority can manage issuers", func() {
-		Context("Create an issuer", func() {
-			It("Must be possible", func() {
-				bz, err := emcli.AuthorityCreateIssuer(testnet.Keystore.Key1.GetAddress(), "x2eur", "x0jpy")
+	Describe("Authority manages issuers", func() {
+		Context("", func() {
+			It("Create an issuer", func() {
+				_, err := emcli.AuthorityCreateIssuer(testnet.Keystore.Key1.GetAddress(), "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
 
 				// TODO Create a better way to detect chain events and wait for them.
 				time.Sleep(2 * time.Second)
 
-				bz, err = emcli.QueryIssuers()
+				bz, err := emcli.QueryIssuers()
 				Expect(err).ShouldNot(HaveOccurred())
-				fmt.Println(" *** Issuers:\n", string(bz))
 
+				var issuers types.Issuers
+				json.Unmarshal(bz, &issuers)
+
+				Expect(issuers).To(HaveLen(1))
+				Expect(issuers[0].Denoms).To(ConsistOf("x2eur", "x0jpy"))
 			})
+
 		})
 	})
 })
