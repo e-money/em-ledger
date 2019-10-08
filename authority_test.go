@@ -3,14 +3,18 @@
 package emoney
 
 import (
+	nt "emoney/networktest"
+	apptypes "emoney/types"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"testing"
 	"time"
-
-	nt "emoney/networktest"
 )
+
+func init() {
+	apptypes.ConfigureSDK()
+}
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -20,7 +24,7 @@ func TestSuite(t *testing.T) {
 
 var _ = Describe("Authority", func() {
 	testnet := nt.NewTestnet()
-	emcli := nt.NewEmcli()
+	emcli := nt.NewEmcli(testnet.Keystore)
 
 	BeforeSuite(func() {
 		err := testnet.Setup()
@@ -39,16 +43,16 @@ var _ = Describe("Authority", func() {
 	Describe("Authority can manage issuers", func() {
 		Context("Create an issuer", func() {
 			It("Must be possible", func() {
-				json, err := emcli.QueryInflation()
-				if err != nil {
-					Fail(" *** Error")
-					return
-				}
-				fmt.Println("Inflation:\n", string(json))
+				bz, err := emcli.AuthorityCreateIssuer(testnet.Keystore.Key1.GetAddress(), "x2eur", "x0jpy")
+				Expect(err).ShouldNot(HaveOccurred())
 
-				fmt.Println(" *** Inside test. Sleeping for a while!")
-				time.Sleep(30 * time.Second)
-				fmt.Println(" *** Done sleeping in test!")
+				// TODO Create a better way to detect chain events and wait for them.
+				time.Sleep(2 * time.Second)
+
+				bz, err = emcli.QueryIssuers()
+				Expect(err).ShouldNot(HaveOccurred())
+				fmt.Println(" *** Issuers:\n", string(bz))
+
 			})
 		})
 	})

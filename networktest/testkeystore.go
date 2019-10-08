@@ -9,14 +9,22 @@ import (
 
 const KeyPwd = "pwd12345"
 
-type KeyStore struct {
-	path    string
-	keybase keys.Keybase
+type (
+	KeyStore struct {
+		path    string
+		keybase keys.Keybase
 
-	Authority,
-	Key1,
-	Key2 Key
-}
+		Authority,
+		Key1,
+		Key2,
+		Key3 Key
+	}
+
+	Key struct {
+		name    string
+		keybase keys.Keybase
+	}
+)
 
 func newKey(name string, keybase keys.Keybase) Key {
 	return Key{
@@ -54,6 +62,7 @@ func NewKeystore() (*KeyStore, error) {
 		Authority: newKey("authoritykey", keybase),
 		Key1:      newKey("key1", keybase),
 		Key2:      newKey("key2", keybase),
+		Key3:      newKey("key3", keybase),
 	}
 
 	return ks, nil

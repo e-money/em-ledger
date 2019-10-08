@@ -1,10 +1,9 @@
 package networktest
 
 import (
+	"io"
 	"os/exec"
 	"strings"
-
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
 )
 
 const (
@@ -12,24 +11,17 @@ const (
 )
 
 type Emcli struct {
-	node    string
-	chainid string
-	homedir string
+	node     string
+	chainid  string
+	keystore *KeyStore
 }
 
-type Key struct {
-	name    string
-	keybase keys.Keybase
-}
-
-func NewEmcli() Emcli {
-	emcli := Emcli{}
-
-	emcli.chainid = "localnet"
-	emcli.node = "tcp://localhost:26657"
-	emcli.homedir = "./networktest/testdata/"
-
-	return emcli
+func NewEmcli(keystore *KeyStore) Emcli {
+	return Emcli{
+		chainid:  "localnet",
+		node:     "tcp://localhost:26657",
+		keystore: keystore,
+	}
 }
 
 func (cli Emcli) QueryIssuers() ([]byte, error) {
@@ -40,12 +32,29 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "inflation")...)
 }
 
-func (cli Emcli) AuthorityCreateIssuer(issuerKey string, denoms ...string) {
-	execCmdAndCollectResponse("authority", "create-issuer", "master", issuerKey, strings.Join(denoms, ","))
+func (cli Emcli) AuthorityCreateIssuer(issuerKey string, denoms ...string) ([]byte, error) {
+	args := cli.addNetworkFlags("authority", "create-issuer", "authoritykey", issuerKey, strings.Join(denoms, ","), "--yes")
+	return execCmdWithInput(args, "pwd12345\n")
+}
+
+func execCmdWithInput(arguments []string, input string) ([]byte, error) {
+	cmd := exec.Command(EMCLI, arguments...)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	io.WriteString(stdin, input)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return cmd.CombinedOutput()
 }
 
 func execCmdAndCollectResponse(arguments ...string) ([]byte, error) {
-	//fmt.Printf("Estimated command: %v %v\n", EMCLI, strings.Join(arguments, " "))
 	return exec.Command(EMCLI, arguments...).CombinedOutput()
 }
 
@@ -53,7 +62,7 @@ func (cli Emcli) addNetworkFlags(arguments ...string) []string {
 	return append(arguments,
 		"--node", cli.node,
 		"--chain-id", cli.chainid,
-		"--home", cli.homedir,
+		"--home", cli.keystore.path,
 		"--output", "json",
 	)
 }

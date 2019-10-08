@@ -15,7 +15,7 @@ import (
 // Handles running a testnet using docker-compose.
 type Testnet struct {
 	ctx      context.Context
-	keystore *KeyStore
+	Keystore *KeyStore
 }
 
 const (
@@ -57,7 +57,7 @@ func NewTestnetWithContext(ctx context.Context) Testnet {
 
 	return Testnet{
 		ctx:      ctx,
-		keystore: ks,
+		Keystore: ks,
 	}
 }
 
@@ -103,7 +103,6 @@ func (t Testnet) Restart() (func() bool, error) {
 	return dockerComposeUp()
 }
 
-// TODO Use context?
 func (t Testnet) Teardown() error {
 	return dockerComposeDown()
 }
@@ -114,9 +113,9 @@ func (t Testnet) makeTestnet() error {
 	return execCmdAndWait(EMD,
 		"testnet",
 		"localnet",
-		t.keystore.Authority.name,
+		t.Keystore.Authority.name,
 		"-o", "build",
-		"--keyaccounts", t.keystore.path)
+		"--keyaccounts", t.Keystore.path)
 }
 
 func compileBinaries() error {
@@ -173,34 +172,24 @@ func writeoutput(cmd *exec.Cmd, filters ...func(string)) error {
 		return err
 	}
 
-	go func() {
-		scanner := bufio.NewScanner(stderrReader)
-		for scanner.Scan() {
-			s := scanner.Text()
-			fmt.Fprintf(output, "stderr | %s\n", s)
-
-			for _, filter := range filters {
-				filter(s)
-			}
-		}
-	}()
-
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
 
-	go func() {
-		scanner := bufio.NewScanner(stdoutReader)
-		for scanner.Scan() {
-			s := scanner.Text()
-			fmt.Fprintf(output, "stdout | %s\n", s)
-
-			for _, filter := range filters {
-				filter(s)
-			}
-		}
-	}()
-
+	go createOutputHandler("stderr", stderrReader, filters)
+	go createOutputHandler("stdout", stdoutReader, filters)
 	return nil
+}
+
+func createOutputHandler(prefix string, reader io.Reader, filters []func(string)) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		s := scanner.Text()
+		fmt.Fprintf(output, "%s | %s\n", prefix, s)
+
+		for _, filter := range filters {
+			filter(s)
+		}
+	}
 }
