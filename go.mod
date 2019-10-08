@@ -10,6 +10,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/tendermint/go-amino v0.15.0
 	github.com/tendermint/tendermint v0.32.1
+	github.com/tidwall/gjson v1.3.2
 )
 
 // replace github.com/cosmos/cosmos-sdk => ./tmpvendor/cosmos-sdk

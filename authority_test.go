@@ -11,6 +11,8 @@ import (
 	. "github.com/onsi/gomega"
 	"testing"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 func init() {
@@ -44,13 +46,20 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("Create an issuer", func() {
-				_, err := emcli.AuthorityCreateIssuer(testnet.Keystore.Key1.GetAddress(), "x2eur", "x0jpy")
+				bz, err := emcli.AuthorityCreateIssuer(testnet.Keystore.Key1.GetAddress(), "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
+
+				txhash := gjson.ParseBytes(bz).Get("txhash").String()
+				Expect(txhash).To(Not(BeEmpty()))
 
 				// TODO Create a better way to detect chain events and wait for them.
 				time.Sleep(2 * time.Second)
 
-				bz, err := emcli.QueryIssuers()
+				success, err := emcli.QueryTransactionSucessful(txhash)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(success).To(BeTrue())
+
+				bz, err = emcli.QueryIssuers()
 				Expect(err).ShouldNot(HaveOccurred())
 
 				var issuers types.Issuers

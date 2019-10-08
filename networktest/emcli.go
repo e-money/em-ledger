@@ -1,6 +1,7 @@
 package networktest
 
 import (
+	"github.com/tidwall/gjson"
 	"io"
 	"os/exec"
 	"strings"
@@ -25,16 +26,30 @@ func NewEmcli(keystore *KeyStore) Emcli {
 }
 
 func (cli Emcli) QueryIssuers() ([]byte, error) {
-	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "issuers")...)
+	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "issuers"))
 }
 
 func (cli Emcli) QueryInflation() ([]byte, error) {
-	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "inflation")...)
+	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "inflation"))
 }
 
 func (cli Emcli) AuthorityCreateIssuer(issuerKey string, denoms ...string) ([]byte, error) {
 	args := cli.addNetworkFlags("authority", "create-issuer", "authoritykey", issuerKey, strings.Join(denoms, ","), "--yes")
 	return execCmdWithInput(args, "pwd12345\n")
+}
+
+func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
+	args := cli.addNetworkFlags("query", "tx", txhash)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryTransactionSucessful(txhash string) (bool, error) {
+	bz, err := cli.QueryTransaction(txhash)
+	if err != nil {
+		return false, err
+	}
+
+	return gjson.ParseBytes(bz).Get("logs.0.success").Bool(), nil
 }
 
 func execCmdWithInput(arguments []string, input string) ([]byte, error) {
@@ -54,7 +69,7 @@ func execCmdWithInput(arguments []string, input string) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-func execCmdAndCollectResponse(arguments ...string) ([]byte, error) {
+func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
 	return exec.Command(EMCLI, arguments...).CombinedOutput()
 }
 
