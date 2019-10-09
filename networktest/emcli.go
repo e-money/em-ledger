@@ -1,6 +1,7 @@
 package networktest
 
 import (
+	"fmt"
 	"github.com/tidwall/gjson"
 	"io"
 	"os/exec"
@@ -33,14 +34,44 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "inflation"))
 }
 
-func (cli Emcli) AuthorityCreateIssuer(issuerKey string, denoms ...string) ([]byte, error) {
-	args := cli.addNetworkFlags("authority", "create-issuer", "authoritykey", issuerKey, strings.Join(denoms, ","), "--yes")
+func (cli Emcli) AuthorityCreateIssuer(issuerKey Key, denoms ...string) ([]byte, error) {
+	args := cli.addNetworkFlags("authority", "create-issuer", "authoritykey", issuerKey.GetAddress(), strings.Join(denoms, ","), "--yes")
 	return execCmdWithInput(args, "pwd12345\n")
 }
 
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	args := cli.addNetworkFlags("query", "tx", txhash)
 	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryAccount(account string) ([]byte, error) {
+	args := cli.addNetworkFlags("query", "account", account)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) IssuerIncreaseCredit(issuer, liquidityprovider Key, amount string) (string, error) {
+	args := cli.addNetworkFlags("issuer", "increase-credit", issuer.name, liquidityprovider.GetAddress(), amount, "--yes")
+	bz, err := execCmdWithInput(args, "pwd12345\n")
+	if err != nil {
+		return "", err
+	}
+
+	return extractTxHash(bz)
+}
+
+func (cli Emcli) IssuerDecreaseCredit(issuer, liquidityprovider Key, amount string) ([]byte, error) {
+	args := cli.addNetworkFlags("issuer", "decrease-credit", issuer.name, liquidityprovider.GetAddress(), amount, "--yes")
+	return execCmdWithInput(args, "pwd12345\n")
+}
+
+func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, error) {
+	args := cli.addNetworkFlags("liquidityprovider", "mint", amount, "--from", key.name, "--yes")
+	bz, err := execCmdWithInput(args, "pwd12345\n")
+	if err != nil {
+		return "", err
+	}
+
+	return extractTxHash(bz)
 }
 
 func (cli Emcli) QueryTransactionSucessful(txhash string) (bool, error) {
@@ -50,6 +81,15 @@ func (cli Emcli) QueryTransactionSucessful(txhash string) (bool, error) {
 	}
 
 	return gjson.ParseBytes(bz).Get("logs.0.success").Bool(), nil
+}
+
+func extractTxHash(bz []byte) (string, error) {
+	txhash := gjson.ParseBytes(bz).Get("txhash")
+	if txhash.Exists() {
+		return txhash.Str, nil
+	}
+
+	return "", fmt.Errorf("could not find txhash in response %v", string(bz))
 }
 
 func execCmdWithInput(arguments []string, input string) ([]byte, error) {

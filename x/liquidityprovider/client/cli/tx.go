@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 
 	"emoney/x/liquidityprovider/types"
@@ -42,8 +41,6 @@ func getCmdMint(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			fmt.Println(" *** Parsed minting amount : ", amount)
 
 			msg := types.MsgMintTokens{
 				Amount:            amount,
