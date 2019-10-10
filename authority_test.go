@@ -60,9 +60,8 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("creates an issuer", func() {
-				txhash, err := emcli.AuthorityCreateIssuer(Issuer, "x2eur", "x0jpy")
+				_, err := emcli.AuthorityCreateIssuer(Issuer, "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(txhash).To(Not(BeEmpty()))
 
 				bz, err := emcli.QueryIssuers()
 				Expect(err).ShouldNot(HaveOccurred())
