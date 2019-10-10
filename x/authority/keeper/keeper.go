@@ -43,33 +43,23 @@ func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress) {
 	return
 }
 
-func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) sdk.Error {
+func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) sdk.Result {
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
 		if !types.ValidateDenom(denom) {
-			return types.ErrInvalidDenom(denom)
+			return types.ErrInvalidDenom(denom).Result()
 		}
 	}
 
 	i := issuer.NewIssuer(issuerAddress, denoms...)
-	err := k.ik.AddIssuer(ctx, i)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return k.ik.AddIssuer(ctx, i)
 }
 
-func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Error {
+func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {
 	k.MustBeAuthority(ctx, authority)
 
-	err := k.ik.RemoveIssuer(ctx, issuerAddress)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return k.ik.RemoveIssuer(ctx, issuerAddress)
 }
 
 func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {

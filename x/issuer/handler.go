@@ -28,33 +28,17 @@ func newHandler(k keeper.Keeper) sdk.Handler {
 }
 
 func handleMsgSetInflation(ctx sdk.Context, msg types.MsgSetInflation, k keeper.Keeper) sdk.Result {
-	error := k.SetInflationRate(ctx, msg.Issuer, msg.InflationRate, msg.Denom)
-	if error != nil {
-		return error.Result()
-	}
-
-	return sdk.Result{}
+	return k.SetInflationRate(ctx, msg.Issuer, msg.InflationRate, msg.Denom)
 }
 
 func handleMsgRevokeLiquidityProvider(ctx sdk.Context, msg types.MsgRevokeLiquidityProvider, k keeper.Keeper) sdk.Result {
-	error := k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer)
-	if error != nil {
-		return error.Result()
-	}
-
-	return sdk.Result{}
+	return k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer)
 }
 
 func handleMsgDecreaseCredit(ctx sdk.Context, msg types.MsgDecreaseCredit, k keeper.Keeper) sdk.Result {
-	error := k.DecreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditDecrease)
-	if error != nil {
-		return error.Result()
-	}
-
-	return sdk.Result{}
+	return k.DecreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditDecrease)
 }
 
 func handleMsgIncreaseCredit(ctx sdk.Context, msg types.MsgIncreaseCredit, k keeper.Keeper) sdk.Result {
-	k.IncreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditIncrease)
-	return sdk.Result{}
+	return k.IncreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditIncrease)
 }

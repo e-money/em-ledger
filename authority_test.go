@@ -122,7 +122,7 @@ var _ = Describe("Authority", func() {
 				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
 				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "500000x2eur")
-				Expect(err).ShouldNot(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 
 				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
@@ -157,7 +157,7 @@ var _ = Describe("Authority", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "10000x2eur")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 
 				balanceAfter, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())

@@ -64,18 +64,18 @@ func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store.Set(types.MinterKey, b)
 }
 
-func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string) sdk.Error {
+func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string) sdk.Result {
 	state := k.GetState(ctx)
 	asset := state.FindByDenom(denom)
 	if asset == nil {
 		errMsg := fmt.Sprintf("Unrecognized asset denomination: %v", denom)
-		return sdk.ErrUnknownRequest(errMsg)
+		return sdk.ErrUnknownRequest(errMsg).Result()
 	}
 
 	asset.Inflation = newInflation
 	k.SetState(ctx, state)
 
-	return nil
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {

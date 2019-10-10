@@ -124,11 +124,11 @@ func execCmdWithInput(arguments []string, input string) (string, error) {
 	}
 
 	bz, err := cmd.CombinedOutput()
+	//fmt.Println(" *** Output", string(bz))
 	if err != nil {
 		return "", err
 	}
 
-	//fmt.Println(" *** Output", string(bz))
 	return extractTxHash(bz)
 }
 

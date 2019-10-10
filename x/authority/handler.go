@@ -13,30 +13,12 @@ func newHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 
 		case types.MsgCreateIssuer:
-			return handleMsgCreateIssuer(ctx, keeper, msg)
+			return keeper.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
 		case types.MsgDestroyIssuer:
-			return handleMsgDestroyIssuer(ctx, keeper, msg)
+			return keeper.DestroyIssuer(ctx, msg.Authority, msg.Issuer)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized inflation Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
-}
-
-func handleMsgDestroyIssuer(ctx sdk.Context, k Keeper, msg types.MsgDestroyIssuer) sdk.Result {
-	err := k.DestroyIssuer(ctx, msg.Authority, msg.Issuer)
-	if err != nil {
-		return err.Result()
-	}
-
-	return sdk.Result{}
-}
-
-func handleMsgCreateIssuer(ctx sdk.Context, k Keeper, msg types.MsgCreateIssuer) sdk.Result {
-	err := k.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
-	if err != nil {
-		return err.Result()
-	}
-
-	return sdk.Result{}
 }

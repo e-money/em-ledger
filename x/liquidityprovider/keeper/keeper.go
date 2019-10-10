@@ -35,34 +35,35 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress,
 	logger.Info("Created liquidity provider account.", "account", lpAcc.GetAddress())
 }
 
-func (k Keeper) MintTokensFromCredit(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) {
+func (k Keeper) MintTokensFromCredit(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) sdk.Result {
 	logger := k.Logger(ctx)
 
 	account := k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if account == nil {
-		return
+		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", liquidityProvider.String())).Result()
 	}
 
 	updatedCredit, anyNegative := account.Credit.SafeSub(amount)
 	if anyNegative {
 		logger.Debug(fmt.Sprintf("Insufficient credit for minting operation"), "requested", amount, "available", account.Credit)
-		fmt.Println(" *** Insufficient credit for minting", amount, account.Credit)
-		return
+		return sdk.ErrInsufficientCoins(fmt.Sprintf("insufficient liquidity provider credit; %s < %s", account.Credit, amount)).Result()
 	}
 
 	err := k.supplyKeeper.MintCoins(ctx, types.ModuleName, amount)
 	if err != nil {
-		panic(err)
+		return err.Result()
 	}
 
 	err = k.supplyKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, liquidityProvider, amount)
 	if err != nil {
-		panic(err)
+		return err.Result()
 	}
 
 	account = k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	account.Credit = updatedCredit
 	k.SetLiquidityProviderAccount(ctx, account)
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func (k Keeper) SetLiquidityProviderAccount(ctx sdk.Context, account *types.LiquidityProviderAccount) {

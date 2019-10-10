@@ -29,72 +29,74 @@ func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) K
 	}
 }
 
-// TODO Return sdk.Results instead of panicking everywhere.
-func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditIncrease sdk.Coins) {
-	log := k.logger(ctx)
+func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditIncrease sdk.Coins) sdk.Result {
+	logger := k.logger(ctx)
 
 	i := k.mustBeIssuer(ctx, issuer)
 	for _, coin := range creditIncrease {
 		if !anyContained(i.Denoms, coin.Denom) {
-			panic(fmt.Errorf("issuer %v cannot provide credit in %v", i.Address, coin.Denom))
+			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
 		}
 	}
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		log.Info("Creating liquidity provider", "account", liquidityProvider, "increase", creditIncrease)
+		logger.Info("Creating liquidity provider", "account", liquidityProvider, "increase", creditIncrease)
 		// Account was not previously a liquidity provider. Create it
 		k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, creditIncrease)
 	} else {
-		log.Info("Increasing liquidity provider credit", "account", liquidityProvider, "increase", creditIncrease)
+		logger.Info("Increasing liquidity provider credit", "account", liquidityProvider, "increase", creditIncrease)
 		lpAcc.IncreaseCredit(creditIncrease)
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditDecrease sdk.Coins) sdk.Error {
-	log := k.logger(ctx)
+func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditDecrease sdk.Coins) sdk.Result {
+	logger := k.logger(ctx)
 
 	i := k.mustBeIssuer(ctx, issuer)
 	for _, coin := range creditDecrease {
 		if !anyContained(i.Denoms, coin.Denom) {
-			panic(fmt.Errorf("issuer %v cannot control credit in %v", i.Address, coin.Denom))
+			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
 		}
 	}
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		panic(fmt.Errorf("address %v is not a liquidity provider", liquidityProvider))
+		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
 	_, anyNegative := lpAcc.Credit.SafeSub(creditDecrease)
 	if anyNegative {
-		return types.ErrNegativeCredit(lpAcc.GetAddress())
+		return types.ErrNegativeCredit(lpAcc.GetAddress()).Result()
 	}
 
-	log.Info("Liquidity provider credit decreased", "account", liquidityProvider, "decrease", creditDecrease)
+	logger.Info("Liquidity provider credit decreased", "account", liquidityProvider, "decrease", creditDecrease)
 	lpAcc.DecreaseCredit(creditDecrease)
 	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 
-	return nil
+	return sdk.Result{Events: ctx.EventManager().Events()}
+
 }
 
-func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress) sdk.Error {
+func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress) sdk.Result {
 	k.mustBeIssuer(ctx, issuer)
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		return types.ErrNotLiquidityProvider(liquidityProvider)
+		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
 	if k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc) {
-		return nil
+		return sdk.Result{}
 	}
 
-	return types.ErrNotLiquidityProvider(liquidityProvider)
+	return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 }
 
-func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) sdk.Error {
+func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) sdk.Result {
 	k.mustBeIssuer(ctx, issuer)
 
 	return k.ik.SetInflation(ctx, inflationRate, denom)
@@ -121,20 +123,20 @@ func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store.Set([]byte(keyIssuerList), bz)
 }
 
-func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Error {
+func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
 	issuers := k.GetIssuers(ctx)
 
 	existingDenoms := collectDenoms(issuers)
 	if anyContained(existingDenoms, newIssuer.Denoms...) {
-		return types.ErrDenominationAlreadyAssigned()
+		return types.ErrDenominationAlreadyAssigned().Result()
 	}
 
 	issuers = append(issuers, newIssuer)
 	k.setIssuers(ctx, issuers)
-	return nil
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) sdk.Error {
+func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) sdk.Result {
 	issuers := k.GetIssuers(ctx)
 
 	updatedIssuers := make([]types.Issuer, 0)
@@ -149,11 +151,11 @@ func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) sdk.Error {
 	}
 
 	if len(updatedIssuers) == len(issuers) {
-		return types.ErrIssuerNotFound(issuer)
+		return types.ErrIssuerNotFound(issuer).Result()
 	}
 
 	k.setIssuers(ctx, updatedIssuers)
-	return nil
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func anyContained(s []string, searchterms ...string) bool {

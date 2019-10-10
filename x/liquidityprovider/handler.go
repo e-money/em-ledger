@@ -22,6 +22,5 @@ func newHandler(k keeper.Keeper) sdk.Handler {
 }
 
 func handleMsgMintTokens(ctx sdk.Context, msg types.MsgMintTokens, k keeper.Keeper) sdk.Result {
-	k.MintTokensFromCredit(ctx, msg.LiquidityProvider, msg.Amount)
-	return sdk.Result{}
+	return k.MintTokensFromCredit(ctx, msg.LiquidityProvider, msg.Amount)
 }

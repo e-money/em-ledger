@@ -14,6 +14,7 @@ const (
 	CodeDuplicateDenomination sdk.CodeType = 3
 	CodeIssuerNotFound        sdk.CodeType = 4
 	CodeNegativeInflation     sdk.CodeType = 5
+	CodeDoesNotControlDenom   sdk.CodeType = 6
 )
 
 func ErrNegativeCredit(lp sdk.AccAddress) sdk.Error {
@@ -22,6 +23,10 @@ func ErrNegativeCredit(lp sdk.AccAddress) sdk.Error {
 
 func ErrNotLiquidityProvider(lp sdk.AccAddress) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeNotLiquidityProvider, fmt.Sprint("account is not a liquidity provider:", lp))
+}
+
+func ErrDoesNotControlDenomination(denom string) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeDoesNotControlDenom, fmt.Sprintf("issuer does not control inflation of denomination %v", denom))
 }
 
 func ErrDenominationAlreadyAssigned() sdk.Error {
