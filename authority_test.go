@@ -19,6 +19,7 @@ import (
 const (
 	// gjson paths
 	QGetCreditEUR  = "value.Credit.#(denom==\"x2eur\").amount"
+	QGetCredit     = "value.Credit"
 	QGetBalanceEUR = "value.Account.value.coins.#(denom==\"x2eur\").amount"
 )
 
@@ -54,10 +55,8 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("creates an issuer", func() {
-				bz, err := emcli.AuthorityCreateIssuer(keystore.Key1, "x2eur", "x0jpy")
+				txhash, err := emcli.AuthorityCreateIssuer(keystore.Key1, "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
-
-				txhash := gjson.ParseBytes(bz).Get("txhash").String()
 				Expect(txhash).To(Not(BeEmpty()))
 
 				// TODO Create a better way to detect chain events and wait for them.
@@ -67,7 +66,7 @@ var _ = Describe("Authority", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 
-				bz, err = emcli.QueryIssuers()
+				bz, err := emcli.QueryIssuers()
 				Expect(err).ShouldNot(HaveOccurred())
 
 				var issuers types.Issuers
@@ -139,6 +138,16 @@ var _ = Describe("Authority", func() {
 				creditAfter, _ := strconv.Atoi(s)
 
 				Expect(creditAfter).To(Equal(creditBefore - 10000))
+			})
+
+			It("Liquidity provider gets revoked", func() {
+				_, err := emcli.IssuerRevokeCredit(keystore.Key1, keystore.Key1)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				time.Sleep(time.Second)
+				bz, err := emcli.QueryAccount(keystore.Key1.GetAddress())
+				credit := gjson.ParseBytes(bz).Get(QGetCredit)
+				Expect(credit.Exists()).To(BeFalse())
 			})
 		})
 	})

@@ -34,9 +34,9 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addNetworkFlags("q", "inflation"))
 }
 
-func (cli Emcli) AuthorityCreateIssuer(issuerKey Key, denoms ...string) ([]byte, error) {
+func (cli Emcli) AuthorityCreateIssuer(issuerKey Key, denoms ...string) (string, error) {
 	args := cli.addNetworkFlags("authority", "create-issuer", "authoritykey", issuerKey.GetAddress(), strings.Join(denoms, ","), "--yes")
-	return execCmdWithInput(args, "pwd12345\n")
+	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
@@ -51,27 +51,22 @@ func (cli Emcli) QueryAccount(account string) ([]byte, error) {
 
 func (cli Emcli) IssuerIncreaseCredit(issuer, liquidityprovider Key, amount string) (string, error) {
 	args := cli.addNetworkFlags("issuer", "increase-credit", issuer.name, liquidityprovider.GetAddress(), amount, "--yes")
-	bz, err := execCmdWithInput(args, "pwd12345\n")
-	if err != nil {
-		return "", err
-	}
-
-	return extractTxHash(bz)
+	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) IssuerDecreaseCredit(issuer, liquidityprovider Key, amount string) ([]byte, error) {
+func (cli Emcli) IssuerRevokeCredit(issuer, liquidityprovider Key) (string, error) {
+	args := cli.addNetworkFlags("issuer", "revoke-credit", issuer.name, liquidityprovider.GetAddress(), "--yes")
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) IssuerDecreaseCredit(issuer, liquidityprovider Key, amount string) (string, error) {
 	args := cli.addNetworkFlags("issuer", "decrease-credit", issuer.name, liquidityprovider.GetAddress(), amount, "--yes")
-	return execCmdWithInput(args, "pwd12345\n")
+	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, error) {
 	args := cli.addNetworkFlags("liquidityprovider", "mint", amount, "--from", key.name, "--yes")
-	bz, err := execCmdWithInput(args, "pwd12345\n")
-	if err != nil {
-		return "", err
-	}
-
-	return extractTxHash(bz)
+	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) QueryTransactionSucessful(txhash string) (bool, error) {
@@ -92,21 +87,25 @@ func extractTxHash(bz []byte) (string, error) {
 	return "", fmt.Errorf("could not find txhash in response %v", string(bz))
 }
 
-func execCmdWithInput(arguments []string, input string) ([]byte, error) {
+func execCmdWithInput(arguments []string, input string) (string, error) {
 	cmd := exec.Command(EMCLI, arguments...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	io.WriteString(stdin, input)
-
+	_, err = io.WriteString(stdin, input+"\n")
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	return cmd.CombinedOutput()
+	bz, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return extractTxHash(bz)
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
