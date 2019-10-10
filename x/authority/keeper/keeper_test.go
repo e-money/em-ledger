@@ -79,18 +79,18 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	err := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"x2eur", "x0jpy"})
-	require.Nil(t, err)
+	result := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"x2eur", "x0jpy"})
+	require.True(t, result.IsOK())
 
-	err = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp", "x2eur"})
-	require.NotNil(t, err) // Must fail due to duplicate token denomination
+	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp", "x2eur"})
+	require.False(t, result.IsOK()) // Must fail due to duplicate token denomination
 
-	err = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp"})
-	require.Nil(t, err)
+	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp"})
+	require.True(t, result.IsOK())
 	require.Len(t, ik.GetIssuers(ctx), 2)
 
-	err = keeper.DestroyIssuer(ctx, accAuthority, issuer2)
-	require.Nil(t, err)
+	result = keeper.DestroyIssuer(ctx, accAuthority, issuer2)
+	require.True(t, result.IsOK())
 	require.Len(t, ik.GetIssuers(ctx), 1)
 
 	require.Panics(t, func() {
@@ -98,12 +98,12 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 		keeper.DestroyIssuer(ctx, issuer1, issuer2)
 	})
 
-	err = keeper.DestroyIssuer(ctx, accAuthority, issuer2)
-	require.NotNil(t, err)
+	result = keeper.DestroyIssuer(ctx, accAuthority, issuer2)
+	require.False(t, result.IsOK())
 	require.Len(t, ik.GetIssuers(ctx), 1)
 
-	err = keeper.DestroyIssuer(ctx, accAuthority, issuer1)
-	require.Nil(t, err)
+	result = keeper.DestroyIssuer(ctx, accAuthority, issuer1)
+	require.True(t, result.IsOK())
 	require.Empty(t, ik.GetIssuers(ctx))
 }
 
@@ -159,7 +159,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 
 type mockInflationKeeper struct{}
 
-func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Error) {
+func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Result) {
 	return
 }
 

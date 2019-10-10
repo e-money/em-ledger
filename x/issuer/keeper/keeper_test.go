@@ -41,10 +41,10 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, issuer1.IsValid())
 	require.True(t, issuer2.IsValid())
 
-	err := keeper.AddIssuer(ctx, issuer1)
-	require.Nil(t, err)
-	err = keeper.AddIssuer(ctx, issuer1)
-	require.NotNil(t, err)
+	result := keeper.AddIssuer(ctx, issuer1)
+	require.True(t, result.IsOK())
+	result = keeper.AddIssuer(ctx, issuer1)
+	require.False(t, result.IsOK())
 
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
@@ -74,16 +74,16 @@ func TestRemoveIssuer(t *testing.T) {
 
 	issuer := types.NewIssuer(acc1, "x2eur", "x0jpy")
 
-	err := keeper.AddIssuer(ctx, issuer)
-	require.Nil(t, err)
+	result := keeper.AddIssuer(ctx, issuer)
+	require.True(t, result.IsOK())
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
-	err = keeper.RemoveIssuer(ctx, acc2)
-	require.NotNil(t, err)
+	result = keeper.RemoveIssuer(ctx, acc2)
+	require.False(t, result.IsOK())
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
-	err = keeper.RemoveIssuer(ctx, acc1)
-	require.Nil(t, err)
+	result = keeper.RemoveIssuer(ctx, acc1)
+	require.True(t, result.IsOK())
 	require.Empty(t, keeper.GetIssuers(ctx))
 }
 
@@ -124,7 +124,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	// Decrease credit.
 	credit = MustParseCoins("50000x2eur, 2000x0jpy")
 	result = keeper.DecreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
-	require.Nil(t, result)
+	require.True(t, result.IsOK())
 
 	expected = MustParseCoins("150000x2eur,8000x0jpy")
 	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
@@ -159,8 +159,8 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 		keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
 	})
 
-	err := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
-	require.Nil(t, err, "%v", err)
+	result := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
+	require.True(t, result.IsOK(), "%v", result)
 	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lpacc))
 }
 
@@ -242,7 +242,7 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 
 type mockInflationKeeper struct{}
 
-func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Error) {
+func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Result) {
 	return
 }
 
