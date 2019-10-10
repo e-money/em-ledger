@@ -5,7 +5,6 @@ package emoney
 import (
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"strconv"
 	"testing"
 
 	nt "emoney/networktest"
@@ -18,9 +17,6 @@ import (
 
 const (
 	// gjson paths
-	QGetCreditEUR    = "value.Credit.#(denom==\"x2eur\").amount"
-	QGetCredit       = "value.Credit"
-	QGetBalanceEUR   = "value.Account.value.coins.#(denom==\"x2eur\").amount"
 	QGetInflationEUR = "assets.#(denom==\"x2eur\").inflation"
 )
 
@@ -78,7 +74,7 @@ var _ = Describe("Authority", func() {
 				_, err := emcli.IssuerIncreaseCredit(Issuer, LiquidityProvider, "50000x2eur")
 				Expect(err).ToNot(HaveOccurred())
 
-				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				bz, err := emcli.QueryAccountJson(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 
 				lpaccount := gjson.ParseBytes(bz)
@@ -109,55 +105,64 @@ var _ = Describe("Authority", func() {
 			})
 
 			It("liquidity provider draws on credit", func() {
-				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ShouldNot(HaveOccurred())
-
-				queryresponse := gjson.ParseBytes(bz)
-				s := queryresponse.Get(QGetBalanceEUR).Str
-				balanceBefore, _ := strconv.Atoi(s)
-
-				s = queryresponse.Get(QGetCreditEUR).Str
-				creditBefore, _ := strconv.Atoi(s)
 
 				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "20000x2eur")
 				Expect(err).ShouldNot(HaveOccurred())
 
-				bz, err = emcli.QueryAccount(LiquidityProvider.GetAddress())
+				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ShouldNot(HaveOccurred())
-
-				queryresponse = gjson.ParseBytes(bz)
-				s = queryresponse.Get(QGetBalanceEUR).Str
-				balanceAfter, _ := strconv.Atoi(s)
-
-				s = queryresponse.Get(QGetCreditEUR).Str
-				creditAfter, _ := strconv.Atoi(s)
 
 				Expect(balanceAfter).To(Equal(balanceBefore + 20000))
 				Expect(creditAfter).To(Equal(creditBefore - 20000))
 			})
 
-			It("Liquidity provider gets credit reduced", func() {
-				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
-				s := gjson.ParseBytes(bz).Get(QGetCreditEUR).Str
-				creditBefore, _ := strconv.Atoi(s)
+			It("liquidity provider attempts to overdraw its credit", func() {
+				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+
+				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "500000x2eur")
+				Expect(err).ShouldNot(HaveOccurred())
+
+				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+
+				Expect(balanceAfter).To(Equal(balanceBefore))
+				Expect(creditAfter).To(Equal(creditBefore))
+			})
+
+			It("liquidity provider gets credit reduced", func() {
+				_, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				Expect(err).ToNot(HaveOccurred())
 
 				_, err = emcli.IssuerDecreaseCredit(Issuer, LiquidityProvider, "10000x2eur")
 				Expect(err).ShouldNot(HaveOccurred())
 
-				bz, err = emcli.QueryAccount(LiquidityProvider.GetAddress())
-				s = gjson.ParseBytes(bz).Get(QGetCreditEUR).Str
-				creditAfter, _ := strconv.Atoi(s)
+				_, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(creditAfter).To(Equal(creditBefore - 10000))
 			})
 
-			It("Liquidity provider gets revoked", func() {
+			It("liquidity provider gets revoked", func() {
 				_, err := emcli.IssuerRevokeCredit(Issuer, LiquidityProvider)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
-				credit := gjson.ParseBytes(bz).Get(QGetCredit)
+				bz, err := emcli.QueryAccountJson(LiquidityProvider.GetAddress())
+				credit := gjson.ParseBytes(bz).Get("value.Credit")
 				Expect(credit.Exists()).To(BeFalse())
+			})
+
+			It("former liquidity provider attempts to draw on credit", func() {
+				balanceBefore, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "10000x2eur")
+				Expect(err).ToNot(HaveOccurred())
+
+				balanceAfter, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(balanceBefore).To(Equal(balanceAfter))
 			})
 		})
 	})

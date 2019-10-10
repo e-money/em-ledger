@@ -5,11 +5,16 @@ import (
 	"github.com/tidwall/gjson"
 	"io"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
 const (
 	EMCLI = "./build/emcli-local"
+
+	// gjson paths
+	QGetCreditEUR  = "value.Credit.#(denom==\"x2eur\").amount"
+	QGetBalanceEUR = "value.Account.value.coins.#(denom==\"x2eur\").amount"
 )
 
 type Emcli struct {
@@ -44,7 +49,28 @@ func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
-func (cli Emcli) QueryAccount(account string) ([]byte, error) {
+// NOTE Hardcoded to x2eur for now.
+func (cli Emcli) QueryAccount(account string) (balance, credit int, err error) {
+	args := cli.addQueryFlags("query", "account", account)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	queryresponse := gjson.ParseBytes(bz)
+
+	v := queryresponse.Get(QGetBalanceEUR)
+	balance, _ = strconv.Atoi(v.Str)
+
+	v = queryresponse.Get(QGetCreditEUR)
+	if v.Exists() {
+		credit, _ = strconv.Atoi(v.Str)
+	}
+
+	return
+}
+
+func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "account", account)
 	return execCmdAndCollectResponse(args)
 }
