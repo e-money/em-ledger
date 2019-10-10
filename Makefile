@@ -66,7 +66,10 @@ run-single-node: clean
 test:
 	go test ./...
 
+bdd-test:
+	go test -v --tags="bdd" authority_test.go
+
 clean:
 	rm -rf ./build ./data ./config
 
-.PHONY: build build-linux clean test
+.PHONY: build build-linux clean test bdd-test

@@ -4,9 +4,9 @@ package emoney
 
 import (
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strconv"
 	"testing"
-	"time"
 
 	nt "emoney/networktest"
 	apptypes "emoney/types"
@@ -18,9 +18,10 @@ import (
 
 const (
 	// gjson paths
-	QGetCreditEUR  = "value.Credit.#(denom==\"x2eur\").amount"
-	QGetCredit     = "value.Credit"
-	QGetBalanceEUR = "value.Account.value.coins.#(denom==\"x2eur\").amount"
+	QGetCreditEUR    = "value.Credit.#(denom==\"x2eur\").amount"
+	QGetCredit       = "value.Credit"
+	QGetBalanceEUR   = "value.Account.value.coins.#(denom==\"x2eur\").amount"
+	QGetInflationEUR = "assets.#(denom==\"x2eur\").inflation"
 )
 
 func init() {
@@ -35,8 +36,12 @@ func TestSuite(t *testing.T) {
 
 var _ = Describe("Authority", func() {
 	testnet := nt.NewTestnet()
-	keystore := testnet.Keystore
-	emcli := nt.NewEmcli(keystore)
+	emcli := nt.NewEmcli(testnet.Keystore)
+
+	var (
+		Issuer            = testnet.Keystore.Key1
+		LiquidityProvider = testnet.Keystore.Key2
+	)
 
 	BeforeSuite(func() {
 		err := testnet.Setup()
@@ -55,16 +60,9 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("creates an issuer", func() {
-				txhash, err := emcli.AuthorityCreateIssuer(keystore.Key1, "x2eur", "x0jpy")
+				txhash, err := emcli.AuthorityCreateIssuer(Issuer, "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(txhash).To(Not(BeEmpty()))
-
-				// TODO Create a better way to detect chain events and wait for them.
-				time.Sleep(time.Second)
-
-				success, err := emcli.QueryTransactionSucessful(txhash)
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(success).To(BeTrue())
 
 				bz, err := emcli.QueryIssuers()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -77,15 +75,12 @@ var _ = Describe("Authority", func() {
 			})
 
 			It("creates a liquidity provider", func() {
-				// The issuer Key1 makes itself a liquidity provider of EUR
-				_, err := emcli.IssuerIncreaseCredit(keystore.Key1, keystore.Key1, "50000x2eur")
-				Expect(err).ShouldNot(HaveOccurred())
+				// The issuer makes a liquidity provider of EUR
+				_, err := emcli.IssuerIncreaseCredit(Issuer, LiquidityProvider, "50000x2eur")
+				Expect(err).ToNot(HaveOccurred())
 
-				// TODO Wait on accepted transactions instead.
-				time.Sleep(time.Second)
-
-				bz, err := emcli.QueryAccount(keystore.Key1.GetAddress())
-				Expect(err).ShouldNot(HaveOccurred())
+				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+				Expect(err).ToNot(HaveOccurred())
 
 				lpaccount := gjson.ParseBytes(bz)
 				credit := lpaccount.Get("value.Credit").Array()
@@ -94,8 +89,28 @@ var _ = Describe("Authority", func() {
 				Expect(credit[0].Get("amount").Str).To(Equal("50000"))
 			})
 
+			It("changes inflation of a denomination", func() {
+				bz, err := emcli.QueryInflation()
+				Expect(err).ToNot(HaveOccurred())
+
+				s := gjson.ParseBytes(bz).Get(QGetInflationEUR).Str
+				inflationBefore, _ := sdk.NewDecFromStr(s)
+
+				_, err = emcli.IssuerSetInflation(Issuer, "x2eur", "0.1")
+				Expect(err).ToNot(HaveOccurred())
+
+				bz, err = emcli.QueryInflation()
+				Expect(err).ToNot(HaveOccurred())
+
+				s = gjson.ParseBytes(bz).Get(QGetInflationEUR).Str
+				inflationAfter, _ := sdk.NewDecFromStr(s)
+
+				Expect(inflationAfter).ToNot(Equal(inflationBefore))
+				Expect(inflationAfter).To(Equal(sdk.MustNewDecFromStr("0.100")))
+			})
+
 			It("liquidity provider draws on credit", func() {
-				bz, err := emcli.QueryAccount(keystore.Key1.GetAddress())
+				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ShouldNot(HaveOccurred())
 
 				queryresponse := gjson.ParseBytes(bz)
@@ -105,11 +120,10 @@ var _ = Describe("Authority", func() {
 				s = queryresponse.Get(QGetCreditEUR).Str
 				creditBefore, _ := strconv.Atoi(s)
 
-				_, err = emcli.LiquidityProviderMint(keystore.Key1, "20000x2eur")
+				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "20000x2eur")
 				Expect(err).ShouldNot(HaveOccurred())
 
-				time.Sleep(time.Second)
-				bz, err = emcli.QueryAccount(keystore.Key1.GetAddress())
+				bz, err = emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ShouldNot(HaveOccurred())
 
 				queryresponse = gjson.ParseBytes(bz)
@@ -124,16 +138,14 @@ var _ = Describe("Authority", func() {
 			})
 
 			It("Liquidity provider gets credit reduced", func() {
-				bz, err := emcli.QueryAccount(keystore.Key1.GetAddress())
+				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				s := gjson.ParseBytes(bz).Get(QGetCreditEUR).Str
 				creditBefore, _ := strconv.Atoi(s)
 
-				_, err = emcli.IssuerDecreaseCredit(keystore.Key1, keystore.Key1, "10000x2eur")
+				_, err = emcli.IssuerDecreaseCredit(Issuer, LiquidityProvider, "10000x2eur")
 				Expect(err).ShouldNot(HaveOccurred())
 
-				time.Sleep(time.Second)
-
-				bz, err = emcli.QueryAccount(keystore.Key1.GetAddress())
+				bz, err = emcli.QueryAccount(LiquidityProvider.GetAddress())
 				s = gjson.ParseBytes(bz).Get(QGetCreditEUR).Str
 				creditAfter, _ := strconv.Atoi(s)
 
@@ -141,11 +153,10 @@ var _ = Describe("Authority", func() {
 			})
 
 			It("Liquidity provider gets revoked", func() {
-				_, err := emcli.IssuerRevokeCredit(keystore.Key1, keystore.Key1)
+				_, err := emcli.IssuerRevokeCredit(Issuer, LiquidityProvider)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				time.Sleep(time.Second)
-				bz, err := emcli.QueryAccount(keystore.Key1.GetAddress())
+				bz, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				credit := gjson.ParseBytes(bz).Get(QGetCredit)
 				Expect(credit.Exists()).To(BeFalse())
 			})
