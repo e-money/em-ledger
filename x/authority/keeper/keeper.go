@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	"emoney/x/authority/types"
 	"emoney/x/issuer"
 
@@ -65,12 +63,12 @@ func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerA
 func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
 	authority := k.GetAuthority(ctx)
 	if authority == nil {
-		panic("Authority not set")
+		panic(types.ErrNoAuthorityConfigured())
 	}
 
 	if authority.Equals(address) {
 		return
 	}
 
-	panic(fmt.Errorf("address is not the authority: %v", address))
+	panic(types.ErrNotAuthority(address.String()))
 }

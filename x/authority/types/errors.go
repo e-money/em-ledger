@@ -9,9 +9,15 @@ type CodeType = sdk.CodeType
 const (
 	Codespace sdk.CodespaceType = ModuleName
 
-	CodeMissingDenomination sdk.CodeType = 1
-	CodeInvalidDenomination sdk.CodeType = 2
+	CodeNotAuthority        sdk.CodeType = 1
+	CodeMissingDenomination sdk.CodeType = 2
+	CodeInvalidDenomination sdk.CodeType = 3
+	CodeNoAuthority         sdk.CodeType = 4
 )
+
+func ErrNotAuthority(address string) sdk.Error {
+	return sdk.NewError(Codespace, CodeMissingDenomination, "No denominations specified in authority call")
+}
 
 func ErrNoDenomsSpecified() sdk.Error {
 	return sdk.NewError(Codespace, CodeMissingDenomination, "No denominations specified in authority call")
@@ -19,4 +25,7 @@ func ErrNoDenomsSpecified() sdk.Error {
 
 func ErrInvalidDenom(denom string) sdk.Error {
 	return sdk.NewError(Codespace, CodeInvalidDenomination, "Invalid denomination found: %v", denom)
+}
+func ErrNoAuthorityConfigured() sdk.Error {
+	return sdk.NewError(Codespace, CodeNoAuthority, "No authority configured")
 }
