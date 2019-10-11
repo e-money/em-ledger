@@ -58,6 +58,8 @@ build-linux:
 build-all: build-linux
 	BIN_PREFIX=-local $(MAKE) build
 
+build-docker:
+	$(MAKE) -C networks/docker/ all
 
 run-single-node: clean
 	go run cmd/daemon/*.go init
@@ -72,4 +74,4 @@ bdd-test:
 clean:
 	rm -rf ./build ./data ./config
 
-.PHONY: build build-linux clean test bdd-test
+.PHONY: build build-linux clean test bdd-test build-docker
