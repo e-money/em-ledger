@@ -35,8 +35,10 @@ var _ = Describe("Authority", func() {
 	emcli := nt.NewEmcli(testnet.Keystore)
 
 	var (
+		Authority         = testnet.Keystore.Authority
 		Issuer            = testnet.Keystore.Key1
 		LiquidityProvider = testnet.Keystore.Key2
+		OtherKey          = testnet.Keystore.Key3
 	)
 
 	BeforeSuite(func() {
@@ -56,7 +58,7 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("creates an issuer", func() {
-				_, err := emcli.AuthorityCreateIssuer(Issuer, "x2eur", "x0jpy")
+				_, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
 
 				bz, err := emcli.QueryIssuers()
@@ -67,6 +69,16 @@ var _ = Describe("Authority", func() {
 
 				Expect(issuers).To(HaveLen(1))
 				Expect(issuers[0].Denoms).To(ConsistOf("x2eur", "x0jpy"))
+			})
+
+			It("imposter attempts to act as authority", func() {
+				_, err := emcli.AuthorityCreateIssuer(Issuer, LiquidityProvider, "x2chf", "x2dkk")
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("authority assigns a second issuer to same denomination", func() {
+				_, err := emcli.AuthorityCreateIssuer(Authority, OtherKey, "x2dkk", "x0jpy")
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("creates a liquidity provider", func() {
