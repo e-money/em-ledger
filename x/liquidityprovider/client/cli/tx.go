@@ -23,10 +23,34 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	lpCmds.AddCommand(client.PostCommands(
 		getCmdMint(cdc),
+		getCmdBurn(cdc),
 	)...)
 
 	lpCmds = client.PostCommands(lpCmds)[0]
 	return lpCmds
+}
+
+func getCmdBurn(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:  "burn",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			amount, err := sdk.ParseCoins(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.MsgBurnTokens{
+				Amount:            amount,
+				LiquidityProvider: cliCtx.GetFromAddress(),
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 func getCmdMint(cdc *codec.Codec) *cobra.Command {

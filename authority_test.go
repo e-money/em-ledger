@@ -130,6 +130,18 @@ var _ = Describe("Authority", func() {
 				Expect(creditAfter).To(Equal(creditBefore))
 			})
 
+			It("liquidity provider burns some tokens", func() {
+				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+
+				_, err = emcli.LiquidityProviderBurn(LiquidityProvider, "500000x2eur")
+				Expect(err).ToNot(HaveOccurred())
+
+				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+
+				Expect(balanceAfter).To(Equal(balanceBefore - 500000))
+				Expect(creditAfter).To(Equal(creditBefore + 500000))
+			})
+
 			It("liquidity provider gets credit reduced", func() {
 				_, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())

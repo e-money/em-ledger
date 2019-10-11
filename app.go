@@ -65,8 +65,7 @@ var (
 		staking.NotBondedPoolName:    {supply.Burner, supply.Staking},
 		slashing.ModuleName:          {supply.Minter},
 		slashing.PenaltyAccount:      nil,
-		liquidityprovider.ModuleName: {supply.Minter},
-		//gov.ModuleName:            {supply.Burner},
+		liquidityprovider.ModuleName: {supply.Minter, supply.Burner},
 	}
 )
 

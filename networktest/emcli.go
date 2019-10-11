@@ -100,6 +100,11 @@ func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, error) {
+	args := cli.addTransactionFlags("liquidityprovider", "burn", amount, "--from", key.name)
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func extractTxHash(bz []byte) (string, error) {
 	txhash := gjson.ParseBytes(bz).Get("txhash")
 	if txhash.Exists() {
@@ -124,8 +129,9 @@ func execCmdWithInput(arguments []string, input string) (string, error) {
 	}
 
 	bz, err := cmd.CombinedOutput()
-	//fmt.Println(" *** Output", string(bz))
 	if err != nil {
+		//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+		//fmt.Println(" *** Output", string(bz))
 		return "", err
 	}
 

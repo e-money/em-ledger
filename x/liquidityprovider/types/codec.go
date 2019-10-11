@@ -10,6 +10,7 @@ var ModuleCdc *codec.Codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(&LiquidityProviderAccount{}, "e-money/LiquidityProviderAccount", nil)
 	cdc.RegisterConcrete(MsgMintTokens{}, "e-money/MsgMintTokens", nil)
+	cdc.RegisterConcrete(MsgBurnTokens{}, "e-money/MsgBurnTokens", nil)
 }
 
 func init() {

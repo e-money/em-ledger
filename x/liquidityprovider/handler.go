@@ -13,14 +13,12 @@ func newHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case types.MsgMintTokens:
-			return handleMsgMintTokens(ctx, msg, k)
+			return k.MintTokensFromCredit(ctx, msg.LiquidityProvider, msg.Amount)
+		case types.MsgBurnTokens:
+			return k.BurnTokensFromBalance(ctx, msg.LiquidityProvider, msg.Amount)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized issuance Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
-}
-
-func handleMsgMintTokens(ctx sdk.Context, msg types.MsgMintTokens, k keeper.Keeper) sdk.Result {
-	return k.MintTokensFromCredit(ctx, msg.LiquidityProvider, msg.Amount)
 }
