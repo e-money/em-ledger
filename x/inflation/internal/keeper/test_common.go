@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/tendermint/tendermint/libs/db"
+	dbm "github.com/tendermint/tm-db"
 
 	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
