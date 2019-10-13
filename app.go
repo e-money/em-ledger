@@ -141,13 +141,16 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		slashingSubspace  = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	)
 
+	// TODO Put module accounts here.
+	accountBlacklist := make(map[string]bool)
+
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
-	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace)
-	application.supplyKeeper = supply.NewKeeper(cdc, application.keySupply, application.accountKeeper, application.bankKeeper, supply.DefaultCodespace, maccPerms)
+	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
+	application.supplyKeeper = supply.NewKeeper(cdc, application.keySupply, application.accountKeeper, application.bankKeeper, maccPerms)
 	application.stakingKeeper = staking.NewKeeper(cdc, application.keyStaking, application.tkeyStaking, application.supplyKeeper,
 		stakingSubspace, staking.DefaultCodespace)
 	application.distrKeeper = distr.NewKeeper(application.cdc, application.keyDistr, distrSubspace, &application.stakingKeeper,
-		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
+		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName, accountBlacklist)
 
 	application.inflationKeeper = inflation.NewKeeper(application.cdc, application.keyInflation, inflationSubspace, application.supplyKeeper, auth.FeeCollectorName)
 	application.slashingKeeper = slashing.NewKeeper(application.cdc, application.keySlashing, &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
