@@ -141,8 +141,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		slashingSubspace  = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	)
 
-	// TODO Put module accounts here.
-	accountBlacklist := make(map[string]bool)
+	accountBlacklist := application.ModuleAccountAddrs()
 
 	application.accountKeeper = auth.NewAccountKeeper(cdc, application.keyAccount, authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
@@ -263,6 +262,15 @@ func (app *emoneyApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (r
 	var genesisState GenesisState
 	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
 	return app.mm.InitGenesis(ctx, genesisState)
+}
+
+func (app *emoneyApp) ModuleAccountAddrs() map[string]bool {
+	modAccAddrs := make(map[string]bool)
+	for acc := range maccPerms {
+		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
+	}
+
+	return modAccAddrs
 }
 
 func init() {
