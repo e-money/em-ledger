@@ -15,6 +15,8 @@ func newHandler(keeper Keeper) sdk.Handler {
 				switch o := r.(type) {
 				case sdk.Result:
 					result = o
+				case sdk.Error:
+					result = o.Result()
 				default:
 					panic(r)
 				}

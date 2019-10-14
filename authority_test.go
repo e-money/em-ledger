@@ -58,8 +58,9 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("creates an issuer", func() {
-				_, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "x2eur", "x0jpy")
+				_, success, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "x2eur", "x0jpy")
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				bz, err := emcli.QueryIssuers()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -72,19 +73,22 @@ var _ = Describe("Authority", func() {
 			})
 
 			It("imposter attempts to act as authority", func() {
-				_, err := emcli.AuthorityCreateIssuer(Issuer, LiquidityProvider, "x2chf", "x2dkk")
-				Expect(err).To(HaveOccurred())
+				_, success, err := emcli.AuthorityCreateIssuer(Issuer, LiquidityProvider, "x2chf", "x2dkk")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeFalse())
 			})
 
 			It("authority assigns a second issuer to same denomination", func() {
-				_, err := emcli.AuthorityCreateIssuer(Authority, OtherKey, "x2dkk", "x0jpy")
-				Expect(err).To(HaveOccurred())
+				_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherKey, "x2dkk", "x0jpy")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeFalse())
 			})
 
 			It("creates a liquidity provider", func() {
 				// The issuer makes a liquidity provider of EUR
-				_, err := emcli.IssuerIncreaseCredit(Issuer, LiquidityProvider, "50000x2eur")
+				_, success, err := emcli.IssuerIncreaseCredit(Issuer, LiquidityProvider, "50000x2eur")
 				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				bz, err := emcli.QueryAccountJson(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
@@ -103,8 +107,9 @@ var _ = Describe("Authority", func() {
 				s := gjson.ParseBytes(bz).Get(QGetInflationEUR).Str
 				inflationBefore, _ := sdk.NewDecFromStr(s)
 
-				_, err = emcli.IssuerSetInflation(Issuer, "x2eur", "0.1")
+				_, success, err := emcli.IssuerSetInflation(Issuer, "x2eur", "0.1")
 				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				bz, err = emcli.QueryInflation()
 				Expect(err).ToNot(HaveOccurred())
@@ -120,8 +125,9 @@ var _ = Describe("Authority", func() {
 				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ShouldNot(HaveOccurred())
 
-				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "20000x2eur")
+				_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "20000x2eur")
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ShouldNot(HaveOccurred())
@@ -133,8 +139,9 @@ var _ = Describe("Authority", func() {
 			It("liquidity provider attempts to overdraw its credit", func() {
 				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
-				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "500000x2eur")
-				Expect(err).To(HaveOccurred())
+				_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "500000x2eur")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeFalse())
 
 				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
@@ -145,8 +152,9 @@ var _ = Describe("Authority", func() {
 			It("liquidity provider burns some tokens", func() {
 				balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
-				_, err = emcli.LiquidityProviderBurn(LiquidityProvider, "500000x2eur")
+				_, success, err := emcli.LiquidityProviderBurn(LiquidityProvider, "500000x2eur")
 				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
@@ -158,8 +166,9 @@ var _ = Describe("Authority", func() {
 				_, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = emcli.IssuerDecreaseCredit(Issuer, LiquidityProvider, "10000x2eur")
+				_, success, err := emcli.IssuerDecreaseCredit(Issuer, LiquidityProvider, "10000x2eur")
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				_, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
@@ -168,8 +177,9 @@ var _ = Describe("Authority", func() {
 			})
 
 			It("liquidity provider gets revoked", func() {
-				_, err := emcli.IssuerRevokeCredit(Issuer, LiquidityProvider)
+				_, success, err := emcli.IssuerRevokeCredit(Issuer, LiquidityProvider)
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(success).To(BeTrue())
 
 				bz, err := emcli.QueryAccountJson(LiquidityProvider.GetAddress())
 				credit := gjson.ParseBytes(bz).Get("value.Credit")
@@ -180,8 +190,9 @@ var _ = Describe("Authority", func() {
 				balanceBefore, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = emcli.LiquidityProviderMint(LiquidityProvider, "10000x2eur")
-				Expect(err).To(HaveOccurred())
+				_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "10000x2eur")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeFalse())
 
 				balanceAfter, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
