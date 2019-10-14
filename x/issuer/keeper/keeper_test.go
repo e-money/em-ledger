@@ -228,8 +228,8 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 
 	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 	ak := auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace)
-	sk := supply.NewKeeper(cdc, keySupply, ak, bk, supply.DefaultCodespace, maccPerms)
+	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
+	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 
 	// Empty supply
 	sk.SetSupply(ctx, supply.NewSupply(sdk.NewCoins()))
