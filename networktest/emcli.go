@@ -39,7 +39,7 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addQueryFlags("q", "inflation"))
 }
 
-func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, error) {
+func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
 	return execCmdWithInput(args, KeyPwd)
 }
@@ -75,64 +75,67 @@ func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
-func (cli Emcli) IssuerIncreaseCredit(issuer, liquidityprovider Key, amount string) (string, error) {
+func (cli Emcli) IssuerIncreaseCredit(issuer, liquidityprovider Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("issuer", "increase-credit", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) IssuerRevokeCredit(issuer, liquidityprovider Key) (string, error) {
+func (cli Emcli) IssuerRevokeCredit(issuer, liquidityprovider Key) (string, bool, error) {
 	args := cli.addTransactionFlags("issuer", "revoke-credit", issuer.name, liquidityprovider.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) IssuerDecreaseCredit(issuer, liquidityprovider Key, amount string) (string, error) {
+func (cli Emcli) IssuerDecreaseCredit(issuer, liquidityprovider Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("issuer", "decrease-credit", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) IssuerSetInflation(issuer Key, denom string, inflation string) (string, error) {
+func (cli Emcli) IssuerSetInflation(issuer Key, denom string, inflation string) (string, bool, error) {
 	args := cli.addTransactionFlags("issuer", "set-inflation", issuer.name, denom, inflation)
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, error) {
+func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("liquidityprovider", "mint", amount, "--from", key.name)
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, error) {
+func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("liquidityprovider", "burn", amount, "--from", key.name)
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func extractTxHash(bz []byte) (string, error) {
-	txhash := gjson.ParseBytes(bz).Get("txhash")
-	if txhash.Exists() {
-		return txhash.Str, nil
+func extractTxHash(bz []byte) (txhash string, success bool, err error) {
+	json := gjson.ParseBytes(bz)
+
+	txhashjson := json.Get("txhash")
+	successjson := gjson.ParseBytes(bz).Get("logs.0.success")
+
+	if !txhashjson.Exists() || !successjson.Exists() {
+		return "", false, fmt.Errorf("could not find status fields in response %v", string(bz))
 	}
 
-	return "", fmt.Errorf("could not find txhash in response %v", string(bz))
+	return txhashjson.Str, successjson.Bool(), nil
 }
 
-func execCmdWithInput(arguments []string, input string) (string, error) {
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 	cmd := exec.Command(EMCLI, arguments...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	_, err = io.WriteString(stdin, input+"\n")
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
+	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
+	//fmt.Println(" *** Output", string(bz))
 	if err != nil {
-		//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
-		//fmt.Println(" *** Output", string(bz))
-		return "", err
+		return "", false, err
 	}
 
 	return extractTxHash(bz)

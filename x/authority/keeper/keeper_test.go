@@ -18,8 +18,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 )
 
 func init() {
@@ -143,8 +143,8 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	var (
 		pk  = params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 		ak  = auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-		bk  = bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace)
-		sk  = supply.NewKeeper(cdc, keySupply, ak, bk, supply.DefaultCodespace, maccPerms)
+		bk  = bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
+		sk  = supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 		lpk = liquidityprovider.NewKeeper(ak, sk)
 		ik  = issuer.NewKeeper(keySupply, lpk, mockInflationKeeper{})
 	)

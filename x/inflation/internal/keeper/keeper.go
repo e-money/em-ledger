@@ -79,7 +79,7 @@ func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string
 }
 
 func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {
-	return k.supplyKeeper.GetSupply(ctx).Total
+	return k.supplyKeeper.GetSupply(ctx).GetTotal()
 }
 
 // MintCoins implements an alias call to the underlying supply keeper's

@@ -17,8 +17,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 func TestCreateAndMint(t *testing.T) {
 	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
 
-	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
+	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
@@ -55,7 +55,7 @@ func TestCreateAndMint(t *testing.T) {
 
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
-	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
+	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).GetTotal())
 
 	// Ensure that credit available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -79,7 +79,7 @@ func TestMintTooMuch(t *testing.T) {
 
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance, account.GetCoins())
-	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
+	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
 
 	// Ensure that credit of account has not been modified by failed attempt to mint.
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -109,7 +109,7 @@ func TestMintMultipleDenoms(t *testing.T) {
 	keeper.MintTokensFromCredit(ctx, acc, toMint)
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
-	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).Total)
+	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).GetTotal())
 
 	// Ensure that credit available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -129,7 +129,7 @@ func TestMintWithoutLPAccount(t *testing.T) {
 
 	account = ak.GetAccount(ctx, acc)
 	assert.IsType(t, &auth.BaseAccount{}, account)
-	assert.Equal(t, initialBalance, sk.GetSupply(ctx).Total)
+	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
 	assert.Equal(t, initialBalance, account.GetCoins())
 }
 
@@ -200,8 +200,8 @@ func createTestComponents(t *testing.T, initialSupply sdk.Coins) (sdk.Context, a
 
 	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 	ak := auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace)
-	sk := supply.NewKeeper(cdc, keySupply, ak, bk, supply.DefaultCodespace, maccPerms)
+	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
+	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 
 	// Empty supply
 	sk.SetSupply(ctx, supply.NewSupply(initialSupply))

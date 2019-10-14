@@ -3,7 +3,7 @@ package slashing
 import (
 	"emoney/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/db"
+	db "github.com/tendermint/tm-db"
 )
 
 // Stored by *validator* address (not operator address)

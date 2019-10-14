@@ -2,7 +2,8 @@ package slashing
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/libs/db"
+	db "github.com/tendermint/tm-db"
+
 	"sort"
 	"time"
 
