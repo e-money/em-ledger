@@ -157,6 +157,10 @@ func execCmdAndRun(name string, arguments []string, scanner func(string)) error 
 func execCmdAndWait(name string, arguments ...string) (string, error) {
 	cmd := exec.Command(name, arguments...)
 
+	// TODO Look into ways of not always setting this.
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "BUILD_TAGS=fast_consensus")
+
 	var output strings.Builder
 	captureOutput := func(s string) {
 		output.WriteString(s)

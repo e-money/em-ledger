@@ -17,6 +17,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+var configureConsensus = func() {
+	viper.Set("consensus.create_empty_blocks_interval", "60s")
+	viper.Set("consensus.create_empty_blocks", false)
+	viper.Set("consensus.timeout_commit", "250ms")
+	viper.Set("consensus.timeout_propose", "2s")
+	viper.Set("consensus.peer_gossip_sleep_duration", "25ms")
+}
+
 func main() {
 	cobra.EnableCommandSorting = false
 
@@ -28,12 +36,7 @@ func main() {
 	logLevel := ctx.Config.BaseConfig.LogLevel
 	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,x/liquidityprovider:debug,%v", logLevel)
 
-	viper.Set("consensus.create_empty_blocks_interval", "60s")
-	viper.Set("consensus.create_empty_blocks", false)
-	viper.Set("consensus.timeout_commit", "250ms")
-	viper.Set("consensus.timeout_propose", "2s")
-	viper.Set("consensus.peer_gossip_sleep_duration", "25ms")
-
+	configureConsensus()
 	viper.Set("p2p.flush_throttle_timeout", "25ms")
 
 	rootCmd := &cobra.Command{
