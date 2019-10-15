@@ -123,6 +123,7 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 	queryCmd.AddCommand(
 		authcmd.GetAccountCmd(cdc),
 		authcmd.QueryTxCmd(cdc),
+		authcmd.QueryTxsByEventsCmd(cdc),
 	)
 
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
