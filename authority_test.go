@@ -27,7 +27,7 @@ func init() {
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Authority Test Suite")
+	RunSpecs(t, "em-ledger integration tests")
 }
 
 var _ = Describe("Authority", func() {

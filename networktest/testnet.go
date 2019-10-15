@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -94,7 +95,7 @@ func (t Testnet) Restart() (func() bool, error) {
 	}
 
 	for i := 0; i < ContainerCount; i++ {
-		err := execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
+		_, err := execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
 		if err != nil {
 			return nil, err
 		}
@@ -110,16 +111,23 @@ func (t Testnet) Teardown() error {
 func (t Testnet) WaitFor() {} // Wait for an event, e.g. blocks, special output or ...
 
 func (t Testnet) makeTestnet() error {
-	return execCmdAndWait(EMD,
+	output, err := execCmdAndWait(EMD,
 		"testnet",
 		"localnet",
 		t.Keystore.Authority.name,
 		"-o", "build",
 		"--keyaccounts", t.Keystore.path)
+
+	if err != nil {
+		return err
+	}
+
+	t.Keystore.addValidatorKeys(output)
+	return nil
 }
 
 func compileBinaries() error {
-	err := execCmdAndWait(makePath, "clean", "build-all")
+	_, err := execCmdAndWait(makePath, "clean", "build-all")
 	if err != nil {
 		fmt.Println("Compilation step caused error: ", err)
 	}
@@ -132,7 +140,8 @@ func dockerComposeUp() (func() bool, error) {
 }
 
 func dockerComposeDown() error {
-	return execCmdAndWait(dockerComposePath, "down")
+	_, err := execCmdAndWait(dockerComposePath, "down")
+	return err
 }
 
 func execCmdAndRun(name string, arguments []string, scanner func(string)) error {
@@ -145,25 +154,31 @@ func execCmdAndRun(name string, arguments []string, scanner func(string)) error 
 	return cmd.Start()
 }
 
-func execCmdAndWait(name string, arguments ...string) error {
+func execCmdAndWait(name string, arguments ...string) (string, error) {
 	cmd := exec.Command(name, arguments...)
 
-	err := writeoutput(cmd)
+	var output strings.Builder
+	captureOutput := func(s string) {
+		output.WriteString(s)
+		output.WriteRune('\n')
+	}
+
+	err := writeoutput(cmd, captureOutput)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return output.String(), nil
 }
 
 func writeoutput(cmd *exec.Cmd, filters ...func(string)) error {
