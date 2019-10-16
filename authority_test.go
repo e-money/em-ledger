@@ -20,6 +20,10 @@ const (
 	QGetInflationEUR = "assets.#(denom==\"x2eur\").inflation"
 )
 
+var (
+	testnet = nt.NewTestnet()
+)
+
 func init() {
 	apptypes.ConfigureSDK()
 }
@@ -31,7 +35,6 @@ func TestSuite(t *testing.T) {
 }
 
 var _ = Describe("Authority", func() {
-	testnet := nt.NewTestnet()
 	emcli := nt.NewEmcli(testnet.Keystore)
 
 	var (
@@ -44,10 +47,6 @@ var _ = Describe("Authority", func() {
 	BeforeSuite(func() {
 		err := testnet.Setup()
 		Expect(err).ShouldNot(HaveOccurred())
-
-		awaitReady, err := testnet.Start()
-		Expect(err).ShouldNot(HaveOccurred())
-		Expect(awaitReady()).To(BeTrue())
 	})
 
 	AfterSuite(func() {
@@ -56,6 +55,12 @@ var _ = Describe("Authority", func() {
 	})
 
 	Describe("Authority manages issuers", func() {
+		It("starts a new testnet", func() {
+			awaitReady, err := testnet.Restart()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(awaitReady()).To(BeTrue())
+		})
+
 		It("creates an issuer", func() {
 			_, success, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "x2eur", "x0jpy")
 			Expect(err).ShouldNot(HaveOccurred())
