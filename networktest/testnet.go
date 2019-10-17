@@ -6,9 +6,12 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/tidwall/sjson"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -21,33 +24,32 @@ type Testnet struct {
 
 const (
 	ContainerCount = 4
-	EMD            = "./build/emd-local"
+	WorkingDir     = "./build/"
+	EMD            = WorkingDir + "emd-local"
 )
 
 var (
 	dockerComposePath string
+	dockerPath        string
 	makePath          string
 	output            io.Writer = os.Stdout // Override to make tests quiet
 )
 
 func init() {
-	var err error
+	dockerComposePath = locateExecutable("docker-compose")
+	dockerPath = locateExecutable("docker")
+	makePath = locateExecutable("make")
+}
 
-	dockerComposePath, err = exec.LookPath("docker-compose")
-	if dockerComposePath == "" {
-		fmt.Println("Unable to locate docker-compose")
+func locateExecutable(name string) (path string) {
+	path, err := exec.LookPath(name)
+	if path == "" {
+		fmt.Printf("Unable to locate %s\n", name)
 	}
 	if err != nil {
 		panic(err)
 	}
-
-	makePath, err = exec.LookPath("make")
-	if makePath == "" {
-		fmt.Println("Unable to locate make")
-	}
-	if err != nil {
-		panic(err)
-	}
+	return
 }
 
 func NewTestnetWithContext(ctx context.Context) Testnet {
@@ -73,6 +75,7 @@ func (t Testnet) Setup() error {
 	}
 
 	t.makeTestnet()
+	t.updateGenesis()
 
 	return nil
 }
@@ -108,6 +111,10 @@ func (t Testnet) Teardown() error {
 	return dockerComposeDown()
 }
 
+func (t Testnet) KillValidator(index int) (string, error) {
+	return execCmdAndWait(dockerPath, "kill", fmt.Sprintf("emdnode%v", index))
+}
+
 func (t Testnet) WaitFor() {} // Wait for an event, e.g. blocks, special output or ...
 
 func (t Testnet) makeTestnet() error {
@@ -115,7 +122,7 @@ func (t Testnet) makeTestnet() error {
 		"testnet",
 		"localnet",
 		t.Keystore.Authority.name,
-		"-o", "build",
+		"-o", WorkingDir,
 		"--keyaccounts", t.Keystore.path)
 
 	if err != nil {
@@ -124,6 +131,37 @@ func (t Testnet) makeTestnet() error {
 
 	t.Keystore.addValidatorKeys(output)
 	return nil
+}
+
+func (t Testnet) updateGenesis() {
+	genesisPaths := make([]string, 0)
+	filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
+		if fileinfo.Name() == "genesis.json" {
+			genesisPaths = append(genesisPaths, path)
+		}
+		return nil
+	})
+
+	if len(genesisPaths) == 0 {
+		panic("Unable to locate genesis.json for testnet.")
+	}
+
+	bz, err := ioutil.ReadFile(genesisPaths[0])
+	if err != nil {
+		panic(err)
+	}
+
+	// Tighten slashing conditions.
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.9")
+	window := time.Duration(10 * time.Second).Milliseconds()
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
+
+	for _, path := range genesisPaths {
+		err = ioutil.WriteFile(path, bz, 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func compileBinaries() error {

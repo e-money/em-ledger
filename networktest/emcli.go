@@ -75,6 +75,11 @@ func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
+func (cli Emcli) QueryValidators() ([]byte, error) {
+	args := cli.addQueryFlags("query", "staking", "validators")
+	return execCmdAndCollectResponse(args)
+}
+
 func (cli Emcli) IssuerIncreaseCredit(issuer, liquidityprovider Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("issuer", "increase-credit", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
