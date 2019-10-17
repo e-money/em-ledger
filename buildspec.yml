@@ -8,4 +8,5 @@ phases:
   build:
     commands:
       - docker version
+      - make build-docker
       - go test -v --tags="bdd" authority_test.go
