@@ -7,4 +7,5 @@ phases:
       docker: 18
   build:
     commands:
+      - docker version
       - go test -v --tags="bdd" authority_test.go
