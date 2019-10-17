@@ -7,6 +7,6 @@ phases:
       docker: 18
   build:
     commands:
-      - docker version
+      - make test
       - make build-docker
-      - go test -v --tags="bdd" authority_test.go
+      - make bdd-test
