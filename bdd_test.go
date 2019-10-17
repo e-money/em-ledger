@@ -4,12 +4,15 @@ package emoney
 
 import (
 	"testing"
+	"time"
 
 	nt "emoney/networktest"
 	apptypes "emoney/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/onsi/ginkgo/config"
 )
 
 var (
@@ -32,6 +35,8 @@ func TestSuite(t *testing.T) {
 	})
 
 	RegisterFailHandler(Fail)
+
+	config.DefaultReporterConfig.SlowSpecThreshold = time.Hour.Seconds()
 
 	RunSpecs(t, "em-ledger integration tests")
 }
