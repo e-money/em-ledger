@@ -3,13 +3,10 @@
 package emoney
 
 import (
+	nt "emoney/networktest"
+	"emoney/x/issuer/types"
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"testing"
-
-	nt "emoney/networktest"
-	apptypes "emoney/types"
-	"emoney/x/issuer/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
@@ -20,20 +17,6 @@ const (
 	QGetInflationEUR = "assets.#(denom==\"x2eur\").inflation"
 )
 
-var (
-	testnet = nt.NewTestnet()
-)
-
-func init() {
-	apptypes.ConfigureSDK()
-}
-
-func TestSuite(t *testing.T) {
-	RegisterFailHandler(Fail)
-
-	RunSpecs(t, "em-ledger integration tests")
-}
-
 var _ = Describe("Authority", func() {
 	emcli := nt.NewEmcli(testnet.Keystore)
 
@@ -43,16 +26,6 @@ var _ = Describe("Authority", func() {
 		LiquidityProvider = testnet.Keystore.Key2
 		OtherKey          = testnet.Keystore.Key3
 	)
-
-	BeforeSuite(func() {
-		err := testnet.Setup()
-		Expect(err).ShouldNot(HaveOccurred())
-	})
-
-	AfterSuite(func() {
-		err := testnet.Teardown()
-		Expect(err).ShouldNot(HaveOccurred())
-	})
 
 	Describe("Authority manages issuers", func() {
 		It("starts a new testnet", func() {
