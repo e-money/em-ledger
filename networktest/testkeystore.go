@@ -70,10 +70,10 @@ func NewKeystore() (*KeyStore, error) {
 		Key2:      newKey("key2", keybase),
 		Key3:      newKey("key3", keybase),
 		Validators: []Key{
+			newKey("validator0", keybase),
 			newKey("validator1", keybase),
 			newKey("validator2", keybase),
 			newKey("validator3", keybase),
-			newKey("validator4", keybase),
 		},
 	}
 

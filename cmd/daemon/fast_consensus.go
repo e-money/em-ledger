@@ -10,9 +10,9 @@ import (
 func init() {
 	previousConfig := configureConsensus
 	configureConsensus = func() {
-		fmt.Println("Overriding consensus parameters to achieve 2 second block time")
+		fmt.Println("Overriding consensus parameters to achieve 4 second block time")
 		previousConfig()
 
-		viper.Set("consensus.create_empty_blocks_interval", "2s")
+		viper.Set("consensus.create_empty_blocks_interval", "4s")
 	}
 }

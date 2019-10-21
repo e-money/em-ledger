@@ -3,8 +3,6 @@
 package emoney
 
 import (
-	"fmt"
-	"github.com/tidwall/gjson"
 	"time"
 
 	nt "emoney/networktest"
@@ -14,8 +12,6 @@ import (
 )
 
 var _ = Describe("Staking", func() {
-	emcli := nt.NewEmcli(testnet.Keystore)
-
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
 			It("starts a new testnet", func() {
@@ -25,16 +21,24 @@ var _ = Describe("Staking", func() {
 			})
 
 			It("kill validator 2 and get jailed", func() {
-				_, err := testnet.KillValidator(2)
+				listener, err := nt.NewEventListener()
+				if err != nil {
+					panic(err)
+				}
+
+				// Allow for a few blocks
+				time.Sleep(5 * time.Second)
+
+				slash, err := listener.AwaitSlash()
 				Expect(err).ToNot(HaveOccurred())
 
-				time.Sleep(12 * time.Second)
-
-				bz, err := emcli.QueryValidators()
+				_, err = testnet.KillValidator(2)
 				Expect(err).ToNot(HaveOccurred())
 
-				json := gjson.ParseBytes(bz).Get("#(description.moniker==\"Validator-2\")")
-				Expect(json.Get("jailed").Bool()).To(BeTrue())
+				slashevent := slash()
+				Expect(slashevent).ToNot(BeNil())
+
+				time.Sleep(5 * time.Second)
 			})
 		})
 	})

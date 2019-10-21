@@ -268,7 +268,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	}
 
 	moniker := fmt.Sprintf("Validator-%v", i)
-	valTokens := sdk.TokensFromConsensusPower(50000)
+	valTokens := sdk.TokensFromConsensusPower(60000)
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,

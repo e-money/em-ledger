@@ -152,7 +152,7 @@ func (t Testnet) updateGenesis() {
 	}
 
 	// Tighten slashing conditions.
-	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.9")
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 	window := time.Duration(10 * time.Second).Milliseconds()
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
 
