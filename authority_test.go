@@ -28,11 +28,7 @@ var _ = Describe("Authority", func() {
 	)
 
 	Describe("Authority manages issuers", func() {
-		It("starts a new testnet", func() {
-			awaitReady, err := testnet.Restart()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(awaitReady()).To(BeTrue())
-		})
+		It("creates a new testnet", createNewTestnet)
 
 		It("creates an issuer", func() {
 			_, success, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "x2eur", "x0jpy")

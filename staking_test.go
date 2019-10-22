@@ -14,11 +14,7 @@ import (
 var _ = Describe("Staking", func() {
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
-			It("starts a new testnet", func() {
-				awaitReady, err := testnet.Restart()
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(awaitReady()).To(BeTrue())
-			})
+			It("creates a new testnet", createNewTestnet)
 
 			It("kill validator 2 and get jailed", func() {
 				listener, err := nt.NewEventListener()

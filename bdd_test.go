@@ -23,6 +23,12 @@ func init() {
 	apptypes.ConfigureSDK()
 }
 
+func createNewTestnet() {
+	awaitReady, err := testnet.Restart()
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(awaitReady()).To(BeTrue())
+}
+
 func TestSuite(t *testing.T) {
 	BeforeSuite(func() {
 		err := testnet.Setup()
