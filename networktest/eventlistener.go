@@ -48,6 +48,18 @@ func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error)
 	return res, nil
 }
 
+func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {
+	eventFn, err := el.awaitQuery("penalty_payout.address CONTAINS 'emoney'")
+	if err != nil {
+		return nil, err
+	}
+
+	return func() bool {
+		evt := eventFn()
+		return evt != nil
+	}, nil
+}
+
 func (el EventListener) AwaitSlash() (func() *abcitypes.Event, error) {
 	eventFn, err := el.awaitQuery("slash.reason = 'missing_signature'")
 	if err != nil {

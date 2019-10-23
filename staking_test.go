@@ -28,11 +28,14 @@ var _ = Describe("Staking", func() {
 				slash, err := listener.AwaitSlash()
 				Expect(err).ToNot(HaveOccurred())
 
+				payoutEvent, err := listener.AwaitPenaltyPayout()
+				Expect(err).ToNot(HaveOccurred())
+
 				_, err = testnet.KillValidator(2)
 				Expect(err).ToNot(HaveOccurred())
 
-				slashevent := slash()
-				Expect(slashevent).ToNot(BeNil())
+				Expect(slash()).ToNot(BeNil())
+				Expect(payoutEvent()).To(BeTrue())
 
 				time.Sleep(5 * time.Second)
 			})
