@@ -279,6 +279,14 @@ func (k Keeper) handlePendingPenalties(ctx sdk.Context, batch db.Batch, vfn func
 			continue
 		}
 
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypePenaltyPayout,
+				sdk.NewAttribute(types.AttributeKeyAmount, coins.String()),
+				sdk.NewAttribute(types.AttributeKeyAddress, val),
+			),
+		)
+
 		delete(activePenalties, val)
 
 		err := k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.PenaltyAccount, k.feeModuleName, coins)

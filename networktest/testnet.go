@@ -6,9 +6,13 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/tidwall/sjson"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -20,33 +24,32 @@ type Testnet struct {
 
 const (
 	ContainerCount = 4
-	EMD            = "./build/emd-local"
+	WorkingDir     = "./build/"
+	EMD            = WorkingDir + "emd-local"
 )
 
 var (
 	dockerComposePath string
+	dockerPath        string
 	makePath          string
 	output            io.Writer = os.Stdout // Override to make tests quiet
 )
 
 func init() {
-	var err error
+	dockerComposePath = locateExecutable("docker-compose")
+	dockerPath = locateExecutable("docker")
+	makePath = locateExecutable("make")
+}
 
-	dockerComposePath, err = exec.LookPath("docker-compose")
-	if dockerComposePath == "" {
-		fmt.Println("Unable to locate docker-compose")
+func locateExecutable(name string) (path string) {
+	path, err := exec.LookPath(name)
+	if path == "" {
+		fmt.Printf("Unable to locate %s\n", name)
 	}
 	if err != nil {
 		panic(err)
 	}
-
-	makePath, err = exec.LookPath("make")
-	if makePath == "" {
-		fmt.Println("Unable to locate make")
-	}
-	if err != nil {
-		panic(err)
-	}
+	return
 }
 
 func NewTestnetWithContext(ctx context.Context) Testnet {
@@ -72,6 +75,7 @@ func (t Testnet) Setup() error {
 	}
 
 	t.makeTestnet()
+	t.updateGenesis()
 
 	return nil
 }
@@ -94,11 +98,13 @@ func (t Testnet) Restart() (func() bool, error) {
 	}
 
 	for i := 0; i < ContainerCount; i++ {
-		err := execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
+		_, err := execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	t.updateGenesis()
 
 	return dockerComposeUp()
 }
@@ -107,19 +113,74 @@ func (t Testnet) Teardown() error {
 	return dockerComposeDown()
 }
 
+func (t Testnet) KillValidator(index int) (string, error) {
+	return execCmdAndWait(dockerPath, "kill", fmt.Sprintf("emdnode%v", index))
+}
+
 func (t Testnet) WaitFor() {} // Wait for an event, e.g. blocks, special output or ...
 
 func (t Testnet) makeTestnet() error {
-	return execCmdAndWait(EMD,
+	output, err := execCmdAndWait(EMD,
 		"testnet",
 		"localnet",
 		t.Keystore.Authority.name,
-		"-o", "build",
+		"-o", WorkingDir,
 		"--keyaccounts", t.Keystore.path)
+
+	if err != nil {
+		return err
+	}
+
+	t.Keystore.addValidatorKeys(output)
+	return nil
+}
+
+func (t Testnet) updateGenesis() {
+	genesisPaths := make([]string, 0)
+	filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
+		if fileinfo.Name() == "genesis.json" {
+			genesisPaths = append(genesisPaths, path)
+		}
+		return nil
+	})
+
+	if len(genesisPaths) == 0 {
+		panic("Unable to locate genesis.json for testnet.")
+	}
+
+	bz, err := ioutil.ReadFile(genesisPaths[0])
+	if err != nil {
+		panic(err)
+	}
+
+	// Tighten slashing conditions.
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
+
+	window := time.Duration(10 * time.Second).Milliseconds()
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
+
+	// Reduce jail time to be able to test unjailing
+	unjail := time.Duration(5 * time.Second).Milliseconds()
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", fmt.Sprint(unjail))
+
+	// Start inflation before testnet start in order to have some rewards for NGM stakers.
+	inflationLastApplied := time.Now().Add(-2 * time.Hour).UTC().Format(time.RFC3339)
+	bz, _ = sjson.SetBytes(bz, "app_state.inflation.assets.last_applied", inflationLastApplied)
+
+	// Set genesis time in the future to allow all docker containers to get up and running
+	genesisTime := time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339)
+	bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime)
+
+	for _, path := range genesisPaths {
+		err = ioutil.WriteFile(path, bz, 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func compileBinaries() error {
-	err := execCmdAndWait(makePath, "clean", "build-all")
+	_, err := execCmdAndWait(makePath, "clean", "build-all")
 	if err != nil {
 		fmt.Println("Compilation step caused error: ", err)
 	}
@@ -127,12 +188,13 @@ func compileBinaries() error {
 }
 
 func dockerComposeUp() (func() bool, error) {
-	wait, scanner := createOutputScanner("] Committed state", 20*time.Second)
+	wait, scanner := createOutputScanner("] Committed state", 30*time.Second)
 	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
 func dockerComposeDown() error {
-	return execCmdAndWait(dockerComposePath, "down")
+	_, err := execCmdAndWait(dockerComposePath, "down")
+	return err
 }
 
 func execCmdAndRun(name string, arguments []string, scanner func(string)) error {
@@ -145,25 +207,35 @@ func execCmdAndRun(name string, arguments []string, scanner func(string)) error 
 	return cmd.Start()
 }
 
-func execCmdAndWait(name string, arguments ...string) error {
+func execCmdAndWait(name string, arguments ...string) (string, error) {
 	cmd := exec.Command(name, arguments...)
 
-	err := writeoutput(cmd)
+	// TODO Look into ways of not always setting this.
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "BUILD_TAGS=fast_consensus")
+
+	var output strings.Builder
+	captureOutput := func(s string) {
+		output.WriteString(s)
+		output.WriteRune('\n')
+	}
+
+	err := writeoutput(cmd, captureOutput)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return output.String(), nil
 }
 
 func writeoutput(cmd *exec.Cmd, filters ...func(string)) error {

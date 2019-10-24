@@ -12,6 +12,9 @@ require (
 	github.com/tendermint/tendermint v0.32.6
 	github.com/tendermint/tm-db v0.2.0
 	github.com/tidwall/gjson v1.3.2
+	github.com/tidwall/sjson v1.0.4
 )
 
 // replace github.com/cosmos/cosmos-sdk => ./tmpvendor/cosmos-sdk
+
+// replace github.com/tendermint/tendermint => ./tmpvendor/tendermint
