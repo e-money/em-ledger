@@ -8,4 +8,5 @@ const (
 	AttributeKeyInflation        = "inflation"
 	AttributeKeyAnnualProvisions = "annual_provisions"
 	AttributeKeyAmount           = "amount"
+	AttributeKeyEvent            = "inflation"
 )
