@@ -49,6 +49,17 @@ func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
+func (cli Emcli) QueryRewards(delegator string) (gjson.Result, error) {
+	args := cli.addQueryFlags("query", "distribution", "rewards", delegator)
+
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return gjson.Result{}, err
+	}
+
+	return gjson.ParseBytes(bz), nil
+}
+
 // NOTE Hardcoded to x2eur for now.
 func (cli Emcli) QueryAccount(account string) (balance, credit int, err error) {
 	args := cli.addQueryFlags("query", "account", account)

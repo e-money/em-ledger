@@ -153,8 +153,17 @@ func (t Testnet) updateGenesis() {
 
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
+
+	// Start inflation before testnet start in order to have some rewards for NGM stakers.
+	inflationLastApplied := time.Now().Add(-2 * time.Hour).UTC().Format(time.RFC3339)
+	bz, _ = sjson.SetBytes(bz, "app_state.inflation.assets.last_applied", inflationLastApplied)
+
 	window := time.Duration(10 * time.Second).Milliseconds()
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
+
+	// Set genesis time in the future to allow all docker containers to get up and running
+	genesisTime := time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339)
+	bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime)
 
 	for _, path := range genesisPaths {
 		err = ioutil.WriteFile(path, bz, 0644)
@@ -173,7 +182,7 @@ func compileBinaries() error {
 }
 
 func dockerComposeUp() (func() bool, error) {
-	wait, scanner := createOutputScanner("] Committed state", 20*time.Second)
+	wait, scanner := createOutputScanner("] Committed state", 30*time.Second)
 	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
