@@ -12,7 +12,10 @@ import (
 )
 
 var _ = Describe("Staking", func() {
-	const QueryNgmRewards = "total.#(denom==\"x3ngm\")"
+	const (
+		QueryNgmRewards            = "total.#(denom==\"x3ngm\")"
+		QueryJailedValidatorsCount = "#(jailed==true)#"
+	)
 
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
@@ -50,8 +53,6 @@ var _ = Describe("Staking", func() {
 				Expect(slash()).ToNot(BeNil())
 				Expect(payoutEvent()).To(BeTrue())
 
-				time.Sleep(30 * time.Second)
-
 				rewardsJson, err = emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rewardsJson.Get(QueryNgmRewards).Raw).ToNot(BeEmpty())
@@ -60,6 +61,22 @@ var _ = Describe("Staking", func() {
 				rewardsJson, err = emcli.QueryRewards(Validator2Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rewardsJson.Get(QueryNgmRewards).Raw).To(BeEmpty())
+
+				validators, err := emcli.QueryValidators()
+				Expect(err).ToNot(HaveOccurred())
+				validators = validators.Get(QueryJailedValidatorsCount)
+				Expect(validators.Array()).To(HaveLen(1))
+			})
+
+			It("validator unjails", func() {
+				_, success, err := emcli.UnjailValidator(Validator2Key)
+				Expect(success).To(BeTrue())
+				Expect(err).ToNot(HaveOccurred())
+
+				validators, err := emcli.QueryValidators()
+				Expect(err).ToNot(HaveOccurred())
+				validators = validators.Get(QueryJailedValidatorsCount)
+				Expect(validators.Array()).To(BeEmpty())
 			})
 		})
 	})

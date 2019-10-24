@@ -86,9 +86,14 @@ func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
-func (cli Emcli) QueryValidators() ([]byte, error) {
+func (cli Emcli) QueryValidators() (gjson.Result, error) {
 	args := cli.addQueryFlags("query", "staking", "validators")
-	return execCmdAndCollectResponse(args)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return gjson.Result{}, err
+	}
+
+	return gjson.ParseBytes(bz), nil
 }
 
 func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
@@ -123,6 +128,11 @@ func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, bool, er
 
 func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("liquidityprovider", "burn", amount, "--from", key.name)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) UnjailValidator(key Key) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "slashing", "unjail", "--from", key.name)
 	return execCmdWithInput(args, KeyPwd)
 }
 

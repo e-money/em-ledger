@@ -104,6 +104,8 @@ func (t Testnet) Restart() (func() bool, error) {
 		}
 	}
 
+	t.updateGenesis()
+
 	return dockerComposeUp()
 }
 
@@ -154,12 +156,16 @@ func (t Testnet) updateGenesis() {
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 
+	window := time.Duration(10 * time.Second).Milliseconds()
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
+
+	// Reduce jail time to be able to test unjailing
+	unjail := time.Duration(5 * time.Second).Milliseconds()
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", fmt.Sprint(unjail))
+
 	// Start inflation before testnet start in order to have some rewards for NGM stakers.
 	inflationLastApplied := time.Now().Add(-2 * time.Hour).UTC().Format(time.RFC3339)
 	bz, _ = sjson.SetBytes(bz, "app_state.inflation.assets.last_applied", inflationLastApplied)
-
-	window := time.Duration(10 * time.Second).Milliseconds()
-	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
 
 	// Set genesis time in the future to allow all docker containers to get up and running
 	genesisTime := time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339)
