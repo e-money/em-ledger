@@ -11,8 +11,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -76,7 +76,7 @@ func createTestInput(t *testing.T, defaults Params, database dbm.DB) (sdk.Contex
 	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 	accountKeeper := auth.NewAccountKeeper(cdc, keyAcc, paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 
-	bk := bank.NewBaseKeeper(accountKeeper, paramsKeeper.Subspace(bank.DefaultParamspace), bank.DefaultCodespace)
+	bk := bank.NewBaseKeeper(accountKeeper, paramsKeeper.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
 	maccPerms := map[string][]string{
 		auth.FeeCollectorName:     nil,
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
@@ -84,7 +84,7 @@ func createTestInput(t *testing.T, defaults Params, database dbm.DB) (sdk.Contex
 		ModuleName:                {supply.Minter},
 		PenaltyAccount:            nil,
 	}
-	supplyKeeper := supply.NewKeeper(cdc, keySupply, accountKeeper, bk, supply.DefaultCodespace, maccPerms)
+	supplyKeeper := supply.NewKeeper(cdc, keySupply, accountKeeper, bk, maccPerms)
 
 	totalSupply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens.MulRaw(int64(len(addrs)))))
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
@@ -126,11 +126,6 @@ func newPubKey(pk string) (res crypto.PubKey) {
 	var pkEd ed25519.PubKeyEd25519
 	copy(pkEd[:], pkBytes[:])
 	return pkEd
-}
-
-func testAddr(addr string) sdk.AccAddress {
-	res := []byte(addr)
-	return res
 }
 
 func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey crypto.PubKey, amt sdk.Int) staking.MsgCreateValidator {

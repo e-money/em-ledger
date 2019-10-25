@@ -9,8 +9,8 @@ import (
 	"emoney/x/slashing/types"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	db "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -278,6 +278,14 @@ func (k Keeper) handlePendingPenalties(ctx sdk.Context, batch db.Batch, vfn func
 			// Penalized validator is still in the validator set. Do not pay out slashing fine.
 			continue
 		}
+
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypePenaltyPayout,
+				sdk.NewAttribute(types.AttributeKeyAmount, coins.String()),
+				sdk.NewAttribute(types.AttributeKeyAddress, val),
+			),
+		)
 
 		delete(activePenalties, val)
 

@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/db"
+	db "github.com/tendermint/tm-db"
 	"testing"
 	"time"
 

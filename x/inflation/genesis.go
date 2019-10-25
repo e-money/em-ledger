@@ -5,10 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// GenesisState - minter state
 type GenesisState struct {
-	//Minter Minter `json:"minter" yaml:"minter"` // minter object
-	//Params Params `json:"params" yaml:"params"` // inflation params
 	InflationState InflationState `json:"assets" yaml:"assets"`
 }
 
@@ -26,7 +23,6 @@ func DefaultGenesisState() GenesisState {
 	}
 }
 
-// InitGenesis new mint genesis
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	keeper.SetState(ctx, data.InflationState)
 }

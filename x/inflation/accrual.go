@@ -1,6 +1,7 @@
 package inflation
 
 import (
+	"emoney/x/inflation/internal/types"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -47,23 +48,25 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		panic(err)
 	}
 
-	/*
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeMint,
-				sdk.NewAttribute(types.AttributeKeyBondedRatio, bondedRatio.String()),
-				sdk.NewAttribute(types.AttributeKeyInflation, minter.Inflation.String()),
-				sdk.NewAttribute(types.AttributeKeyAnnualProvisions, minter.AnnualProvisions.String()),
-				sdk.NewAttribute(types.AttributeKeyAmount, mintedCoin.Amount.String()),
-			),
-		)
-	*/
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeMint,
+			sdk.NewAttribute(types.AttributeKeyAmount, mintedCoins.String()),
+			sdk.NewAttribute(types.AttributeKeyEvent, "true"),
+		),
+	)
 }
 
 func applyInflation(state *InflationState, totalTokenSupply sdk.Coins, currentTime time.Time) sdk.Coins {
 	lastAccrual := state.LastAppliedTime
-	state.LastAppliedTime = currentTime
 	mintedCoins := sdk.Coins{}
+
+	// Inflation may be set to start in the future. Do nothing in that case.
+	if currentTime.Before(lastAccrual) {
+		return mintedCoins
+	}
+
+	state.LastAppliedTime = currentTime
 
 	for i, asset := range state.InflationAssets {
 		supply := totalTokenSupply.AmountOf(asset.Denom)

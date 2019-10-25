@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"os"
 
@@ -9,14 +12,17 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	app "emoney"
-	"emoney/types"
+	apptypes "emoney/types"
 	"emoney/util"
+	authoritycli "emoney/x/authority/client/cli"
+	issuercli "emoney/x/issuer/client/cli"
+	lpcli "emoney/x/liquidityprovider/client/cli"
+	lptypes "emoney/x/liquidityprovider/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
@@ -26,13 +32,9 @@ import (
 
 func main() {
 	cobra.EnableCommandSorting = false
-	cdc := app.MakeCodec()
 
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(types.Bech32PrefixAccAddr, types.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(types.Bech32PrefixValAddr, types.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(types.Bech32PrefixConsAddr, types.Bech32PrefixConsPub)
-	config.Seal()
+	apptypes.ConfigureSDK()
+	cdc := app.MakeCodec()
 
 	rootCmd := &cobra.Command{
 		Use:   "emcli",
@@ -47,6 +49,10 @@ func main() {
 		txCmds(cdc),
 		lcd.ServeCommand(cdc, registerLCDRoutes),
 		keys.Commands(),
+		lpcli.GetTxCmd(cdc),
+		issuercli.GetTxCmd(cdc),
+		authoritycli.GetTxCmd(cdc),
+
 		version.Cmd,
 	)
 
@@ -63,13 +69,32 @@ func main() {
 	}
 }
 
+func init() {
+	registerTypesInAuthModule()
+}
+
+func registerTypesInAuthModule() {
+	// The auth module's codec must be updated with the account types introduced by the liquidityprovider module
+	// When https://github.com/cosmos/cosmos-sdk/pull/5017 is in the used Cosmos-sdk, consider switching to it.
+	// https://github.com/cosmos/cosmos-sdk/blob/1d16d34b1b35cb65405f84b632d228ed8fc329fc/docs/architecture/adr-011-generalize-genesis-accounts.md
+	authcdc := codec.New()
+
+	codec.RegisterCrypto(authcdc)
+	lptypes.RegisterCodec(authcdc)
+	authtypes.RegisterCodec(authcdc)
+
+	authtypes.ModuleCdc = authcdc
+	auth.ModuleCdc = authcdc
+}
+
 func txCmds(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   "tx",
 		Short: "Transactions subcommands",
 	}
 
-	txCmd.AddCommand(bankcmd.SendTxCmd(cdc),
+	txCmd.AddCommand(
+		bankcmd.SendTxCmd(cdc),
 		authcmd.GetSignCommand(cdc),
 		authcmd.GetMultiSignCommand(cdc),
 		authcmd.GetBroadcastCommand(cdc),
@@ -97,6 +122,8 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 
 	queryCmd.AddCommand(
 		authcmd.GetAccountCmd(cdc),
+		authcmd.QueryTxCmd(cdc),
+		authcmd.QueryTxsByEventsCmd(cdc),
 	)
 
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)

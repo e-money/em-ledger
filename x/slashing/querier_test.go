@@ -1,7 +1,7 @@
 package slashing
 
 import (
-	"github.com/tendermint/tendermint/libs/db"
+	db "github.com/tendermint/tm-db"
 	"testing"
 
 	"github.com/stretchr/testify/require"

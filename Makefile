@@ -48,11 +48,18 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 build:
-	go build $(BUILD_FLAGS) -o build/emd ./cmd/daemon
-	go build $(BUILD_FLAGS) -o build/emcli ./cmd/cli
+	go build $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/daemon
+	go build $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/cli
 
 build-linux:
-	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+	# Linux images for docker-compose
+	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+
+build-all: build-linux
+	$(MAKE) build
+
+build-docker:
+	$(MAKE) -C networks/docker/ all
 
 run-single-node: clean
 	go run cmd/daemon/*.go init
@@ -61,7 +68,10 @@ run-single-node: clean
 test:
 	go test ./...
 
+bdd-test:
+	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go authority_test.go
+
 clean:
 	rm -rf ./build ./data ./config
 
-.PHONY: build build-linux clean test
+.PHONY: build build-linux clean test bdd-test build-docker

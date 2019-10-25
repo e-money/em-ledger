@@ -1,6 +1,6 @@
 package types
 
-import "github.com/tendermint/tendermint/libs/db"
+import db "github.com/tendermint/tm-db"
 
 // A reduced database interface which ensures that all modifications to state are written elsewhere.
 type ReadOnlyDB interface {
