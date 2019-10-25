@@ -25,7 +25,7 @@ type Testnet struct {
 const (
 	ContainerCount = 4
 	WorkingDir     = "./build/"
-	EMD            = WorkingDir + "emd-local"
+	EMD            = WorkingDir + "emd"
 )
 
 var (

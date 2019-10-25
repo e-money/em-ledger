@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	EMCLI = "./build/emcli-local"
+	EMCLI = "./build/emcli"
 
 	// gjson paths
 	QGetCreditEUR  = "value.Credit.#(denom==\"x2eur\").amount"
