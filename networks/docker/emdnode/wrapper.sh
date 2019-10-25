@@ -3,7 +3,7 @@
 ##
 ## Input parameters
 ##
-BINARY=/emoney/${BINARY:-emd}
+BINARY=/emoney/${BINARY:-emd-linux}
 ID=${ID:-0}
 LOG=${LOG:-emd.log}
 

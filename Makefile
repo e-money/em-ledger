@@ -53,10 +53,10 @@ build:
 
 build-linux:
 	# Linux images for docker-compose
-	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
 build-all: build-linux
-	BIN_PREFIX=-local $(MAKE) build
+	$(MAKE) build
 
 build-docker:
 	$(MAKE) -C networks/docker/ all
