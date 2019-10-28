@@ -15,8 +15,8 @@ import (
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	authorityCmds := &cobra.Command{
 		Use:                "authority",
+		Short:              "manage liquidity providers",
 		DisableFlagParsing: false,
-		RunE:               client.ValidateCmd,
 	}
 
 	authorityCmds.AddCommand(
