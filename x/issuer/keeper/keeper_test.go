@@ -134,7 +134,7 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 	var (
 		iacc, _      = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 		lpacc, _     = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
-		randomacc, _ = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		randomacc, _ = sdk.AccAddressFromBech32("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
 	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lpacc))
@@ -157,6 +157,40 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 	result := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
 	require.True(t, result.IsOK(), "%v", result)
 	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lpacc))
+}
+
+func TestDoubleLiquidityProvider(t *testing.T) {
+	// Two issuers provide lp status to the same account. Ensure revocation is isolated.
+	ctx, ak, lpk, keeper := createTestComponents(t)
+
+	var (
+		issuer1, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		issuer2, _ = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		lp, _      = sdk.AccAddressFromBech32("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
+	)
+
+	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lp))
+	keeper.AddIssuer(ctx, types.NewIssuer(issuer1, "x2eur", "x0jpy"))
+	keeper.AddIssuer(ctx, types.NewIssuer(issuer2, "x2dkk", "x2sek"))
+
+	credit1 := MustParseCoins("100000x2eur,5000x0jpy")
+	credit2 := MustParseCoins("250000x2dkk,1000x2sek")
+
+	keeper.IncreaseCreditOfLiquidityProvider(ctx, lp, issuer1, credit1)
+	keeper.IncreaseCreditOfLiquidityProvider(ctx, lp, issuer2, credit2)
+
+	lpAccount := lpk.GetLiquidityProviderAccount(ctx, lp)
+	require.Len(t, lpAccount.Credit, 4)
+
+	res := keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
+	require.True(t, res.IsOK())
+
+	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp)
+	require.Len(t, lpAccount.Credit, 2)
+
+	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
+	require.True(t, res.IsOK())
+	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lp))
 }
 
 func TestCollectDenominations(t *testing.T) {
@@ -188,6 +222,21 @@ func TestAnyContains(t *testing.T) {
 	require.False(t, anyContained(input, "flow", "eagle"))
 	require.False(t, anyContained(input))
 	require.False(t, anyContained(make([]string, 0), "ocean"))
+}
+
+func TestRemoveDenom(t *testing.T) {
+	coins := sdk.NewCoins(
+		sdk.NewCoin("x2eur", sdk.NewInt(5)),
+		sdk.NewCoin("x2dkk", sdk.NewInt(5)),
+		sdk.NewCoin("x0jpy", sdk.NewInt(5)),
+	)
+
+	res := removeDenom(coins, "x2chf")
+	require.EqualValues(t, coins, res)
+
+	res = removeDenom(coins, "x2eur")
+	require.Len(t, res, 2)
+	require.EqualValues(t, coins[:len(coins)-1], res)
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquidityprovider.Keeper, Keeper) {

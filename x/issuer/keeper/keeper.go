@@ -89,24 +89,32 @@ func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 
 }
 
-func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress) sdk.Result {
-	_, err := k.mustBeIssuer(ctx, issuer)
+func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {
+	issuer, err := k.mustBeIssuer(ctx, issuerAddress)
 	if err != nil {
-		return types.ErrNotAnIssuer(issuer).Result()
+		return types.ErrNotAnIssuer(issuerAddress).Result()
 	}
-
-	// TODO Only revoke the denoms the issuer controls.
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
 		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
-	if k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc) {
-		return sdk.Result{}
+	newCredit := lpAcc.Credit
+	for _, denom := range issuer.Denoms {
+		newCredit = removeDenom(newCredit, denom)
 	}
 
-	return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+	if len(newCredit) == 0 {
+		// No more credit, so demote to ordinary account
+		k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc)
+	} else {
+		// This liquidity provider has been granted credit from multiple issuers so some credit remain.
+		lpAcc.Credit = newCredit
+		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
+	}
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) sdk.Result {
@@ -191,6 +199,18 @@ func collectDenoms(issuers []types.Issuer) (res []string) {
 	}
 
 	sort.Strings(res)
+	return
+}
+
+func removeDenom(coins sdk.Coins, denom string) (res sdk.Coins) {
+	for _, c := range coins {
+		if c.Denom == denom {
+			continue
+		}
+
+		res = append(res, c)
+	}
+
 	return
 }
 
