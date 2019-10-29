@@ -44,6 +44,11 @@ func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) 
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, error) {
+	args := cli.addTransactionFlags("authority", "destroy-issuer", authority.name, issuer.GetAddress())
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "tx", txhash)
 	return execCmdAndCollectResponse(args)

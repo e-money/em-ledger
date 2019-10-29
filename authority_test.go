@@ -185,5 +185,15 @@ var _ = Describe("Authority", func() {
 
 			Expect(balanceBefore).To(Equal(balanceAfter))
 		})
+
+		It("issuer gets revoked", func() {
+			_, success, err := emcli.AuthorityDestroyIssuer(Authority, Issuer)
+			Expect(success).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+
+			_, success, err = emcli.IssuerSetInflation(Issuer, "x2eur", "0.5")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeFalse())
+		})
 	})
 })
