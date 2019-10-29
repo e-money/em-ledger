@@ -6,6 +6,7 @@ import (
 	nt "emoney/networktest"
 	"emoney/x/issuer/types"
 	"encoding/json"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,7 +25,7 @@ var _ = Describe("Authority", func() {
 		Authority         = testnet.Keystore.Authority
 		Issuer            = testnet.Keystore.Key1
 		LiquidityProvider = testnet.Keystore.Key2
-		OtherKey          = testnet.Keystore.Key3
+		OtherIssuer       = testnet.Keystore.Key3
 	)
 
 	Describe("Authority manages issuers", func() {
@@ -52,9 +53,15 @@ var _ = Describe("Authority", func() {
 		})
 
 		It("authority assigns a second issuer to same denomination", func() {
-			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherKey, "x2dkk", "x0jpy")
+			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "x2dkk", "x0jpy")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeFalse())
+		})
+
+		It("authority creates a second issuer", func() {
+			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "x2dkk")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
 		})
 
 		It("creates a liquidity provider", func() {
@@ -92,6 +99,16 @@ var _ = Describe("Authority", func() {
 
 			Expect(inflationAfter).ToNot(Equal(inflationBefore))
 			Expect(inflationAfter).To(Equal(sdk.MustNewDecFromStr("0.100")))
+		})
+
+		It("attempts to change inflation of denomination not under its control", func() {
+			_, success, err := emcli.IssuerSetInflation(OtherIssuer, "x2eur", "0.5")
+
+			bz, _ := emcli.QueryInflation()
+			fmt.Println(" *** Inflation\n", string(bz))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeFalse())
 		})
 
 		It("liquidity provider draws on credit", func() {

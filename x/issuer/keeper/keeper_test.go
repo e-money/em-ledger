@@ -52,18 +52,15 @@ func TestAddIssuer(t *testing.T) {
 	require.Len(t, keeper.GetIssuers(ctx), 2)
 	require.Len(t, collectDenoms(keeper.GetIssuers(ctx)), 3)
 
-	issuer := keeper.mustBeIssuer(ctx, acc1)
+	issuer, _ := keeper.mustBeIssuer(ctx, acc1)
 	require.Equal(t, issuer1, issuer)
 
 	acc2, _ := sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
-	require.Panics(t, func() {
-		// Function must panic if provided with a non-issuer account
-		keeper.mustBeIssuer(ctx, acc2)
-	})
-	require.Panics(t, func() {
-		// Function must panic if somehow provided with a nil address
-		keeper.mustBeIssuer(ctx, nil)
-	})
+	_, err := keeper.mustBeIssuer(ctx, acc2)
+	require.Error(t, err)
+
+	_, err = keeper.mustBeIssuer(ctx, nil)
+	require.Error(t, err)
 }
 
 func TestRemoveIssuer(t *testing.T) {
@@ -147,17 +144,15 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 	credit := MustParseCoins("100000x2eur,5000x0jpy")
 
 	// Ensure that a random account can't create a LP
-	require.Panics(t, func() {
-		keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, randomacc, credit)
-	})
+	res := keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, randomacc, credit)
+	require.False(t, res.IsOK())
 
 	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, iacc, credit)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
 	// Make sure a random account can't revoke LP status
-	require.Panics(t, func() {
-		keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
-	})
+	res = keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
+	require.False(t, res.IsOK())
 
 	result := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
 	require.True(t, result.IsOK(), "%v", result)
