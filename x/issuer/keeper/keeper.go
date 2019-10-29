@@ -105,6 +105,11 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 		newCredit = removeDenom(newCredit, denom)
 	}
 
+	if len(newCredit) == len(lpAcc.Credit) {
+		// Nothing was changed. Issuer was not controlling this lp.
+		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+	}
+
 	if len(newCredit) == 0 {
 		// No more credit, so demote to ordinary account
 		k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc)

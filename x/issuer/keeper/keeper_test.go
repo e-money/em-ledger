@@ -177,12 +177,17 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	credit2 := MustParseCoins("250000x2dkk,1000x2sek")
 
 	keeper.IncreaseCreditOfLiquidityProvider(ctx, lp, issuer1, credit1)
+
+	// Attempt to revoke liquidity given by other issuer
+	res := keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
+	require.False(t, res.IsOK())
+
 	keeper.IncreaseCreditOfLiquidityProvider(ctx, lp, issuer2, credit2)
 
 	lpAccount := lpk.GetLiquidityProviderAccount(ctx, lp)
 	require.Len(t, lpAccount.Credit, 4)
 
-	res := keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
+	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
 	require.True(t, res.IsOK())
 
 	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp)

@@ -6,7 +6,6 @@ import (
 	nt "emoney/networktest"
 	"emoney/x/issuer/types"
 	"encoding/json"
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -103,9 +102,6 @@ var _ = Describe("Authority", func() {
 
 		It("attempts to change inflation of denomination not under its control", func() {
 			_, success, err := emcli.IssuerSetInflation(OtherIssuer, "x2eur", "0.5")
-
-			bz, _ := emcli.QueryInflation()
-			fmt.Println(" *** Inflation\n", string(bz))
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeFalse())
