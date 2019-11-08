@@ -20,6 +20,7 @@ import (
 	lptypes "emoney/x/liquidityprovider/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -61,11 +62,24 @@ func main() {
 		"query.distribution.community-pool",
 	)
 
+	makeBroadcastBlocked(rootCmd)
+
 	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
 		os.Exit(1)
+	}
+}
+
+// Switch the default value of --broadcast-mode to "block"
+func makeBroadcastBlocked(cmd *cobra.Command) {
+	if flag := cmd.Flag(flags.FlagBroadcastMode); flag != nil {
+		flag.DefValue = flags.BroadcastBlock
+	}
+
+	for _, child := range cmd.Commands() {
+		makeBroadcastBlocked(child)
 	}
 }
 
