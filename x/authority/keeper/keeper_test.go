@@ -163,6 +163,10 @@ func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, de
 	return
 }
 
+func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ sdk.Result) {
+	return
+}
+
 func makeTestCodec() (cdc *codec.Codec) {
 	cdc = codec.New()
 
