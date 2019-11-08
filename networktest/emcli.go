@@ -13,7 +13,7 @@ const (
 	EMCLI = "./build/emcli"
 
 	// gjson paths
-	QGetCreditEUR  = "value.Credit.#(denom==\"x2eur\").amount"
+	QGetCreditEUR  = "value.credit.#(denom==\"x2eur\").amount"
 	QGetBalanceEUR = "value.Account.value.coins.#(denom==\"x2eur\").amount"
 )
 

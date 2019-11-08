@@ -72,7 +72,7 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			lpaccount := gjson.ParseBytes(bz)
-			credit := lpaccount.Get("value.Credit").Array()
+			credit := lpaccount.Get("value.credit").Array()
 			Expect(credit).To(HaveLen(1))
 			Expect(credit[0].Get("denom").Str).To(Equal("x2eur"))
 			Expect(credit[0].Get("amount").Str).To(Equal("50000"))
