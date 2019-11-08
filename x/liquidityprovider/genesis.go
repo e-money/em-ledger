@@ -5,7 +5,7 @@ import (
 )
 
 type genesisState struct {
-	Accounts []types.LiquidityProviderAccount
+	Accounts []types.LiquidityProviderAccount `json:"accounts" yaml:"accounts"`
 }
 
 func defaultGenesisState() genesisState {

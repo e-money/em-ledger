@@ -8,7 +8,7 @@ import (
 )
 
 type genesisState struct {
-	Issuers []types.Issuer
+	Issuers []types.Issuer `json:"issuers" yaml:"issuers"`
 }
 
 func initGenesis(ctx sdk.Context, k keeper.Keeper, state genesisState) {
