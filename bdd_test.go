@@ -15,13 +15,13 @@ import (
 	"github.com/onsi/ginkgo/config"
 )
 
-var (
-	testnet = nt.NewTestnet()
-)
-
 func init() {
 	apptypes.ConfigureSDK()
 }
+
+var (
+	testnet = nt.NewTestnet()
+)
 
 func createNewTestnet() {
 	awaitReady, err := testnet.Restart()

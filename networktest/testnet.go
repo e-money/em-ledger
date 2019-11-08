@@ -14,12 +14,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 // Handles running a testnet using docker-compose.
 type Testnet struct {
 	ctx      context.Context
 	Keystore *KeyStore
+	chainID  string
 }
 
 const (
@@ -58,9 +61,12 @@ func NewTestnetWithContext(ctx context.Context) Testnet {
 		panic(err)
 	}
 
+	chainID := fmt.Sprintf("localnet-%s", cmn.RandStr(6))
+
 	return Testnet{
 		ctx:      ctx,
 		Keystore: ks,
+		chainID:  chainID,
 	}
 }
 
@@ -117,12 +123,22 @@ func (t Testnet) KillValidator(index int) (string, error) {
 	return execCmdAndWait(dockerPath, "kill", fmt.Sprintf("emdnode%v", index))
 }
 
-func (t Testnet) WaitFor() {} // Wait for an event, e.g. blocks, special output or ...
+func (t Testnet) NewEmcli() Emcli {
+	return Emcli{
+		chainid:  t.chainID,
+		node:     "tcp://localhost:26657",
+		keystore: t.Keystore,
+	}
+}
+
+func (t Testnet) ChainID() string {
+	return t.chainID
+}
 
 func (t Testnet) makeTestnet() error {
 	output, err := execCmdAndWait(EMD,
 		"testnet",
-		"localnet",
+		t.chainID,
 		t.Keystore.Authority.name,
 		"-o", WorkingDir,
 		"--keyaccounts", t.Keystore.path)

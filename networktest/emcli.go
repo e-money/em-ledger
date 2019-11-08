@@ -23,14 +23,6 @@ type Emcli struct {
 	keystore *KeyStore
 }
 
-func NewEmcli(keystore *KeyStore) Emcli {
-	return Emcli{
-		chainid:  "localnet",
-		node:     "tcp://localhost:26657",
-		keystore: keystore,
-	}
-}
-
 func (cli Emcli) QueryIssuers() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addQueryFlags("q", "issuers"))
 }

@@ -3,7 +3,6 @@
 package emoney
 
 import (
-	nt "emoney/networktest"
 	"emoney/x/issuer/types"
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +17,7 @@ const (
 )
 
 var _ = Describe("Authority", func() {
-	emcli := nt.NewEmcli(testnet.Keystore)
+	emcli := testnet.NewEmcli()
 
 	var (
 		Authority         = testnet.Keystore.Authority

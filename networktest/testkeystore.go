@@ -5,6 +5,8 @@ import (
 	"fmt"
 	keys2 "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/crypto"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -28,24 +30,50 @@ type (
 	Key struct {
 		name    string
 		keybase keys.Keybase
+		privkey crypto.PrivKey
+		address sdk.AccAddress
 	}
 )
 
 func newKey(name string, keybase keys.Keybase) Key {
+	// Extract key information to prevent future keystore access. Makes concurrent key usage possible.
+	var (
+		privkey, _ = keybase.ExportPrivateKeyObject(name, KeyPwd)
+		info, _    = keybase.Get(name)
+	)
+
+	var address sdk.AccAddress
+	if info != nil {
+		address = info.GetAddress()
+	}
+
 	return Key{
 		name:    name,
 		keybase: keybase,
+		privkey: privkey,
+		address: address,
 	}
 }
 
 func (k Key) GetAddress() string {
-	info, err := k.keybase.Get(k.name)
-	if err != nil {
-		panic(err) // TODO Better errorhandling
+	if k.address.Empty() {
+		info, err := k.keybase.Get(k.name)
+		if err != nil {
+			panic(err)
+		}
+
+		k.address = info.GetAddress()
 	}
 
-	accAddress := info.GetAddress()
-	return accAddress.String()
+	return k.address.String()
+}
+
+func (k Key) GetPublicKey() crypto.PubKey {
+	return k.privkey.PubKey()
+}
+
+func (k Key) Sign(bz []byte) ([]byte, error) {
+	return k.privkey.Sign(bz)
 }
 
 func NewKeystore() (*KeyStore, error) {

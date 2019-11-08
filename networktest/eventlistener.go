@@ -5,6 +5,7 @@ package networktest
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -24,6 +25,31 @@ func NewEventListener() (EventListener, error) {
 	}
 
 	return EventListener{client: httpClient}, nil
+}
+
+func (el EventListener) subscribeQuery(query string, listener func(ct.ResultEvent) bool) error {
+	ctx := context.Background()
+	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		defer el.client.WSEvents.Unsubscribe(ctx, "", query)
+		for {
+			select {
+			case evt := <-eventChannel:
+				if !listener(evt) {
+					return
+				}
+			case <-time.After(time.Minute):
+				fmt.Println(" *** Timeout waiting for event.", query)
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error) {
@@ -46,6 +72,42 @@ func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error)
 	}
 
 	return res, nil
+}
+
+func (el EventListener) AwaitInflationMinting() error {
+	eventFn, err := el.awaitQuery("inflation.inflation = 'true'")
+	if err != nil {
+		return err
+	}
+
+	event := eventFn()
+
+	fmt.Println(" *** Events fired:")
+	for k, v := range event.Events {
+		fmt.Println(k)
+		if strings.HasPrefix(k, "inflation") {
+			fmt.Println(v)
+		}
+	}
+
+	return nil
+}
+
+func (el EventListener) SubscribeTransfers() error {
+	stopTime := time.Now().Add(30 * time.Second)
+
+	return el.subscribeQuery("transfer.recipient CONTAINS 'emoney'",
+		func(event ct.ResultEvent) bool {
+			fmt.Println(" *** Events fired:")
+			for k, v := range event.Events {
+				fmt.Println(k)
+				if strings.HasPrefix(k, "transfer") {
+					fmt.Println(v)
+				}
+			}
+
+			return time.Now().Before(stopTime)
+		})
 }
 
 func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {
