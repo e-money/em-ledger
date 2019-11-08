@@ -15,7 +15,12 @@ const (
 	CodeIssuerNotFound        sdk.CodeType = 4
 	CodeNegativeInflation     sdk.CodeType = 5
 	CodeDoesNotControlDenom   sdk.CodeType = 6
+	CodeNotAnIssuer           sdk.CodeType = 7
 )
+
+func ErrNotAnIssuer(address sdk.AccAddress) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeNotAnIssuer, fmt.Sprintf("%v is not an issuer", address))
+}
 
 func ErrNegativeCredit(lp sdk.AccAddress) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeNegativeCredit, fmt.Sprintf("credit decrease would result in negative credit for %d", lp))

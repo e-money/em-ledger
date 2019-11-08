@@ -32,7 +32,11 @@ func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) K
 func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditIncrease sdk.Coins) sdk.Result {
 	logger := k.logger(ctx)
 
-	i := k.mustBeIssuer(ctx, issuer)
+	i, err := k.mustBeIssuer(ctx, issuer)
+	if err != nil {
+		return types.ErrNotAnIssuer(issuer).Result()
+	}
+
 	for _, coin := range creditIncrease {
 		if !anyContained(i.Denoms, coin.Denom) {
 			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
@@ -56,7 +60,11 @@ func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditDecrease sdk.Coins) sdk.Result {
 	logger := k.logger(ctx)
 
-	i := k.mustBeIssuer(ctx, issuer)
+	i, err := k.mustBeIssuer(ctx, issuer)
+	if err != nil {
+		return types.ErrNotAnIssuer(issuer).Result()
+	}
+
 	for _, coin := range creditDecrease {
 		if !anyContained(i.Denoms, coin.Denom) {
 			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
@@ -81,23 +89,44 @@ func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 
 }
 
-func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress) sdk.Result {
-	k.mustBeIssuer(ctx, issuer)
+func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {
+	issuer, err := k.mustBeIssuer(ctx, issuerAddress)
+	if err != nil {
+		return types.ErrNotAnIssuer(issuerAddress).Result()
+	}
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
 		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
-	if k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc) {
-		return sdk.Result{}
+	newCredit := lpAcc.Credit
+	for _, denom := range issuer.Denoms {
+		newCredit = removeDenom(newCredit, denom)
 	}
 
-	return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+	if len(newCredit) == len(lpAcc.Credit) {
+		// Nothing was changed. Issuer was not controlling this lp.
+		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+	}
+
+	if len(newCredit) == 0 {
+		// No more credit, so demote to ordinary account
+		k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc)
+	} else {
+		// This liquidity provider has been granted credit from multiple issuers so some credit remain.
+		lpAcc.Credit = newCredit
+		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
+	}
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) sdk.Result {
-	k.mustBeIssuer(ctx, issuer)
+	_, err := k.mustBeIssuerOfDenom(ctx, issuer, denom)
+	if err != nil {
+		return types.ErrNotAnIssuer(issuer).Result()
+	}
 
 	return k.ik.SetInflation(ctx, inflationRate, denom)
 }
@@ -178,19 +207,52 @@ func collectDenoms(issuers []types.Issuer) (res []string) {
 	return
 }
 
-func (k Keeper) mustBeIssuer(ctx sdk.Context, address sdk.AccAddress) types.Issuer {
+func removeDenom(coins sdk.Coins, denom string) (res sdk.Coins) {
+	for _, c := range coins {
+		if c.Denom == denom {
+			continue
+		}
+
+		res = append(res, c)
+	}
+
+	return
+}
+
+func (k Keeper) mustBeIssuer(ctx sdk.Context, address sdk.AccAddress) (types.Issuer, error) {
 	if address == nil {
-		panic(fmt.Errorf("%v is not an issuer", address))
+		return types.Issuer{}, fmt.Errorf("no issuer specified")
 	}
 
 	issuers := k.GetIssuers(ctx)
 
 	for _, issuer := range issuers {
 		if issuer.Address.Equals(address) {
-			return issuer
+			return issuer, nil
 		}
 	}
 
 	k.logger(ctx).Info("Issuer operation attempted by non-issuer", "address", address)
-	panic(fmt.Errorf("%v is not an issuer", address))
+	return types.Issuer{}, fmt.Errorf("%v is not an issuer", address)
+}
+
+func (k Keeper) mustBeIssuerOfDenom(ctx sdk.Context, address sdk.AccAddress, denom string) (types.Issuer, error) {
+	if address == nil {
+		return types.Issuer{}, fmt.Errorf("no issuer specified")
+	}
+
+	issuers := k.GetIssuers(ctx)
+
+	for _, issuer := range issuers {
+		if issuer.Address.Equals(address) {
+			for _, d := range issuer.Denoms {
+				if d == denom {
+					return issuer, nil
+				}
+			}
+		}
+	}
+
+	k.logger(ctx).Info("Issuer operation attempted by non-issuer", "address", address)
+	return types.Issuer{}, fmt.Errorf("%v is not an issuer", address)
 }

@@ -19,7 +19,7 @@ var _ = Describe("Staking", func() {
 
 	Describe("Authority manages issuers", func() {
 		Context("", func() {
-			emcli := nt.NewEmcli(testnet.Keystore)
+			emcli := testnet.NewEmcli()
 
 			var (
 				Validator0Key = testnet.Keystore.Validators[0]
@@ -57,7 +57,7 @@ var _ = Describe("Staking", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rewardsJson.Get(QueryNgmRewards).Raw).ToNot(BeEmpty())
 
-				// Ensure that the jailed validator
+				// Ensure that the jailed validator does not get any of the fine.
 				rewardsJson, err = emcli.QueryRewards(Validator2Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rewardsJson.Get(QueryNgmRewards).Raw).To(BeEmpty())

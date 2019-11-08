@@ -23,14 +23,6 @@ type Emcli struct {
 	keystore *KeyStore
 }
 
-func NewEmcli(keystore *KeyStore) Emcli {
-	return Emcli{
-		chainid:  "localnet",
-		node:     "tcp://localhost:26657",
-		keystore: keystore,
-	}
-}
-
 func (cli Emcli) QueryIssuers() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addQueryFlags("q", "issuers"))
 }
@@ -41,6 +33,11 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 
 func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, error) {
+	args := cli.addTransactionFlags("authority", "destroy-issuer", authority.name, issuer.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
 }
 

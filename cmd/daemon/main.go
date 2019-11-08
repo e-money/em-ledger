@@ -34,13 +34,13 @@ func main() {
 	ctx := server.NewDefaultContext()
 	// Add application to logging configuration
 	logLevel := ctx.Config.BaseConfig.LogLevel
-	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,x/liquidityprovider:debug,%v", logLevel)
+	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,x/liquidityprovider:info,%v", logLevel)
 
 	configureConsensus()
 	viper.Set("p2p.flush_throttle_timeout", "25ms")
 
 	rootCmd := &cobra.Command{
-		Use:               "daemon",
+		Use:               "emd",
 		Short:             "e-money validator node",
 		PersistentPreRunE: persistentPreRunEFn(ctx),
 	}

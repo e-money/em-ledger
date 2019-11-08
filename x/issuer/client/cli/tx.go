@@ -14,10 +14,10 @@ import (
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	issuanceTxCmd := &cobra.Command{
 		Use:                        "issuer",
+		Short:                      "control inflation rates and manage liquidity providers",
 		Aliases:                    []string{"i"},
 		DisableFlagParsing:         false,
 		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
 	}
 
 	issuanceTxCmd.AddCommand(
