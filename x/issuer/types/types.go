@@ -11,8 +11,8 @@ import (
 type Issuers []Issuer
 
 type Issuer struct {
-	Address sdk.AccAddress
-	Denoms  []string
+	Address sdk.AccAddress `json:"address" yaml:"address"`
+	Denoms  []string       `json:"denoms" yaml:"denoms"`
 }
 
 func NewIssuer(address sdk.AccAddress, denoms ...string) Issuer {

@@ -160,7 +160,7 @@ func initializeTestnet(
 
 	// Update consensus-parameters
 	genDoc.ConsensusParams = tmtypes.DefaultConsensusParams()
-	genDoc.ConsensusParams.Block.MaxBytes = 1024 * 1024
+	genDoc.ConsensusParams.Block.MaxBytes = 1024 * 1024 * 16
 	genDoc.ConsensusParams.Block.TimeIotaMs = 1
 
 	for i := 0; i < validatorCount; i++ {

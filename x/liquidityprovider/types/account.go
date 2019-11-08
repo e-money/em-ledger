@@ -11,7 +11,7 @@ var _ auth.Account = LiquidityProviderAccount{}
 type LiquidityProviderAccount struct {
 	auth.Account
 
-	Credit sdk.Coins
+	Credit sdk.Coins `json:"credit" yaml:"credit"`
 }
 
 func NewLiquidityProviderAccount(baseAccount auth.Account, credit sdk.Coins) *LiquidityProviderAccount {
