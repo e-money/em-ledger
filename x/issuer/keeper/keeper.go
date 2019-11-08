@@ -162,6 +162,7 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
 
 	issuers = append(issuers, newIssuer)
 	k.setIssuers(ctx, issuers)
+	k.ik.AddDenoms(ctx, newIssuer.Denoms)
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
