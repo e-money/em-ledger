@@ -5,22 +5,21 @@ import (
 )
 
 var (
-	_ sdk.Msg = MsgIncreaseCredit{}
-	_ sdk.Msg = MsgDecreaseCredit{}
+	_ sdk.Msg = MsgIncreaseMintable{}
+	_ sdk.Msg = MsgDecreaseMintable{}
 	_ sdk.Msg = MsgRevokeLiquidityProvider{}
 	_ sdk.Msg = MsgSetInflation{}
 )
 
-// Increase the credit of a liquidity provider. If the account is not previously an LP, it will be made one.
 type (
-	MsgIncreaseCredit struct {
-		CreditIncrease    sdk.Coins
+	MsgIncreaseMintable struct {
+		MintableIncrease  sdk.Coins
 		LiquidityProvider sdk.AccAddress
 		Issuer            sdk.AccAddress
 	}
 
-	MsgDecreaseCredit struct {
-		CreditDecrease    sdk.Coins
+	MsgDecreaseMintable struct {
+		MintableDecrease  sdk.Coins
 		LiquidityProvider sdk.AccAddress
 		Issuer            sdk.AccAddress
 	}
@@ -85,11 +84,11 @@ func (msg MsgRevokeLiquidityProvider) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Issuer}
 }
 
-func (msg MsgDecreaseCredit) Route() string { return ModuleName }
+func (msg MsgDecreaseMintable) Route() string { return ModuleName }
 
-func (msg MsgDecreaseCredit) Type() string { return "decreaseCredit" }
+func (msg MsgDecreaseMintable) Type() string { return "decreaseMintable" }
 
-func (msg MsgDecreaseCredit) ValidateBasic() sdk.Error {
+func (msg MsgDecreaseMintable) ValidateBasic() sdk.Error {
 	if msg.LiquidityProvider.Empty() {
 		return sdk.ErrInvalidAddress("missing liquidity provider address")
 	}
@@ -98,26 +97,26 @@ func (msg MsgDecreaseCredit) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
-	if !msg.CreditDecrease.IsValid() {
-		return sdk.ErrInvalidCoins("credit decrease is invalid: " + msg.CreditDecrease.String())
+	if !msg.MintableDecrease.IsValid() {
+		return sdk.ErrInvalidCoins("requested decrease is invalid: " + msg.MintableDecrease.String())
 	}
 
 	return nil
 }
 
-func (msg MsgDecreaseCredit) GetSignBytes() []byte {
+func (msg MsgDecreaseMintable) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
-func (msg MsgDecreaseCredit) GetSigners() []sdk.AccAddress {
+func (msg MsgDecreaseMintable) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Issuer}
 }
 
-func (msg MsgIncreaseCredit) Route() string { return ModuleName }
+func (msg MsgIncreaseMintable) Route() string { return ModuleName }
 
-func (msg MsgIncreaseCredit) Type() string { return "increaseCredit" }
+func (msg MsgIncreaseMintable) Type() string { return "increaseMintable" }
 
-func (msg MsgIncreaseCredit) ValidateBasic() sdk.Error {
+func (msg MsgIncreaseMintable) ValidateBasic() sdk.Error {
 	if msg.LiquidityProvider.Empty() {
 		return sdk.ErrInvalidAddress("missing liquidity provider address")
 	}
@@ -126,17 +125,17 @@ func (msg MsgIncreaseCredit) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
-	if !msg.CreditIncrease.IsValid() {
-		return sdk.ErrInvalidCoins("credit increase is invalid: " + msg.CreditIncrease.String())
+	if !msg.MintableIncrease.IsValid() {
+		return sdk.ErrInvalidCoins("mintable increase is invalid: " + msg.MintableIncrease.String())
 	}
 
 	return nil
 }
 
-func (msg MsgIncreaseCredit) GetSignBytes() []byte {
+func (msg MsgIncreaseMintable) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
-func (msg MsgIncreaseCredit) GetSigners() []sdk.AccAddress {
+func (msg MsgIncreaseMintable) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Issuer}
 }

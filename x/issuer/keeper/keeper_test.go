@@ -97,35 +97,35 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	issuer := types.NewIssuer(iacc, "x2eur", "x0jpy")
 
 	keeper.AddIssuer(ctx, issuer)
-	credit := MustParseCoins("100000x2eur,5000x0jpy")
+	mintable := MustParseCoins("100000x2eur,5000x0jpy")
 
-	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
-	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 
-	// Verify the two increases in credit
+	// Verify the two increases in mintable balance
 	a := ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
 	expected := MustParseCoins("200000x2eur,10000x0jpy")
-	require.Equal(t, expected, a.Credit)
+	require.Equal(t, expected, a.Mintable)
 
-	// Decrease the credit too much
-	credit, _ = sdk.ParseCoins("400000x2eur")
-	result := keeper.DecreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
+	// Decrease the mintable amount too much
+	mintable, _ = sdk.ParseCoins("400000x2eur")
+	result := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.NotNil(t, result)
 
-	// Verify unchanged credit
+	// Verify unchanged mintable amount
 	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
-	require.Equal(t, expected, a.Credit)
+	require.Equal(t, expected, a.Mintable)
 
-	// Decrease credit.
-	credit = MustParseCoins("50000x2eur, 2000x0jpy")
-	result = keeper.DecreaseCreditOfLiquidityProvider(ctx, lpacc, issuer.Address, credit)
+	// Decrease mintable balance.
+	mintable = MustParseCoins("50000x2eur, 2000x0jpy")
+	result = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.True(t, result.IsOK())
 
 	expected = MustParseCoins("150000x2eur,8000x0jpy")
 	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
-	require.Equal(t, expected, a.Credit)
+	require.Equal(t, expected, a.Mintable)
 }
 
 func TestAddAndRevokeLiquidityProvider(t *testing.T) {
@@ -141,13 +141,13 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 
 	keeper.AddIssuer(ctx, types.NewIssuer(iacc, "x2eur", "x0jpy"))
 
-	credit := MustParseCoins("100000x2eur,5000x0jpy")
+	mintable := MustParseCoins("100000x2eur,5000x0jpy")
 
 	// Ensure that a random account can't create a LP
-	res := keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, randomacc, credit)
+	res := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, randomacc, mintable)
 	require.False(t, res.IsOK())
 
-	keeper.IncreaseCreditOfLiquidityProvider(ctx, lpacc, iacc, credit)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
 	// Make sure a random account can't revoke LP status
@@ -173,25 +173,25 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	keeper.AddIssuer(ctx, types.NewIssuer(issuer1, "x2eur", "x0jpy"))
 	keeper.AddIssuer(ctx, types.NewIssuer(issuer2, "x2dkk", "x2sek"))
 
-	credit1 := MustParseCoins("100000x2eur,5000x0jpy")
-	credit2 := MustParseCoins("250000x2dkk,1000x2sek")
+	mintable1 := MustParseCoins("100000x2eur,5000x0jpy")
+	mintable2 := MustParseCoins("250000x2dkk,1000x2sek")
 
-	keeper.IncreaseCreditOfLiquidityProvider(ctx, lp, issuer1, credit1)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer1, mintable1)
 
 	// Attempt to revoke liquidity given by other issuer
 	res := keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
 	require.False(t, res.IsOK())
 
-	keeper.IncreaseCreditOfLiquidityProvider(ctx, lp, issuer2, credit2)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer2, mintable2)
 
 	lpAccount := lpk.GetLiquidityProviderAccount(ctx, lp)
-	require.Len(t, lpAccount.Credit, 4)
+	require.Len(t, lpAccount.Mintable, 4)
 
 	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
 	require.True(t, res.IsOK())
 
 	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp)
-	require.Len(t, lpAccount.Credit, 2)
+	require.Len(t, lpAccount.Mintable, 2)
 
 	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
 	require.True(t, res.IsOK())

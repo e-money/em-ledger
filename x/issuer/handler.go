@@ -12,10 +12,10 @@ import (
 func newHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
-		case types.MsgIncreaseCredit:
-			return handleMsgIncreaseCredit(ctx, msg, k)
-		case types.MsgDecreaseCredit:
-			return handleMsgDecreaseCredit(ctx, msg, k)
+		case types.MsgIncreaseMintable:
+			return handleMsgIncreaseMintableAmount(ctx, msg, k)
+		case types.MsgDecreaseMintable:
+			return handleMsgDecreaseMintableAmount(ctx, msg, k)
 		case types.MsgRevokeLiquidityProvider:
 			return handleMsgRevokeLiquidityProvider(ctx, msg, k)
 		case types.MsgSetInflation:
@@ -35,10 +35,10 @@ func handleMsgRevokeLiquidityProvider(ctx sdk.Context, msg types.MsgRevokeLiquid
 	return k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer)
 }
 
-func handleMsgDecreaseCredit(ctx sdk.Context, msg types.MsgDecreaseCredit, k keeper.Keeper) sdk.Result {
-	return k.DecreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditDecrease)
+func handleMsgDecreaseMintableAmount(ctx sdk.Context, msg types.MsgDecreaseMintable, k keeper.Keeper) sdk.Result {
+	return k.DecreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.MintableDecrease)
 }
 
-func handleMsgIncreaseCredit(ctx sdk.Context, msg types.MsgIncreaseCredit, k keeper.Keeper) sdk.Result {
-	return k.IncreaseCreditOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.CreditIncrease)
+func handleMsgIncreaseMintableAmount(ctx sdk.Context, msg types.MsgIncreaseMintable, k keeper.Keeper) sdk.Result {
+	return k.IncreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.MintableIncrease)
 }
