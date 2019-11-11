@@ -16,7 +16,7 @@ import (
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	lpCmds := &cobra.Command{
 		Use:                "liquidityprovider",
-		Short:              "manage liquidity provider",
+		Short:              "Liquidity provider operations",
 		Aliases:            []string{"lp"},
 		DisableFlagParsing: false,
 	}
