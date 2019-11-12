@@ -119,12 +119,12 @@ func (cli Emcli) IssuerSetInflation(issuer Key, denom string, inflation string) 
 }
 
 func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("liquidityprovider", "mint", amount, "--from", key.name)
+	args := cli.addTransactionFlags("liquidityprovider", "mint", key.name, amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("liquidityprovider", "burn", amount, "--from", key.name)
+	args := cli.addTransactionFlags("liquidityprovider", "burn", key.name, amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
