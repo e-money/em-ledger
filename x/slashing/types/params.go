@@ -21,7 +21,7 @@ var (
 	DoubleSignJailEndTime          = time.Unix(253402300799, 0)
 	DefaultMinSignedPerWindow      = sdk.NewDecWithPrec(1, 1)
 	DefaultSlashFractionDoubleSign = sdk.NewDec(1).Quo(sdk.NewDec(20))
-	DefaultSlashFractionDowntime   = sdk.NewDec(1).Quo(sdk.NewDec(100))
+	DefaultSlashFractionDowntime   = sdk.NewDec(1).Quo(sdk.NewDec(1000))
 )
 
 // Parameter store keys
