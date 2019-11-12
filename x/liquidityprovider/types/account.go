@@ -11,28 +11,28 @@ var _ auth.Account = LiquidityProviderAccount{}
 type LiquidityProviderAccount struct {
 	auth.Account
 
-	Credit sdk.Coins `json:"credit" yaml:"credit"`
+	Mintable sdk.Coins `json:"mintable" yaml:"mintable"`
 }
 
-func NewLiquidityProviderAccount(baseAccount auth.Account, credit sdk.Coins) *LiquidityProviderAccount {
+func NewLiquidityProviderAccount(baseAccount auth.Account, mintable sdk.Coins) *LiquidityProviderAccount {
 	return &LiquidityProviderAccount{
-		Account: baseAccount,
-		Credit:  credit,
+		Account:  baseAccount,
+		Mintable: mintable,
 	}
 }
 
-func (acc *LiquidityProviderAccount) IncreaseCredit(increase sdk.Coins) {
-	acc.Credit = acc.Credit.Add(increase)
+func (acc *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
+	acc.Mintable = acc.Mintable.Add(increase)
 }
 
-// Function panics if resulting credit is negative. Should be checked prior to invocation for cleaner handling.
-func (acc *LiquidityProviderAccount) DecreaseCredit(decrease sdk.Coins) {
-	if newCredit, anyNegative := acc.Credit.SafeSub(decrease); !anyNegative {
-		acc.Credit = newCredit
+// Function panics if resulting mintable amount is negative. Should be checked prior to invocation for cleaner handling.
+func (acc *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) {
+	if mintable, anyNegative := acc.Mintable.SafeSub(decrease); !anyNegative {
+		acc.Mintable = mintable
 		return
 	}
 
-	panic(fmt.Errorf("credit cannot be negative"))
+	panic(fmt.Errorf("mintable amount cannot be negative"))
 }
 
 func (acc LiquidityProviderAccount) String() string {
@@ -45,10 +45,10 @@ func (acc LiquidityProviderAccount) String() string {
 	return fmt.Sprintf(`Account:
   Address:       %s
   Pubkey:        %s
-  Credit:        %s
+  Mintable:      %s
   Coins:         %s
   AccountNumber: %d
   Sequence:      %d`,
-		acc.GetAddress(), pubkey, acc.Credit, acc.GetCoins(), acc.GetAccountNumber(), acc.GetSequence(),
+		acc.GetAddress(), pubkey, acc.Mintable, acc.GetCoins(), acc.GetAccountNumber(), acc.GetSequence(),
 	)
 }

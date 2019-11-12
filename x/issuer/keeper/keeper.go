@@ -29,7 +29,7 @@ func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) K
 	}
 }
 
-func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditIncrease sdk.Coins) sdk.Result {
+func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) sdk.Result {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer)
@@ -37,7 +37,7 @@ func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 		return types.ErrNotAnIssuer(issuer).Result()
 	}
 
-	for _, coin := range creditIncrease {
+	for _, coin := range mintableIncrease {
 		if !anyContained(i.Denoms, coin.Denom) {
 			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
 		}
@@ -45,19 +45,19 @@ func (k Keeper) IncreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		logger.Info("Creating liquidity provider", "account", liquidityProvider, "increase", creditIncrease)
+		logger.Info("Creating liquidity provider", "account", liquidityProvider, "increase", mintableIncrease)
 		// Account was not previously a liquidity provider. Create it
-		k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, creditIncrease)
+		k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease)
 	} else {
-		logger.Info("Increasing liquidity provider credit", "account", liquidityProvider, "increase", creditIncrease)
-		lpAcc.IncreaseCredit(creditIncrease)
+		logger.Info("Increasing liquidity provider mintable amount", "account", liquidityProvider, "increase", mintableIncrease)
+		lpAcc.IncreaseMintableAmount(mintableIncrease)
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, creditDecrease sdk.Coins) sdk.Result {
+func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) sdk.Result {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer)
@@ -65,7 +65,7 @@ func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 		return types.ErrNotAnIssuer(issuer).Result()
 	}
 
-	for _, coin := range creditDecrease {
+	for _, coin := range mintableDecrease {
 		if !anyContained(i.Denoms, coin.Denom) {
 			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
 		}
@@ -76,13 +76,13 @@ func (k Keeper) DecreaseCreditOfLiquidityProvider(ctx sdk.Context, liquidityProv
 		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
-	_, anyNegative := lpAcc.Credit.SafeSub(creditDecrease)
+	_, anyNegative := lpAcc.Mintable.SafeSub(mintableDecrease)
 	if anyNegative {
-		return types.ErrNegativeCredit(lpAcc.GetAddress()).Result()
+		return types.ErrNegativeMintableBalance(lpAcc.GetAddress()).Result()
 	}
 
-	logger.Info("Liquidity provider credit decreased", "account", liquidityProvider, "decrease", creditDecrease)
-	lpAcc.DecreaseCredit(creditDecrease)
+	logger.Info("Liquidity provider mintable amount decreased", "account", liquidityProvider, "decrease", mintableDecrease)
+	lpAcc.DecreaseMintableAmount(mintableDecrease)
 	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
@@ -100,22 +100,22 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
-	newCredit := lpAcc.Credit
+	newMintableAmount := lpAcc.Mintable
 	for _, denom := range issuer.Denoms {
-		newCredit = removeDenom(newCredit, denom)
+		newMintableAmount = removeDenom(newMintableAmount, denom)
 	}
 
-	if len(newCredit) == len(lpAcc.Credit) {
+	if len(newMintableAmount) == len(lpAcc.Mintable) {
 		// Nothing was changed. Issuer was not controlling this lp.
 		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
 	}
 
-	if len(newCredit) == 0 {
-		// No more credit, so demote to ordinary account
+	if len(newMintableAmount) == 0 {
+		// Mintable amount is zero, so demote to ordinary account
 		k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc)
 	} else {
-		// This liquidity provider has been granted credit from multiple issuers so some credit remain.
-		lpAcc.Credit = newCredit
+		// This liquidity provider has been granted a mintable amounts from multiple issuers so some amount remain.
+		lpAcc.Mintable = newMintableAmount
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
 

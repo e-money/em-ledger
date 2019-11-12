@@ -14,7 +14,7 @@ import (
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	issuanceTxCmd := &cobra.Command{
 		Use:                        "issuer",
-		Short:                      "control inflation rates and manage liquidity providers",
+		Short:                      "Control inflation rates and manage liquidity providers",
 		Aliases:                    []string{"i"},
 		DisableFlagParsing:         false,
 		SuggestionsMinimumDistance: 2,
@@ -22,8 +22,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	issuanceTxCmd.AddCommand(
 		client.PostCommands(
-			getCmdIncreaseCredit(cdc),
-			getCmdDecreaseCredit(cdc),
+			getCmdIncreaseMintableAmount(cdc),
+			getCmdDecreaseMintableAmount(cdc),
 			getCmdSetInflation(cdc),
 			getCmdRevokeLiquidityProvider(cdc),
 		)...,
@@ -60,10 +60,10 @@ func getCmdSetInflation(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdIncreaseCredit(cdc *codec.Codec) *cobra.Command {
+func getCmdIncreaseMintableAmount(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "increase-credit [issuer_key_or_address] [liquidity_provider_address] [amount]",
-		Short: "Increase the credit of a liquidity provider.",
+		Use:   "increase-mintable [issuer_key_or_address] [liquidity_provider_address] [amount]",
+		Short: "Increase the amount mintable for a liquidity provider.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -74,13 +74,13 @@ func getCmdIncreaseCredit(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			creditIncrease, err := sdk.ParseCoins(args[2])
+			mintableIncrease, err := sdk.ParseCoins(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgIncreaseCredit{
-				CreditIncrease:    creditIncrease,
+			msg := types.MsgIncreaseMintable{
+				MintableIncrease:  mintableIncrease,
 				LiquidityProvider: lpAcc,
 				Issuer:            cliCtx.GetFromAddress(),
 			}
@@ -90,10 +90,10 @@ func getCmdIncreaseCredit(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdDecreaseCredit(cdc *codec.Codec) *cobra.Command {
+func getCmdDecreaseMintableAmount(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "decrease-credit [issuer_key_or_address] [liquidity_provider_address] [amount]",
-		Short: "Decrease the credit of a liquidity provider. Credit cannot be negative",
+		Use:   "decrease-mintable [issuer_key_or_address] [liquidity_provider_address] [amount]",
+		Short: "Decrease the amount mintable for a liquidity provider. Result cannot be negative",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -104,13 +104,13 @@ func getCmdDecreaseCredit(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			creditDecrease, err := sdk.ParseCoins(args[2])
+			mintableDecrease, err := sdk.ParseCoins(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgDecreaseCredit{
-				CreditDecrease:    creditDecrease,
+			msg := types.MsgDecreaseMintable{
+				MintableDecrease:  mintableDecrease,
 				LiquidityProvider: lpAcc,
 				Issuer:            cliCtx.GetFromAddress(),
 			}
@@ -122,8 +122,8 @@ func getCmdDecreaseCredit(cdc *codec.Codec) *cobra.Command {
 
 func getCmdRevokeLiquidityProvider(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "revoke-credit [issuer_key_or_address] [liquidity_provider_address]",
-		Short: "Revoke liquidity provider status for account",
+		Use:   "revoke-mint [issuer_key_or_address] [liquidity_provider_address]",
+		Short: "Revoke liquidity provider status for an account",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))

@@ -13,8 +13,8 @@ const (
 	EMCLI = "./build/emcli"
 
 	// gjson paths
-	QGetCreditEUR  = "value.credit.#(denom==\"x2eur\").amount"
-	QGetBalanceEUR = "value.Account.value.coins.#(denom==\"x2eur\").amount"
+	QGetMintableEUR = "value.mintable.#(denom==\"x2eur\").amount"
+	QGetBalanceEUR  = "value.Account.value.coins.#(denom==\"x2eur\").amount"
 )
 
 type Emcli struct {
@@ -58,7 +58,7 @@ func (cli Emcli) QueryRewards(delegator string) (gjson.Result, error) {
 }
 
 // NOTE Hardcoded to x2eur for now.
-func (cli Emcli) QueryAccount(account string) (balance, credit int, err error) {
+func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error) {
 	args := cli.addQueryFlags("query", "account", account)
 	bz, err := execCmdAndCollectResponse(args)
 	if err != nil {
@@ -70,9 +70,9 @@ func (cli Emcli) QueryAccount(account string) (balance, credit int, err error) {
 	v := queryresponse.Get(QGetBalanceEUR)
 	balance, _ = strconv.Atoi(v.Str)
 
-	v = queryresponse.Get(QGetCreditEUR)
+	v = queryresponse.Get(QGetMintableEUR)
 	if v.Exists() {
-		credit, _ = strconv.Atoi(v.Str)
+		mintable, _ = strconv.Atoi(v.Str)
 	}
 
 	return
@@ -98,18 +98,18 @@ func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
-func (cli Emcli) IssuerIncreaseCredit(issuer, liquidityprovider Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "increase-credit", issuer.name, liquidityprovider.GetAddress(), amount)
+func (cli Emcli) IssuerIncreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
+	args := cli.addTransactionFlags("issuer", "increase-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) IssuerRevokeCredit(issuer, liquidityprovider Key) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "revoke-credit", issuer.name, liquidityprovider.GetAddress())
+func (cli Emcli) IssuerRevokeMinting(issuer, liquidityprovider Key) (string, bool, error) {
+	args := cli.addTransactionFlags("issuer", "revoke-mint", issuer.name, liquidityprovider.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) IssuerDecreaseCredit(issuer, liquidityprovider Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "decrease-credit", issuer.name, liquidityprovider.GetAddress(), amount)
+func (cli Emcli) IssuerDecreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
+	args := cli.addTransactionFlags("issuer", "decrease-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 

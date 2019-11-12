@@ -64,7 +64,7 @@ var _ = Describe("Authority", func() {
 
 		It("creates a liquidity provider", func() {
 			// The issuer makes a liquidity provider of EUR
-			_, success, err := emcli.IssuerIncreaseCredit(Issuer, LiquidityProvider, "50000x2eur")
+			_, success, err := emcli.IssuerIncreaseMintableAmount(Issuer, LiquidityProvider, "50000x2eur")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
@@ -72,10 +72,10 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			lpaccount := gjson.ParseBytes(bz)
-			credit := lpaccount.Get("value.credit").Array()
-			Expect(credit).To(HaveLen(1))
-			Expect(credit[0].Get("denom").Str).To(Equal("x2eur"))
-			Expect(credit[0].Get("amount").Str).To(Equal("50000"))
+			mintableAmount := lpaccount.Get("value.mintable").Array()
+			Expect(mintableAmount).To(HaveLen(1))
+			Expect(mintableAmount[0].Get("denom").Str).To(Equal("x2eur"))
+			Expect(mintableAmount[0].Get("amount").Str).To(Equal("50000"))
 		})
 
 		It("changes inflation of a denomination", func() {
@@ -106,72 +106,72 @@ var _ = Describe("Authority", func() {
 			Expect(success).To(BeFalse())
 		})
 
-		It("liquidity provider draws on credit", func() {
-			balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+		It("liquidity provider draws on its mintable amount", func() {
+			balanceBefore, mintableBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ShouldNot(HaveOccurred())
 
 			_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "20000x2eur")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
-			balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+			balanceAfter, mintableAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ShouldNot(HaveOccurred())
 
 			Expect(balanceAfter).To(Equal(balanceBefore + 20000))
-			Expect(creditAfter).To(Equal(creditBefore - 20000))
+			Expect(mintableAfter).To(Equal(mintableBefore - 20000))
 		})
 
-		It("liquidity provider attempts to overdraw its credit", func() {
-			balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+		It("liquidity provider attempts to overdraw its mintable balance", func() {
+			balanceBefore, mintableBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
 			_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "500000x2eur")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeFalse())
 
-			balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+			balanceAfter, mintableAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
 			Expect(balanceAfter).To(Equal(balanceBefore))
-			Expect(creditAfter).To(Equal(creditBefore))
+			Expect(mintableAfter).To(Equal(mintableBefore))
 		})
 
 		It("liquidity provider burns some tokens", func() {
-			balanceBefore, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+			balanceBefore, mintableBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
 			_, success, err := emcli.LiquidityProviderBurn(LiquidityProvider, "500000x2eur")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
-			balanceAfter, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+			balanceAfter, mintableAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
 			Expect(balanceAfter).To(Equal(balanceBefore - 500000))
-			Expect(creditAfter).To(Equal(creditBefore + 500000))
+			Expect(mintableAfter).To(Equal(mintableBefore + 500000))
 		})
 
-		It("liquidity provider gets credit reduced", func() {
-			_, creditBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+		It("liquidity provider gets mintable amount reduced", func() {
+			_, mintableBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ToNot(HaveOccurred())
 
-			_, success, err := emcli.IssuerDecreaseCredit(Issuer, LiquidityProvider, "10000x2eur")
+			_, success, err := emcli.IssuerDecreaseMintableAmount(Issuer, LiquidityProvider, "10000x2eur")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
-			_, creditAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
+			_, mintableAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(creditAfter).To(Equal(creditBefore - 10000))
+			Expect(mintableAfter).To(Equal(mintableBefore - 10000))
 		})
 
 		It("liquidity provider gets revoked", func() {
-			_, success, err := emcli.IssuerRevokeCredit(Issuer, LiquidityProvider)
+			_, success, err := emcli.IssuerRevokeMinting(Issuer, LiquidityProvider)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
 			bz, err := emcli.QueryAccountJson(LiquidityProvider.GetAddress())
-			credit := gjson.ParseBytes(bz).Get("value.Credit")
-			Expect(credit.Exists()).To(BeFalse())
+			mintable := gjson.ParseBytes(bz).Get("value.mintable")
+			Expect(mintable.Exists()).To(BeFalse())
 		})
 
-		It("former liquidity provider attempts to draw on credit", func() {
+		It("former liquidity provider attempts to mint", func() {
 			balanceBefore, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ToNot(HaveOccurred())
 

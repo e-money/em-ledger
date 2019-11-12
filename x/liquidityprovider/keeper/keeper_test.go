@@ -24,7 +24,7 @@ import (
 var (
 	accAddr1 = sdk.AccAddress([]byte("account1"))
 
-	defaultCredit = sdk.NewCoins(
+	defaultMintable = sdk.NewCoins(
 		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2)),
 	)
 
@@ -45,21 +45,21 @@ func TestCreateAndMint(t *testing.T) {
 	ak.SetAccount(ctx, account)
 
 	// Turn account into a LP
-	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
 	account = ak.GetAccount(ctx, acc)
 
 	assert.IsType(t, &types.LiquidityProviderAccount{}, account)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
-	keeper.MintTokensFromCredit(ctx, acc, toMint)
+	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).GetTotal())
 
-	// Ensure that credit available has been correspondingly reduced
+	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
-	assert.Equal(t, defaultCredit.Sub(toMint), lpAcc.Credit)
+	assert.Equal(t, defaultMintable.Sub(toMint), lpAcc.Mintable)
 }
 
 func TestMintTooMuch(t *testing.T) {
@@ -71,26 +71,26 @@ func TestMintTooMuch(t *testing.T) {
 	ak.SetAccount(ctx, account)
 
 	// Turn account into a LP
-	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
 	account = ak.GetAccount(ctx, acc)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(5000, 2)))
-	keeper.MintTokensFromCredit(ctx, acc, toMint)
+	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance, account.GetCoins())
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
 
-	// Ensure that credit of account has not been modified by failed attempt to mint.
+	// Ensure that the mintable amount of the account has not been modified by failed attempt to mint.
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
-	assert.Equal(t, defaultCredit, lpAcc.Credit)
+	assert.Equal(t, defaultMintable, lpAcc.Mintable)
 }
 
 func TestMintMultipleDenoms(t *testing.T) {
 	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
 
 	jpy := sdk.NewCoins(sdk.NewCoin("x0jpy", sdk.NewInt(1000000)))
-	extendedCredit := defaultCredit.Add(jpy)
+	extendedMintable := defaultMintable.Add(jpy)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
@@ -98,7 +98,7 @@ func TestMintMultipleDenoms(t *testing.T) {
 	ak.SetAccount(ctx, account)
 
 	// Turn account into a LP
-	keeper.CreateLiquidityProvider(ctx, acc, extendedCredit)
+	keeper.CreateLiquidityProvider(ctx, acc, extendedMintable)
 	account = ak.GetAccount(ctx, acc)
 
 	toMint := sdk.NewCoins(
@@ -106,14 +106,14 @@ func TestMintMultipleDenoms(t *testing.T) {
 		sdk.NewCoin("x0jpy", sdk.NewInt(500000)),
 	)
 
-	keeper.MintTokensFromCredit(ctx, acc, toMint)
+	keeper.MintTokens(ctx, acc, toMint)
 	account = ak.GetAccount(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
 	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).GetTotal())
 
-	// Ensure that credit available has been correspondingly reduced
+	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
-	assert.Equal(t, extendedCredit.Sub(toMint), lpAcc.Credit)
+	assert.Equal(t, extendedMintable.Sub(toMint), lpAcc.Mintable)
 }
 
 func TestMintWithoutLPAccount(t *testing.T) {
@@ -125,7 +125,7 @@ func TestMintWithoutLPAccount(t *testing.T) {
 	ak.SetAccount(ctx, account)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
-	keeper.MintTokensFromCredit(ctx, acc, toMint)
+	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
 	assert.IsType(t, &auth.BaseAccount{}, account)
@@ -142,7 +142,7 @@ func TestCreateAndRevoke(t *testing.T) {
 	ak.SetAccount(ctx, account)
 
 	// Turn account into a LP
-	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
 	account = ak.GetAccount(ctx, acc)
 
 	assert.IsType(t, &types.LiquidityProviderAccount{}, account)
@@ -156,7 +156,7 @@ func TestAccountNotFound(t *testing.T) {
 	ctx, ak, _, _, keeper := createTestComponents(t, initialBalance)
 
 	acc := accAddr1
-	keeper.CreateLiquidityProvider(ctx, acc, defaultCredit)
+	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
 	assert.Nil(t, ak.GetAccount(ctx, acc))
 }
 

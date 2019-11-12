@@ -8,8 +8,8 @@ import (
 var ModuleCdc *codec.Codec
 
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgIncreaseCredit{}, "e-money/MsgIncreaseCredit", nil)
-	cdc.RegisterConcrete(MsgDecreaseCredit{}, "e-money/MsgDecreaseCredit", nil)
+	cdc.RegisterConcrete(MsgIncreaseMintable{}, "e-money/MsgIncreaseMintable", nil)
+	cdc.RegisterConcrete(MsgDecreaseMintable{}, "e-money/MsgDecreaseMintable", nil)
 	cdc.RegisterConcrete(MsgRevokeLiquidityProvider{}, "e-money/MsgRevokeLiquidityProvider", nil)
 	cdc.RegisterConcrete(MsgSetInflation{}, "e-money/MsgSetInflation", nil)
 }

@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/tidwall/sjson"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tidwall/sjson"
 )
 
 // Handles running a testnet using docker-compose.
@@ -205,7 +205,7 @@ func compileBinaries() error {
 
 func dockerComposeUp() (func() bool, error) {
 	wait, scanner := createOutputScanner("] Committed state", 30*time.Second)
-	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
+	return wait, execCmdAndRun(dockerComposePath, []string{"up", "--no-color"}, scanner)
 }
 
 func dockerComposeDown() error {
