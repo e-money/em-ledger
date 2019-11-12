@@ -405,8 +405,8 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Unbonding, validator.GetStatus())
 
-	// validator should have been slashed
-	resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
+	// validator should have been slashed 1/10 percent
+	resultingTokens := amt.Sub(amt.QuoRaw(1000))
 	require.Equal(t, resultingTokens, validator.GetTokens())
 
 	// another block missed
