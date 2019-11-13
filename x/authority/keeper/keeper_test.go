@@ -107,6 +107,28 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 	require.Empty(t, ik.GetIssuers(ctx))
 }
 
+func TestAddMultipleDenomsSameIssuer(t *testing.T) {
+	ctx, keeper, ik := createTestComponents(t)
+
+	var (
+		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accIssuer    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+	)
+
+	keeper.SetAuthority(ctx, accAuthority)
+
+	result := keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"x2eur", "x0jpy"})
+	require.True(t, result.IsOK())
+
+	result = keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"x2krw"})
+	require.True(t, result.IsOK())
+	issuers := ik.GetIssuers(ctx)
+
+	// Ensure that the denomination has been added to the existing issuer, not to a new entry with the same key
+	require.Len(t, issuers, 1)
+	require.Len(t, issuers[0].Denoms, 3)
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	cdc := makeTestCodec()
 
