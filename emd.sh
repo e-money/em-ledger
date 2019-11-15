@@ -1,3 +1,3 @@
 #!/bin/bash
 
-go run cmd/daemon/*.go "$@"
+go run cmd/emd/*.go "$@"
