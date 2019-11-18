@@ -5,7 +5,7 @@ package emoney
 import (
 	"time"
 
-	nt "emoney/networktest"
+	nt "github.com/e-money/em-ledger/networktest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

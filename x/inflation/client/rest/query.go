@@ -6,9 +6,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {

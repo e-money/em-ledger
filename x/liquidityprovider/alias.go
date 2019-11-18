@@ -1,8 +1,8 @@
 package liquidityprovider
 
 import (
-	"emoney/x/liquidityprovider/keeper"
-	"emoney/x/liquidityprovider/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/keeper"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 )
 
 const (

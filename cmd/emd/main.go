@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	app "emoney"
-	apptypes "emoney/types"
+	app "github.com/e-money/em-ledger"
+	apptypes "github.com/e-money/em-ledger/types"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
@@ -20,7 +20,7 @@ import (
 var configureConsensus = func() {
 	viper.Set("consensus.create_empty_blocks_interval", "60s")
 	viper.Set("consensus.create_empty_blocks", false)
-	viper.Set("consensus.timeout_commit", "250ms")
+	viper.Set("consensus.timeout_commit", "500ms")
 	viper.Set("consensus.timeout_propose", "2s")
 	viper.Set("consensus.peer_gossip_sleep_duration", "25ms")
 }

@@ -3,9 +3,9 @@ package issuer
 import (
 	"fmt"
 
-	"emoney/x/issuer/keeper"
-	"emoney/x/issuer/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/issuer/keeper"
+	"github.com/e-money/em-ledger/x/issuer/types"
 )
 
 // TODO Accept Keeper argument

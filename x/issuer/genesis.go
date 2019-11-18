@@ -1,8 +1,8 @@
 package issuer
 
 import (
-	"emoney/x/issuer/keeper"
-	types "emoney/x/issuer/types"
+	"github.com/e-money/em-ledger/x/issuer/keeper"
+	types "github.com/e-money/em-ledger/x/issuer/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

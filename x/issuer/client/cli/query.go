@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"emoney/x/issuer/types"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/e-money/em-ledger/x/issuer/types"
 
 	"github.com/spf13/cobra"
 )

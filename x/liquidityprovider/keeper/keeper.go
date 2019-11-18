@@ -1,11 +1,12 @@
 package keeper
 
 import (
-	"emoney/x/liquidityprovider/types"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 

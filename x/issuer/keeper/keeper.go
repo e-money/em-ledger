@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"emoney/x/issuer/types"
-	lp "emoney/x/liquidityprovider"
+	"github.com/e-money/em-ledger/x/issuer/types"
+	lp "github.com/e-money/em-ledger/x/liquidityprovider"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -160,7 +160,19 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
 		return types.ErrDenominationAlreadyAssigned().Result()
 	}
 
-	issuers = append(issuers, newIssuer)
+	found := false
+	for i, _ := range issuers {
+		if issuers[i].Address.Equals(newIssuer.Address) {
+			issuers[i].Denoms = append(issuers[i].Denoms, newIssuer.Denoms...)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		issuers = append(issuers, newIssuer)
+	}
+
 	k.setIssuers(ctx, issuers)
 	k.ik.AddDenoms(ctx, newIssuer.Denoms)
 	return sdk.Result{Events: ctx.EventManager().Events()}

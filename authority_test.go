@@ -3,9 +3,10 @@
 package emoney
 
 import (
-	"emoney/x/issuer/types"
 	"encoding/json"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/issuer/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
@@ -104,6 +105,21 @@ var _ = Describe("Authority", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeFalse())
+		})
+
+		It("creates an issuer of a completely new denomination", func() {
+			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "x0caps")
+			Expect(err).To(BeNil())
+			Expect(success).To(BeTrue())
+
+			bz, err := emcli.QueryInflation()
+			Expect(err).To(BeNil())
+
+			fmt.Println(string(bz))
+
+			s := gjson.ParseBytes(bz).Get("assets.#(denom==\"x0caps\").inflation").Str
+			inflationCaps, _ := sdk.NewDecFromStr(s)
+			Expect(inflationCaps).To(Equal(sdk.ZeroDec()))
 		})
 
 		It("liquidity provider draws on its mintable amount", func() {

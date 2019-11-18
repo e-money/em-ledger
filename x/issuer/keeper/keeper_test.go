@@ -1,12 +1,12 @@
 package keeper
 
 import (
-	apptypes "emoney/types"
-	"emoney/x/liquidityprovider"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"sort"
 	"testing"
 
-	"emoney/x/issuer/types"
+	"github.com/e-money/em-ledger/x/issuer/types"
 
 	"github.com/stretchr/testify/require"
 
@@ -31,11 +31,12 @@ func init() {
 func TestAddIssuer(t *testing.T) {
 	ctx, _, _, keeper := createTestComponents(t)
 
-	acc1, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
-
 	var (
-		issuer1 = types.NewIssuer(acc1, "x2eur", "x0jpy")
-		issuer2 = types.NewIssuer(acc1, "x2chf")
+		acc1, _      = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		acc2, _      = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		randomacc, _ = sdk.AccAddressFromBech32("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
+		issuer1      = types.NewIssuer(acc1, "x2eur", "x0jpy")
+		issuer2      = types.NewIssuer(acc2, "x2chf")
 	)
 
 	require.True(t, issuer1.IsValid())
@@ -45,18 +46,19 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, result.IsOK())
 	result = keeper.AddIssuer(ctx, issuer1)
 	require.False(t, result.IsOK())
+	result = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "x2dkk"))
+	require.True(t, result.IsOK())
 
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
 	keeper.AddIssuer(ctx, issuer2)
 	require.Len(t, keeper.GetIssuers(ctx), 2)
-	require.Len(t, collectDenoms(keeper.GetIssuers(ctx)), 3)
+	require.Len(t, collectDenoms(keeper.GetIssuers(ctx)), 4)
 
-	issuer, _ := keeper.mustBeIssuer(ctx, acc1)
-	require.Equal(t, issuer1, issuer)
+	issuer, _ := keeper.mustBeIssuer(ctx, acc2)
+	require.Equal(t, issuer2, issuer)
 
-	acc2, _ := sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
-	_, err := keeper.mustBeIssuer(ctx, acc2)
+	_, err := keeper.mustBeIssuer(ctx, randomacc)
 	require.Error(t, err)
 
 	_, err = keeper.mustBeIssuer(ctx, nil)

@@ -1,10 +1,10 @@
 package issuer
 
 import (
-	"emoney/x/issuer/client/cli"
-	"emoney/x/issuer/keeper"
-	"emoney/x/issuer/types"
 	"encoding/json"
+	"github.com/e-money/em-ledger/x/issuer/client/cli"
+	"github.com/e-money/em-ledger/x/issuer/keeper"
+	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 

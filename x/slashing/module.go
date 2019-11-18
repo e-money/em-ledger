@@ -3,9 +3,9 @@ package slashing
 import (
 	"encoding/json"
 
-	"emoney/x/slashing/client/cli"
-	"emoney/x/slashing/client/rest"
-	"emoney/x/slashing/types"
+	"github.com/e-money/em-ledger/x/slashing/client/cli"
+	"github.com/e-money/em-ledger/x/slashing/client/rest"
+	"github.com/e-money/em-ledger/x/slashing/types"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"

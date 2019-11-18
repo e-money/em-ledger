@@ -1,9 +1,9 @@
 package slashing
 
 import (
-	"emoney/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/e-money/em-ledger/x/slashing/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
@@ -405,8 +405,8 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Unbonding, validator.GetStatus())
 
-	// validator should have been slashed
-	resultingTokens := amt.Sub(sdk.TokensFromConsensusPower(1))
+	// validator should have been slashed 1/10 percent
+	resultingTokens := amt.Sub(amt.QuoRaw(1000))
 	require.Equal(t, resultingTokens, validator.GetTokens())
 
 	// another block missed

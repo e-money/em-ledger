@@ -3,9 +3,9 @@ package cli
 import (
 	"github.com/spf13/cobra"
 
-	"emoney/x/liquidityprovider/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -32,13 +32,14 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func getCmdBurn(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:  "burn",
-		Args: cobra.ExactArgs(1),
+		Use:   "burn [liquidity_provider_key_or_address] [amount]",
+		Short: "Destroys the given amount of tokens",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			amount, err := sdk.ParseCoins(args[0])
+			amount, err := sdk.ParseCoins(args[1])
 			if err != nil {
 				return err
 			}
@@ -55,13 +56,14 @@ func getCmdBurn(cdc *codec.Codec) *cobra.Command {
 
 func getCmdMint(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:  "mint",
-		Args: cobra.ExactArgs(1),
+		Use:   "mint [liquidity_provider_key_or_address] [amount]",
+		Short: "Creates new tokens from the liquidity provider's mintable amount",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			amount, err := sdk.ParseCoins(args[0])
+			amount, err := sdk.ParseCoins(args[1])
 			if err != nil {
 				return err
 			}

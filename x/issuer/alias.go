@@ -1,8 +1,8 @@
 package issuer
 
 import (
-	"emoney/x/issuer/keeper"
-	"emoney/x/issuer/types"
+	"github.com/e-money/em-ledger/x/issuer/keeper"
+	"github.com/e-money/em-ledger/x/issuer/types"
 )
 
 const (

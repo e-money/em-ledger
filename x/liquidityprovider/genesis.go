@@ -1,7 +1,7 @@
 package liquidityprovider
 
 import (
-	"emoney/x/liquidityprovider/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 )
 
 type genesisState struct {

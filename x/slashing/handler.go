@@ -3,8 +3,8 @@ package slashing
 import (
 	"fmt"
 
-	"emoney/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/slashing/types"
 )
 
 func NewHandler(k Keeper) sdk.Handler {

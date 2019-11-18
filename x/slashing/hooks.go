@@ -2,7 +2,7 @@
 package slashing
 
 import (
-	"emoney/x/slashing/types"
+	"github.com/e-money/em-ledger/x/slashing/types"
 	"time"
 
 	"github.com/tendermint/tendermint/crypto"
