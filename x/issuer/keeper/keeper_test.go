@@ -1,12 +1,12 @@
 package keeper
 
 import (
-	apptypes "emoney/types"
-	"emoney/x/liquidityprovider"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"sort"
 	"testing"
 
-	"emoney/x/issuer/types"
+	"github.com/e-money/em-ledger/x/issuer/types"
 
 	"github.com/stretchr/testify/require"
 

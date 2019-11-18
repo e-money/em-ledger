@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"emoney/x/inflation/internal/types"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"

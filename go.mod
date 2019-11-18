@@ -1,4 +1,4 @@
-module emoney
+module github.com/e-money/em-ledger
 
 go 1.12
 

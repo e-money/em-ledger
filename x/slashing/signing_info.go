@@ -1,8 +1,8 @@
 package slashing
 
 import (
-	"emoney/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/slashing/types"
 	db "github.com/tendermint/tm-db"
 )
 

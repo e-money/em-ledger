@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
 // Keeper of the mint store

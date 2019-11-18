@@ -1,9 +1,9 @@
 package liquidityprovider
 
 import (
-	"emoney/x/liquidityprovider/client/cli"
-	"emoney/x/liquidityprovider/types"
 	"encoding/json"
+	"github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
@@ -14,7 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"emoney/x/liquidityprovider/keeper"
+	"github.com/e-money/em-ledger/x/liquidityprovider/keeper"
 )
 
 var (

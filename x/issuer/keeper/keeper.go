@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"emoney/x/issuer/types"
-	lp "emoney/x/liquidityprovider"
+	"github.com/e-money/em-ledger/x/issuer/types"
+	lp "github.com/e-money/em-ledger/x/liquidityprovider"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"

@@ -1,9 +1,9 @@
 package slashing
 
 import (
-	"emoney/x/slashing/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/exported"
+	"github.com/e-money/em-ledger/x/slashing/types"
 )
 
 // InitGenesis initialize default parameters

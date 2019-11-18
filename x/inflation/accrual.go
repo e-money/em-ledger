@@ -1,7 +1,7 @@
 package inflation
 
 import (
-	"emoney/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"

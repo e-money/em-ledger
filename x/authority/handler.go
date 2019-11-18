@@ -3,7 +3,7 @@ package authority
 import (
 	"fmt"
 
-	"emoney/x/authority/types"
+	"github.com/e-money/em-ledger/x/authority/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

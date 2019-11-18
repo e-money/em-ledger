@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	nt "emoney/networktest"
-	apptypes "emoney/types"
+	nt "github.com/e-money/em-ledger/networktest"
+	apptypes "github.com/e-money/em-ledger/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

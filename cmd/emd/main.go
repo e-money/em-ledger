@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	app "emoney"
-	apptypes "emoney/types"
+	app "github.com/e-money/em-ledger"
+	apptypes "github.com/e-money/em-ledger/types"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
