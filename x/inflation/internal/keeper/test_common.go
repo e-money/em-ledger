@@ -13,7 +13,6 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"emoney/x/inflation/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
 type testInput struct {

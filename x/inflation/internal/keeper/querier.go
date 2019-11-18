@@ -5,8 +5,8 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"emoney/x/inflation/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
 // NewQuerier returns an inflation Querier handler.

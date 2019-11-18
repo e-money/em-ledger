@@ -8,7 +8,7 @@ import (
 
 	"testing"
 
-	"emoney/x/liquidityprovider/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"

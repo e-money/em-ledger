@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"emoney/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 

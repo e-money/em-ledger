@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	nt "emoney/networktest"
+	nt "github.com/e-money/em-ledger/networktest"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

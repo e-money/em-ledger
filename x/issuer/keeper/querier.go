@@ -3,7 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	"emoney/x/issuer/types"
+	"github.com/e-money/em-ledger/x/issuer/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"

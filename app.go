@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	emdistr "emoney/hooks/distribution"
-	"emoney/x/authority"
-	"emoney/x/inflation"
-	"emoney/x/issuer"
-	"emoney/x/liquidityprovider"
-	"emoney/x/slashing"
+	emdistr "github.com/e-money/em-ledger/hooks/distribution"
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/inflation"
+	"github.com/e-money/em-ledger/x/issuer"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
+	"github.com/e-money/em-ledger/x/slashing"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"

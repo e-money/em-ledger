@@ -3,9 +3,9 @@ package liquidityprovider
 import (
 	"fmt"
 
-	"emoney/x/liquidityprovider/keeper"
-	types "emoney/x/liquidityprovider/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/keeper"
+	types "github.com/e-money/em-ledger/x/liquidityprovider/types"
 )
 
 // TODO Accept Keeper argument

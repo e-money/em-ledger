@@ -8,10 +8,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"testing"
 
-	apptypes "emoney/types"
-	"emoney/x/authority/types"
-	"emoney/x/issuer"
-	"emoney/x/liquidityprovider"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority/types"
+	"github.com/e-money/em-ledger/x/issuer"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
 
 	"github.com/stretchr/testify/require"
 

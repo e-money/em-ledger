@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"emoney/x/slashing/types"
+	"github.com/e-money/em-ledger/x/slashing/types"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/log"

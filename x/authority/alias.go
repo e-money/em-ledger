@@ -1,8 +1,8 @@
 package authority
 
 import (
-	"emoney/x/authority/keeper"
-	"emoney/x/authority/types"
+	"github.com/e-money/em-ledger/x/authority/keeper"
+	"github.com/e-money/em-ledger/x/authority/types"
 )
 
 const (

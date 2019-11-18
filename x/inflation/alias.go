@@ -6,8 +6,8 @@
 package inflation
 
 import (
-	"emoney/x/inflation/internal/keeper"
-	"emoney/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/x/inflation/internal/keeper"
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
 const (

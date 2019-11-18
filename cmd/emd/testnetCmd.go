@@ -1,8 +1,6 @@
 package main
 
 import (
-	"emoney/x/authority"
-	"emoney/x/inflation"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -11,6 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/tendermint/tendermint/crypto"
 	"net"
 	"path/filepath"

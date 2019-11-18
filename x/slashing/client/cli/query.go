@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"emoney/x/slashing/types"
+	"github.com/e-money/em-ledger/x/slashing/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
