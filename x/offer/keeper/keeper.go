@@ -2,21 +2,29 @@ package keeper
 
 import (
 	"fmt"
+	"math"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/offer/types"
-	"math"
 )
 
 type Keeper struct {
+	key         sdk.StoreKey
+	cdc         *codec.Codec
 	instruments types.Instruments
 }
 
-func NewKeeper() Keeper {
-	return Keeper{}
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey) Keeper {
+	return Keeper{
+		cdc: cdc,
+		key: key,
+	}
 }
 
 func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
-	fmt.Println("\nProcessing order", order.ID)
+	order.ID = k.GetNextOrderNumber(ctx)
+
 	for _, i := range k.instruments {
 		if i.Source == order.Destination && i.Destination == order.Source {
 			for {
@@ -57,6 +65,11 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 					// Order has been filled. Remove it from queue.
 					_, _ = i.Orders.Get(1)
 				}
+
+				if order.RemainingAmount == 0 {
+					// Order has been filled.
+					break
+				}
 			}
 		}
 	}
@@ -67,4 +80,22 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+func (k Keeper) GetNextOrderNumber(ctx sdk.Context) uint64 {
+	var orderID uint64
+	store := ctx.KVStore(k.key)
+	bz := store.Get(types.GlobalOrderIDKey)
+	if bz == nil {
+		orderID = 0
+	} else {
+		err := k.cdc.UnmarshalBinaryLengthPrefixed(bz, &orderID)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	bz = k.cdc.MustMarshalBinaryLengthPrefixed(orderID + 1)
+	store.Set(types.GlobalOrderIDKey, bz)
+
+	return orderID
 }

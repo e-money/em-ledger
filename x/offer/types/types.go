@@ -54,7 +54,7 @@ func (is *Instruments) RemoveInstrument(instr Instrument) {
 var _ queue.Item = Order{}
 
 type Order struct {
-	ID int
+	ID uint64
 
 	Source,
 	Destination string
@@ -99,14 +99,8 @@ func (o Order) String() string {
 	return fmt.Sprintf("%d : %v%v -> %v%v @ %v/%v (%v%v remaining)", o.ID, o.Source, o.SourceAmount, o.Destination, o.DestinationAmount, o.price, o.invertedPrice, o.Source, o.RemainingAmount)
 }
 
-// TODO Load from genesis. Look to account numbering for correct pattern
-var OrderIDCounter int
-
 func NewOrder(src, dst string, srcAm, dstAm uint) *Order {
-	OrderIDCounter++
-
 	return &Order{
-		ID:                OrderIDCounter,
 		Source:            src,
 		Destination:       dst,
 		SourceAmount:      srcAm,
