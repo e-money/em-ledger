@@ -3,6 +3,7 @@ module github.com/e-money/em-ledger
 go 1.12
 
 require (
+	github.com/Workiva/go-datastructures v1.0.50
 	github.com/cosmos/cosmos-sdk v0.37.3
 	github.com/gorilla/mux v1.7.0
 	github.com/spf13/cobra v0.0.5
