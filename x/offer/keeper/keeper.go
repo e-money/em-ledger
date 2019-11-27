@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,16 +15,24 @@ type Keeper struct {
 	key         sdk.StoreKey
 	cdc         *codec.Codec
 	instruments types.Instruments
+	ak          auth.AccountKeeper
+	bk          bank.BaseKeeper
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper, bankKeeper bank.BaseKeeper) Keeper {
 	return Keeper{
 		cdc: cdc,
 		key: key,
+		ak:  authKeeper,
+		bk:  bankKeeper,
 	}
 }
 
 func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
+	//acc := k.ak.GetAccount(ctx, order.SourceAccount)
+	//// Verify account balance
+	//acc.GetCoins().SafeSub()
+
 	order.ID = k.GetNextOrderNumber(ctx)
 
 	for _, i := range k.instruments {

@@ -2,8 +2,10 @@ package types
 
 import (
 	"fmt"
-	"github.com/Workiva/go-datastructures/queue"
 	"strings"
+
+	"github.com/Workiva/go-datastructures/queue"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type Instrument struct {
@@ -59,6 +61,8 @@ type Order struct {
 	Source,
 	Destination string
 
+	SourceAccount sdk.AccAddress
+
 	SourceAmount,
 	DestinationAmount,
 	RemainingAmount uint
@@ -99,10 +103,11 @@ func (o Order) String() string {
 	return fmt.Sprintf("%d : %v%v -> %v%v @ %v/%v (%v%v remaining)", o.ID, o.Source, o.SourceAmount, o.Destination, o.DestinationAmount, o.price, o.invertedPrice, o.Source, o.RemainingAmount)
 }
 
-func NewOrder(src, dst string, srcAm, dstAm uint) *Order {
+func NewOrder(src, dst string, srcAm, dstAm uint, seller sdk.AccAddress) *Order {
 	return &Order{
 		Source:            src,
 		Destination:       dst,
+		SourceAccount:     seller,
 		SourceAmount:      srcAm,
 		DestinationAmount: dstAm,
 		RemainingAmount:   srcAm,
