@@ -28,15 +28,15 @@ func (is Instruments) String() string {
 
 func (is *Instruments) InsertOrder(order *Order) {
 	for _, i := range *is {
-		if i.Destination == order.Destination && i.Source == order.Source {
+		if i.Destination == order.Destination.Denom && i.Source == order.Source.Denom {
 			i.Orders.Put(order)
 			return
 		}
 	}
 
 	i := Instrument{
-		Source:      order.Source,
-		Destination: order.Destination,
+		Source:      order.Source.Denom,
+		Destination: order.Destination.Denom,
 		Orders:      queue.NewPriorityQueue(1, true),
 	}
 
@@ -58,14 +58,10 @@ var _ queue.Item = Order{}
 type Order struct {
 	ID uint64
 
-	Source,
-	Destination string
+	Source, Destination sdk.Coin
+	Remaining           sdk.Int
 
 	SourceAccount sdk.AccAddress
-
-	SourceAmount,
-	DestinationAmount,
-	RemainingAmount uint
 
 	price,
 	invertedPrice float64
@@ -100,18 +96,16 @@ func (o Order) Price() float64 {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v%v -> %v%v @ %v/%v (%v%v remaining)", o.ID, o.Source, o.SourceAmount, o.Destination, o.DestinationAmount, o.price, o.invertedPrice, o.Source, o.RemainingAmount)
+	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining)", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.Remaining)
 }
 
-func NewOrder(src, dst string, srcAm, dstAm uint, seller sdk.AccAddress) *Order {
+func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress) *Order {
 	return &Order{
-		Source:            src,
-		Destination:       dst,
-		SourceAccount:     seller,
-		SourceAmount:      srcAm,
-		DestinationAmount: dstAm,
-		RemainingAmount:   srcAm,
-		price:             float64(dstAm) / float64(srcAm),
-		invertedPrice:     float64(srcAm) / float64(dstAm),
+		SourceAccount: seller,
+		Source:        src,
+		Destination:   dst,
+		Remaining:     src.Amount,
+		price:         float64(dst.Amount.Int64()) / float64(src.Amount.Int64()),
+		invertedPrice: float64(src.Amount.Int64()) / float64(dst.Amount.Int64()),
 	}
 }

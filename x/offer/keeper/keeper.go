@@ -2,12 +2,12 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+
 	"github.com/e-money/em-ledger/x/offer/types"
 )
 
@@ -36,7 +36,7 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 	order.ID = k.GetNextOrderNumber(ctx)
 
 	for _, i := range k.instruments {
-		if i.Source == order.Destination && i.Destination == order.Source {
+		if i.Source == order.Destination.Denom && i.Destination == order.Source.Denom {
 			for {
 				if i.Orders.Len() == 0 {
 					k.instruments.RemoveInstrument(i)
@@ -49,34 +49,42 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 					break
 				}
 
+				//fmt.Println("Candidate order:\n", co.String())
+				//fmt.Println("Incoming order:\n", order.String())
+				//fmt.Println()
+
 				// Price is divided evenly between bid and offer. Price improvement is shared equally.
-				matchingPrice := (float64(order.DestinationAmount) + float64(co.SourceAmount)) / (float64(order.SourceAmount) + float64(co.DestinationAmount))
+				matchingPrice := order.Destination.Amount.Add(co.Source.Amount).ToDec().Quo(order.Source.Amount.Add(co.Destination.Amount).ToDec())
+
+				//matchingPrice := (float64(order.Destination.Amount.Int64()) + float64(co.Source.Amount.Int64())) / (float64(order.Source.Amount.Int64()) + float64(co.Destination.Amount.Int64()))
 
 				// Price improvement is 100% given to the buyer.
 				//matchingPrice := co.invertedPrice
 
-				sourceMatched := uint(math.Ceil(float64(co.RemainingAmount) / matchingPrice))
-				if order.RemainingAmount < sourceMatched {
-					sourceMatched = order.RemainingAmount
+				sourceMatched := co.Remaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
+				//sourceMatched := int64(math.Ceil(float64(co.Remaining.Int64()) / matchingPrice))
+				if order.Remaining.LT(sourceMatched) {
+					sourceMatched = order.Remaining
 				}
 
-				destinationMatched := uint(math.Floor(float64(sourceMatched) * matchingPrice))
+				destinationMatched := sourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
+				//destinationMatched := int64(math.Floor(float64(sourceMatched) * matchingPrice))
 
-				co.RemainingAmount = co.RemainingAmount - destinationMatched
-				order.RemainingAmount = order.RemainingAmount - sourceMatched
+				co.Remaining = co.Remaining.Sub(destinationMatched)
+				order.Remaining = order.Remaining.Sub(sourceMatched)
 
 				// Invariant check
-				if order.RemainingAmount < 0 || co.RemainingAmount < 0 {
+				if order.Remaining.LT(sdk.ZeroInt()) || co.Remaining.LT(sdk.ZeroInt()) {
 					msg := fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", order, co)
 					panic(msg)
 				}
 
-				if co.RemainingAmount == 0 {
+				if co.Remaining.IsZero() {
 					// Order has been filled. Remove it from queue.
 					_, _ = i.Orders.Get(1)
 				}
 
-				if order.RemainingAmount == 0 {
+				if order.Remaining.IsZero() {
 					// Order has been filled.
 					break
 				}
@@ -84,9 +92,8 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 		}
 	}
 
-	if order.RemainingAmount > 0 {
+	if !order.Remaining.IsZero() {
 		k.instruments.InsertOrder(order)
-
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}

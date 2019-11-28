@@ -24,12 +24,16 @@ func Test1(t *testing.T) {
 	acc1 := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte("acc1")))
 	acc2 := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte("acc2")))
 
-	order := types.NewOrder("EUR", "USD", 100, 120, acc1.GetAddress())
+	src := sdk.NewCoin("eur", sdk.NewInt(100))
+	dst := sdk.NewCoin("usd", sdk.NewInt(120))
+	order := types.NewOrder(src, dst, acc1.GetAddress())
 	k.ProcessOrder(ctx, order)
 
 	fmt.Println(k.instruments.String())
 
-	order = types.NewOrder("USD", "EUR", 60, 50, acc2.GetAddress())
+	src = sdk.NewCoin("usd", sdk.NewInt(60))
+	dst = sdk.NewCoin("eur", sdk.NewInt(50))
+	order = types.NewOrder(src, dst, acc2.GetAddress())
 	k.ProcessOrder(ctx, order)
 
 	fmt.Println(k.instruments.String())
@@ -37,7 +41,57 @@ func Test1(t *testing.T) {
 	i := k.instruments[0]
 	remainingOrder := i.Orders.Peek().(*types.Order)
 	fmt.Println(remainingOrder)
+}
 
+func Test2(t *testing.T) {
+	ctx, k, ak := createTestComponents(t)
+
+	acc1 := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte("acc1")))
+	acc2 := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte("acc2")))
+
+	src := sdk.NewCoin("eur", sdk.NewInt(100))
+	dst := sdk.NewCoin("usd", sdk.NewInt(120))
+	order := types.NewOrder(src, dst, acc1.GetAddress())
+	k.ProcessOrder(ctx, order)
+
+	fmt.Println(k.instruments.String())
+
+	src = sdk.NewCoin("usd", sdk.NewInt(121))
+	dst = sdk.NewCoin("eur", sdk.NewInt(100))
+	order = types.NewOrder(src, dst, acc2.GetAddress())
+	k.ProcessOrder(ctx, order)
+
+	fmt.Println(k.instruments.String())
+
+	i := k.instruments[0]
+	remainingOrder := i.Orders.Peek().(*types.Order)
+	fmt.Println(remainingOrder)
+}
+
+func Test3(t *testing.T) {
+	ctx, k, ak := createTestComponents(t)
+
+	acc1 := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte("acc1")))
+	acc2 := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte("acc2")))
+
+	src := sdk.NewCoin("eur", sdk.NewInt(100))
+	dst := sdk.NewCoin("usd", sdk.NewInt(120))
+	order := types.NewOrder(src, dst, acc1.GetAddress())
+	k.ProcessOrder(ctx, order)
+
+	fmt.Println(k.instruments.String())
+
+	for i := 0; i < 4; i++ {
+		src = sdk.NewCoin("usd", sdk.NewInt(30))
+		dst = sdk.NewCoin("eur", sdk.NewInt(25))
+		order = types.NewOrder(src, dst, acc2.GetAddress())
+		k.ProcessOrder(ctx, order)
+	}
+
+	fmt.Println(k.instruments.String())
+
+	i := k.instruments[0]
+	require.Equal(t, 0, i.Orders.Len())
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper) {
