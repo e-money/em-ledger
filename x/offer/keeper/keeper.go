@@ -29,9 +29,16 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper
 }
 
 func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
-	//acc := k.ak.GetAccount(ctx, order.SourceAccount)
-	//// Verify account balance
-	//acc.GetCoins().SafeSub()
+	sourceAccount := k.ak.GetAccount(ctx, order.SourceAccount)
+	if sourceAccount == nil {
+		return sdk.Result{} // TODO Error code
+	}
+
+	// Verify account balance
+	if _, anyNegative := sourceAccount.GetCoins().SafeSub(sdk.NewCoins(order.Source)); anyNegative {
+		fmt.Println("Insufficient account balance")
+		return sdk.Result{}
+	}
 
 	order.ID = k.GetNextOrderNumber(ctx)
 
@@ -70,6 +77,8 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 				destinationMatched := sourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
 				//destinationMatched := int64(math.Floor(float64(sourceMatched) * matchingPrice))
 
+				k.transferTradedVolumes(ctx, destinationMatched, sourceMatched, co, order)
+
 				co.Remaining = co.Remaining.Sub(destinationMatched)
 				order.Remaining = order.Remaining.Sub(sourceMatched)
 
@@ -98,6 +107,32 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
+
+func (k Keeper) transferTradedVolumes(ctx sdk.Context, destinationMatched, sourceMatched sdk.Int, co, order *types.Order) {
+	var (
+		candidateAccount = k.ak.GetAccount(ctx, co.SourceAccount)
+		orderAccount     = k.ak.GetAccount(ctx, order.SourceAccount)
+	)
+
+	// Verify that the passive order still holds the balance
+	coinMatchedDst := sdk.NewCoin(co.Source.Denom, destinationMatched)
+	if _, anyNegative := candidateAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
+		fmt.Println("Candidate account does not have sufficient balance")
+		return // TODO Dedicated error types.
+	}
+
+	// Verify that the aggressive order still holds the balance
+	coinMatchedSrc := sdk.NewCoin(order.Source.Denom, sourceMatched)
+	if _, anyNegative := orderAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
+		fmt.Println("Order account does not have sufficient balance")
+		return // TODO Dedicated error types.
+	}
+
+	// Balances appear sufficient. Do the transfers
+	k.bk.SendCoins(ctx, order.SourceAccount, co.SourceAccount, sdk.NewCoins(coinMatchedSrc))
+	k.bk.SendCoins(ctx, co.SourceAccount, order.SourceAccount, sdk.NewCoins(coinMatchedDst))
+}
+
 func (k Keeper) GetNextOrderNumber(ctx sdk.Context) uint64 {
 	var orderID uint64
 	store := ctx.KVStore(k.key)
