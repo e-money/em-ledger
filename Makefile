@@ -78,4 +78,9 @@ bdd-test:
 clean:
 	rm -rf ./build ./data ./config
 
-.PHONY: build build-linux clean test bdd-test build-docker
+license:
+	GO111MODULE=off go get github.com/google/addlicense/
+	addlicense -f LICENSE .
+
+
+.PHONY: build build-linux clean test bdd-test build-docker license
