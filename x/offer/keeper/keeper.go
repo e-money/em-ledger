@@ -35,7 +35,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper
 	}
 }
 
-func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
+func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
 	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.Owner)
 	if sourceAccount == nil {
 		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.Owner.String())).Result()
@@ -43,17 +43,17 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 
 	// Verify account balance
 	if _, anyNegative := sourceAccount.GetCoins().SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
-		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
+		return types.ErrAccountBalanceInsufficient(aggressiveOrder.Owner, aggressiveOrder.Source, sourceAccount.GetCoins().AmountOf(aggressiveOrder.Source.Denom)).Result()
 	}
 
 	// Verify uniqueness of client order id among active orders
 	if clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]; clientOrders != nil {
 		if clientOrders.Contains(aggressiveOrder) {
-			return sdk.ErrUnknownAddress(fmt.Sprintf("Duplicate client order id")).Result()
+			return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
 		}
 	}
 
-	aggressiveOrder.ID = k.GetNextOrderNumber(ctx)
+	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
 
 	for _, i := range k.instruments {
 		if i.Source == aggressiveOrder.Destination.Denom && i.Destination == aggressiveOrder.Source.Denom {
@@ -98,7 +98,7 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 
 				if passiveOrder.SourceRemaining.IsZero() {
 					// Order has been filled. Remove it from queue.
-					k.DeleteOrder(passiveOrder)
+					k.deleteOrder(passiveOrder)
 
 					if i.Orders.Empty() {
 						k.instruments.RemoveInstrument(i)
@@ -114,6 +114,7 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 	}
 
 	if !aggressiveOrder.SourceRemaining.IsZero() {
+		// Order was not fully matched. Add to book.
 		k.instruments.InsertOrder(aggressiveOrder)
 
 		clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]
@@ -128,7 +129,44 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k *Keeper) DeleteOrder(order *types.Order) {
+func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
+	// TODO Verify that instrument is the same.
+	currentOrders := k.accountOrders[newOrder.Owner.String()]
+
+	res := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
+	if !res.IsOK() {
+		return res
+	}
+
+	// TODO Add new order
+	// Adjust remaining according to how much of the replaced order was filled:
+	// newOrder.remaining = newOrder.sourceAmount - (oldOrder.SourceAmount - oldOrder.Remaining)
+
+	evts := append(ctx.EventManager().Events(), res.Events...)
+	return sdk.Result{Events: evts}
+}
+
+func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) sdk.Result {
+	orders := k.accountOrders[owner.String()]
+	if orders == nil {
+		return types.ErrClientOrderIDNotFound(owner, clientOrderId).Result()
+	}
+
+	var order *types.Order
+	i, _ := orders.Find(func(index int, v interface{}) bool {
+		order = v.(*types.Order)
+		return order.ClientOrderID == clientOrderId
+	})
+
+	if i == -1 {
+		return types.ErrClientOrderIDNotFound(owner, clientOrderId).Result()
+	}
+
+	k.deleteOrder(order)
+	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+func (k *Keeper) deleteOrder(order *types.Order) {
 	instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
 	instrument.Orders.Remove(order)
 	if instrument.Orders.Empty() {
@@ -137,6 +175,22 @@ func (k *Keeper) DeleteOrder(order *types.Order) {
 
 	orders := k.accountOrders[order.Owner.String()]
 	orders.Remove(order)
+}
+
+func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {
+	orders, found := k.accountOrders[owner.String()]
+	if !found {
+		return []types.Order{}
+	}
+	res := make([]types.Order, orders.Size())
+
+	it := orders.Iterator()
+	for it.Next() {
+		o := it.Value().(*types.Order)
+		res[it.Index()] = *o // Copy all orders, so that the calling function can't modify state.
+	}
+
+	return res
 }
 
 func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourceMatched sdk.Int, passiveOrder, aggressiveOrder *types.Order) sdk.Error {
@@ -163,7 +217,7 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourc
 	return nil
 }
 
-func (k Keeper) GetNextOrderNumber(ctx sdk.Context) uint64 {
+func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
 	var orderID uint64
 	store := ctx.KVStore(k.key)
 	bz := store.Get(types.GlobalOrderIDKey)

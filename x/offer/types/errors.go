@@ -11,6 +11,7 @@ const (
 
 	CodeInsufficientBalance    sdk.CodeType = 1
 	CodeNonUniqueClientOrderId sdk.CodeType = 2
+	CodeClientOrderIdNotFound  sdk.CodeType = 3
 )
 
 func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
@@ -19,4 +20,8 @@ func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, ba
 
 func ErrNonUniqueClientOrderID(address sdk.AccAddress, clientOrderId string) sdk.Error {
 	return sdk.NewError(Codespace, CodeNonUniqueClientOrderId, "Account %v already has an active order with client order id: %v", address.String(), clientOrderId)
+}
+
+func ErrClientOrderIDNotFound(address sdk.AccAddress, clientOrderId string) sdk.Error {
+	return sdk.NewError(Codespace, CodeNonUniqueClientOrderId, "Account %v does not have an active order with client order id: %v", address.String(), clientOrderId)
 }
