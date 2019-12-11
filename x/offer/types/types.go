@@ -73,8 +73,6 @@ type Order struct {
 	Owner         sdk.AccAddress
 	ClientOrderID string
 
-	SourceAccount sdk.AccAddress
-
 	price,
 	invertedPrice float64
 }
@@ -86,8 +84,6 @@ type Order struct {
 func OrderPriorityComparator(a, b interface{}) int {
 	aAsserted := a.(*Order)
 	bAsserted := b.(*Order)
-
-	// TODO Unit tests
 
 	// Price priority
 	switch {
@@ -110,12 +106,12 @@ func (o Order) Price() float64 {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining)", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining)
+	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining, o.Owner.String())
 }
 
 func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *Order {
 	return &Order{
-		SourceAccount:   seller,
+		Owner:           seller,
 		Source:          src,
 		Destination:     dst,
 		SourceRemaining: src.Amount,

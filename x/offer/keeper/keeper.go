@@ -36,9 +36,9 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper
 }
 
 func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
-	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.SourceAccount)
+	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.Owner)
 	if sourceAccount == nil {
-		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.SourceAccount.String())).Result()
+		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.Owner.String())).Result()
 	}
 
 	// Verify account balance
@@ -49,8 +49,6 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 	// Verify uniqueness of client order id among active orders
 	if clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]; clientOrders != nil {
 		if clientOrders.Contains(aggressiveOrder) {
-			// TODO Add error
-			// TODO Add unit test
 			return sdk.ErrUnknownAddress(fmt.Sprintf("Duplicate client order id")).Result()
 		}
 	}
@@ -100,7 +98,6 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 
 				if passiveOrder.SourceRemaining.IsZero() {
 					// Order has been filled. Remove it from queue.
-					//i.Orders.Remove(passiveOrder)
 					k.DeleteOrder(passiveOrder)
 
 					if i.Orders.Empty() {
@@ -131,9 +128,12 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k Keeper) DeleteOrder(order *types.Order) {
+func (k *Keeper) DeleteOrder(order *types.Order) {
 	instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
 	instrument.Orders.Remove(order)
+	if instrument.Orders.Empty() {
+		k.instruments.RemoveInstrument(*instrument)
+	}
 
 	orders := k.accountOrders[order.Owner.String()]
 	orders.Remove(order)
@@ -141,8 +141,8 @@ func (k Keeper) DeleteOrder(order *types.Order) {
 
 func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourceMatched sdk.Int, passiveOrder, aggressiveOrder *types.Order) sdk.Error {
 	var (
-		passiveAccount    = k.ak.GetAccount(ctx, passiveOrder.SourceAccount)
-		aggressiveAccount = k.ak.GetAccount(ctx, aggressiveOrder.SourceAccount)
+		passiveAccount    = k.ak.GetAccount(ctx, passiveOrder.Owner)
+		aggressiveAccount = k.ak.GetAccount(ctx, aggressiveOrder.Owner)
 	)
 
 	// Verify that the passive order still holds the balance
@@ -158,8 +158,8 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourc
 	}
 
 	// Balances appear sufficient. Do the transfers
-	k.bk.SendCoins(ctx, aggressiveOrder.SourceAccount, passiveOrder.SourceAccount, sdk.NewCoins(coinMatchedSrc))
-	k.bk.SendCoins(ctx, passiveOrder.SourceAccount, aggressiveOrder.SourceAccount, sdk.NewCoins(coinMatchedDst))
+	k.bk.SendCoins(ctx, aggressiveOrder.Owner, passiveOrder.Owner, sdk.NewCoins(coinMatchedSrc))
+	k.bk.SendCoins(ctx, passiveOrder.Owner, aggressiveOrder.Owner, sdk.NewCoins(coinMatchedDst))
 	return nil
 }
 

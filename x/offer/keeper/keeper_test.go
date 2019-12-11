@@ -122,6 +122,43 @@ func Test3(t *testing.T) {
 	}
 
 	require.Len(t, k.instruments, 0)
+	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
+	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
+	require.Equal(t, coins("120usd"), acc1.GetCoins())
+	require.Equal(t, coins("100eur"), acc2.GetCoins())
+}
+
+func TestDeleteOrder(t *testing.T) {
+	ctx, k, ak := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, "acc1", "100eur")
+
+	cid := cid()
+
+	order1 := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid)
+	res := k.ProcessOrder(ctx, order1)
+	require.True(t, res.IsOK())
+
+	order2 := types.NewOrder(coin("100eur"), coin("77chf"), acc1.GetAddress(), cid)
+	res = k.ProcessOrder(ctx, order2)
+	require.False(t, res.IsOK()) // Verify that client order ids cannot be duplicated.
+
+	require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
+
+	k.DeleteOrder(order1)
+	require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
+}
+
+func TestOrderClientIdComparator(t *testing.T) {
+	order1 := types.NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1.ID = 1
+
+	order2 := types.NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc1")), "B")
+	order2.ID = 2
+
+	require.True(t, OrderClientIdComparator(order1, order2) < 0)
+	require.True(t, OrderClientIdComparator(order2, order1) > 0)
+	require.True(t, OrderClientIdComparator(order1, order1) == 0)
+	require.True(t, OrderClientIdComparator(order2, order2) == 0)
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper) {
