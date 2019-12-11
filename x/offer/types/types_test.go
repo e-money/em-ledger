@@ -12,6 +12,6 @@ func TestNewOrder(t *testing.T) {
 		dst    = sdk.NewCoin("usd", sdk.NewInt(120))
 		seller = sdk.AccAddress([]byte("acc1"))
 	)
-	order := NewOrder(src, dst, seller)
+	order := NewOrder(src, dst, seller, "A")
 	fmt.Println(order.String())
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/e-money/em-ledger/x/offer/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tm-db"
 )
 
@@ -24,11 +25,11 @@ func TestBasicTrade(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
 
-	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress())
+	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid())
 	res := k.ProcessOrder(ctx, order)
 	require.True(t, res.IsOK())
 
-	order = types.NewOrder(coin("60usd"), coin("50eur"), acc2.GetAddress())
+	order = types.NewOrder(coin("60usd"), coin("50eur"), acc2.GetAddress(), cid())
 	res = k.ProcessOrder(ctx, order)
 	require.True(t, res.IsOK())
 
@@ -46,8 +47,8 @@ func TestBasicTrade(t *testing.T) {
 	require.Len(t, k.instruments, 1)
 
 	i := k.instruments[0]
-	remainingOrder := i.Orders.Peek().(*types.Order)
-	require.Equal(t, int64(50), remainingOrder.Remaining.Int64())
+	remainingOrder := i.Orders.LeftKey().(*types.Order)
+	require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
 }
 
 func TestInsufficientBalance1(t *testing.T) {
@@ -57,14 +58,14 @@ func TestInsufficientBalance1(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "500eur")
 	acc2 := createAccount(ctx, ak, "acc2", "740usd")
 
-	order := types.NewOrder(coin("300eur"), coin("360usd"), acc1.GetAddress())
+	order := types.NewOrder(coin("300eur"), coin("360usd"), acc1.GetAddress(), cid())
 	k.ProcessOrder(ctx, order)
 
 	// Modify account balance to be below order source
 	acc1.SetCoins(coins("250eur"))
 	k.ak.SetAccount(ctx, acc1)
 
-	order = types.NewOrder(coin("360usd"), coin("300eur"), acc2.GetAddress())
+	order = types.NewOrder(coin("360usd"), coin("300eur"), acc2.GetAddress(), cid())
 	res := k.ProcessOrder(ctx, order)
 	require.False(t, res.IsOK())
 
@@ -75,7 +76,7 @@ func TestInsufficientBalance1(t *testing.T) {
 
 	// TODO This is a very bad situation. The new, legit order is being blocked by the passive order not having the correct balance.
 
-	order = types.NewOrder(coin("180usd"), coin("150eur"), acc2.GetAddress())
+	order = types.NewOrder(coin("180usd"), coin("150eur"), acc2.GetAddress(), cid())
 	res = k.ProcessOrder(ctx, order)
 	require.True(t, res.IsOK())
 
@@ -92,18 +93,18 @@ func Test2(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "121usd")
 
-	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress())
+	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid())
 	res := k.ProcessOrder(ctx, order)
 	require.True(t, res.IsOK())
 
-	order = types.NewOrder(coin("121usd"), coin("100eur"), acc2.GetAddress())
+	order = types.NewOrder(coin("121usd"), coin("100eur"), acc2.GetAddress(), cid())
 	res = k.ProcessOrder(ctx, order)
 	require.True(t, res.IsOK())
 
 	require.Len(t, k.instruments, 1)
 
-	remainingOrder := k.instruments[0].Orders.Peek().(*types.Order)
-	require.Equal(t, int64(1), remainingOrder.Remaining.Int64())
+	remainingOrder := k.instruments[0].Orders.LeftKey().(*types.Order)
+	require.Equal(t, int64(1), remainingOrder.SourceRemaining.Int64())
 }
 
 func Test3(t *testing.T) {
@@ -112,17 +113,15 @@ func Test3(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
 
-	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress())
+	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid())
 	k.ProcessOrder(ctx, order)
 
 	for i := 0; i < 4; i++ {
-		order = types.NewOrder(coin("30usd"), coin("25eur"), acc2.GetAddress())
+		order = types.NewOrder(coin("30usd"), coin("25eur"), acc2.GetAddress(), cid())
 		k.ProcessOrder(ctx, order)
 	}
 
-	// TODO There really ought to be zero instruments left now.
-	i := k.instruments[0]
-	require.Equal(t, 0, i.Orders.Len())
+	require.Len(t, k.instruments, 0)
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper) {
@@ -186,4 +185,9 @@ func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance stri
 	acc.SetCoins(coins(balance))
 	ak.SetAccount(ctx, acc)
 	return acc
+}
+
+// Generate a random string to use as a client order id
+func cid() string {
+	return cmn.RandStr(10)
 }

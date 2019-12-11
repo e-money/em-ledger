@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Workiva/go-datastructures/queue"
+	"github.com/emirpasic/gods/trees/btree"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type Instrument struct {
 	Source, Destination string
 
-	Orders *queue.PriorityQueue
+	Orders *btree.Tree
 }
 
 type Instruments []Instrument
@@ -20,7 +21,7 @@ func (is Instruments) String() string {
 	sb := strings.Builder{}
 
 	for _, instr := range is {
-		sb.WriteString(fmt.Sprintf("%v/%v - %v\n", instr.Source, instr.Destination, instr.Orders.Len()))
+		sb.WriteString(fmt.Sprintf("%v/%v - %v\n", instr.Source, instr.Destination, instr.Orders.Size()))
 	}
 
 	return sb.String()
@@ -29,7 +30,7 @@ func (is Instruments) String() string {
 func (is *Instruments) InsertOrder(order *Order) {
 	for _, i := range *is {
 		if i.Destination == order.Destination.Denom && i.Source == order.Source.Denom {
-			i.Orders.Put(order)
+			i.Orders.Put(order, nil)
 			return
 		}
 	}
@@ -37,11 +38,21 @@ func (is *Instruments) InsertOrder(order *Order) {
 	i := Instrument{
 		Source:      order.Source.Denom,
 		Destination: order.Destination.Denom,
-		Orders:      queue.NewPriorityQueue(1, true),
+		Orders:      btree.NewWith(3, OrderPriorityComparator),
 	}
 
 	*is = append(*is, i)
-	i.Orders.Put(order)
+	i.Orders.Put(order, nil)
+}
+
+func (is *Instruments) GetInstrument(source, destination string) *Instrument {
+	for _, i := range *is {
+		if i.Source == source && i.Destination == destination {
+			return &i
+		}
+	}
+
+	return nil
 }
 
 func (is *Instruments) RemoveInstrument(instr Instrument) {
@@ -53,13 +64,14 @@ func (is *Instruments) RemoveInstrument(instr Instrument) {
 	}
 }
 
-var _ queue.Item = Order{}
-
 type Order struct {
 	ID uint64
 
 	Source, Destination sdk.Coin
-	Remaining           sdk.Int
+	SourceRemaining     sdk.Int
+
+	Owner         sdk.AccAddress
+	ClientOrderID string
 
 	SourceAccount sdk.AccAddress
 
@@ -67,24 +79,26 @@ type Order struct {
 	invertedPrice float64
 }
 
-func (o Order) Compare(other queue.Item) int {
-	ot := other.(*Order)
+// Should return a number:
+//    negative , if a < b
+//    zero     , if a == b
+//    positive , if a > b
+func OrderPriorityComparator(a, b interface{}) int {
+	aAsserted := a.(*Order)
+	bAsserted := b.(*Order)
+
+	// TODO Unit tests
+
+	// Price priority
 	switch {
-	case o.price > ot.price:
-		return 1
-	case o.price < ot.price:
+	case aAsserted.Price() < bAsserted.Price():
 		return -1
+	case aAsserted.Price() > bAsserted.Price():
+		return 1
 	}
 
-	// Prices are equale. The oldest order gets to go first.
-	switch {
-	case o.ID > ot.ID:
-		return 1
-	case o.ID < ot.ID:
-		return -1
-	default:
-		return 0
-	}
+	// Time priority
+	return int(aAsserted.ID - bAsserted.ID)
 }
 
 func (o Order) InvertedPrice() float64 {
@@ -96,16 +110,17 @@ func (o Order) Price() float64 {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining)", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.Remaining)
+	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining)", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining)
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress) *Order {
+func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *Order {
 	return &Order{
-		SourceAccount: seller,
-		Source:        src,
-		Destination:   dst,
-		Remaining:     src.Amount,
-		price:         float64(dst.Amount.Int64()) / float64(src.Amount.Int64()),
-		invertedPrice: float64(src.Amount.Int64()) / float64(dst.Amount.Int64()),
+		SourceAccount:   seller,
+		Source:          src,
+		Destination:     dst,
+		SourceRemaining: src.Amount,
+		ClientOrderID:   clientOrderId,
+		price:           float64(dst.Amount.Int64()) / float64(src.Amount.Int64()),
+		invertedPrice:   float64(src.Amount.Int64()) / float64(dst.Amount.Int64()),
 	}
 }

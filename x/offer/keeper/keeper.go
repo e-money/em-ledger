@@ -8,6 +8,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
+	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/emirpasic/gods/utils"
+
 	"github.com/e-money/em-ledger/x/offer/types"
 )
 
@@ -17,6 +20,8 @@ type Keeper struct {
 	instruments types.Instruments
 	ak          auth.AccountKeeper
 	bk          bank.BaseKeeper
+
+	accountOrders map[string]*treeset.Set
 }
 
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper, bankKeeper bank.BaseKeeper) Keeper {
@@ -25,78 +30,85 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper
 		key: key,
 		ak:  authKeeper,
 		bk:  bankKeeper,
+
+		accountOrders: make(map[string]*treeset.Set),
 	}
 }
 
-func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
-	sourceAccount := k.ak.GetAccount(ctx, order.SourceAccount)
+func (k *Keeper) ProcessOrder(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
+	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.SourceAccount)
 	if sourceAccount == nil {
-		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", order.SourceAccount.String())).Result()
+		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.SourceAccount.String())).Result()
 	}
 
 	// Verify account balance
-	if _, anyNegative := sourceAccount.GetCoins().SafeSub(sdk.NewCoins(order.Source)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(order.SourceAccount, order.Source, sourceAccount.GetCoins().AmountOf(order.Source.Denom)).Result()
+	if _, anyNegative := sourceAccount.GetCoins().SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
+		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
 	}
 
-	order.ID = k.GetNextOrderNumber(ctx)
+	// Verify uniqueness of client order id among active orders
+	if clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]; clientOrders != nil {
+		if clientOrders.Contains(aggressiveOrder) {
+			// TODO Add error
+			// TODO Add unit test
+			return sdk.ErrUnknownAddress(fmt.Sprintf("Duplicate client order id")).Result()
+		}
+	}
+
+	aggressiveOrder.ID = k.GetNextOrderNumber(ctx)
 
 	for _, i := range k.instruments {
-		if i.Source == order.Destination.Denom && i.Destination == order.Source.Denom {
+		if i.Source == aggressiveOrder.Destination.Denom && i.Destination == aggressiveOrder.Source.Denom {
 			for {
-				if i.Orders.Len() == 0 {
-					k.instruments.RemoveInstrument(i)
+				if i.Orders.Empty() {
 					break
 				}
 
-				co := i.Orders.Peek().(*types.Order)
-				if order.Price() > co.InvertedPrice() {
-					fmt.Printf("Price mismatch: %v > %v\n", order.Price(), co.InvertedPrice())
+				passiveOrder := i.Orders.LeftKey().(*types.Order)
+				if aggressiveOrder.Price() > passiveOrder.InvertedPrice() {
+					// Spread has not been crossed. Candidate should be added to order book.
 					break
 				}
-
-				//fmt.Println("Candidate order:\n", co.String())
-				//fmt.Println("Incoming order:\n", order.String())
-				//fmt.Println()
 
 				// Price is divided evenly between bid and offer. Price improvement is shared equally.
-				matchingPrice := order.Destination.Amount.Add(co.Source.Amount).ToDec().Quo(order.Source.Amount.Add(co.Destination.Amount).ToDec())
-
-				//matchingPrice := (float64(order.Destination.Amount.Int64()) + float64(co.Source.Amount.Int64())) / (float64(order.Source.Amount.Int64()) + float64(co.Destination.Amount.Int64()))
+				matchingPrice := aggressiveOrder.Destination.Amount.Add(passiveOrder.Source.Amount).ToDec().Quo(aggressiveOrder.Source.Amount.Add(passiveOrder.Destination.Amount).ToDec())
 
 				// Price improvement is 100% given to the buyer.
 				//matchingPrice := co.invertedPrice
 
-				sourceMatched := co.Remaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
-				//sourceMatched := int64(math.Ceil(float64(co.Remaining.Int64()) / matchingPrice))
-				if order.Remaining.LT(sourceMatched) {
-					sourceMatched = order.Remaining
+				sourceMatched := passiveOrder.SourceRemaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
+				if aggressiveOrder.SourceRemaining.LT(sourceMatched) {
+					sourceMatched = aggressiveOrder.SourceRemaining
 				}
 
 				destinationMatched := sourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
-				//destinationMatched := int64(math.Floor(float64(sourceMatched) * matchingPrice))
 
-				err := k.transferTradedVolumes(ctx, destinationMatched, sourceMatched, co, order)
+				err := k.transferTradedAmounts(ctx, destinationMatched, sourceMatched, passiveOrder, aggressiveOrder)
 				if err != nil {
 					return err.Result()
 				}
 
 				// Adjust orders
-				co.Remaining = co.Remaining.Sub(destinationMatched)
-				order.Remaining = order.Remaining.Sub(sourceMatched)
+				passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(destinationMatched)
+				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(sourceMatched)
 
 				// Invariant check
-				if order.Remaining.LT(sdk.ZeroInt()) || co.Remaining.LT(sdk.ZeroInt()) {
-					msg := fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", order, co)
+				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) || passiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
+					msg := fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder)
 					panic(msg)
 				}
 
-				if co.Remaining.IsZero() {
+				if passiveOrder.SourceRemaining.IsZero() {
 					// Order has been filled. Remove it from queue.
-					_, _ = i.Orders.Get(1)
+					//i.Orders.Remove(passiveOrder)
+					k.DeleteOrder(passiveOrder)
+
+					if i.Orders.Empty() {
+						k.instruments.RemoveInstrument(i)
+					}
 				}
 
-				if order.Remaining.IsZero() {
+				if aggressiveOrder.SourceRemaining.IsZero() {
 					// Order has been filled.
 					break
 				}
@@ -104,34 +116,50 @@ func (k *Keeper) ProcessOrder(ctx sdk.Context, order *types.Order) sdk.Result {
 		}
 	}
 
-	if !order.Remaining.IsZero() {
-		k.instruments.InsertOrder(order)
+	if !aggressiveOrder.SourceRemaining.IsZero() {
+		k.instruments.InsertOrder(aggressiveOrder)
+
+		clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]
+		if clientOrders == nil {
+			clientOrders = treeset.NewWith(OrderClientIdComparator)
+			k.accountOrders[aggressiveOrder.Owner.String()] = clientOrders
+		}
+
+		clientOrders.Add(aggressiveOrder)
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k Keeper) transferTradedVolumes(ctx sdk.Context, destinationMatched, sourceMatched sdk.Int, co, order *types.Order) sdk.Error {
+func (k Keeper) DeleteOrder(order *types.Order) {
+	instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
+	instrument.Orders.Remove(order)
+
+	orders := k.accountOrders[order.Owner.String()]
+	orders.Remove(order)
+}
+
+func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourceMatched sdk.Int, passiveOrder, aggressiveOrder *types.Order) sdk.Error {
 	var (
-		candidateAccount = k.ak.GetAccount(ctx, co.SourceAccount)
-		orderAccount     = k.ak.GetAccount(ctx, order.SourceAccount)
+		passiveAccount    = k.ak.GetAccount(ctx, passiveOrder.SourceAccount)
+		aggressiveAccount = k.ak.GetAccount(ctx, aggressiveOrder.SourceAccount)
 	)
 
 	// Verify that the passive order still holds the balance
-	coinMatchedDst := sdk.NewCoin(co.Source.Denom, destinationMatched)
-	if _, anyNegative := candidateAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(candidateAccount.GetAddress(), coinMatchedDst, candidateAccount.GetCoins().AmountOf(coinMatchedDst.Denom))
+	coinMatchedDst := sdk.NewCoin(passiveOrder.Source.Denom, destinationMatched)
+	if _, anyNegative := passiveAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
+		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), coinMatchedDst, passiveAccount.GetCoins().AmountOf(coinMatchedDst.Denom))
 	}
 
 	// Verify that the aggressive order still holds the balance
-	coinMatchedSrc := sdk.NewCoin(order.Source.Denom, sourceMatched)
-	if _, anyNegative := orderAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(orderAccount.GetAddress(), coinMatchedSrc, orderAccount.GetCoins().AmountOf(coinMatchedSrc.Denom))
+	coinMatchedSrc := sdk.NewCoin(aggressiveOrder.Source.Denom, sourceMatched)
+	if _, anyNegative := aggressiveAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
+		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), coinMatchedSrc, aggressiveAccount.GetCoins().AmountOf(coinMatchedSrc.Denom))
 	}
 
 	// Balances appear sufficient. Do the transfers
-	k.bk.SendCoins(ctx, order.SourceAccount, co.SourceAccount, sdk.NewCoins(coinMatchedSrc))
-	k.bk.SendCoins(ctx, co.SourceAccount, order.SourceAccount, sdk.NewCoins(coinMatchedDst))
+	k.bk.SendCoins(ctx, aggressiveOrder.SourceAccount, passiveOrder.SourceAccount, sdk.NewCoins(coinMatchedSrc))
+	k.bk.SendCoins(ctx, passiveOrder.SourceAccount, aggressiveOrder.SourceAccount, sdk.NewCoins(coinMatchedDst))
 	return nil
 }
 
@@ -152,4 +180,11 @@ func (k Keeper) GetNextOrderNumber(ctx sdk.Context) uint64 {
 	store.Set(types.GlobalOrderIDKey, bz)
 
 	return orderID
+}
+
+func OrderClientIdComparator(a, b interface{}) int {
+	aAsserted := a.(*types.Order)
+	bAsserted := b.(*types.Order)
+
+	return utils.StringComparator(aAsserted.ClientOrderID, bAsserted.ClientOrderID)
 }
