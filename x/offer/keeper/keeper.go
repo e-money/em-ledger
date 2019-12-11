@@ -8,9 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
-	"github.com/emirpasic/gods/sets/treeset"
-	"github.com/emirpasic/gods/utils"
-
 	"github.com/e-money/em-ledger/x/offer/types"
 )
 
@@ -21,7 +18,7 @@ type Keeper struct {
 	ak          auth.AccountKeeper
 	bk          bank.BaseKeeper
 
-	accountOrders map[string]*treeset.Set
+	accountOrders types.Orders
 }
 
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper, bankKeeper bank.BaseKeeper) Keeper {
@@ -31,7 +28,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper
 		ak:  authKeeper,
 		bk:  bankKeeper,
 
-		accountOrders: make(map[string]*treeset.Set),
+		accountOrders: types.NewOrders(),
 	}
 }
 
@@ -47,11 +44,15 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 	}
 
 	// Verify uniqueness of client order id among active orders
-	if clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]; clientOrders != nil {
-		if clientOrders.Contains(aggressiveOrder) {
-			return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
-		}
+	if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
+		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
 	}
+
+	//if clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]; clientOrders != nil {
+	//	if clientOrders.Contains(aggressiveOrder) {
+	//		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
+	//	}
+	//}
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
 
@@ -116,14 +117,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 	if !aggressiveOrder.SourceRemaining.IsZero() {
 		// Order was not fully matched. Add to book.
 		k.instruments.InsertOrder(aggressiveOrder)
-
-		clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]
-		if clientOrders == nil {
-			clientOrders = treeset.NewWith(OrderClientIdComparator)
-			k.accountOrders[aggressiveOrder.Owner.String()] = clientOrders
-		}
-
-		clientOrders.Add(aggressiveOrder)
+		k.accountOrders.AddOrder(aggressiveOrder)
+		// NOTE This should be the only place that an order is added to the book!
+		// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
@@ -131,7 +127,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
 	// TODO Verify that instrument is the same.
-	currentOrders := k.accountOrders[newOrder.Owner.String()]
+	//currentOrders := k.accountOrders[newOrder.Owner.String()]
 
 	res := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
 	if !res.IsOK() {
@@ -147,10 +143,7 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 }
 
 func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) sdk.Result {
-	orders := k.accountOrders[owner.String()]
-	if orders == nil {
-		return types.ErrClientOrderIDNotFound(owner, clientOrderId).Result()
-	}
+	orders := k.accountOrders.GetAllOrders(owner)
 
 	var order *types.Order
 	i, _ := orders.Find(func(index int, v interface{}) bool {
@@ -173,15 +166,11 @@ func (k *Keeper) deleteOrder(order *types.Order) {
 		k.instruments.RemoveInstrument(*instrument)
 	}
 
-	orders := k.accountOrders[order.Owner.String()]
-	orders.Remove(order)
+	k.accountOrders.RemoveOrder(order)
 }
 
 func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {
-	orders, found := k.accountOrders[owner.String()]
-	if !found {
-		return []types.Order{}
-	}
+	orders := k.accountOrders.GetAllOrders(owner)
 	res := make([]types.Order, orders.Size())
 
 	it := orders.Iterator()
@@ -234,11 +223,4 @@ func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
 	store.Set(types.GlobalOrderIDKey, bz)
 
 	return orderID
-}
-
-func OrderClientIdComparator(a, b interface{}) int {
-	aAsserted := a.(*types.Order)
-	bAsserted := b.(*types.Order)
-
-	return utils.StringComparator(aAsserted.ClientOrderID, bAsserted.ClientOrderID)
 }

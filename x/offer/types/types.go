@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/emirpasic/gods/utils"
 	"strings"
 
 	"github.com/emirpasic/gods/trees/btree"
@@ -119,4 +121,47 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *O
 		price:           float64(dst.Amount.Int64()) / float64(src.Amount.Int64()),
 		invertedPrice:   float64(src.Amount.Int64()) / float64(dst.Amount.Int64()),
 	}
+}
+
+type Orders struct {
+	accountOrders map[string]*treeset.Set
+}
+
+func NewOrders() Orders {
+	return Orders{make(map[string]*treeset.Set)}
+}
+
+func (o Orders) ContainsClientOrderId(owner sdk.AccAddress, clientOrderId string) bool {
+	allOrders := o.GetAllOrders(owner)
+
+	order := &Order{ClientOrderID: clientOrderId}
+	return allOrders.Contains(order)
+}
+
+func (o *Orders) GetAllOrders(owner sdk.AccAddress) *treeset.Set {
+	allOrders, found := o.accountOrders[owner.String()]
+
+	if !found {
+		allOrders = treeset.NewWith(OrderClientIdComparator)
+		o.accountOrders[owner.String()] = allOrders
+	}
+
+	return allOrders
+}
+
+func (o *Orders) AddOrder(order *Order) {
+	orders := o.GetAllOrders(order.Owner)
+	orders.Add(order)
+}
+
+func (o *Orders) RemoveOrder(order *Order) {
+	orders := o.GetAllOrders(order.Owner)
+	orders.Remove(order)
+}
+
+func OrderClientIdComparator(a, b interface{}) int {
+	aAsserted := a.(*Order)
+	bAsserted := b.(*Order)
+
+	return utils.StringComparator(aAsserted.ClientOrderID, bAsserted.ClientOrderID)
 }

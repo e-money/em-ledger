@@ -148,19 +148,6 @@ func TestDeleteOrder(t *testing.T) {
 	require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
 }
 
-func TestOrderClientIdComparator(t *testing.T) {
-	order1 := types.NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
-	order1.ID = 1
-
-	order2 := types.NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc1")), "B")
-	order2.ID = 2
-
-	require.True(t, OrderClientIdComparator(order1, order2) < 0)
-	require.True(t, OrderClientIdComparator(order2, order1) > 0)
-	require.True(t, OrderClientIdComparator(order1, order1) == 0)
-	require.True(t, OrderClientIdComparator(order2, order2) == 0)
-}
-
 func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	ctx, k, ak := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
