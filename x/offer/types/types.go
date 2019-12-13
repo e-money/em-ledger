@@ -80,7 +80,7 @@ type Order struct {
 	ClientOrderID string
 
 	price,
-	invertedPrice float64
+	invertedPrice sdk.Dec
 }
 
 // Should return a number:
@@ -93,9 +93,9 @@ func OrderPriorityComparator(a, b interface{}) int {
 
 	// Price priority
 	switch {
-	case aAsserted.Price() < bAsserted.Price():
+	case aAsserted.Price().LT(bAsserted.Price()):
 		return -1
-	case aAsserted.Price() > bAsserted.Price():
+	case aAsserted.Price().GT(bAsserted.Price()):
 		return 1
 	}
 
@@ -103,11 +103,11 @@ func OrderPriorityComparator(a, b interface{}) int {
 	return int(aAsserted.ID - bAsserted.ID)
 }
 
-func (o Order) InvertedPrice() float64 {
+func (o Order) InvertedPrice() sdk.Dec {
 	return o.invertedPrice
 }
 
-func (o Order) Price() float64 {
+func (o Order) Price() sdk.Dec {
 	return o.price
 }
 
@@ -122,8 +122,8 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *O
 		Destination:     dst,
 		SourceRemaining: src.Amount,
 		ClientOrderID:   clientOrderId,
-		price:           float64(dst.Amount.Int64()) / float64(src.Amount.Int64()),
-		invertedPrice:   float64(src.Amount.Int64()) / float64(dst.Amount.Int64()),
+		price:           dst.Amount.ToDec().Quo(src.Amount.ToDec()),
+		invertedPrice:   src.Amount.ToDec().Quo(dst.Amount.ToDec()),
 	}
 }
 
@@ -142,10 +142,27 @@ func (o Orders) ContainsClientOrderId(owner sdk.AccAddress, clientOrderId string
 	return allOrders.Contains(order)
 }
 
+func (o Orders) GetOrder(owner sdk.AccAddress, clientOrderId string) (res *Order) {
+	allOrders := o.GetAllOrders(owner)
+
+	allOrders.Find(func(_ int, value interface{}) bool {
+		order := value.(*Order)
+		if order.ClientOrderID == clientOrderId {
+			res = order
+			return true
+		}
+
+		return false
+	})
+
+	return
+}
+
 func (o *Orders) GetAllOrders(owner sdk.AccAddress) *treeset.Set {
 	allOrders, found := o.accountOrders[owner.String()]
 
 	if !found {
+		// Note that comparator only uses client order id.
 		allOrders = treeset.NewWith(OrderClientIdComparator)
 		o.accountOrders[owner.String()] = allOrders
 	}

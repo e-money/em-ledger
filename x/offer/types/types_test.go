@@ -11,7 +11,6 @@ import (
 )
 
 func TestOrders1(t *testing.T) {
-
 	acc1 := sdk.AccAddress([]byte("acc1"))
 	acc2 := sdk.AccAddress([]byte("acc2"))
 
@@ -19,7 +18,7 @@ func TestOrders1(t *testing.T) {
 	order1 := NewOrder(coin("100eur"), coin("120usd"), acc1, "A")
 	order1.ID = 1
 
-	order2 := NewOrder(coin("100eur"), coin("100usd"), acc2, "A")
+	order2 := NewOrder(coin("250usd"), coin("180chf"), acc2, "A")
 	order2.ID = 2
 
 	orders.AddOrder(order1)
@@ -27,6 +26,10 @@ func TestOrders1(t *testing.T) {
 
 	require.True(t, orders.ContainsClientOrderId(acc1, "A"))
 	require.True(t, orders.ContainsClientOrderId(acc2, "A"))
+
+	require.NotNil(t, orders.GetOrder(acc1, "A"))
+	require.NotNil(t, orders.GetOrder(acc2, "A"))
+	require.Nil(t, orders.GetOrder(acc1, "B"))
 
 }
 

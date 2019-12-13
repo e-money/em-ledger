@@ -198,6 +198,77 @@ func TestCancelOrders1(t *testing.T) {
 	require.False(t, res.IsOK())
 }
 
+func TestCancelReplaceOrder(t *testing.T) {
+	ctx, k, ak := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, "acc1", "20000eur")
+	acc2 := createAccount(ctx, ak, "acc2", "45000usd")
+
+	order1cid := cid()
+	order1 := types.NewOrder(coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	order2cid := cid()
+	order2 := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
+	res = k.CancelReplaceOrder(ctx, order2, order1cid)
+	require.True(t, res.IsOK())
+
+	{
+		orders := k.GetOrdersByOwner(acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order2cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("5000eur"), orders[0].Source)
+		require.Equal(t, coin("17000usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
+	}
+
+	order3 := types.NewOrder(coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
+	// Wrong client order id for previous order submitted.
+	res = k.CancelReplaceOrder(ctx, order3, order1cid)
+	require.Equal(t, types.CodeClientOrderIdNotFound, res.Code)
+
+	// Changing instrument of order
+	res = k.CancelReplaceOrder(ctx, order3, order2cid)
+	require.Equal(t, types.CodeOrderInstrumentChanged, res.Code)
+
+	res = k.NewOrderSingle(ctx,
+		types.NewOrder(coin("2600usd"), coin("300eur"), acc2.GetAddress(), cid()),
+	)
+	require.True(t, res.IsOK())
+
+	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
+	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
+
+	require.Equal(t, int64(765), acc2.GetCoins().AmountOf("eur").Int64())
+	require.Equal(t, int64(2600), acc1.GetCoins().AmountOf("usd").Int64())
+
+	//fmt.Println("acc1", acc1.GetCoins())
+	//fmt.Println("acc2", acc2.GetCoins())
+	//fmt.Println("Total supply:", acc1.GetCoins().Add(acc2.GetCoins()))
+
+	filled := sdk.ZeroInt()
+	{
+		orders := k.GetOrdersByOwner(acc1.GetAddress())
+		require.Len(t, orders, 1)
+		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
+	}
+
+	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
+	order4cid := cid()
+	order4 := types.NewOrder(coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
+	res = k.CancelReplaceOrder(ctx, order4, order2cid)
+	require.True(t, res.IsOK(), res.Log)
+
+	{
+		orders := k.GetOrdersByOwner(acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order4cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("10000eur"), orders[0].Source)
+		require.Equal(t, coin("35050usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
+	}
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper) {
 	var (
 		keyOffer   = sdk.NewKVStoreKey(types.ModuleName)

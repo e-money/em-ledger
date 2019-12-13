@@ -16,6 +16,7 @@ const (
 	CodeInsufficientBalance    sdk.CodeType = 1
 	CodeNonUniqueClientOrderId sdk.CodeType = 2
 	CodeClientOrderIdNotFound  sdk.CodeType = 3
+	CodeOrderInstrumentChanged sdk.CodeType = 4
 )
 
 func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
@@ -27,5 +28,9 @@ func ErrNonUniqueClientOrderID(address sdk.AccAddress, clientOrderId string) sdk
 }
 
 func ErrClientOrderIDNotFound(address sdk.AccAddress, clientOrderId string) sdk.Error {
-	return sdk.NewError(Codespace, CodeNonUniqueClientOrderId, "Account %v does not have an active order with client order id: %v", address.String(), clientOrderId)
+	return sdk.NewError(Codespace, CodeClientOrderIdNotFound, "Account %v does not have an active order with client order id: %v", address.String(), clientOrderId)
+}
+
+func ErrOrderInstrumentChanged(origSrc, origDst, newSrc, newDst string) sdk.Error {
+	return sdk.NewError(Codespace, CodeOrderInstrumentChanged, "Instrument cannot be changed when using CancelReplace : %v -> %v != %v -> %v", origSrc, origDst, newSrc, newDst)
 }

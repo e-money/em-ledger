@@ -52,12 +52,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
 	}
 
-	//if clientOrders := k.accountOrders[aggressiveOrder.Owner.String()]; clientOrders != nil {
-	//	if clientOrders.Contains(aggressiveOrder) {
-	//		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
-	//	}
-	//}
-
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
 
 	for _, i := range k.instruments {
@@ -68,32 +62,36 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 				}
 
 				passiveOrder := i.Orders.LeftKey().(*types.Order)
-				if aggressiveOrder.Price() > passiveOrder.InvertedPrice() {
+				if aggressiveOrder.Price().GT(passiveOrder.InvertedPrice()) {
 					// Spread has not been crossed. Candidate should be added to order book.
 					break
 				}
 
 				// Price is divided evenly between bid and offer. Price improvement is shared equally.
-				matchingPrice := aggressiveOrder.Destination.Amount.Add(passiveOrder.Source.Amount).ToDec().Quo(aggressiveOrder.Source.Amount.Add(passiveOrder.Destination.Amount).ToDec())
+				//matchingPrice := aggressiveOrder.Destination.Amount.Add(passiveOrder.Source.Amount).ToDec().Quo(aggressiveOrder.Source.Amount.Add(passiveOrder.Destination.Amount).ToDec())
 
-				// Price improvement is 100% given to the buyer.
-				//matchingPrice := co.invertedPrice
+				// Divide evenly between two prices:
+				//matchingPrice := passiveOrder.InvertedPrice().Add(aggressiveOrder.Price()).Quo(sdk.NewDec(2))
 
-				sourceMatched := passiveOrder.SourceRemaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
-				if aggressiveOrder.SourceRemaining.LT(sourceMatched) {
-					sourceMatched = aggressiveOrder.SourceRemaining
+				// Use the passive order's price in the market.
+				matchingPrice := passiveOrder.InvertedPrice()
+
+				//The number of tokens from the aggressive orders sell side that the passive order will fill with the price that has been reached
+				aggressiveSourceMatched := passiveOrder.SourceRemaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
+				if aggressiveOrder.SourceRemaining.LT(aggressiveSourceMatched) {
+					aggressiveSourceMatched = aggressiveOrder.SourceRemaining
 				}
 
-				destinationMatched := sourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
+				aggressiveDestinationMatched := aggressiveSourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
 
-				err := k.transferTradedAmounts(ctx, destinationMatched, sourceMatched, passiveOrder, aggressiveOrder)
+				err := k.transferTradedAmounts(ctx, aggressiveDestinationMatched, aggressiveSourceMatched, passiveOrder, aggressiveOrder)
 				if err != nil {
 					return err.Result()
 				}
 
 				// Adjust orders
-				passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(destinationMatched)
-				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(sourceMatched)
+				passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(aggressiveDestinationMatched)
+				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(aggressiveSourceMatched)
 
 				// Invariant check
 				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) || passiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
@@ -129,20 +127,39 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
-	// TODO Verify that instrument is the same.
-	//currentOrders := k.accountOrders[newOrder.Owner.String()]
-
-	res := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
-	if !res.IsOK() {
-		return res
+func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder *types.Order, origClientOrderId string) sdk.Result {
+	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
+	if origOrder == nil {
+		return types.ErrClientOrderIDNotFound(newOrder.Owner, origClientOrderId).Result()
 	}
 
-	// TODO Add new order
+	// Verify that instrument is the same.
+	if origOrder.Source.Denom != newOrder.Source.Denom || origOrder.Destination.Denom != newOrder.Destination.Denom {
+		return types.ErrOrderInstrumentChanged(
+			origOrder.Source.Denom, origOrder.Destination.Denom,
+			newOrder.Source.Denom, newOrder.Destination.Denom,
+		).Result()
+	}
+
+	resCancel := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
+	if !resCancel.IsOK() {
+		return resCancel
+	}
+
 	// Adjust remaining according to how much of the replaced order was filled:
 	// newOrder.remaining = newOrder.sourceAmount - (oldOrder.SourceAmount - oldOrder.Remaining)
+	origFilled := origOrder.Source.Amount.Int64() - origOrder.SourceRemaining.Int64()
+	newRemaining := newOrder.Source.Amount.Int64() - origFilled
+	newOrder.SourceRemaining = sdk.NewInt(newRemaining)
 
-	evts := append(ctx.EventManager().Events(), res.Events...)
+	resAdd := k.NewOrderSingle(ctx, newOrder)
+	if !resAdd.IsOK() {
+		resAdd.Events = append(resAdd.Events, resCancel.Events...)
+		return resAdd
+	}
+
+	evts := append(ctx.EventManager().Events(), resCancel.Events...)
+	evts = append(evts, resAdd.Events...)
 	return sdk.Result{Events: evts}
 }
 
