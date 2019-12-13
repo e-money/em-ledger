@@ -150,10 +150,8 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder *types.Order, orig
 	}
 
 	// Adjust remaining according to how much of the replaced order was filled:
-	// newOrder.remaining = newOrder.sourceAmount - (oldOrder.SourceAmount - oldOrder.Remaining)
-	origFilled := origOrder.Source.Amount.Int64() - origOrder.SourceRemaining.Int64()
-	newRemaining := newOrder.Source.Amount.Int64() - origFilled
-	newOrder.SourceRemaining = sdk.NewInt(newRemaining)
+	newOrder.SourceFilled = origOrder.SourceFilled
+	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(origOrder.SourceFilled)
 
 	resAdd := k.NewOrderSingle(ctx, newOrder)
 	if !resAdd.IsOK() {
