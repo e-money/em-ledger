@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	"github.com/e-money/em-ledger/x/offer/types"
@@ -90,7 +91,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 				}
 
 				// Adjust orders
+				passiveOrder.SourceFilled = passiveOrder.SourceFilled.Add(aggressiveDestinationMatched)
 				passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(aggressiveDestinationMatched)
+				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(aggressiveSourceMatched)
 				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(aggressiveSourceMatched)
 
 				// Invariant check
@@ -178,6 +181,19 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 
 	k.deleteOrder(order)
 	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+// Update any orders that can no longer be filled with the account's balance.
+func (k *Keeper) accountChanged(_ sdk.Context, acc authe.Account) {
+	orders := k.accountOrders.GetAllOrders(acc.GetAddress())
+
+	orders.Each(func(_ int, v interface{}) {
+		order := v.(*types.Order)
+		denomBalance := acc.GetCoins().AmountOf(order.Source.Denom)
+
+		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
+		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
+	})
 }
 
 func (k *Keeper) deleteOrder(order *types.Order) {

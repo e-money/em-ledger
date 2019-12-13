@@ -73,8 +73,8 @@ func (is *Instruments) RemoveInstrument(instr Instrument) {
 type Order struct {
 	ID uint64
 
-	Source, Destination sdk.Coin
-	SourceRemaining     sdk.Int
+	Source, Destination           sdk.Coin
+	SourceFilled, SourceRemaining sdk.Int
 
 	Owner         sdk.AccAddress
 	ClientOrderID string
@@ -120,6 +120,7 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *O
 		Owner:           seller,
 		Source:          src,
 		Destination:     dst,
+		SourceFilled:    sdk.ZeroInt(),
 		SourceRemaining: src.Amount,
 		ClientOrderID:   clientOrderId,
 		price:           dst.Amount.ToDec().Quo(src.Amount.ToDec()),

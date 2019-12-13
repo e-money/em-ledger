@@ -269,6 +269,49 @@ func TestCancelReplaceOrder(t *testing.T) {
 	}
 }
 
+func TestOrdersChangeWithAccountBalance(t *testing.T) {
+	ctx, k, ak := createTestComponents(t)
+	acc := createAccount(ctx, ak, "acc1", "15000eur")
+
+	order := types.NewOrder(coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
+	res := k.NewOrderSingle(ctx, order)
+	require.True(t, res.IsOK())
+
+	{
+		// Partially fill the order above
+		acc2 := createAccount(ctx, ak, "acc2", "900000usd")
+		order2 := types.NewOrder(coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
+		res = k.NewOrderSingle(ctx, order2)
+		require.True(t, res.IsOK())
+
+		//fmt.Println(ak.GetAccount(ctx, acc2.GetAddress()))
+	}
+
+	acc.SetCoins(coins("3000eur"))
+	k.accountChanged(ctx, acc)
+
+	// Seller's account balance drops, remaining should be adjusted accordingly.
+	orders := k.GetOrdersByOwner(acc.GetAddress())
+	require.Len(t, orders, 1)
+	require.Equal(t, coin("10000eur"), orders[0].Source)
+	require.Equal(t, "3000", orders[0].SourceRemaining.String())
+	require.Equal(t, "4000", orders[0].SourceFilled.String())
+
+	// Seller's account balance is restored. Order should be adjusted, but take into consideration that the order has already been partially filled.
+	acc.SetCoins(coins("15000eur"))
+	k.accountChanged(ctx, acc)
+
+	orders = k.GetOrdersByOwner(acc.GetAddress())
+	require.Equal(t, "6000", orders[0].SourceRemaining.String())
+	require.Equal(t, "4000", orders[0].SourceFilled.String())
+
+	// Account balance dips below original sales amount, but can still fill the remaining order.
+	acc.SetCoins(coins("9000eur"))
+	k.accountChanged(ctx, acc)
+	orders = k.GetOrdersByOwner(acc.GetAddress())
+	require.Equal(t, "6000", orders[0].SourceRemaining.String())
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper) {
 	var (
 		keyOffer   = sdk.NewKVStoreKey(types.ModuleName)
