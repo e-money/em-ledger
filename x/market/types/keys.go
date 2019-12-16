@@ -4,6 +4,8 @@
 
 package types
 
+import "encoding/binary"
+
 const (
 	ModuleName   = "market"
 	StoreKey     = ModuleName
@@ -14,4 +16,13 @@ const (
 var (
 	// Parameter key for global order IDs
 	GlobalOrderIDKey = []byte("globalOrderID")
+
+	// LevelDB prefixes
+	orderPrefix = []byte{0x01}
 )
+
+func GetOrderKey(v uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, v)
+	return append(orderPrefix, b...)
+}

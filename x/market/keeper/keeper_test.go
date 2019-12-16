@@ -5,7 +5,6 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -185,7 +184,7 @@ func TestDeleteOrder(t *testing.T) {
 
 	require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
 
-	k.deleteOrder(order1)
+	k.deleteOrder(ctx, order1)
 	require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
 }
 
@@ -359,8 +358,6 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 		blacklistedAddrs = make(map[string]bool)
 	)
 
-	cdc := makeTestCodec()
-
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
@@ -369,25 +366,16 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+	pk := params.NewKeeper(types.ModuleCdc, keyParams, tkeyParams, params.DefaultCodespace)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
-	accountKeeper := auth.NewAccountKeeper(cdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
+	accountKeeper := auth.NewAccountKeeper(types.ModuleCdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
 	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
-	marketKeeper := NewKeeper(cdc, keyMarket, accountKeeperWrapped, bankKeeper)
+	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper)
 
 	return ctx, marketKeeper, accountKeeper, bankKeeper
-}
-
-func makeTestCodec() (cdc *codec.Codec) {
-	cdc = codec.New()
-
-	auth.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-
-	return
 }
 
 func coin(s string) sdk.Coin {

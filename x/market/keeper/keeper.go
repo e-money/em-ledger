@@ -106,7 +106,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 
 				if passiveOrder.SourceRemaining.IsZero() {
 					// Order has been filled. Remove it from queue.
-					k.deleteOrder(passiveOrder)
+					k.deleteOrder(ctx, passiveOrder)
+				} else {
+					k.setOrder(ctx, passiveOrder)
 				}
 
 				if aggressiveOrder.SourceRemaining.IsZero() {
@@ -121,6 +123,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 		// Order was not fully matched. Add to book.
 		k.instruments.InsertOrder(aggressiveOrder)
 		k.accountOrders.AddOrder(aggressiveOrder)
+		k.setOrder(ctx, aggressiveOrder)
 		// NOTE This should be the only place that an order is added to the book!
 		// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
 	}
@@ -175,12 +178,12 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 		return types.ErrClientOrderIDNotFound(owner, clientOrderId).Result()
 	}
 
-	k.deleteOrder(order)
+	k.deleteOrder(ctx, order)
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 // Update any orders that can no longer be filled with the account's balance.
-func (k *Keeper) accountChanged(_ sdk.Context, acc authe.Account) {
+func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
 	orders := k.accountOrders.GetAllOrders(acc.GetAddress())
 
 	orders.Each(func(_ int, v interface{}) {
@@ -191,12 +194,21 @@ func (k *Keeper) accountChanged(_ sdk.Context, acc authe.Account) {
 		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
 
 		if order.SourceRemaining.IsZero() {
-			k.deleteOrder(order)
+			k.deleteOrder(ctx, order)
 		}
 	})
 }
 
-func (k *Keeper) deleteOrder(order *types.Order) {
+func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
+	store := ctx.KVStore(k.key)
+	bz := k.cdc.MustMarshalBinaryBare(order)
+	store.Set(types.GetOrderKey(order.ID), bz)
+}
+
+func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
+	store := ctx.KVStore(k.key)
+	store.Delete(types.GetOrderKey(order.ID))
+
 	k.accountOrders.RemoveOrder(order)
 
 	instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)

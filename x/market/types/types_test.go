@@ -10,6 +10,39 @@ import (
 	"testing"
 )
 
+func TestSerialization(t *testing.T) {
+	// Verify that non-public fields survive de-/serialization
+	order1 := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1.ID = 3123
+	order1.SourceRemaining = sdk.NewInt(50)
+	order1.SourceFilled = sdk.NewInt(50)
+
+	bz, err := ModuleCdc.MarshalBinaryBare(order1)
+	require.NoError(t, err)
+
+	require.True(t, len(bz) > 0)
+
+	order2 := Order{}
+	err = ModuleCdc.UnmarshalBinaryBare(bz, &order2)
+	require.NoError(t, err)
+
+	require.True(t, order2.Source.Amount.Int64() > 0)
+	require.True(t, order2.Destination.Amount.Int64() > 0)
+	require.True(t, order2.SourceRemaining.Int64() > 0)
+	require.True(t, order2.SourceFilled.Int64() > 0)
+
+	require.Equal(t, uint64(3123), order2.ID)
+	require.Equal(t, order1.ID, order2.ID)
+	require.Equal(t, order1.Source, order2.Source)
+	require.Equal(t, order1.Destination, order2.Destination)
+	require.Equal(t, sdk.NewInt(50), order2.SourceRemaining)
+	require.Equal(t, order1.SourceRemaining, order2.SourceRemaining)
+	require.Equal(t, sdk.NewInt(50), order2.SourceFilled)
+	require.Equal(t, order1.SourceFilled, order2.SourceFilled)
+	require.Equal(t, order1.price, order2.price)
+	require.Equal(t, order1.invertedPrice, order2.invertedPrice)
+}
+
 func TestOrders1(t *testing.T) {
 	acc1 := sdk.AccAddress([]byte("acc1"))
 	acc2 := sdk.AccAddress([]byte("acc2"))

@@ -5,6 +5,7 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/emirpasic/gods/utils"
@@ -81,6 +82,38 @@ type Order struct {
 
 	price,
 	invertedPrice sdk.Dec
+}
+
+// Manual handling of de-/serialization in order to include private fields
+func (o Order) MarshalAmino() ([]byte, error) {
+	w := new(bytes.Buffer)
+
+	for _, v := range o.allFields() {
+		_, err := ModuleCdc.MarshalBinaryLengthPrefixedWriter(w, v)
+		if err != nil {
+			return []byte{}, err
+		}
+	}
+
+	return w.Bytes(), nil
+}
+
+func (o *Order) UnmarshalAmino(bz []byte) error {
+	r := bytes.NewBuffer(bz)
+
+	for _, v := range o.allFields() {
+		_, err := ModuleCdc.UnmarshalBinaryLengthPrefixedReader(r, v, 1024)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Ensure field order of de-/serialization
+func (o *Order) allFields() []interface{} {
+	return []interface{}{&o.ID, &o.Source, &o.Destination, &o.SourceFilled, &o.SourceRemaining, &o.Owner, &o.ClientOrderID, &o.price, &o.invertedPrice}
 }
 
 // Should return a number:
