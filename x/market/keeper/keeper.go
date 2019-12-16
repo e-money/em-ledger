@@ -6,7 +6,6 @@ package keeper
 
 import (
 	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
@@ -25,8 +24,8 @@ type Keeper struct {
 	accountOrders types.Orders
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper bank.BaseKeeper) Keeper {
-	k := Keeper{
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper bank.BaseKeeper) *Keeper {
+	k := &Keeper{
 		cdc: cdc,
 		key: key,
 		ak:  authKeeper,
@@ -108,10 +107,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 				if passiveOrder.SourceRemaining.IsZero() {
 					// Order has been filled. Remove it from queue.
 					k.deleteOrder(passiveOrder)
-
-					if i.Orders.Empty() {
-						k.instruments.RemoveInstrument(i)
-					}
 				}
 
 				if aggressiveOrder.SourceRemaining.IsZero() {
@@ -194,17 +189,25 @@ func (k *Keeper) accountChanged(_ sdk.Context, acc authe.Account) {
 
 		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
 		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
+
+		if order.SourceRemaining.IsZero() {
+			k.deleteOrder(order)
+		}
 	})
 }
 
 func (k *Keeper) deleteOrder(order *types.Order) {
+	k.accountOrders.RemoveOrder(order)
+
 	instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
+	if instrument == nil {
+		return
+	}
+
 	instrument.Orders.Remove(order)
 	if instrument.Orders.Empty() {
 		k.instruments.RemoveInstrument(*instrument)
 	}
-
-	k.accountOrders.RemoveOrder(order)
 }
 
 func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {

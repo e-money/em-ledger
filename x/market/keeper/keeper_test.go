@@ -30,12 +30,12 @@ func TestBasicTrade(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
 
-	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid())
-	res := k.NewOrderSingle(ctx, order)
+	order1 := order(acc1, "100eur", "120usd")
+	res := k.NewOrderSingle(ctx, order1)
 	require.True(t, res.IsOK())
 
-	order = types.NewOrder(coin("60usd"), coin("50eur"), acc2.GetAddress(), cid())
-	res = k.NewOrderSingle(ctx, order)
+	order2 := order(acc2, "60usd", "50eur")
+	res = k.NewOrderSingle(ctx, order2)
 	require.True(t, res.IsOK())
 
 	bal1 := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
@@ -43,17 +43,66 @@ func TestBasicTrade(t *testing.T) {
 	require.Len(t, bal1, 2)
 	require.Len(t, bal2, 2)
 
-	require.Equal(t, int64(4950), bal1.AmountOf("eur").Int64())
-	require.Equal(t, int64(60), bal1.AmountOf("usd").Int64())
+	require.Equal(t, "4950", bal1.AmountOf("eur").String())
+	require.Equal(t, "60", bal1.AmountOf("usd").String())
 
-	require.Equal(t, int64(50), bal2.AmountOf("eur").Int64())
-	require.Equal(t, int64(7340), bal2.AmountOf("usd").Int64())
+	require.Equal(t, "50", bal2.AmountOf("eur").String())
+	require.Equal(t, "7340", bal2.AmountOf("usd").String())
 
 	require.Len(t, k.instruments, 1)
 
 	i := k.instruments[0]
 	remainingOrder := i.Orders.LeftKey().(*types.Order)
 	require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
+}
+
+func TestMultipleOrders(t *testing.T) {
+	ctx, k, ak, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
+	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
+	acc3 := createAccount(ctx, ak, "acc3", "2200chf")
+
+	// Add two orders that draw on the same balance.
+	res := k.NewOrderSingle(ctx, order(acc1, "10000eur", "11000usd"))
+	require.True(t, res.IsOK())
+
+	res = k.NewOrderSingle(ctx, order(acc1, "10000eur", "1400chf"))
+	require.True(t, res.IsOK())
+
+	require.Len(t, k.instruments, 2)
+
+	res = k.NewOrderSingle(ctx, order(acc2, "7400usd", "5000eur"))
+	require.True(t, res.IsOK(), res.Log)
+
+	// Verify that acc1 still has two orders in the market with the same amount of remaining source tokens in each.
+	orders := k.GetOrdersByOwner(acc1.GetAddress())
+	require.Len(t, orders, 2)
+	require.Equal(t, orders[0].SourceRemaining, orders[1].SourceRemaining)
+
+	res = k.NewOrderSingle(ctx, order(acc3, "2200chf", "5000eur"))
+	require.True(t, res.IsOK(), res.Log)
+
+	// All acc1's EUR are sold by now. No orders should be on books
+	orders = k.GetOrdersByOwner(acc1.GetAddress())
+	require.Len(t, orders, 0)
+
+	// Only a single instrument should remain chf -> eur
+	require.Len(t, k.instruments, 1)
+}
+
+func TestCancelZeroRemainingOrders(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc := createAccount(ctx, ak, "acc1", "10000eur")
+	res := k.NewOrderSingle(ctx, order(acc, "10000eur", "11000usd"))
+	require.True(t, res.IsOK())
+
+	err := bk.SendCoins(ctx, acc.GetAddress(), sdk.AccAddress([]byte("void")), coins("10000eur"))
+	require.NoError(t, err)
+
+	orders := k.GetOrdersByOwner(acc.GetAddress())
+	require.Len(t, orders, 0)
 }
 
 func TestInsufficientBalance1(t *testing.T) {
@@ -63,14 +112,14 @@ func TestInsufficientBalance1(t *testing.T) {
 	acc2 := createAccount(ctx, ak, "acc2", "740usd")
 	acc3 := createAccount(ctx, ak, "acc3", "")
 
-	order := types.NewOrder(coin("300eur"), coin("360usd"), acc1.GetAddress(), cid())
-	k.NewOrderSingle(ctx, order)
+	o := order(acc1, "300eur", "360usd")
+	k.NewOrderSingle(ctx, o)
 
 	// Modify account balance to be below order source
 	bk.SendCoins(ctx, acc1.GetAddress(), acc3.GetAddress(), coins("250eur"))
 
-	order = types.NewOrder(coin("360usd"), coin("300eur"), acc2.GetAddress(), cid())
-	res := k.NewOrderSingle(ctx, order)
+	o = order(acc2, "360usd", "300eur")
+	res := k.NewOrderSingle(ctx, o)
 	require.True(t, res.IsOK())
 
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
@@ -85,12 +134,12 @@ func Test2(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "121usd")
 
-	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid())
-	res := k.NewOrderSingle(ctx, order)
+	o := order(acc1, "100eur", "120usd")
+	res := k.NewOrderSingle(ctx, o)
 	require.True(t, res.IsOK())
 
-	order = types.NewOrder(coin("121usd"), coin("100eur"), acc2.GetAddress(), cid())
-	res = k.NewOrderSingle(ctx, order)
+	o = order(acc2, "121usd", "100eur")
+	res = k.NewOrderSingle(ctx, o)
 	require.True(t, res.IsOK())
 
 	require.Len(t, k.instruments, 1)
@@ -105,12 +154,12 @@ func Test3(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
 
-	order := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid())
-	k.NewOrderSingle(ctx, order)
+	o := order(acc1, "100eur", "120usd")
+	k.NewOrderSingle(ctx, o)
 
 	for i := 0; i < 4; i++ {
-		order = types.NewOrder(coin("30usd"), coin("25eur"), acc2.GetAddress(), cid())
-		k.NewOrderSingle(ctx, order)
+		o = order(acc2, "30usd", "25eur")
+		k.NewOrderSingle(ctx, o)
 	}
 
 	require.Len(t, k.instruments, 0)
@@ -272,8 +321,6 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 		order2 := types.NewOrder(coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
 		res = k.NewOrderSingle(ctx, order2)
 		require.True(t, res.IsOK())
-
-		//fmt.Println(ak.GetAccount(ctx, acc2.GetAddress()))
 	}
 
 	err := bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("8000eur"))
@@ -302,7 +349,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper, bank.Keeper) {
+func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper) {
 	var (
 		keyOffer   = sdk.NewKVStoreKey(types.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
@@ -329,9 +376,9 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
 	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
-	offerKeeper := NewKeeper(cdc, keyOffer, accountKeeperWrapped, bankKeeper)
+	marketKeeper := NewKeeper(cdc, keyOffer, accountKeeperWrapped, bankKeeper)
 
-	return ctx, offerKeeper, accountKeeper, bankKeeper
+	return ctx, marketKeeper, accountKeeper, bankKeeper
 }
 
 func makeTestCodec() (cdc *codec.Codec) {
@@ -357,6 +404,10 @@ func coins(s string) sdk.Coins {
 		panic(err)
 	}
 	return coins
+}
+
+func order(account exported.Account, src, dst string) *types.Order {
+	return types.NewOrder(coin(src), coin(dst), account.GetAddress(), cid())
 }
 
 func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) exported.Account {
