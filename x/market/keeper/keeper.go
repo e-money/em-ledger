@@ -12,7 +12,7 @@ import (
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
-	"github.com/e-money/em-ledger/x/offer/types"
+	"github.com/e-money/em-ledger/x/market/types"
 )
 
 type Keeper struct {

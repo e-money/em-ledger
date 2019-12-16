@@ -17,7 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	emauth "github.com/e-money/em-ledger/hooks/auth"
-	"github.com/e-money/em-ledger/x/offer/types"
+	"github.com/e-money/em-ledger/x/market/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
