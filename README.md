@@ -16,7 +16,7 @@ See https://github.com/e-money/testnets for instructions on how to join our test
 
 ## Integration Guide
 
-Token Identifiers: [docs/token-identifiers.md](docs/token-identifiers.md)
+Token Identifiers: [docs/token-identifiers.md](docs/token-identifiers.md)  
 Market Module: [docs/market.md](docs/market.md)
 
 ## Stay Updated
