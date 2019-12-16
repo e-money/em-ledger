@@ -7,14 +7,14 @@ Referencing the [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) sta
 
 Identifier: &lt;first-alpha&gt;&lt;exponent&gt;&lt;subsequent-alphas&gt;
 
-Notice that the exponent can consist of multiple digits (> 9), so a parser must consume digits until it reaches the subsequent-alpha.
+Notice that the exponent can consist of multiple digits, i.e. be larger than 9, so a parser must consume digits until it reaches the subsequent-alpha.
 
-The number of minor units is calculated as 10^exponent. Amounts are thus stored and carried around as number of minor units in a integer type.
+The number of minor units is calculated as 10^exponent and amounts are thus represented as the number of minor units stored in an integer type.
 
 ### Rationale
-The exponent was placed at the second position as this is trivial to parse. In addition all known currency identifiers are 3 letters so it is safe to place it at the second position.
+The exponent was placed at the second position as this is trivial to parse. In addition all known currency identifiers are at least 3 letters, making it safe to put it at the second position.
 
-Placing the exponent at the beginning or the end of the identifier was ruled out as unsafe. It would be confusing if it was displayed verbatim next to an amount ("EUR2 1000" or "1000 2EUR").
+Placing the exponent at the beginning or the end of the identifier was deemed unsafe: It would be confusing if it was displayed verbatim next to an amount, e.g. "EEUR2 1000" or "1000 2EEUR".
 
 ### Examples
 The following examples related to tokens issued by e-Money, where our currency-backed tokens are prefixed with "E" for e-Money.
@@ -27,5 +27,5 @@ The following examples related to tokens issued by e-Money, where our currency-b
 * N3GM: Staking token "NGM" for the e-Money zone with exponent 3 and 10^3 minor units.
 
 Existing tokens with longer identifiers could also be identified like this:
-* A8TOM: [Cosmos Hub](https://cosmos.network) ATOM staking tokens with exponent 8 and 10^8 minor units (uatom).
+* A6TOM: [Cosmos Hub](https://cosmos.network) ATOM staking tokens with exponent 6 and 10^6 minor units (uatom).
 * I18RIS: [IRISNet](https://irisnet.org) IRIS staking token with exponent 18 and 10^18 minor units (iris-atto).
