@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	emauth "github.com/e-money/em-ledger/hooks/auth"
 	emdistr "github.com/e-money/em-ledger/hooks/distribution"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/inflation"
@@ -79,7 +80,7 @@ type emoneyApp struct {
 	database     db.DB
 	currentBatch db.Batch
 
-	accountKeeper   auth.AccountKeeper
+	accountKeeper   emauth.AccountKeeper
 	paramsKeeper    params.Keeper
 	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
@@ -134,8 +135,8 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	)
 
 	accountBlacklist := application.ModuleAccountAddrs()
+	application.accountKeeper = emauth.Wrap(auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount))
 
-	application.accountKeeper = auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
 	application.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], application.accountKeeper, application.bankKeeper, maccPerms)
 	application.stakingKeeper = staking.NewKeeper(cdc, keys[staking.StoreKey], tkeys[staking.TStoreKey], application.supplyKeeper,
@@ -156,7 +157,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
 		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
-		auth.NewAppModule(application.accountKeeper),
+		auth.NewAppModule(application.accountKeeper.InnerKeeper()),
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
@@ -187,7 +188,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
 	application.SetInitChainer(application.InitChainer)
-	application.SetAnteHandler(auth.NewAnteHandler(application.accountKeeper, application.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
+	application.SetAnteHandler(auth.NewAnteHandler(application.accountKeeper.InnerKeeper(), application.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
 	application.SetBeginBlocker(application.BeginBlocker)
 	application.SetEndBlocker(application.EndBlocker)
 

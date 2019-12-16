@@ -16,6 +16,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	emauth "github.com/e-money/em-ledger/hooks/auth"
 	"github.com/e-money/em-ledger/x/offer/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -24,7 +25,7 @@ import (
 )
 
 func TestBasicTrade(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
@@ -56,43 +57,30 @@ func TestBasicTrade(t *testing.T) {
 }
 
 func TestInsufficientBalance1(t *testing.T) {
-	// TODO This test will have to heavily modified or deleted once orders are removed when account balances drop below the order's source amount.
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "500eur")
 	acc2 := createAccount(ctx, ak, "acc2", "740usd")
+	acc3 := createAccount(ctx, ak, "acc3", "")
 
 	order := types.NewOrder(coin("300eur"), coin("360usd"), acc1.GetAddress(), cid())
 	k.NewOrderSingle(ctx, order)
 
 	// Modify account balance to be below order source
-	acc1.SetCoins(coins("250eur"))
-	k.ak.SetAccount(ctx, acc1)
+	bk.SendCoins(ctx, acc1.GetAddress(), acc3.GetAddress(), coins("250eur"))
 
 	order = types.NewOrder(coin("360usd"), coin("300eur"), acc2.GetAddress(), cid())
 	res := k.NewOrderSingle(ctx, order)
-	require.False(t, res.IsOK())
-
-	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
-	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
-	require.Equal(t, coins("250eur"), acc1.GetCoins()) // Still holds the updated amount
-	require.Equal(t, coins("740usd"), acc2.GetCoins())
-
-	// TODO This is a very bad situation. The new, legit order is being blocked by the passive order not having the correct balance.
-
-	order = types.NewOrder(coin("180usd"), coin("150eur"), acc2.GetAddress(), cid())
-	res = k.NewOrderSingle(ctx, order)
 	require.True(t, res.IsOK())
 
-	// Verify that the smaller order was executed
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
 	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
-	require.Equal(t, coins("100eur,180usd"), acc1.GetCoins()) // Still holds the updated amount
-	require.Equal(t, coins("560usd,150eur"), acc2.GetCoins())
+	require.Equal(t, "300usd", acc1.GetCoins().String())
+	require.Equal(t, "250eur,440usd", acc2.GetCoins().String())
 }
 
 func Test2(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "121usd")
@@ -112,7 +100,7 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
@@ -133,7 +121,7 @@ func Test3(t *testing.T) {
 }
 
 func TestDeleteOrder(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 
 	cid := cid()
@@ -153,7 +141,7 @@ func TestDeleteOrder(t *testing.T) {
 }
 
 func TestGetOrdersByOwnerAndCancel(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
 
@@ -191,7 +179,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 func TestCancelOrders1(t *testing.T) {
 	// Cancel a non-existing order by an account with no orders in the system.
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 	acc := createAccount(ctx, ak, "acc1", "100eur")
 
 	res := k.CancelOrder(ctx, acc.GetAddress(), "abcde")
@@ -199,7 +187,7 @@ func TestCancelOrders1(t *testing.T) {
 }
 
 func TestCancelReplaceOrder(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "20000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "45000usd")
 
@@ -270,8 +258,9 @@ func TestCancelReplaceOrder(t *testing.T) {
 }
 
 func TestOrdersChangeWithAccountBalance(t *testing.T) {
-	ctx, k, ak := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 	acc := createAccount(ctx, ak, "acc1", "15000eur")
+	acc2 := createAccount(ctx, ak, "acc2", "11000chf,100000eur")
 
 	order := types.NewOrder(coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
 	res := k.NewOrderSingle(ctx, order)
@@ -287,8 +276,8 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 		//fmt.Println(ak.GetAccount(ctx, acc2.GetAddress()))
 	}
 
-	acc.SetCoins(coins("3000eur"))
-	k.accountChanged(ctx, acc)
+	err := bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("8000eur"))
+	require.Nil(t, err)
 
 	// Seller's account balance drops, remaining should be adjusted accordingly.
 	orders := k.GetOrdersByOwner(acc.GetAddress())
@@ -298,21 +287,22 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Equal(t, "4000", orders[0].SourceFilled.String())
 
 	// Seller's account balance is restored. Order should be adjusted, but take into consideration that the order has already been partially filled.
-	acc.SetCoins(coins("15000eur"))
-	k.accountChanged(ctx, acc)
+	err = bk.SendCoins(ctx, acc2.GetAddress(), acc.GetAddress(), coins("12000eur"))
+	require.Nil(t, err)
 
 	orders = k.GetOrdersByOwner(acc.GetAddress())
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 	require.Equal(t, "4000", orders[0].SourceFilled.String())
 
 	// Account balance dips below original sales amount, but can still fill the remaining order.
-	acc.SetCoins(coins("9000eur"))
-	k.accountChanged(ctx, acc)
+	err = bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("6000eur"))
+	require.Nil(t, err)
+
 	orders = k.GetOrdersByOwner(acc.GetAddress())
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper) {
+func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper, bank.Keeper) {
 	var (
 		keyOffer   = sdk.NewKVStoreKey(types.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
@@ -335,12 +325,13 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, auth.AccountKeeper
 	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
-	ak := auth.NewAccountKeeper(cdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
+	accountKeeper := auth.NewAccountKeeper(cdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
+	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
-	k := NewKeeper(cdc, keyOffer, ak, bk)
+	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
+	offerKeeper := NewKeeper(cdc, keyOffer, accountKeeperWrapped, bankKeeper)
 
-	return ctx, k, ak
+	return ctx, offerKeeper, accountKeeper, bankKeeper
 }
 
 func makeTestCodec() (cdc *codec.Codec) {
