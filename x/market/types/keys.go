@@ -5,7 +5,7 @@
 package types
 
 const (
-	ModuleName   = "offer"
+	ModuleName   = "market"
 	StoreKey     = ModuleName
 	RouterKey    = ModuleName
 	QuerierRoute = ModuleName

@@ -351,7 +351,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper) {
 	var (
-		keyOffer   = sdk.NewKVStoreKey(types.ModuleName)
+		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
@@ -364,7 +364,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyOffer, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
@@ -376,7 +376,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
 	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
-	marketKeeper := NewKeeper(cdc, keyOffer, accountKeeperWrapped, bankKeeper)
+	marketKeeper := NewKeeper(cdc, keyMarket, accountKeeperWrapped, bankKeeper)
 
 	return ctx, marketKeeper, accountKeeper, bankKeeper
 }
