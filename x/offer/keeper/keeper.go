@@ -9,7 +9,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
@@ -20,14 +19,14 @@ type Keeper struct {
 	key         sdk.StoreKey
 	cdc         *codec.Codec
 	instruments types.Instruments
-	ak          auth.AccountKeeper
+	ak          types.AccountKeeper
 	bk          bank.BaseKeeper
 
 	accountOrders types.Orders
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper, bankKeeper bank.BaseKeeper) Keeper {
-	return Keeper{
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper bank.BaseKeeper) Keeper {
+	k := Keeper{
 		cdc: cdc,
 		key: key,
 		ak:  authKeeper,
@@ -35,6 +34,9 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper auth.AccountKeeper
 
 		accountOrders: types.NewOrders(),
 	}
+
+	authKeeper.AddAccountListener(k.accountChanged)
+	return k
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
@@ -79,22 +81,23 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 
 				//The number of tokens from the aggressive orders sell side that the passive order will fill with the price that has been reached
 				aggressiveSourceMatched := passiveOrder.SourceRemaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
+
 				if aggressiveOrder.SourceRemaining.LT(aggressiveSourceMatched) {
 					aggressiveSourceMatched = aggressiveOrder.SourceRemaining
 				}
 
 				aggressiveDestinationMatched := aggressiveSourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
 
-				err := k.transferTradedAmounts(ctx, aggressiveDestinationMatched, aggressiveSourceMatched, passiveOrder, aggressiveOrder)
-				if err != nil {
-					return err.Result()
-				}
-
 				// Adjust orders
 				passiveOrder.SourceFilled = passiveOrder.SourceFilled.Add(aggressiveDestinationMatched)
 				passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(aggressiveDestinationMatched)
 				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(aggressiveSourceMatched)
 				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(aggressiveSourceMatched)
+
+				err := k.transferTradedAmounts(ctx, aggressiveDestinationMatched, aggressiveSourceMatched, passiveOrder, aggressiveOrder)
+				if err != nil {
+					return err.Result()
+				}
 
 				// Invariant check
 				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) || passiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
@@ -236,8 +239,17 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourc
 	}
 
 	// Balances appear sufficient. Do the transfers
-	k.bk.SendCoins(ctx, aggressiveOrder.Owner, passiveOrder.Owner, sdk.NewCoins(coinMatchedSrc))
-	k.bk.SendCoins(ctx, passiveOrder.Owner, aggressiveOrder.Owner, sdk.NewCoins(coinMatchedDst))
+	err := k.bk.SendCoins(ctx, aggressiveOrder.Owner, passiveOrder.Owner, sdk.NewCoins(coinMatchedSrc))
+	if err != nil {
+		return err
+	}
+
+	err = k.bk.SendCoins(ctx, passiveOrder.Owner, aggressiveOrder.Owner, sdk.NewCoins(coinMatchedDst))
+	if err != nil {
+		// TODO Reverse the successful send?
+		return err
+	}
+
 	return nil
 }
 
