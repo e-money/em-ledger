@@ -26,10 +26,13 @@ func TestSerialization(t *testing.T) {
 	err = ModuleCdc.UnmarshalBinaryBare(bz, &order2)
 	require.NoError(t, err)
 
+	// Some sanity checks to ensure we're not just comparing default values below.
 	require.True(t, order2.Source.Amount.Int64() > 0)
 	require.True(t, order2.Destination.Amount.Int64() > 0)
 	require.True(t, order2.SourceRemaining.Int64() > 0)
 	require.True(t, order2.SourceFilled.Int64() > 0)
+	require.True(t, order2.price.GT(sdk.ZeroDec()))
+	require.True(t, order2.invertedPrice.GT(sdk.ZeroDec()))
 
 	require.Equal(t, uint64(3123), order2.ID)
 	require.Equal(t, order1.ID, order2.ID)

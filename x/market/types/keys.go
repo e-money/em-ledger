@@ -15,11 +15,16 @@ const (
 
 var (
 	// Parameter key for global order IDs
-	GlobalOrderIDKey = []byte("globalOrderID")
+	globalOrderIDKey = []byte("globalOrderID")
 
 	// LevelDB prefixes
-	orderPrefix = []byte{0x01}
+	keysPrefix  = []byte{0x01}
+	orderPrefix = []byte{0x02}
 )
+
+func GetOrderIDGeneratorKey() []byte {
+	return append(keysPrefix, globalOrderIDKey...)
+}
 
 func GetOrderKey(v uint64) []byte {
 	b := make([]byte, 8)

@@ -271,7 +271,7 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourc
 func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
 	var orderID uint64
 	store := ctx.KVStore(k.key)
-	bz := store.Get(types.GlobalOrderIDKey)
+	bz := store.Get(types.GetOrderIDGeneratorKey())
 	if bz == nil {
 		orderID = 0
 	} else {
@@ -282,7 +282,7 @@ func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
 	}
 
 	bz = k.cdc.MustMarshalBinaryLengthPrefixed(orderID + 1)
-	store.Set(types.GlobalOrderIDKey, bz)
+	store.Set(types.GetOrderIDGeneratorKey(), bz)
 
 	return orderID
 }
