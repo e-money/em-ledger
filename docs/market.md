@@ -24,7 +24,7 @@ An order consists of the following data:
 
 ### Features
 
-*Price/time priority matching*. Orders at the same price will be ordered by OrderId, with the lowest matched first.  
+*No instrument listing required*. Any token is immediately tradeable against other tokens.
 
 *No execution fees*. This applies for both makers and takers, which only need to pay the standard transaction costs.
 
@@ -33,7 +33,9 @@ When the balance of the owner account changes, SourceRemaining is adjusted accor
 
 *Takers always trade at the best price*. Price improvement is passed to the taker in case there is a better price in the market.
 
-*Arbitrage-free*. Sophisticated matching logic ensures that no arbitrage opportunities exist in the market. Orders always trade at the best price, with the possibility of matching against multiple orders such as EUR->GBP and GBP->USD for a EUR->USD order.
+*Arbitrage-free*. Sophisticated matching logic ensures that no arbitrage opportunities exist in the market. Orders always trade at the best price, with the possibility of matching against multiple orders such as EUR->GBP and GBP->USD for a single EUR->USD order.
+
+*Price/time priority matching*. Orders at the same price will be ordered by OrderId, with the lowest matched first.  
 
 *Immediate settlement*. Matched orders are settled immediately with finality.
 
