@@ -2,14 +2,13 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
-package types
+package market
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/e-money/em-ledger/x/market/keeper"
 )
 
-type AccountKeeper interface {
-	GetAccount(sdk.Context, sdk.AccAddress) exported.Account
-	SetAccount(sdk.Context, exported.Account)
+func BeginBlocker(ctx sdk.Context, sk keeper.Keeper) {
+
 }
