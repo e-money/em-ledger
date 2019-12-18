@@ -56,6 +56,10 @@ func (m MsgCancelReplaceOrder) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
 	}
 
+	if m.Source.Denom == m.Destination.Denom {
+		return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
+	}
+
 	err := validateClientOrderID(m.OrigClientOrderId)
 	if err != nil {
 		return err
@@ -115,6 +119,10 @@ func (m MsgAddOrder) ValidateBasic() sdk.Error {
 
 	if !m.Source.IsValid() {
 		return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
+	}
+
+	if m.Source.Denom == m.Destination.Denom {
+		return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
 	}
 
 	return validateClientOrderID(m.ClientOrderId)

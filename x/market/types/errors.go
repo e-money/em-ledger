@@ -18,17 +18,18 @@ const (
 	CodeClientOrderIdNotFound  sdk.CodeType = 3
 	CodeOrderInstrumentChanged sdk.CodeType = 4
 	CodeInvalidClientOrderId   sdk.CodeType = 5
+	CodeInvalidInstrument      sdk.CodeType = 6
 )
 
 func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
 	return sdk.NewError(Codespace, CodeInsufficientBalance, "Account %v has insufficient balance to execute trade: %v < %v", address.String(), balance, required)
 }
 
-func ErrNonUniqueClientOrderID(address sdk.AccAddress, clientOrderId string) sdk.Error {
+func ErrNonUniqueClientOrderId(address sdk.AccAddress, clientOrderId string) sdk.Error {
 	return sdk.NewError(Codespace, CodeNonUniqueClientOrderId, "Account %v already has an active order with client order id: %v", address.String(), clientOrderId)
 }
 
-func ErrClientOrderIDNotFound(address sdk.AccAddress, clientOrderId string) sdk.Error {
+func ErrClientOrderIdNotFound(address sdk.AccAddress, clientOrderId string) sdk.Error {
 	return sdk.NewError(Codespace, CodeClientOrderIdNotFound, "Account %v does not have an active order with client order id: %v", address.String(), clientOrderId)
 }
 
@@ -38,4 +39,8 @@ func ErrOrderInstrumentChanged(origSrc, origDst, newSrc, newDst string) sdk.Erro
 
 func ErrInvalidClientOrderId(clientorderid string) sdk.Error {
 	return sdk.NewError(Codespace, CodeInvalidClientOrderId, "Specified client order ID is not valid: '%v'", clientorderid)
+}
+
+func ErrInvalidInstrument(src, dst string) sdk.Error {
+	return sdk.NewError(Codespace, CodeInvalidInstrument, "'%v/%v' is not a valid instrument", src, dst)
 }

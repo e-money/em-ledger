@@ -40,6 +40,10 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
+	if aggressiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
+		return types.ErrInvalidInstrument(aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom).Result()
+	}
+
 	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.Owner)
 	if sourceAccount == nil {
 		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.Owner.String())).Result()
@@ -52,7 +56,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 
 	// Verify uniqueness of client order id among active orders
 	if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
-		return types.ErrNonUniqueClientOrderID(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
+		return types.ErrNonUniqueClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
 	}
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
@@ -150,7 +154,7 @@ func (k *Keeper) initializeFromStore(ctx sdk.Context, key sdk.StoreKey) {
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder *types.Order, origClientOrderId string) sdk.Result {
 	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
 	if origOrder == nil {
-		return types.ErrClientOrderIDNotFound(newOrder.Owner, origClientOrderId).Result()
+		return types.ErrClientOrderIdNotFound(newOrder.Owner, origClientOrderId).Result()
 	}
 
 	// Verify that instrument is the same.
@@ -191,7 +195,7 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 	})
 
 	if i == -1 {
-		return types.ErrClientOrderIDNotFound(owner, clientOrderId).Result()
+		return types.ErrClientOrderIdNotFound(owner, clientOrderId).Result()
 	}
 
 	k.deleteOrder(ctx, order)

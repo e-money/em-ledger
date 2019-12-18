@@ -26,6 +26,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
+
 	txCmd.AddCommand(
 		AddOrderCmd(cdc),
 		CancelOrderCmd(cdc),

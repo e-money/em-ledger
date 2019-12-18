@@ -373,6 +373,16 @@ func TestLoadFromStore(t *testing.T) {
 	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc2.GetAddress()).Size())
 }
 
+func TestInvalidInstrument(t *testing.T) {
+	ctx, k, ak, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
+
+	// Ensure that an order cannot contain the same denomination in source and destination
+	res := k.NewOrderSingle(ctx, order(acc1, "125eur", "250eur"))
+	require.False(t, res.IsOK())
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper) {
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)

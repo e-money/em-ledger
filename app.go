@@ -60,6 +60,7 @@ var (
 		liquidityprovider.AppModuleBasic{},
 		issuer.AppModuleBasic{},
 		authority.AppModule{},
+		market.AppModule{},
 	)
 
 	// module account permissions
