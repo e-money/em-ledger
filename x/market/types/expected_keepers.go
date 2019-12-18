@@ -9,14 +9,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 )
 
-type AccountKeeper interface {
-	GetAccount(sdk.Context, sdk.AccAddress) exported.Account
-	AddAccountListener(func(sdk.Context, exported.Account))
-	//SetAccount(ctx sdk.Context, acc exported.Account)
-	//AddAccountListener(Listener)
-}
+type (
+	AccountKeeper interface {
+		GetAccount(sdk.Context, sdk.AccAddress) exported.Account
+		AddAccountListener(func(sdk.Context, exported.Account))
+	}
 
-//
-//type Listener interface {
-//	AccountChanged(ctx sdk.Context, acc exported.Account)
-//}
+	BankKeeper interface {
+		SendCoins(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
+	}
+)

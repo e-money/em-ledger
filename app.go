@@ -7,6 +7,7 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/e-money/em-ledger/x/market"
 	"os"
 	"path/filepath"
 
@@ -91,6 +92,7 @@ type emoneyApp struct {
 	lpKeeper        liquidityprovider.Keeper
 	issuerKeeper    issuer.Keeper
 	authorityKeeper authority.Keeper
+	marketKeeper    *market.Keeper
 
 	mm *module.Manager
 }
@@ -121,6 +123,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		slashing.StoreKey,
 		issuer.StoreKey,
 		authority.StoreKey,
+		market.StoreKey,
 	)
 
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
@@ -150,6 +153,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper)
+	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, application.bankKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
@@ -167,6 +171,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		liquidityprovider.NewAppModule(application.lpKeeper),
 		issuer.NewAppModule(application.issuerKeeper),
 		authority.NewAppModule(application.authorityKeeper),
+		market.NewAppModule(application.marketKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
@@ -183,6 +188,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		genutil.ModuleName,
 		issuer.ModuleName,
 		authority.ModuleName,
+		market.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
@@ -218,6 +224,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	app.currentBatch = app.database.NewBatch()
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 
+	market.BeginBlocker(ctx, app.marketKeeper)
 	inflation.BeginBlocker(ctx, app.inflationKeeper)
 	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)

@@ -11,7 +11,9 @@ import (
 
 // Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
-	//cdc.RegisterConcrete(MsgUnjail{}, "cosmos-sdk/MsgUnjail", nil)
+	cdc.RegisterConcrete(MsgAddOrder{}, "em-ledger/MsgAddOrder", nil)
+	cdc.RegisterConcrete(MsgCancelReplaceOrder{}, "em-ledger/MsgCancelReplaceOrder", nil)
+	cdc.RegisterConcrete(MsgCancelOrder{}, "em-ledger/MsgCancelOrder", nil)
 }
 
 // module codec

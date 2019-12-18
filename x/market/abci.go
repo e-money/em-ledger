@@ -6,9 +6,8 @@ package market
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/market/keeper"
 )
 
-func BeginBlocker(ctx sdk.Context, sk keeper.Keeper) {
+func BeginBlocker(ctx sdk.Context, sk *Keeper) {
 
 }

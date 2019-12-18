@@ -6,11 +6,11 @@ package keeper
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"math"
 
 	"github.com/e-money/em-ledger/x/market/types"
 )
@@ -20,12 +20,12 @@ type Keeper struct {
 	cdc         *codec.Codec
 	instruments types.Instruments
 	ak          types.AccountKeeper
-	bk          bank.BaseKeeper
+	bk          types.BankKeeper
 
 	accountOrders types.Orders
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper bank.BaseKeeper) *Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
 	k := &Keeper{
 		cdc: cdc,
 		key: key,

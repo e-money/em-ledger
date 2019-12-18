@@ -22,6 +22,7 @@ import (
 	issuercli "github.com/e-money/em-ledger/x/issuer/client/cli"
 	lpcli "github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
 	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
+	marketcli "github.com/e-money/em-ledger/x/market/client/cli"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -116,6 +117,7 @@ func txCmds(cdc *amino.Codec) *cobra.Command {
 		authcmd.GetSignCommand(cdc),
 		authcmd.GetMultiSignCommand(cdc),
 		authcmd.GetBroadcastCommand(cdc),
+		marketcli.GetTxCmd(cdc),
 	)
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)
