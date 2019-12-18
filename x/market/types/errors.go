@@ -17,6 +17,7 @@ const (
 	CodeNonUniqueClientOrderId sdk.CodeType = 2
 	CodeClientOrderIdNotFound  sdk.CodeType = 3
 	CodeOrderInstrumentChanged sdk.CodeType = 4
+	CodeInvalidClientOrderId   sdk.CodeType = 5
 )
 
 func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
@@ -33,4 +34,8 @@ func ErrClientOrderIDNotFound(address sdk.AccAddress, clientOrderId string) sdk.
 
 func ErrOrderInstrumentChanged(origSrc, origDst, newSrc, newDst string) sdk.Error {
 	return sdk.NewError(Codespace, CodeOrderInstrumentChanged, "Instrument cannot be changed when using CancelReplace : %v -> %v != %v -> %v", origSrc, origDst, newSrc, newDst)
+}
+
+func ErrInvalidClientOrderId(clientorderid string) sdk.Error {
+	return sdk.NewError(Codespace, CodeInvalidClientOrderId, "Specified client order ID is not valid: '%v'", clientorderid)
 }

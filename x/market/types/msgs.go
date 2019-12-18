@@ -8,7 +8,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _, _, _ sdk.Msg = MsgAddOrder{}, MsgCancelOrder{}, MsgCancelReplaceOrder{}
+const ClientOrderIDMaxLength = 32
+
+var (
+	_ sdk.Msg = MsgAddOrder{}
+	_ sdk.Msg = MsgCancelOrder{}
+	_ sdk.Msg = MsgCancelReplaceOrder{}
+)
 
 type (
 	MsgAddOrder struct {
@@ -23,9 +29,9 @@ type (
 	}
 
 	MsgCancelReplaceOrder struct {
-		Owner               sdk.AccAddress
-		ClientOrderId       string
-		Source, Destination sdk.Coin
+		Owner                               sdk.AccAddress
+		Source, Destination                 sdk.Coin
+		OrigClientOrderId, NewClientOrderId string
 	}
 )
 
@@ -38,11 +44,28 @@ func (m MsgCancelReplaceOrder) Type() string {
 }
 
 func (m MsgCancelReplaceOrder) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Owner.Empty() {
+		return sdk.ErrInvalidAddress("missing owner address")
+	}
+
+	if !m.Destination.IsValid() {
+		return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
+	}
+
+	if !m.Source.IsValid() {
+		return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
+	}
+
+	err := validateClientOrderID(m.OrigClientOrderId)
+	if err != nil {
+		return err
+	}
+
+	return validateClientOrderID(m.NewClientOrderId)
 }
 
 func (m MsgCancelReplaceOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
 func (m MsgCancelReplaceOrder) GetSigners() []sdk.AccAddress {
@@ -58,11 +81,15 @@ func (m MsgCancelOrder) Type() string {
 }
 
 func (m MsgCancelOrder) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Owner.Empty() {
+		return sdk.ErrInvalidAddress("missing owner address")
+	}
+
+	return validateClientOrderID(m.ClientOrderId)
 }
 
 func (m MsgCancelOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
 func (m MsgCancelOrder) GetSigners() []sdk.AccAddress {
@@ -78,13 +105,33 @@ func (m MsgAddOrder) Type() string {
 }
 
 func (m MsgAddOrder) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Owner.Empty() {
+		return sdk.ErrInvalidAddress("missing owner address")
+	}
+
+	if !m.Destination.IsValid() {
+		return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
+	}
+
+	if !m.Source.IsValid() {
+		return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
+	}
+
+	return validateClientOrderID(m.ClientOrderId)
 }
 
 func (m MsgAddOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
 func (m MsgAddOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
+}
+
+func validateClientOrderID(id string) sdk.Error {
+	if len(id) > ClientOrderIDMaxLength {
+		return ErrInvalidClientOrderId(id)
+	}
+
+	return nil
 }
