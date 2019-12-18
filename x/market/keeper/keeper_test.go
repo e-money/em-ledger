@@ -348,6 +348,31 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 }
 
+func TestLoadFromStore(t *testing.T) {
+	// Create order book with a number of passive orders.
+	ctx, k1, ak, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
+	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
+
+	o := order(acc1, "1000eur", "1200usd")
+	require.True(t, k1.NewOrderSingle(ctx, o).IsOK())
+
+	o = order(acc2, "5000usd", "3500chf")
+	require.True(t, k1.NewOrderSingle(ctx, o).IsOK())
+
+	_, k2, _, _ := createTestComponents(t)
+
+	// Create new keeper and let it inherit the store of the previous keeper
+	k2.initializeFromStore(ctx, k1.key)
+
+	// Verify that all orders are loaded correctly into the book
+	require.Len(t, k2.instruments, len(k1.instruments))
+
+	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc1.GetAddress()).Size())
+	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc2.GetAddress()).Size())
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper) {
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)

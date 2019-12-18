@@ -16,13 +16,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type Instrument struct {
-	Source, Destination string
+type (
+	Instrument struct {
+		Source, Destination string
 
-	Orders *btree.Tree
-}
+		Orders *btree.Tree
+	}
 
-type Instruments []Instrument
+	Instruments []Instrument
+
+	Order struct {
+		ID uint64
+
+		Source, Destination           sdk.Coin
+		SourceFilled, SourceRemaining sdk.Int
+
+		Owner         sdk.AccAddress
+		ClientOrderID string
+
+		price,
+		invertedPrice sdk.Dec
+	}
+)
 
 func (is Instruments) String() string {
 	sb := strings.Builder{}
@@ -69,19 +84,6 @@ func (is *Instruments) RemoveInstrument(instr Instrument) {
 			return
 		}
 	}
-}
-
-type Order struct {
-	ID uint64
-
-	Source, Destination           sdk.Coin
-	SourceFilled, SourceRemaining sdk.Int
-
-	Owner         sdk.AccAddress
-	ClientOrderID string
-
-	price,
-	invertedPrice sdk.Dec
 }
 
 // Manual handling of de-/serialization in order to include private fields

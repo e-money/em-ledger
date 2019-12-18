@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"math"
 
 	"github.com/e-money/em-ledger/x/market/types"
 )
@@ -129,6 +130,21 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+func (k *Keeper) initializeFromStore(ctx sdk.Context, key sdk.StoreKey) {
+	store := ctx.KVStore(key)
+	it := store.Iterator(types.GetOrderKey(0), types.GetOrderKey(math.MaxUint64))
+	for ; it.Valid(); it.Next() {
+		o := types.Order{}
+		err := k.cdc.UnmarshalBinaryBare(it.Value(), &o)
+		if err != nil {
+			panic(err)
+		}
+
+		k.instruments.InsertOrder(&o)
+		k.accountOrders.AddOrder(&o)
+	}
 }
 
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder *types.Order, origClientOrderId string) sdk.Result {
