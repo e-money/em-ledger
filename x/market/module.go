@@ -51,6 +51,7 @@ func (amb AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 }
 
 func (amb AppModuleBasic) DefaultGenesis() (_ json.RawMessage) {
+	// TODO
 	return
 }
 
@@ -67,9 +68,8 @@ func (amb AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetTxCmd(cdc)
 }
 
-func (amb AppModuleBasic) GetQueryCmd(*codec.Codec) *cobra.Command {
-	// TODO
-	return nil
+func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return cli.GetQueryCmd(cdc)
 }
 
 func (am AppModule) InitGenesis(sdk.Context, json.RawMessage) (_ []abci.ValidatorUpdate) {
@@ -95,7 +95,7 @@ func (am AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.k)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
