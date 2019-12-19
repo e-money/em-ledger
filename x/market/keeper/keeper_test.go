@@ -363,8 +363,9 @@ func TestLoadFromStore(t *testing.T) {
 
 	_, k2, _, _ := createTestComponents(t)
 
+	k2.key = k1.key
 	// Create new keeper and let it inherit the store of the previous keeper
-	k2.initializeFromStore(ctx, k1.key)
+	k2.initializeFromStore(ctx)
 
 	// Verify that all orders are loaded correctly into the book
 	require.Len(t, k2.instruments, len(k1.instruments))

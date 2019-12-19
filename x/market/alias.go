@@ -18,7 +18,8 @@ const (
 )
 
 var (
-	NewKeeper = keeper.NewKeeper
+	NewKeeper    = keeper.NewKeeper
+	BeginBlocker = keeper.BeginBlocker
 )
 
 type (

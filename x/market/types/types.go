@@ -26,13 +26,15 @@ type (
 	Instruments []Instrument
 
 	Order struct {
-		ID uint64
+		ID uint64 `json:"id" yaml:"id"`
 
-		Source, Destination           sdk.Coin
-		SourceFilled, SourceRemaining sdk.Int
+		Source          sdk.Coin `json:"source" yaml:"source"`
+		Destination     sdk.Coin `json:"destination" yaml:"destination"`
+		SourceFilled    sdk.Int  `json:"source_filled" yaml:"source_filled"`
+		SourceRemaining sdk.Int  `json:"source_remaining" yaml:"source_remaining"`
 
-		Owner         sdk.AccAddress
-		ClientOrderID string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
 
 		price,
 		invertedPrice sdk.Dec
@@ -140,6 +142,11 @@ func OrderPriorityComparator(a, b interface{}) int {
 
 func (o Order) InvertedPrice() sdk.Dec {
 	return o.invertedPrice
+}
+
+// Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
+func (o Order) IsFilled() bool {
+	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec())
 }
 
 func (o Order) Price() sdk.Dec {

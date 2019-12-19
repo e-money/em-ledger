@@ -87,6 +87,16 @@ func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
+func (cli Emcli) QueryMarketInstruments() ([]byte, error) {
+	args := cli.addQueryFlags("query", "market", "instruments")
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryMarketInstrument(source, destination string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "market", "instrument", source, destination)
+	return execCmdAndCollectResponse(args)
+}
+
 func (cli Emcli) QueryValidators() (gjson.Result, error) {
 	args := cli.addQueryFlags("query", "staking", "validators")
 	bz, err := execCmdAndCollectResponse(args)
@@ -129,6 +139,11 @@ func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, bool, er
 
 func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("liquidityprovider", "burn", key.name, amount)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) MarketAddOrder(key Key, source, destination, cid string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "add", source, destination, cid, "--from", key.name)
 	return execCmdWithInput(args, KeyPwd)
 }
 

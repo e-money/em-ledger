@@ -99,7 +99,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
-	// TODO
+	keeper.BeginBlocker(ctx, am.k)
 }
 
 func (am AppModule) EndBlock(sdk.Context, abci.RequestEndBlock) (_ []abci.ValidatorUpdate) {

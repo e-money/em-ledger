@@ -7,6 +7,7 @@ package keeper
 import (
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,6 +24,7 @@ type Keeper struct {
 	bk          types.BankKeeper
 
 	accountOrders types.Orders
+	appstateInit  *sync.Once
 }
 
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
@@ -33,6 +35,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 		bk:  bankKeeper,
 
 		accountOrders: types.NewOrders(),
+		appstateInit:  new(sync.Once),
 	}
 
 	authKeeper.AddAccountListener(k.accountChanged)
@@ -74,12 +77,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 					break
 				}
 
-				// Price is divided evenly between bid and offer. Price improvement is shared equally.
-				//matchingPrice := aggressiveOrder.Destination.Amount.Add(passiveOrder.Source.Amount).ToDec().Quo(aggressiveOrder.Source.Amount.Add(passiveOrder.Destination.Amount).ToDec())
-
-				// Divide evenly between two prices:
-				//matchingPrice := passiveOrder.InvertedPrice().Add(aggressiveOrder.Price()).Quo(sdk.NewDec(2))
-
 				// Use the passive order's price in the market.
 				matchingPrice := passiveOrder.InvertedPrice()
 
@@ -109,14 +106,15 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 					panic(msg)
 				}
 
-				if passiveOrder.SourceRemaining.IsZero() {
+				if passiveOrder.IsFilled() {
 					// Order has been filled. Remove it from queue.
-					k.deleteOrder(ctx, passiveOrder)
+					// Tx sender should not pay gas for completely filling passive orders.
+					k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
 				} else {
 					k.setOrder(ctx, passiveOrder)
 				}
 
-				if aggressiveOrder.SourceRemaining.IsZero() {
+				if aggressiveOrder.IsFilled() {
 					// Order has been filled.
 					break
 				}
@@ -124,7 +122,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 		}
 	}
 
-	if !aggressiveOrder.SourceRemaining.IsZero() {
+	if !aggressiveOrder.IsFilled() {
 		// Order was not fully matched. Add to book.
 		k.instruments.InsertOrder(aggressiveOrder)
 		k.accountOrders.AddOrder(aggressiveOrder)
@@ -136,19 +134,22 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-func (k *Keeper) initializeFromStore(ctx sdk.Context, key sdk.StoreKey) {
-	store := ctx.KVStore(key)
-	it := store.Iterator(types.GetOrderKey(0), types.GetOrderKey(math.MaxUint64))
-	for ; it.Valid(); it.Next() {
-		o := types.Order{}
-		err := k.cdc.UnmarshalBinaryBare(it.Value(), &o)
-		if err != nil {
-			panic(err)
-		}
+func (k *Keeper) initializeFromStore(ctx sdk.Context) {
+	// Loads the last known market state from app state.
+	k.appstateInit.Do(func() {
+		store := ctx.KVStore(k.key)
+		it := store.Iterator(types.GetOrderKey(0), types.GetOrderKey(math.MaxUint64))
+		for ; it.Valid(); it.Next() {
+			o := types.Order{}
+			err := k.cdc.UnmarshalBinaryBare(it.Value(), &o)
+			if err != nil {
+				panic(err)
+			}
 
-		k.instruments.InsertOrder(&o)
-		k.accountOrders.AddOrder(&o)
-	}
+			k.instruments.InsertOrder(&o)
+			k.accountOrders.AddOrder(&o)
+		}
+	})
 }
 
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder *types.Order, origClientOrderId string) sdk.Result {

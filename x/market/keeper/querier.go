@@ -31,8 +31,9 @@ func NewQuerier(k *Keeper) sdk.Querier {
 }
 
 type queryInstrumentResponse struct {
-	Source, Destination string
-	Orders              []types.Order
+	Source      string        `json:"source" yaml:"source"`
+	Destination string        `json:"destination" yaml:"destination"`
+	Orders      []types.Order `json:"orders" yaml:"orders"`
 }
 
 func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
@@ -69,8 +70,9 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 }
 
 type queryInstrumentsResponse struct {
-	Source, Destination string
-	OrderCount          int
+	Source      string `json:"source" yaml:"source"`
+	Destination string `json:"destination" yaml:"destination"`
+	OrderCount  int    `json:"order_count" yaml:"order_count"`
 }
 
 func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, sdk.Error) {
@@ -83,8 +85,10 @@ func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, sdk.Error) {
 		}
 	}
 
-	// Wrap the instruments in an object.
-	var instrumentsWrapper = struct{ Instruments []queryInstrumentsResponse }{response}
+	// Wrap the instruments in an object in anticipation of later expansion
+	var instrumentsWrapper = struct {
+		Instruments []queryInstrumentsResponse `json:"instruments" yaml:"instruments"`
+	}{response}
 
 	bz, err := json.Marshal(instrumentsWrapper)
 	if err != nil {
