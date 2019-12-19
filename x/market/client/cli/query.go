@@ -29,9 +29,47 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand(GetInstrumentsCmd(cdc))
+	cmd.AddCommand(
+		GetInstrumentsCmd(cdc),
+		GetInstrumentCmd(cdc),
+	)
 
 	return cmd
+}
+
+func GetInstrumentCmd(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "instrument [source-denomination] [destination-denomination]",
+		Short: "Query the order book of a specific instrument",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			source, destination := args[0], args[1]
+
+			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, keeper.QueryInstrument, source, destination))
+			if err != nil {
+				return err
+			}
+
+			var out string
+			if cliCtx.Indent {
+				var buf bytes.Buffer
+				err = json.Indent(&buf, bz, "", "  ")
+				out = buf.String()
+			} else {
+				out = string(bz)
+			}
+
+			if err != nil {
+				return err
+			}
+
+			_, err = fmt.Println(out)
+			return err
+		},
+	}
+
+	return flags.GetCommands(cmd)[0]
 }
 
 func GetInstrumentsCmd(cdc *codec.Codec) *cobra.Command {
