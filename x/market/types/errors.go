@@ -19,6 +19,7 @@ const (
 	CodeOrderInstrumentChanged sdk.CodeType = 4
 	CodeInvalidClientOrderId   sdk.CodeType = 5
 	CodeInvalidInstrument      sdk.CodeType = 6
+	CodeInvalidOrderPrice      sdk.CodeType = 7
 )
 
 func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
@@ -43,4 +44,8 @@ func ErrInvalidClientOrderId(clientorderid string) sdk.Error {
 
 func ErrInvalidInstrument(src, dst string) sdk.Error {
 	return sdk.NewError(Codespace, CodeInvalidInstrument, "'%v/%v' is not a valid instrument", src, dst)
+}
+
+func ErrInvalidPrice(src, dst sdk.Coin) sdk.Error {
+	return sdk.NewError(Codespace, CodeInvalidOrderPrice, "Order price is invalid: %s -> %s", src, dst)
 }

@@ -141,10 +141,9 @@ func Test2(t *testing.T) {
 	res = k.NewOrderSingle(ctx, o)
 	require.True(t, res.IsOK())
 
-	require.Len(t, k.instruments, 1)
-
-	remainingOrder := k.instruments[0].Orders.LeftKey().(*types.Order)
-	require.Equal(t, int64(1), remainingOrder.SourceRemaining.Int64())
+	require.Empty(t, k.instruments)
+	require.Equal(t, coins("120usd"), ak.GetAccount(ctx, acc1.GetAddress()).GetCoins())
+	require.Equal(t, coins("100eur,1usd"), ak.GetAccount(ctx, acc2.GetAddress()).GetCoins())
 }
 
 func Test3(t *testing.T) {
