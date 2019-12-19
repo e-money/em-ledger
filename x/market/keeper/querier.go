@@ -6,8 +6,6 @@ package keeper
 
 import (
 	"encoding/json"
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -29,16 +27,17 @@ func NewQuerier(k *Keeper) sdk.Querier {
 }
 
 type queryInstrumentsResponse struct {
-	Pair       string
-	OrderCount int
+	Source, Destination string
+	OrderCount          int
 }
 
 func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, sdk.Error) {
 	response := make([]queryInstrumentsResponse, len(k.instruments))
 	for i, v := range k.instruments {
 		response[i] = queryInstrumentsResponse{
-			Pair:       fmt.Sprintf("%v/%v", v.Source, v.Destination),
-			OrderCount: v.Orders.Size(),
+			Source:      v.Source,
+			Destination: v.Destination,
+			OrderCount:  v.Orders.Size(),
 		}
 	}
 
