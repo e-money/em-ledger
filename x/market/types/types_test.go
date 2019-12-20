@@ -57,8 +57,8 @@ func TestOrders1(t *testing.T) {
 	order2, _ := NewOrder(coin("250usd"), coin("180chf"), acc2, "A")
 	order2.ID = 2
 
-	orders.AddOrder(order1)
-	orders.AddOrder(order2)
+	orders.AddOrder(&order1)
+	orders.AddOrder(&order2)
 
 	require.True(t, orders.ContainsClientOrderId(acc1, "A"))
 	require.True(t, orders.ContainsClientOrderId(acc2, "A"))
@@ -70,7 +70,12 @@ func TestOrders1(t *testing.T) {
 }
 
 func TestInvalidOrder(t *testing.T) {
-	_, err := NewOrder(coin("0eur"), coin("120usd"), sdk.AccAddress([]byte("acc")), "A")
+	// 0 amount source
+	_, err := NewOrder(coin("0eur"), coin("120usd"), []byte("acc"), "A")
+	require.Error(t, err)
+
+	// Same denomination
+	_, err = NewOrder(coin("1000eur"), coin("850eur"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	c := sdk.Coin{
@@ -78,35 +83,36 @@ func TestInvalidOrder(t *testing.T) {
 		Amount: sdk.NewInt(-100),
 	}
 
-	_, err = NewOrder(c, coin("120usd"), sdk.AccAddress([]byte("acc")), "B")
+	// Negative source
+	_, err = NewOrder(c, coin("120usd"), []byte("acc"), "B")
 	require.Error(t, err)
 }
 
 func TestComparator(t *testing.T) {
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), "A")
 	order1.ID = 1
 
-	order2, _ := NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc2")), "A")
+	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc2"), "A")
 	order2.ID = 2
 
-	require.True(t, OrderPriorityComparator(order1, order2) > 0)
-	require.True(t, OrderPriorityComparator(order2, order1) < 0)
+	require.True(t, OrderPriorityComparator(&order1, &order2) > 0)
+	require.True(t, OrderPriorityComparator(&order2, &order1) < 0)
 
-	require.True(t, OrderPriorityComparator(order1, order1) == 0)
-	require.True(t, OrderPriorityComparator(order2, order2) == 0)
+	require.True(t, OrderPriorityComparator(&order1, &order1) == 0)
+	require.True(t, OrderPriorityComparator(&order2, &order2) == 0)
 }
 
 func TestOrderClientIdComparator(t *testing.T) {
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), "A")
 	order1.ID = 1
 
-	order2, _ := NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc1")), "B")
+	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc1"), "B")
 	order2.ID = 2
 
-	require.True(t, OrderClientIdComparator(order1, order2) < 0)
-	require.True(t, OrderClientIdComparator(order2, order1) > 0)
-	require.True(t, OrderClientIdComparator(order1, order1) == 0)
-	require.True(t, OrderClientIdComparator(order2, order2) == 0)
+	require.True(t, OrderClientIdComparator(&order1, &order2) < 0)
+	require.True(t, OrderClientIdComparator(&order2, &order1) > 0)
+	require.True(t, OrderClientIdComparator(&order1, &order1) == 0)
+	require.True(t, OrderClientIdComparator(&order2, &order2) == 0)
 }
 
 func coin(s string) sdk.Coin {

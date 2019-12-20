@@ -183,7 +183,7 @@ func TestDeleteOrder(t *testing.T) {
 
 	require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
 
-	k.deleteOrder(ctx, order1)
+	k.deleteOrder(ctx, &order1)
 	require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
 }
 
@@ -378,7 +378,17 @@ func TestInvalidInstrument(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 
 	// Ensure that an order cannot contain the same denomination in source and destination
-	res := k.NewOrderSingle(ctx, order(acc1, "125eur", "250eur"))
+	o := types.Order{
+		ID:              124,
+		Source:          coin("125eur"),
+		Destination:     coin("250eur"),
+		SourceFilled:    sdk.ZeroInt(),
+		SourceRemaining: sdk.NewInt(125),
+		Owner:           acc1.GetAddress(),
+		ClientOrderID:   "abcddeg",
+	}
+
+	res := k.NewOrderSingle(ctx, o)
 	require.False(t, res.IsOK())
 }
 
@@ -428,7 +438,7 @@ func coins(s string) sdk.Coins {
 	return coins
 }
 
-func order(account exported.Account, src, dst string) *types.Order {
+func order(account exported.Account, src, dst string) types.Order {
 	o, err := types.NewOrder(coin(src), coin(dst), account.GetAddress(), cid())
 	if err != nil {
 		panic(err)

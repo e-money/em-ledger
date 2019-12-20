@@ -42,13 +42,9 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 	return k
 }
 
-func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) sdk.Result {
-	if aggressiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
-		return types.ErrInvalidInstrument(aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom).Result()
-	}
-
-	if aggressiveOrder.Source.Amount.LTE(sdk.ZeroInt()) || aggressiveOrder.Destination.Amount.LTE(sdk.ZeroInt()) {
-		return types.ErrInvalidPrice(aggressiveOrder.Source, aggressiveOrder.Destination).Result()
+func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sdk.Result {
+	if err := aggressiveOrder.IsValid(); err != nil {
+		return err.Result()
 	}
 
 	if aggressiveOrder.IsFilled() {
@@ -103,7 +99,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(aggressiveSourceMatched)
 				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(aggressiveSourceMatched)
 
-				err := k.transferTradedAmounts(ctx, aggressiveDestinationMatched, aggressiveSourceMatched, passiveOrder, aggressiveOrder)
+				err := k.transferTradedAmounts(ctx, aggressiveDestinationMatched, aggressiveSourceMatched, passiveOrder, &aggressiveOrder)
 				if err != nil {
 					return err.Result()
 				}
@@ -132,9 +128,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 
 	if !aggressiveOrder.IsFilled() {
 		// Order was not fully matched. Add to book.
-		k.instruments.InsertOrder(aggressiveOrder)
-		k.accountOrders.AddOrder(aggressiveOrder)
-		k.setOrder(ctx, aggressiveOrder)
+		op := &aggressiveOrder
+		k.instruments.InsertOrder(op)
+		k.accountOrders.AddOrder(op)
+		k.setOrder(ctx, op)
 		// NOTE This should be the only place that an order is added to the book!
 		// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
 	}
@@ -160,7 +157,7 @@ func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 	})
 }
 
-func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder *types.Order, origClientOrderId string) sdk.Result {
+func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
 	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
 	if origOrder == nil {
 		return types.ErrClientOrderIdNotFound(newOrder.Owner, origClientOrderId).Result()

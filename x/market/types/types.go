@@ -149,6 +149,22 @@ func (o Order) IsFilled() bool {
 	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec())
 }
 
+func (o Order) IsValid() sdk.Error {
+	if o.Source.Amount.LTE(sdk.ZeroInt()) {
+		return ErrInvalidPrice(o.Source, o.Destination)
+	}
+
+	if o.Destination.Amount.LTE(sdk.ZeroInt()) {
+		return ErrInvalidPrice(o.Source, o.Destination)
+	}
+
+	if o.Source.Denom == o.Destination.Denom {
+		return ErrInvalidInstrument(o.Source.Denom, o.Destination.Denom)
+	}
+
+	return nil
+}
+
 func (o Order) Price() sdk.Dec {
 	return o.price
 }
@@ -157,12 +173,12 @@ func (o Order) String() string {
 	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining, o.Owner.String())
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (*Order, sdk.Error) {
+func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, sdk.Error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
-		return nil, ErrInvalidPrice(src, dst)
+		return Order{}, ErrInvalidPrice(src, dst)
 	}
 
-	return &Order{
+	o := Order{
 		Owner:           seller,
 		Source:          src,
 		Destination:     dst,
@@ -171,7 +187,13 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (*
 		ClientOrderID:   clientOrderId,
 		price:           dst.Amount.ToDec().Quo(src.Amount.ToDec()),
 		invertedPrice:   src.Amount.ToDec().Quo(dst.Amount.ToDec()),
-	}, nil
+	}
+
+	if err := o.IsValid(); err != nil {
+		return Order{}, err
+	}
+
+	return o, nil
 }
 
 type Orders struct {
