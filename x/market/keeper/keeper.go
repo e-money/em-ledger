@@ -57,7 +57,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 	}
 
 	// Verify account balance
-	if _, anyNegative := sourceAccount.GetCoins().SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
+	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
 		return types.ErrAccountBalanceInsufficient(aggressiveOrder.Owner, aggressiveOrder.Source, sourceAccount.GetCoins().AmountOf(aggressiveOrder.Source.Denom)).Result()
 	}
 
@@ -269,13 +269,13 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourc
 
 	// Verify that the passive order still holds the balance
 	coinMatchedDst := sdk.NewCoin(passiveOrder.Source.Denom, destinationMatched)
-	if _, anyNegative := passiveAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
+	if _, anyNegative := passiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
 		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), coinMatchedDst, passiveAccount.GetCoins().AmountOf(coinMatchedDst.Denom))
 	}
 
 	// Verify that the aggressive order still holds the balance
 	coinMatchedSrc := sdk.NewCoin(aggressiveOrder.Source.Denom, sourceMatched)
-	if _, anyNegative := aggressiveAccount.GetCoins().SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
+	if _, anyNegative := aggressiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
 		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), coinMatchedSrc, aggressiveAccount.GetCoins().AmountOf(coinMatchedSrc.Denom))
 	}
 

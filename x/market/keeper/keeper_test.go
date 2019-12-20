@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
+	"math"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -370,6 +371,17 @@ func TestLoadFromStore(t *testing.T) {
 
 	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc1.GetAddress()).Size())
 	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc2.GetAddress()).Size())
+}
+
+func TestVestingAccount(t *testing.T) {
+	ctx, keeper, ak, _ := createTestComponents(t)
+	account := createAccount(ctx, ak, "acc1", "110000eur")
+
+	vestingAcc := auth.NewDelayedVestingAccount(account.(*auth.BaseAccount), math.MaxInt64)
+	ak.SetAccount(ctx, vestingAcc)
+
+	res := keeper.NewOrderSingle(ctx, order(vestingAcc, "5000eur", "4700chf"))
+	require.False(t, res.IsOK())
 }
 
 func TestInvalidInstrument(t *testing.T) {
