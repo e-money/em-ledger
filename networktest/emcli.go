@@ -147,6 +147,11 @@ func (cli Emcli) MarketAddOrder(key Key, source, destination, cid string) (strin
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) MarketCancelOrder(key Key, cid string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "cancel", cid, "--from", key.name)
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func (cli Emcli) UnjailValidator(key Key) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "slashing", "unjail", "--from", key.name)
 	return execCmdWithInput(args, KeyPwd)

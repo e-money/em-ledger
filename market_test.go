@@ -48,8 +48,12 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Crashing validator can catch up", func() {
+			_, success, err := emcli.MarketAddOrder(acc2, "5000x2eur", "100000x0jpy", "acc2cid1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
 			// Kill a validator
-			_, err := testnet.KillValidator(2)
+			_, err = testnet.KillValidator(2)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Create and execute a couple of orders
@@ -64,6 +68,10 @@ var _ = Describe("Market", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}
+
+			_, success, err = emcli.MarketCancelOrder(acc2, "acc2cid1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
 
 			//bz, err := emcli.QueryMarketInstruments()
 			//Expect(err).ToNot(HaveOccurred())
