@@ -8,11 +8,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestSerialization(t *testing.T) {
+	now := time.Now().UTC()
 	// Verify that non-public fields survive de-/serialization
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), now, "A")
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
 	order1.SourceFilled = sdk.NewInt(50)
@@ -35,6 +37,7 @@ func TestSerialization(t *testing.T) {
 	require.True(t, order2.invertedPrice.GT(sdk.ZeroDec()))
 
 	require.Equal(t, uint64(3123), order2.ID)
+	require.Equal(t, now, order2.Created)
 	require.Equal(t, order1.ID, order2.ID)
 	require.Equal(t, order1.Source, order2.Source)
 	require.Equal(t, order1.Destination, order2.Destination)
@@ -51,10 +54,10 @@ func TestOrders1(t *testing.T) {
 	acc2 := sdk.AccAddress([]byte("acc2"))
 
 	orders := NewOrders()
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), acc1, "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), acc1, time.Now(), "A")
 	order1.ID = 1
 
-	order2, _ := NewOrder(coin("250usd"), coin("180chf"), acc2, "A")
+	order2, _ := NewOrder(coin("250usd"), coin("180chf"), acc2, time.Now(), "A")
 	order2.ID = 2
 
 	orders.AddOrder(&order1)
@@ -71,11 +74,11 @@ func TestOrders1(t *testing.T) {
 
 func TestInvalidOrder(t *testing.T) {
 	// 0 amount source
-	_, err := NewOrder(coin("0eur"), coin("120usd"), []byte("acc"), "A")
+	_, err := NewOrder(coin("0eur"), coin("120usd"), []byte("acc"), time.Now(), "A")
 	require.Error(t, err)
 
 	// Same denomination
-	_, err = NewOrder(coin("1000eur"), coin("850eur"), []byte("acc"), "A")
+	_, err = NewOrder(coin("1000eur"), coin("850eur"), []byte("acc"), time.Now(), "A")
 	require.Error(t, err)
 
 	c := sdk.Coin{
@@ -84,15 +87,15 @@ func TestInvalidOrder(t *testing.T) {
 	}
 
 	// Negative source
-	_, err = NewOrder(c, coin("120usd"), []byte("acc"), "B")
+	_, err = NewOrder(c, coin("120usd"), []byte("acc"), time.Now(), "B")
 	require.Error(t, err)
 }
 
 func TestComparator(t *testing.T) {
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), time.Now(), "A")
 	order1.ID = 1
 
-	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc2"), "A")
+	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc2"), time.Now(), "A")
 	order2.ID = 2
 
 	require.True(t, OrderPriorityComparator(&order1, &order2) > 0)
@@ -103,10 +106,11 @@ func TestComparator(t *testing.T) {
 }
 
 func TestOrderClientIdComparator(t *testing.T) {
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), "A")
+	now := time.Now()
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), now, "A")
 	order1.ID = 1
 
-	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc1"), "B")
+	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc1"), now, "B")
 	order2.ID = 2
 
 	require.True(t, OrderClientIdComparator(&order1, &order2) < 0)

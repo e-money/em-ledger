@@ -10,6 +10,7 @@ import (
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/emirpasic/gods/utils"
 	"strings"
+	"time"
 
 	"github.com/emirpasic/gods/trees/btree"
 
@@ -26,7 +27,8 @@ type (
 	Instruments []Instrument
 
 	Order struct {
-		ID uint64 `json:"id" yaml:"id"`
+		ID      uint64    `json:"id" yaml:"id"`
+		Created time.Time `json:"created" yaml:"created"`
 
 		Source          sdk.Coin `json:"source" yaml:"source"`
 		Destination     sdk.Coin `json:"destination" yaml:"destination"`
@@ -117,7 +119,7 @@ func (o *Order) UnmarshalAmino(bz []byte) error {
 
 // Ensure field order of de-/serialization
 func (o *Order) allFields() []interface{} {
-	return []interface{}{&o.ID, &o.Source, &o.Destination, &o.SourceFilled, &o.SourceRemaining, &o.Owner, &o.ClientOrderID, &o.price, &o.invertedPrice}
+	return []interface{}{&o.ID, &o.Created, &o.Source, &o.Destination, &o.SourceFilled, &o.SourceRemaining, &o.Owner, &o.ClientOrderID, &o.price, &o.invertedPrice}
 }
 
 // Should return a number:
@@ -173,13 +175,14 @@ func (o Order) String() string {
 	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining, o.Owner.String())
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, sdk.Error) {
+func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clientOrderId string) (Order, sdk.Error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
 		return Order{}, ErrInvalidPrice(src, dst)
 	}
 
 	o := Order{
 		Owner:           seller,
+		Created:         created,
 		Source:          src,
 		Destination:     dst,
 		SourceFilled:    sdk.ZeroInt(),

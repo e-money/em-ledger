@@ -34,7 +34,7 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 }
 
 func handleMsgAddOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddOrder) sdk.Result {
-	order, err := types.NewOrder(msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
+	order, err := types.NewOrder(msg.Source, msg.Destination, msg.Owner, ctx.BlockTime(), msg.ClientOrderId)
 	if err != nil {
 		return err.Result()
 	}
@@ -50,7 +50,7 @@ func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelOrder) 
 
 func handleMsgCancelReplaceOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceOrder) sdk.Result {
 	// TODO Emit events.
-	order, err := types.NewOrder(msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
+	order, err := types.NewOrder(msg.Source, msg.Destination, msg.Owner, ctx.BlockTime(), msg.NewClientOrderId)
 	if err != nil {
 		return err.Result()
 	}
