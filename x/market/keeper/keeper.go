@@ -58,7 +58,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 
 	// Verify account balance
 	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(aggressiveOrder.Owner, aggressiveOrder.Source, sourceAccount.GetCoins().AmountOf(aggressiveOrder.Source.Denom)).Result()
+		return types.ErrAccountBalanceInsufficient(aggressiveOrder.Owner, aggressiveOrder.Source, sourceAccount.SpendableCoins(ctx.BlockTime()).AmountOf(aggressiveOrder.Source.Denom)).Result()
 	}
 
 	// Verify uniqueness of client order id among active orders
@@ -214,7 +214,7 @@ func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
 
 	orders.Each(func(_ int, v interface{}) {
 		order := v.(*types.Order)
-		denomBalance := acc.GetCoins().AmountOf(order.Source.Denom)
+		denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
 
 		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
 		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
@@ -270,13 +270,13 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourc
 	// Verify that the passive order still holds the balance
 	coinMatchedDst := sdk.NewCoin(passiveOrder.Source.Denom, destinationMatched)
 	if _, anyNegative := passiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), coinMatchedDst, passiveAccount.GetCoins().AmountOf(coinMatchedDst.Denom))
+		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), coinMatchedDst, passiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(coinMatchedDst.Denom))
 	}
 
 	// Verify that the aggressive order still holds the balance
 	coinMatchedSrc := sdk.NewCoin(aggressiveOrder.Source.Denom, sourceMatched)
 	if _, anyNegative := aggressiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), coinMatchedSrc, aggressiveAccount.GetCoins().AmountOf(coinMatchedSrc.Denom))
+		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), coinMatchedSrc, aggressiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(coinMatchedSrc.Denom))
 	}
 
 	// Balances appear sufficient. Do the transfers
