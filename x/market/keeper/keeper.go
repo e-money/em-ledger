@@ -145,14 +145,14 @@ func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 		store := ctx.KVStore(k.key)
 		it := store.Iterator(types.GetOrderKey(0), types.GetOrderKey(math.MaxUint64))
 		for ; it.Valid(); it.Next() {
-			o := types.Order{}
-			err := k.cdc.UnmarshalBinaryBare(it.Value(), &o)
+			o := &types.Order{}
+			err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
 			if err != nil {
 				panic(err)
 			}
 
-			k.instruments.InsertOrder(&o)
-			k.accountOrders.AddOrder(&o)
+			k.instruments.InsertOrder(o)
+			k.accountOrders.AddOrder(o)
 		}
 	})
 }

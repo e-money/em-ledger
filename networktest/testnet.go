@@ -127,6 +127,14 @@ func (t Testnet) KillValidator(index int) (string, error) {
 	return execCmdAndWait(dockerPath, "kill", fmt.Sprintf("emdnode%v", index))
 }
 
+func (t Testnet) ResurrectValidator(index int) (string, error) {
+	return execCmdAndWait(dockerPath, "start", fmt.Sprintf("emdnode%v", index))
+}
+
+func (t Testnet) GetValidatorLogs(index int) (string, error) {
+	return execCmdAndWait(dockerPath, "logs", fmt.Sprintf("emdnode%v", index))
+}
+
 func (t Testnet) NewEmcli() Emcli {
 	return Emcli{
 		chainid:  t.chainID,

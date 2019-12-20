@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
+	"strings"
 	"time"
 
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -53,7 +54,6 @@ var _ = Describe("Market", func() {
 
 			// Create and execute a couple of orders
 			for i := 0; i < 7; i++ {
-				fmt.Println(" *** ", i)
 				_, success, err := emcli.MarketAddOrder(acc2, "90500x2chf", fmt.Sprintf("%dx2eur", 11000-i*400), cmn.RandStr(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
@@ -65,11 +65,30 @@ var _ = Describe("Market", func() {
 				Expect(success).To(BeTrue())
 			}
 
-			bz, err := emcli.QueryMarketInstruments()
-			Expect(err).ToNot(HaveOccurred())
-			fmt.Println("Order book:\n", string(bz))
+			//bz, err := emcli.QueryMarketInstruments()
+			//Expect(err).ToNot(HaveOccurred())
+			//fmt.Println("Order book:\n", string(bz))
 
-			time.Sleep(5 * time.Second)
+			time.Sleep(4 * time.Second)
+
+			_, err = testnet.ResurrectValidator(2)
+			Expect(err).ToNot(HaveOccurred())
+
+			for i := 0; i < 10; i++ {
+				_, success, err := emcli.MarketAddOrder(acc3, "90000x2eur", fmt.Sprintf("%dx2chf", 50000-i*100), cmn.RandStr(10))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
+			}
+
+			// Wait and while and attempt to discover consensus failure in the logs of the resurrected validator
+			time.Sleep(8 * time.Second)
+
+			log, err := testnet.GetValidatorLogs(2)
+			Expect(err).ToNot(HaveOccurred())
+			if strings.Contains(log, "Wrong Block.Header.AppHash") ||
+				strings.Contains(log, "panic") {
+				Fail(fmt.Sprintf("Validator 2 does not appear to have re-established consensus:\n%v", log))
+			}
 		})
 	})
 })
