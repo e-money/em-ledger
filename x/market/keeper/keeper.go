@@ -47,7 +47,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder *types.Order) s
 		return types.ErrInvalidInstrument(aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom).Result()
 	}
 
-	if aggressiveOrder.Source.Amount.Equal(sdk.ZeroInt()) || aggressiveOrder.Destination.Amount.Equal(sdk.ZeroInt()) {
+	if aggressiveOrder.Source.Amount.LTE(sdk.ZeroInt()) || aggressiveOrder.Destination.Amount.LTE(sdk.ZeroInt()) {
 		return types.ErrInvalidPrice(aggressiveOrder.Source, aggressiveOrder.Destination).Result()
 	}
 
