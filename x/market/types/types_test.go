@@ -12,7 +12,7 @@ import (
 
 func TestSerialization(t *testing.T) {
 	// Verify that non-public fields survive de-/serialization
-	order1 := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
 	order1.SourceFilled = sdk.NewInt(50)
@@ -51,10 +51,10 @@ func TestOrders1(t *testing.T) {
 	acc2 := sdk.AccAddress([]byte("acc2"))
 
 	orders := NewOrders()
-	order1 := NewOrder(coin("100eur"), coin("120usd"), acc1, "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), acc1, "A")
 	order1.ID = 1
 
-	order2 := NewOrder(coin("250usd"), coin("180chf"), acc2, "A")
+	order2, _ := NewOrder(coin("250usd"), coin("180chf"), acc2, "A")
 	order2.ID = 2
 
 	orders.AddOrder(order1)
@@ -69,11 +69,24 @@ func TestOrders1(t *testing.T) {
 
 }
 
+func TestInvalidOrder(t *testing.T) {
+	_, err := NewOrder(coin("0eur"), coin("120usd"), sdk.AccAddress([]byte("acc")), "A")
+	require.Error(t, err)
+
+	c := sdk.Coin{
+		Denom:  "eur",
+		Amount: sdk.NewInt(-100),
+	}
+
+	_, err = NewOrder(c, coin("120usd"), sdk.AccAddress([]byte("acc")), "B")
+	require.Error(t, err)
+}
+
 func TestComparator(t *testing.T) {
-	order1 := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
 	order1.ID = 1
 
-	order2 := NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc2")), "A")
+	order2, _ := NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc2")), "A")
 	order2.ID = 2
 
 	require.True(t, OrderPriorityComparator(order1, order2) > 0)
@@ -84,10 +97,10 @@ func TestComparator(t *testing.T) {
 }
 
 func TestOrderClientIdComparator(t *testing.T) {
-	order1 := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
+	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), "A")
 	order1.ID = 1
 
-	order2 := NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc1")), "B")
+	order2, _ := NewOrder(coin("100eur"), coin("100usd"), sdk.AccAddress([]byte("acc1")), "B")
 	order2.ID = 2
 
 	require.True(t, OrderClientIdComparator(order1, order2) < 0)

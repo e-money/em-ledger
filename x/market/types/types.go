@@ -157,7 +157,11 @@ func (o Order) String() string {
 	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining, o.Owner.String())
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *Order {
+func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (*Order, sdk.Error) {
+	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
+		return nil, ErrInvalidPrice(src, dst)
+	}
+
 	return &Order{
 		Owner:           seller,
 		Source:          src,
@@ -167,7 +171,7 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) *O
 		ClientOrderID:   clientOrderId,
 		price:           dst.Amount.ToDec().Quo(src.Amount.ToDec()),
 		invertedPrice:   src.Amount.ToDec().Quo(dst.Amount.ToDec()),
-	}
+	}, nil
 }
 
 type Orders struct {
