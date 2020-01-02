@@ -154,7 +154,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper)
-	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, application.bankKeeper)
+	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, application.bankKeeper, application.supplyKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)

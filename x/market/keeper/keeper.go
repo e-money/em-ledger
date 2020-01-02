@@ -22,17 +22,19 @@ type Keeper struct {
 	instruments types.Instruments
 	ak          types.AccountKeeper
 	bk          types.BankKeeper
+	sk          types.SupplyKeeper
 
 	accountOrders types.Orders
 	appstateInit  *sync.Once
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, supplyKeeper types.SupplyKeeper) *Keeper {
 	k := &Keeper{
 		cdc: cdc,
 		key: key,
 		ak:  authKeeper,
 		bk:  bankKeeper,
+		sk:  supplyKeeper,
 
 		accountOrders: types.NewOrders(),
 		appstateInit:  new(sync.Once),
@@ -64,6 +66,11 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 	// Verify uniqueness of client order id among active orders
 	if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
 		return types.ErrNonUniqueClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
+	}
+
+	// Verify that the destination asset actually exists on chain before creating an instrument
+	if !k.assetExists(ctx, aggressiveOrder.Destination) {
+		return types.ErrUnknownAsset(aggressiveOrder.Destination).Result()
 	}
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
@@ -155,6 +162,12 @@ func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 			k.accountOrders.AddOrder(o)
 		}
 	})
+}
+
+// Check whether an asset even exists on the chain at the moment.
+func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
+	total := k.sk.GetSupply(ctx).GetTotal()
+	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {

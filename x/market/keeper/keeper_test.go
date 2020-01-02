@@ -9,10 +9,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 	"math"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -25,7 +27,7 @@ import (
 )
 
 func TestBasicTrade(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
@@ -57,7 +59,7 @@ func TestBasicTrade(t *testing.T) {
 }
 
 func TestMultipleOrders(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
@@ -92,7 +94,7 @@ func TestMultipleOrders(t *testing.T) {
 }
 
 func TestCancelZeroRemainingOrders(t *testing.T) {
-	ctx, k, ak, bk := createTestComponents(t)
+	ctx, k, ak, bk, _ := createTestComponents(t)
 
 	acc := createAccount(ctx, ak, "acc1", "10000eur")
 	res := k.NewOrderSingle(ctx, order(acc, "10000eur", "11000usd"))
@@ -106,7 +108,7 @@ func TestCancelZeroRemainingOrders(t *testing.T) {
 }
 
 func TestInsufficientBalance1(t *testing.T) {
-	ctx, k, ak, bk := createTestComponents(t)
+	ctx, k, ak, bk, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "500eur")
 	acc2 := createAccount(ctx, ak, "acc2", "740usd")
@@ -129,7 +131,7 @@ func TestInsufficientBalance1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "121usd")
@@ -148,7 +150,7 @@ func Test2(t *testing.T) {
 }
 
 func Test3(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
@@ -169,16 +171,17 @@ func Test3(t *testing.T) {
 }
 
 func TestDeleteOrder(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
+
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 
 	cid := cid()
 
-	order1, _ := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), cid)
+	order1, _ := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), time.Now(), cid)
 	res := k.NewOrderSingle(ctx, order1)
 	require.True(t, res.IsOK())
 
-	order2, _ := types.NewOrder(coin("100eur"), coin("77chf"), acc1.GetAddress(), cid)
+	order2, _ := types.NewOrder(coin("100eur"), coin("77chf"), acc1.GetAddress(), time.Now(), cid)
 	res = k.NewOrderSingle(ctx, order2)
 	require.False(t, res.IsOK()) // Verify that client order ids cannot be duplicated.
 
@@ -189,18 +192,18 @@ func TestDeleteOrder(t *testing.T) {
 }
 
 func TestGetOrdersByOwnerAndCancel(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
 
 	for i := 0; i < 5; i++ {
-		order, _ := types.NewOrder(coin("5eur"), coin("12usd"), acc1.GetAddress(), cid())
+		order, _ := types.NewOrder(coin("5eur"), coin("12usd"), acc1.GetAddress(), time.Now(), cid())
 		res := k.NewOrderSingle(ctx, order)
 		require.True(t, res.IsOK())
 	}
 
 	for i := 0; i < 5; i++ {
-		order, _ := types.NewOrder(coin("7usd"), coin("3chf"), acc2.GetAddress(), cid())
+		order, _ := types.NewOrder(coin("7usd"), coin("3chf"), acc2.GetAddress(), time.Now(), cid())
 		res := k.NewOrderSingle(ctx, order)
 		require.True(t, res.IsOK(), res.Log)
 	}
@@ -209,7 +212,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	require.Len(t, allOrders1, 5)
 
 	{
-		order, _ := types.NewOrder(coin("12usd"), coin("5eur"), acc2.GetAddress(), cid())
+		order, _ := types.NewOrder(coin("12usd"), coin("5eur"), acc2.GetAddress(), time.Now(), cid())
 		res := k.NewOrderSingle(ctx, order)
 		require.True(t, res.IsOK(), res.Log)
 	}
@@ -227,7 +230,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 func TestCancelOrders1(t *testing.T) {
 	// Cancel a non-existing order by an account with no orders in the system.
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 	acc := createAccount(ctx, ak, "acc1", "100eur")
 
 	res := k.CancelOrder(ctx, acc.GetAddress(), "abcde")
@@ -235,17 +238,17 @@ func TestCancelOrders1(t *testing.T) {
 }
 
 func TestCancelReplaceOrder(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "20000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "45000usd")
 
 	order1cid := cid()
-	order1, _ := types.NewOrder(coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
+	order1, _ := types.NewOrder(coin("500eur"), coin("1200usd"), acc1.GetAddress(), time.Now(), order1cid)
 	res := k.NewOrderSingle(ctx, order1)
 	require.True(t, res.IsOK())
 
 	order2cid := cid()
-	order2, _ := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
+	order2, _ := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), time.Now(), order2cid)
 	res = k.CancelReplaceOrder(ctx, order2, order1cid)
 	require.True(t, res.IsOK())
 
@@ -258,7 +261,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
 	}
 
-	order3, _ := types.NewOrder(coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
+	order3, _ := types.NewOrder(coin("500chf"), coin("1700usd"), acc1.GetAddress(), time.Now(), cid())
 	// Wrong client order id for previous order submitted.
 	res = k.CancelReplaceOrder(ctx, order3, order1cid)
 	require.Equal(t, types.CodeClientOrderIdNotFound, res.Code)
@@ -267,7 +270,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	res = k.CancelReplaceOrder(ctx, order3, order2cid)
 	require.Equal(t, types.CodeOrderInstrumentChanged, res.Code)
 
-	o, _ := types.NewOrder(coin("2600usd"), coin("300eur"), acc2.GetAddress(), cid())
+	o, _ := types.NewOrder(coin("2600usd"), coin("300eur"), acc2.GetAddress(), time.Now(), cid())
 	res = k.NewOrderSingle(ctx, o)
 	require.True(t, res.IsOK())
 
@@ -290,7 +293,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
 	order4cid := cid()
-	order4, _ := types.NewOrder(coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
+	order4, _ := types.NewOrder(coin("10000eur"), coin("35050usd"), acc1.GetAddress(), time.Now(), order4cid)
 	res = k.CancelReplaceOrder(ctx, order4, order2cid)
 	require.True(t, res.IsOK(), res.Log)
 
@@ -305,18 +308,18 @@ func TestCancelReplaceOrder(t *testing.T) {
 }
 
 func TestOrdersChangeWithAccountBalance(t *testing.T) {
-	ctx, k, ak, bk := createTestComponents(t)
+	ctx, k, ak, bk, _ := createTestComponents(t)
 	acc := createAccount(ctx, ak, "acc1", "15000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "11000chf,100000eur")
 
-	order, _ := types.NewOrder(coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
+	order, _ := types.NewOrder(coin("10000eur"), coin("1000usd"), acc.GetAddress(), time.Now(), cid())
 	res := k.NewOrderSingle(ctx, order)
 	require.True(t, res.IsOK())
 
 	{
 		// Partially fill the order above
 		acc2 := createAccount(ctx, ak, "acc2", "900000usd")
-		order2, _ := types.NewOrder(coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
+		order2, _ := types.NewOrder(coin("400usd"), coin("4000eur"), acc2.GetAddress(), time.Now(), cid())
 		res = k.NewOrderSingle(ctx, order2)
 		require.True(t, res.IsOK())
 	}
@@ -347,9 +350,22 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 }
 
+func TestUnknownAsset(t *testing.T) {
+	ctx, k1, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
+
+	// Make an order with a destination that is not known by the supply module
+	o := order(acc1, "1000eur", "1200nok")
+	res := k1.NewOrderSingle(ctx, o)
+	require.False(t, res.IsOK())
+	require.Equal(t, types.Codespace, res.Codespace)
+	require.Equal(t, types.CodeUnknownAsset, res.Code)
+}
+
 func TestLoadFromStore(t *testing.T) {
 	// Create order book with a number of passive orders.
-	ctx, k1, ak, _ := createTestComponents(t)
+	ctx, k1, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
@@ -360,7 +376,7 @@ func TestLoadFromStore(t *testing.T) {
 	o = order(acc2, "5000usd", "3500chf")
 	require.True(t, k1.NewOrderSingle(ctx, o).IsOK())
 
-	_, k2, _, _ := createTestComponents(t)
+	_, k2, _, _, _ := createTestComponents(t)
 
 	k2.key = k1.key
 	// Create new keeper and let it inherit the store of the previous keeper
@@ -374,7 +390,7 @@ func TestLoadFromStore(t *testing.T) {
 }
 
 func TestVestingAccount(t *testing.T) {
-	ctx, keeper, ak, _ := createTestComponents(t)
+	ctx, keeper, ak, _, _ := createTestComponents(t)
 	account := createAccount(ctx, ak, "acc1", "110000eur")
 
 	vestingAcc := auth.NewDelayedVestingAccount(account.(*auth.BaseAccount), math.MaxInt64)
@@ -385,7 +401,7 @@ func TestVestingAccount(t *testing.T) {
 }
 
 func TestInvalidInstrument(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 
@@ -404,11 +420,12 @@ func TestInvalidInstrument(t *testing.T) {
 	require.False(t, res.IsOK())
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper) {
+func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper, supply.Keeper) {
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
+		supplyKey  = sdk.NewKVStoreKey("supply")
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 
 		blacklistedAddrs = make(map[string]bool)
@@ -418,6 +435,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(supplyKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
@@ -429,9 +447,15 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
 	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
-	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper)
 
-	return ctx, marketKeeper, accountKeeper, bankKeeper
+	maccPerms := map[string][]string{}
+
+	supplyKeeper := supply.NewKeeper(types.ModuleCdc, supplyKey, accountKeeper, bankKeeper, maccPerms)
+	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy")))
+
+	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper, supplyKeeper)
+
+	return ctx, marketKeeper, accountKeeper, bankKeeper, supplyKeeper
 }
 
 func coin(s string) sdk.Coin {
@@ -451,7 +475,7 @@ func coins(s string) sdk.Coins {
 }
 
 func order(account exported.Account, src, dst string) types.Order {
-	o, err := types.NewOrder(coin(src), coin(dst), account.GetAddress(), cid())
+	o, err := types.NewOrder(coin(src), coin(dst), account.GetAddress(), time.Now(), cid())
 	if err != nil {
 		panic(err)
 	}

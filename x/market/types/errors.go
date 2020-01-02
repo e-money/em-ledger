@@ -21,6 +21,7 @@ const (
 	CodeInvalidInstrument      sdk.CodeType = 6
 	CodeInvalidOrderPrice      sdk.CodeType = 7
 	CodeInvalidOrder           sdk.CodeType = 8
+	CodeUnknownAsset           sdk.CodeType = 9
 )
 
 func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
@@ -53,4 +54,8 @@ func ErrInvalidPrice(src, dst sdk.Coin) sdk.Error {
 
 func ErrInvalidOrder(order *Order) sdk.Error {
 	return sdk.NewError(Codespace, CodeInvalidOrder, "Order is not valid: %v", order)
+}
+
+func ErrUnknownAsset(coin sdk.Coin) sdk.Error {
+	return sdk.NewError(Codespace, CodeUnknownAsset, "'%v' is not a known asset.", coin.Denom)
 }

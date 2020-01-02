@@ -6,16 +6,21 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
 )
 
 type (
 	AccountKeeper interface {
-		GetAccount(sdk.Context, sdk.AccAddress) exported.Account
-		AddAccountListener(func(sdk.Context, exported.Account))
+		GetAccount(sdk.Context, sdk.AccAddress) auth.Account
+		AddAccountListener(func(sdk.Context, auth.Account))
 	}
 
 	BankKeeper interface {
 		SendCoins(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
+	}
+
+	SupplyKeeper interface {
+		GetSupply(ctx sdk.Context) (supply supply.SupplyI)
 	}
 )

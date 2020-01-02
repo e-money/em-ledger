@@ -13,7 +13,7 @@ import (
 )
 
 func TestQuerier1(t *testing.T) {
-	ctx, k, ak, _ := createTestComponents(t)
+	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf")
 
