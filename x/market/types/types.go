@@ -30,16 +30,23 @@ type (
 		ID      uint64    `json:"id" yaml:"id"`
 		Created time.Time `json:"created" yaml:"created"`
 
-		Source          sdk.Coin `json:"source" yaml:"source"`
-		Destination     sdk.Coin `json:"destination" yaml:"destination"`
-		SourceFilled    sdk.Int  `json:"source_filled" yaml:"source_filled"`
-		SourceRemaining sdk.Int  `json:"source_remaining" yaml:"source_remaining"`
+		Source               sdk.Coin `json:"source" yaml:"source"`
+		Destination          sdk.Coin `json:"destination" yaml:"destination"`
+		DestinationFilled    sdk.Int  `json:"destination_filled" yaml:"destination_filled"`
+		DestinationRemaining sdk.Int  `json:"destination_remaining" yaml:"destination_remaining"`
 
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
 		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
 
-		price,
-		invertedPrice sdk.Dec
+		price sdk.Dec
+		//invertedPrice sdk.Dec
+	}
+
+	ExecutionPlan struct {
+		Price sdk.Dec
+
+		FirstOrder,
+		SecondOrder *Order
 	}
 )
 
@@ -119,7 +126,7 @@ func (o *Order) UnmarshalAmino(bz []byte) error {
 
 // Ensure field order of de-/serialization
 func (o *Order) allFields() []interface{} {
-	return []interface{}{&o.ID, &o.Created, &o.Source, &o.Destination, &o.SourceFilled, &o.SourceRemaining, &o.Owner, &o.ClientOrderID, &o.price, &o.invertedPrice}
+	return []interface{}{&o.ID, &o.Created, &o.Source, &o.Destination, &o.DestinationFilled, &o.DestinationRemaining, &o.Owner, &o.ClientOrderID, &o.price}
 }
 
 // Should return a number:
@@ -142,13 +149,13 @@ func OrderPriorityComparator(a, b interface{}) int {
 	return int(aAsserted.ID - bAsserted.ID)
 }
 
-func (o Order) InvertedPrice() sdk.Dec {
-	return o.invertedPrice
-}
+//func (o Order) InvertedPrice() sdk.Dec {
+//	return o.invertedPrice
+//}
 
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
 func (o Order) IsFilled() bool {
-	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec())
+	return o.DestinationRemaining.IsZero()
 }
 
 func (o Order) IsValid() sdk.Error {
@@ -172,7 +179,39 @@ func (o Order) Price() sdk.Dec {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v/%v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.invertedPrice, o.SourceRemaining, o.Owner.String())
+	return fmt.Sprintf("%d : %v -> %v @ %v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.DestinationRemaining, o.Owner.String())
+}
+
+func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
+	if ep.FirstOrder == nil {
+		return sdk.ZeroDec()
+	}
+
+	res := ep.FirstOrder.DestinationRemaining.ToDec()
+
+	if ep.SecondOrder != nil {
+		res = sdk.MinDec(ep.SecondOrder.DestinationRemaining.ToDec(), res.Mul(ep.SecondOrder.Price()))
+	}
+
+	return res
+}
+
+func (ep ExecutionPlan) String() string {
+	var buf strings.Builder
+
+	var capacityDenom string
+	for _, o := range []*Order{ep.FirstOrder, ep.SecondOrder} {
+		if o == nil {
+			continue
+		}
+
+		capacityDenom = o.Destination.Denom
+		buf.WriteString(fmt.Sprintf(" - %v\n", o.String()))
+	}
+	buf.WriteString(fmt.Sprintf("Capacity: %v%s\n", ep.DestinationCapacity(), capacityDenom))
+	buf.WriteString(fmt.Sprintf("Price   : %v\n", ep.Price))
+
+	return buf.String()
 }
 
 func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clientOrderId string) (Order, sdk.Error) {
@@ -181,15 +220,15 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clien
 	}
 
 	o := Order{
-		Owner:           seller,
-		Created:         created,
-		Source:          src,
-		Destination:     dst,
-		SourceFilled:    sdk.ZeroInt(),
-		SourceRemaining: src.Amount,
-		ClientOrderID:   clientOrderId,
-		price:           dst.Amount.ToDec().Quo(src.Amount.ToDec()),
-		invertedPrice:   src.Amount.ToDec().Quo(dst.Amount.ToDec()),
+		Owner:                seller,
+		Created:              created,
+		Source:               src,
+		Destination:          dst,
+		DestinationFilled:    sdk.ZeroInt(),
+		DestinationRemaining: dst.Amount,
+		ClientOrderID:        clientOrderId,
+		price:                dst.Amount.ToDec().Quo(src.Amount.ToDec()),
+		//invertedPrice:        src.Amount.ToDec().Quo(dst.Amount.ToDec()),
 	}
 
 	if err := o.IsValid(); err != nil {

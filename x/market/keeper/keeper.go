@@ -44,6 +44,65 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 	return k
 }
 
+func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, DestinationDenom string) types.ExecutionPlan {
+	result := types.ExecutionPlan{
+		Price: sdk.ZeroDec(),
+		//Orders:          make([]*types.Order, 0),
+	}
+
+	// Find the best direct or synthetic price for a given source/destination denom
+	for _, firstInstrument := range k.instruments {
+		if firstInstrument.Source == SourceDenom {
+			if firstInstrument.Orders.Empty() {
+				continue
+			}
+
+			firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
+
+			// Check direct price
+			if firstInstrument.Destination == DestinationDenom {
+				// Direct price is better than current plan
+				if firstPassiveOrder.Price().GT(result.Price) {
+					result = types.ExecutionPlan{
+						Price:      firstPassiveOrder.Price(),
+						FirstOrder: firstPassiveOrder,
+					}
+				}
+			}
+
+			// Check synthetic price by going through two orders:
+			// (SourceDenom, X) -> (X, DestinationDenom)
+			for _, secondInstrument := range k.instruments {
+				if secondInstrument.Source != firstInstrument.Destination {
+					continue
+				}
+
+				if secondInstrument.Destination != DestinationDenom {
+					continue
+				}
+
+				if secondInstrument.Orders.Empty() {
+					continue
+				}
+
+				secondPassiveOrder := secondInstrument.Orders.LeftKey().(*types.Order)
+
+				syntheticPrice := firstPassiveOrder.Price().Mul(secondPassiveOrder.Price())
+
+				if syntheticPrice.GT(result.Price) {
+					result = types.ExecutionPlan{
+						Price:       syntheticPrice,
+						FirstOrder:  firstPassiveOrder,
+						SecondOrder: secondPassiveOrder,
+					}
+				}
+			}
+		}
+	}
+
+	return result
+}
+
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sdk.Result {
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return err.Result()
@@ -75,65 +134,84 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
 
-	for _, i := range k.instruments {
-		if i.Source == aggressiveOrder.Destination.Denom && i.Destination == aggressiveOrder.Source.Denom {
-			for {
-				if i.Orders.Empty() {
-					break
-				}
+	for {
+		plan := k.createExecutionPlan(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
+		if plan.FirstOrder == nil {
+			break
+		}
+		fmt.Println("Aggressive order:", aggressiveOrder)
+		fmt.Printf("Plan:\n%+v\n", plan)
 
-				passiveOrder := i.Orders.LeftKey().(*types.Order)
-				if aggressiveOrder.Price().GT(passiveOrder.InvertedPrice()) {
-					// Spread has not been crossed. Candidate should be added to order book.
-					break
-				}
+		nextDestinationFilled := sdk.MinDec(plan.DestinationCapacity(), aggressiveOrder.DestinationRemaining.ToDec().Mul(plan.Price))
+		fmt.Println("DestinationCapacity:", plan.DestinationCapacity())
+		fmt.Println("aggressiveOrder.DestinationRemaining.ToDec().Quo(aggressiveOrder.Price())", aggressiveOrder.DestinationRemaining.ToDec().Mul(plan.Price))
 
-				// Use the passive order's price in the market.
-				matchingPrice := passiveOrder.InvertedPrice()
-
-				//The number of tokens from the aggressive orders sell side that the passive order will fill with the price that has been reached
-				aggressiveSourceMatched := passiveOrder.SourceRemaining.ToDec().QuoRoundUp(matchingPrice).TruncateInt()
-
-				if aggressiveOrder.SourceRemaining.LT(aggressiveSourceMatched) {
-					aggressiveSourceMatched = aggressiveOrder.SourceRemaining
-				}
-
-				aggressiveDestinationMatched := aggressiveSourceMatched.ToDec().Mul(matchingPrice).Ceil().TruncateInt()
-
-				// Adjust orders
-				passiveOrder.SourceFilled = passiveOrder.SourceFilled.Add(aggressiveDestinationMatched)
-				passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(aggressiveDestinationMatched)
-				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(aggressiveSourceMatched)
-				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(aggressiveSourceMatched)
-
-				err := k.transferTradedAmounts(ctx, aggressiveDestinationMatched, aggressiveSourceMatched, passiveOrder, &aggressiveOrder)
-				if err != nil {
-					return err.Result()
-				}
-
-				// Invariant check
-				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) || passiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
-					msg := fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder)
-					panic(msg)
-				}
-
-				if passiveOrder.IsFilled() {
-					// Order has been filled. Remove it from queue.
-					// Tx sender should not pay gas for completely filling passive orders.
-					k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
-				} else {
-					k.setOrder(ctx, passiveOrder)
-				}
-
-				if aggressiveOrder.IsFilled() {
-					// Order has been filled.
-					break
-				}
+		for _, passiveOrder := range []*types.Order{plan.SecondOrder, plan.FirstOrder} {
+			if passiveOrder == nil {
+				continue
 			}
+
+			fmt.Println("PassiveOrder being filled:\n", passiveOrder)
+
+			// Use the passive order's price in the market.
+			matchingPrice := passiveOrder.Price()
+
+			nextSourceFilled := nextDestinationFilled.Quo(matchingPrice)
+			fmt.Println("nextSourceFilled", nextSourceFilled)
+			fmt.Println("nextDestinationFilled", nextDestinationFilled)
+
+			if passiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
+				// TODO Check whether rounding exceeds amount of available tokens.
+				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(nextSourceFilled.RoundInt())
+				aggressiveOrder.DestinationRemaining = aggressiveOrder.DestinationRemaining.Sub(nextSourceFilled.RoundInt())
+			}
+
+			// TODO Check whether rounding exceeds amount of available tokens.
+			passiveOrder.DestinationFilled = passiveOrder.DestinationFilled.Add(nextDestinationFilled.RoundInt())
+			passiveOrder.DestinationRemaining = passiveOrder.DestinationRemaining.Sub(nextDestinationFilled.RoundInt())
+
+			// TODO Check whether rounding exceeds amount of available tokens.
+			nextDestinationFilledCoin := sdk.NewCoin(passiveOrder.Destination.Denom, nextDestinationFilled.RoundInt())
+			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, nextSourceFilled.RoundInt())
+			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
+			if err != nil {
+				fmt.Println(err)
+				return err.Result()
+			}
+
+			// Invariant check
+			if passiveOrder.DestinationRemaining.LT(sdk.ZeroInt()) {
+				msg := fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder)
+				panic(msg)
+			}
+
+			if passiveOrder.IsFilled() {
+				// Order has been filled. Remove it from queue.
+				// Tx sender should not pay gas for completely filling passive orders.
+				k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
+				fmt.Println(" --- Passive order COMPLETELY filled", passiveOrder)
+			} else {
+				k.setOrder(ctx, passiveOrder)
+				fmt.Println(" --- Passive order PARTIALLY filled", passiveOrder)
+			}
+
+			nextDestinationFilled = nextSourceFilled
+		}
+
+		if aggressiveOrder.DestinationRemaining.LT(sdk.ZeroInt()) {
+			msg := fmt.Sprintf("Remaining field is less than zero. order: %v", aggressiveOrder)
+			//panic(msg)
+			fmt.Println(msg)
+		}
+
+		if aggressiveOrder.IsFilled() {
+			// Order has been filled.
+			break
 		}
 	}
 
 	if !aggressiveOrder.IsFilled() {
+		fmt.Println(" --- Adding order to book", aggressiveOrder)
 		// Order was not fully matched. Add to book.
 		op := &aggressiveOrder
 		k.instruments.InsertOrder(op)
@@ -141,6 +219,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		k.setOrder(ctx, op)
 		// NOTE This should be the only place that an order is added to the book!
 		// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
+	} else {
+		fmt.Println("Aggressive order was completely filled", aggressiveOrder.ID)
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
@@ -190,8 +270,8 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	}
 
 	// Adjust remaining according to how much of the replaced order was filled:
-	newOrder.SourceFilled = origOrder.SourceFilled
-	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(origOrder.SourceFilled)
+	newOrder.DestinationFilled = origOrder.DestinationFilled
+	newOrder.DestinationRemaining = newOrder.Destination.Amount.Sub(origOrder.DestinationFilled)
 
 	resAdd := k.NewOrderSingle(ctx, newOrder)
 	if !resAdd.IsOK() {
@@ -229,10 +309,10 @@ func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
 		order := v.(*types.Order)
 		denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
 
-		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
-		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
+		order.DestinationRemaining = order.Destination.Amount.Sub(order.DestinationFilled)
+		order.DestinationRemaining = sdk.MinInt(order.DestinationRemaining, denomBalance.ToDec().Mul(order.Price()).TruncateInt())
 
-		if order.SourceRemaining.IsZero() {
+		if order.DestinationRemaining.IsZero() {
 			k.deleteOrder(ctx, order)
 		}
 	})
@@ -274,31 +354,32 @@ func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {
 	return res
 }
 
-func (k Keeper) transferTradedAmounts(ctx sdk.Context, destinationMatched, sourceMatched sdk.Int, passiveOrder, aggressiveOrder *types.Order) sdk.Error {
+func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destinationFilled sdk.Coin, passiveAccountAddr, aggressiveAccountAddr sdk.AccAddress) sdk.Error {
 	var (
-		passiveAccount    = k.ak.GetAccount(ctx, passiveOrder.Owner)
-		aggressiveAccount = k.ak.GetAccount(ctx, aggressiveOrder.Owner)
+		passiveAccount    = k.ak.GetAccount(ctx, passiveAccountAddr)
+		aggressiveAccount = k.ak.GetAccount(ctx, aggressiveAccountAddr)
 	)
 
 	// Verify that the passive order still holds the balance
-	coinMatchedDst := sdk.NewCoin(passiveOrder.Source.Denom, destinationMatched)
-	if _, anyNegative := passiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(coinMatchedDst)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), coinMatchedDst, passiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(coinMatchedDst.Denom))
+	if _, anyNegative := passiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(destinationFilled)); anyNegative {
+		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), destinationFilled, passiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(destinationFilled.Denom))
 	}
 
 	// Verify that the aggressive order still holds the balance
-	coinMatchedSrc := sdk.NewCoin(aggressiveOrder.Source.Denom, sourceMatched)
-	if _, anyNegative := aggressiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(coinMatchedSrc)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), coinMatchedSrc, aggressiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(coinMatchedSrc.Denom))
+	if _, anyNegative := aggressiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(sourceFilled)); anyNegative {
+		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), sourceFilled, aggressiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(sourceFilled.Denom))
 	}
 
 	// Balances appear sufficient. Do the transfers
-	err := k.bk.SendCoins(ctx, aggressiveOrder.Owner, passiveOrder.Owner, sdk.NewCoins(coinMatchedSrc))
+	err := k.bk.SendCoins(ctx, aggressiveAccountAddr, passiveAccountAddr, sdk.NewCoins(sourceFilled))
 	if err != nil {
 		return err
 	}
 
-	err = k.bk.SendCoins(ctx, passiveOrder.Owner, aggressiveOrder.Owner, sdk.NewCoins(coinMatchedDst))
+	fmt.Println(" *** <- ", sourceFilled)
+	fmt.Println(" *** -> ", destinationFilled)
+
+	err = k.bk.SendCoins(ctx, passiveAccountAddr, aggressiveAccountAddr, sdk.NewCoins(destinationFilled))
 	if err != nil {
 		// TODO Reverse the successful send?
 		return err
