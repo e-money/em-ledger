@@ -1,6 +1,6 @@
 ## Market Module
 
-The market module enable accounts to sell an amount of *source* tokens in exchange for an amount of *destination* tokens.
+The market module enable accounts to sell an amount of *source* tokens in exchange for an fixed amount of *destination* tokens, where the price is derived from the amount of *source* and *destination* tokens.
 
 This is a generalisation of the classic limit order for two-sided markets:
 
@@ -8,6 +8,8 @@ This is a generalisation of the classic limit order for two-sided markets:
 |------|------|------|-------|
 | Buy  | Destination Denom | Source Denom | Source Amount / Destination Amount |
 | Sell | Source Denom | Destination Denom | Destination Amount / Source Amount |
+
+As the *destination* amount is fixed, less than *source* amount of tokens will be paid if a better price exist in the market. Having the *destination* amount fixed is useful for payments where a fixed amount of foreign currency needs to be delivered.
 
 ### Order Data
 
@@ -18,8 +20,8 @@ An order consists of the following data:
 * ClientOrderId: a `string` assigned by owner, which must not be a duplicate of an existing order.
 * Source: a `Coin` representing the desired amount of tokens to sell.
 * Destination: a `Coin` representing the minimum amount of tokens to buy.
-* SourceFilled: `Coin` that tracks the sold amount so far.
-* SourceRemaining: a `Coin` that is the minimum of *SourceFilled* and owner account balance.
+* DestinationFilled: `Coin` that tracks the sold amount so far.
+* DestinationRemaining: a `Coin` that is adjusted with *DestinationFilled* and relevant changes to the owner account balance.
 * Price: a `Dec` calculated as *Destination* / *Source*.
 
 ### Features
@@ -31,9 +33,9 @@ An order consists of the following data:
 *Optimized for liquidity*. Orders do not touch the account balance until they are matched, so that makers can place multiple orders based on the same *Source*.
 When the balance of the owner account changes, SourceRemaining is adjusted accordingly and any untradable orders are canceled. 
 
-*Takers always trade at the best price*. Price improvement is passed to the taker in case there is a better price in the market.
+*Takers always trade at the best price*. In case there is a better price in the market, price improvement is passed to the taker who pays less than the specified amount of *Source* tokens.
 
-*Arbitrage-free*. Sophisticated matching logic ensures that no arbitrage opportunities exist in the market. Orders always trade at the best price, with the possibility of matching against multiple orders such as EUR->GBP and GBP->USD for a single EUR->USD order.
+*Arbitrage-free*. Sophisticated order matching ensures that no arbitrage opportunities exist in the market. Orders always trade at the best price by considering synthetic instruments, e.g. a single USD->EUR order matched against EUR->GBP and GBP->USD simultaneously.
 
 *Price/time priority matching*. Orders at the same price will be ordered by OrderId, with the lowest matched first.  
 
