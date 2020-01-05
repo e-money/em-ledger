@@ -147,24 +147,22 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 			break
 		}
 
-		fmt.Println(" --- Spread has been crossed")
-
 		// All variables are named from the perspective of the passive order
 
 		stepDestinationFilled := plan.DestinationCapacity()
+		// Don't try to fill more than either the aggressive order capacity or the plan capacity (capacity of passive orders).
+		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveOrder.SourceRemaining.ToDec())
+
 		for _, passiveOrder := range []*types.Order{plan.SecondOrder, plan.FirstOrder} {
 			if passiveOrder == nil {
 				continue
 			}
 
-			// Don't try to fill more than either the aggressive order capacity or the plan capacity (capacity of passive orders).
-			stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveOrder.SourceRemaining.ToDec())
-
 			// Use the passive order's price in the market.
 			stepSourceFilled := stepDestinationFilled.Quo(passiveOrder.Price())
 
 			// Update the aggressive order during the plan's final step.
-			if passiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
+			if passiveOrder.Destination.Denom == aggressiveOrder.Source.Denom {
 				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(stepDestinationFilled.RoundInt())
 				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(stepDestinationFilled.RoundInt())
 				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(stepSourceFilled.RoundInt())
