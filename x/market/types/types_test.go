@@ -16,7 +16,8 @@ func TestSerialization(t *testing.T) {
 	// Verify that non-public fields survive de-/serialization
 	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), now, "A")
 	order1.ID = 3123
-	order1.DestinationRemaining = sdk.NewInt(50)
+	order1.SourceRemaining = sdk.NewInt(50)
+	order1.SourceFilled = sdk.NewInt(10)
 	order1.DestinationFilled = sdk.NewInt(50)
 
 	bz, err := ModuleCdc.MarshalBinaryBare(order1)
@@ -31,8 +32,9 @@ func TestSerialization(t *testing.T) {
 	// Some sanity checks to ensure we're not just comparing default values below.
 	require.True(t, order2.Source.Amount.Int64() > 0)
 	require.True(t, order2.Destination.Amount.Int64() > 0)
-	require.True(t, order2.DestinationRemaining.Int64() > 0)
+	require.True(t, order2.SourceRemaining.Int64() > 0)
 	require.True(t, order2.DestinationFilled.Int64() > 0)
+	require.True(t, order2.SourceFilled.Int64() > 0)
 	require.True(t, order2.price.GT(sdk.ZeroDec()))
 
 	require.Equal(t, uint64(3123), order2.ID)
@@ -40,8 +42,9 @@ func TestSerialization(t *testing.T) {
 	require.Equal(t, order1.ID, order2.ID)
 	require.Equal(t, order1.Source, order2.Source)
 	require.Equal(t, order1.Destination, order2.Destination)
-	require.Equal(t, sdk.NewInt(50), order2.DestinationRemaining)
-	require.Equal(t, order1.DestinationRemaining, order2.DestinationRemaining)
+	require.Equal(t, sdk.NewInt(50), order2.SourceRemaining)
+	require.Equal(t, order1.SourceRemaining, order2.SourceRemaining)
+	require.Equal(t, order1.SourceFilled, order2.SourceFilled)
 	require.Equal(t, sdk.NewInt(50), order2.DestinationFilled)
 	require.Equal(t, order1.DestinationFilled, order2.DestinationFilled)
 	require.Equal(t, order1.price, order2.price)

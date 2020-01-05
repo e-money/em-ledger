@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/emirpasic/gods/utils"
+	"math"
 	"strings"
 	"time"
 
@@ -30,16 +31,16 @@ type (
 		ID      uint64    `json:"id" yaml:"id"`
 		Created time.Time `json:"created" yaml:"created"`
 
-		Source               sdk.Coin `json:"source" yaml:"source"`
-		Destination          sdk.Coin `json:"destination" yaml:"destination"`
-		DestinationFilled    sdk.Int  `json:"destination_filled" yaml:"destination_filled"`
-		DestinationRemaining sdk.Int  `json:"destination_remaining" yaml:"destination_remaining"`
-
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
 		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
 
+		Source            sdk.Coin `json:"source" yaml:"source"`
+		SourceRemaining   sdk.Int  `json:"source_remaining" yaml:"source_remaining"`
+		SourceFilled      sdk.Int  `json:"source_filled" yaml:"source_filled"`
+		Destination       sdk.Coin `json:"destination" yaml:"destination"`
+		DestinationFilled sdk.Int  `json:"destination_filled" yaml:"destination_filled"`
+
 		price sdk.Dec
-		//invertedPrice sdk.Dec
 	}
 
 	ExecutionPlan struct {
@@ -126,7 +127,21 @@ func (o *Order) UnmarshalAmino(bz []byte) error {
 
 // Ensure field order of de-/serialization
 func (o *Order) allFields() []interface{} {
-	return []interface{}{&o.ID, &o.Created, &o.Source, &o.Destination, &o.DestinationFilled, &o.DestinationRemaining, &o.Owner, &o.ClientOrderID, &o.price}
+	return []interface{}{
+		&o.ID,
+		&o.Created,
+
+		&o.Owner,
+		&o.ClientOrderID,
+
+		&o.Source,
+		&o.SourceRemaining,
+		&o.SourceFilled,
+		&o.Destination,
+		&o.DestinationFilled,
+
+		&o.price,
+	}
 }
 
 // Should return a number:
@@ -155,7 +170,7 @@ func OrderPriorityComparator(a, b interface{}) int {
 
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
 func (o Order) IsFilled() bool {
-	return o.DestinationRemaining.IsZero()
+	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec())
 }
 
 func (o Order) IsValid() sdk.Error {
@@ -179,7 +194,7 @@ func (o Order) Price() sdk.Dec {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v (%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.DestinationRemaining, o.Owner.String())
+	return fmt.Sprintf("%d : %v -> %v @ %v (%v%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.SourceRemaining, o.Source.Denom, o.Owner.String())
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
@@ -187,10 +202,13 @@ func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
 		return sdk.ZeroDec()
 	}
 
-	res := ep.FirstOrder.DestinationRemaining.ToDec()
+	res := sdk.NewDec(math.MaxInt64)
 
-	if ep.SecondOrder != nil {
-		res = sdk.MinDec(ep.SecondOrder.DestinationRemaining.ToDec(), res.Mul(ep.SecondOrder.Price()))
+	for _, order := range []*Order{ep.FirstOrder, ep.SecondOrder} {
+		if order == nil {
+			continue
+		}
+		res = sdk.MinDec(res, order.SourceRemaining.ToDec().Mul(order.Price()))
 	}
 
 	return res
@@ -220,15 +238,18 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clien
 	}
 
 	o := Order{
-		Owner:                seller,
-		Created:              created,
-		Source:               src,
-		Destination:          dst,
-		DestinationFilled:    sdk.ZeroInt(),
-		DestinationRemaining: dst.Amount,
-		ClientOrderID:        clientOrderId,
-		price:                dst.Amount.ToDec().Quo(src.Amount.ToDec()),
-		//invertedPrice:        src.Amount.ToDec().Quo(dst.Amount.ToDec()),
+		Created: created,
+
+		Owner:         seller,
+		ClientOrderID: clientOrderId,
+
+		Source:            src,
+		SourceRemaining:   src.Amount,
+		SourceFilled:      sdk.ZeroInt(),
+		Destination:       dst,
+		DestinationFilled: sdk.ZeroInt(),
+
+		price: dst.Amount.ToDec().Quo(src.Amount.ToDec()),
 	}
 
 	if err := o.IsValid(); err != nil {

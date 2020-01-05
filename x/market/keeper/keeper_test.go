@@ -56,7 +56,27 @@ func TestBasicTrade(t *testing.T) {
 
 	i := k.instruments[0]
 	remainingOrder := i.Orders.LeftKey().(*types.Order)
-	require.Equal(t, int64(60), remainingOrder.DestinationRemaining.Int64())
+	require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
+}
+
+func TestBasicTrade2(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "888eur")
+	acc2 := createAccount(ctx, ak, "acc2", "1120usd")
+
+	order1 := order(acc1, "888eur", "1121usd")
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	order2 := order(acc2, "1120usd", "890eur")
+	res = k.NewOrderSingle(ctx, order2)
+	require.True(t, res.IsOK(), res.Log)
+
+	bal1 := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
+	bal2 := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
+	fmt.Println("acc1", bal1)
+	fmt.Println("acc2", bal2)
 }
 
 func TestMultipleOrders(t *testing.T) {
@@ -85,8 +105,8 @@ func TestMultipleOrders(t *testing.T) {
 	orders := k.GetOrdersByOwner(acc1.GetAddress())
 	require.Len(t, orders, 0)
 
-	// No instruments should remain
-	require.Empty(t, k.instruments)
+	// Only a single instrument should remain chf -> eur
+	require.Len(t, k.instruments, 1)
 }
 
 func TestCancelZeroRemainingOrders(t *testing.T) {
@@ -254,7 +274,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, order2cid, orders[0].ClientOrderID)
 		require.Equal(t, coin("5000eur"), orders[0].Source)
 		require.Equal(t, coin("17000usd"), orders[0].Destination)
-		require.Equal(t, "17000", orders[0].DestinationRemaining.String())
+		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
 	}
 
 	order3, _ := types.NewOrder(coin("500chf"), coin("1700usd"), acc1.GetAddress(), time.Now(), cid())
@@ -273,8 +293,8 @@ func TestCancelReplaceOrder(t *testing.T) {
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
 	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
 
-	require.Equal(t, int64(300), acc2.GetCoins().AmountOf("eur").Int64())
-	require.Equal(t, int64(1020), acc1.GetCoins().AmountOf("usd").Int64())
+	require.Equal(t, int64(765), acc2.GetCoins().AmountOf("eur").Int64())
+	require.Equal(t, int64(2600), acc1.GetCoins().AmountOf("usd").Int64())
 
 	//fmt.Println("acc1", acc1.GetCoins())
 	//fmt.Println("acc2", acc2.GetCoins())
@@ -284,7 +304,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	{
 		orders := k.GetOrdersByOwner(acc1.GetAddress())
 		require.Len(t, orders, 1)
-		filled = orders[0].Destination.Amount.Sub(orders[0].DestinationRemaining)
+		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
 	}
 
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
@@ -299,7 +319,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, order4cid, orders[0].ClientOrderID)
 		require.Equal(t, coin("10000eur"), orders[0].Source)
 		require.Equal(t, coin("35050usd"), orders[0].Destination)
-		require.Equal(t, sdk.NewInt(35050).Sub(filled), orders[0].DestinationRemaining)
+		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
 	}
 }
 
@@ -327,7 +347,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	orders := k.GetOrdersByOwner(acc.GetAddress())
 	require.Len(t, orders, 1)
 	require.Equal(t, coin("10000eur"), orders[0].Source)
-	require.Equal(t, "300", orders[0].DestinationRemaining.String())
+	require.Equal(t, "3000", orders[0].SourceRemaining.String())
 	require.Equal(t, "400", orders[0].DestinationFilled.String())
 
 	// Seller's account balance is restored. Order should be adjusted, but take into consideration that the order has already been partially filled.
@@ -335,7 +355,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Nil(t, err)
 
 	orders = k.GetOrdersByOwner(acc.GetAddress())
-	require.Equal(t, "600", orders[0].DestinationRemaining.String())
+	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 	require.Equal(t, "400", orders[0].DestinationFilled.String())
 
 	// Account balance dips below original sales amount, but can still fill the remaining order.
@@ -343,7 +363,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Nil(t, err)
 
 	orders = k.GetOrdersByOwner(acc.GetAddress())
-	require.Equal(t, "600", orders[0].DestinationRemaining.String())
+	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 }
 
 func TestUnknownAsset(t *testing.T) {
@@ -403,13 +423,12 @@ func TestInvalidInstrument(t *testing.T) {
 
 	// Ensure that an order cannot contain the same denomination in source and destination
 	o := types.Order{
-		ID:                   124,
-		Source:               coin("125eur"),
-		Destination:          coin("250eur"),
-		DestinationFilled:    sdk.ZeroInt(),
-		DestinationRemaining: sdk.NewInt(125),
-		Owner:                acc1.GetAddress(),
-		ClientOrderID:        "abcddeg",
+		ID:                124,
+		Source:            coin("125eur"),
+		Destination:       coin("250eur"),
+		DestinationFilled: sdk.ZeroInt(),
+		Owner:             acc1.GetAddress(),
+		ClientOrderID:     "abcddeg",
 	}
 
 	res := k.NewOrderSingle(ctx, o)

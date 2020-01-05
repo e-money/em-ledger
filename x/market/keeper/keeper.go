@@ -139,69 +139,59 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		if plan.FirstOrder == nil {
 			break
 		}
-		fmt.Println("Aggressive order:", aggressiveOrder)
-		fmt.Printf("Plan:\n%+v\n", plan)
 
-		nextDestinationFilled := sdk.MinDec(plan.DestinationCapacity(), aggressiveOrder.DestinationRemaining.ToDec().Mul(plan.Price))
-		fmt.Println("DestinationCapacity:", plan.DestinationCapacity())
-		fmt.Println("aggressiveOrder.DestinationRemaining.ToDec().Quo(aggressiveOrder.Price())", aggressiveOrder.DestinationRemaining.ToDec().Mul(plan.Price))
+		// All variables are named from the perspective of the passive order
 
+		stepDestinationFilled := plan.DestinationCapacity()
 		for _, passiveOrder := range []*types.Order{plan.SecondOrder, plan.FirstOrder} {
 			if passiveOrder == nil {
 				continue
 			}
 
-			fmt.Println("PassiveOrder being filled:\n", passiveOrder)
+			// Don't try to fill more than either the aggressive order capacity or the plan capacity (capacity of passive orders).
+			stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveOrder.SourceRemaining.ToDec())
 
 			// Use the passive order's price in the market.
-			matchingPrice := passiveOrder.Price()
+			stepSourceFilled := stepDestinationFilled.Quo(passiveOrder.Price())
 
-			nextSourceFilled := nextDestinationFilled.Quo(matchingPrice)
-			fmt.Println("nextSourceFilled", nextSourceFilled)
-			fmt.Println("nextDestinationFilled", nextDestinationFilled)
-
+			// Update the aggressive order during the plan's final step.
 			if passiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
-				// TODO Check whether rounding exceeds amount of available tokens.
-				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(nextSourceFilled.RoundInt())
-				aggressiveOrder.DestinationRemaining = aggressiveOrder.DestinationRemaining.Sub(nextSourceFilled.RoundInt())
+				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(stepDestinationFilled.RoundInt())
+				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(stepDestinationFilled.RoundInt())
+				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(stepSourceFilled.RoundInt())
+
+				// Invariant check
+				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
+					panic(fmt.Sprintf("Remaining field is less than zero. order: %v", aggressiveOrder))
+				}
 			}
 
-			// TODO Check whether rounding exceeds amount of available tokens.
-			passiveOrder.DestinationFilled = passiveOrder.DestinationFilled.Add(nextDestinationFilled.RoundInt())
-			passiveOrder.DestinationRemaining = passiveOrder.DestinationRemaining.Sub(nextDestinationFilled.RoundInt())
-
-			// TODO Check whether rounding exceeds amount of available tokens.
-			nextDestinationFilledCoin := sdk.NewCoin(passiveOrder.Destination.Denom, nextDestinationFilled.RoundInt())
-			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, nextSourceFilled.RoundInt())
-			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
-			if err != nil {
-				fmt.Println(err)
-				return err.Result()
-			}
+			passiveOrder.SourceRemaining = passiveOrder.SourceRemaining.Sub(stepSourceFilled.RoundInt())
+			passiveOrder.SourceFilled = passiveOrder.SourceFilled.Add(stepSourceFilled.RoundInt())
+			passiveOrder.DestinationFilled = passiveOrder.DestinationFilled.Add(stepDestinationFilled.RoundInt())
 
 			// Invariant check
-			if passiveOrder.DestinationRemaining.LT(sdk.ZeroInt()) {
-				msg := fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder)
-				panic(msg)
+			if passiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
+				panic(fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder))
+			}
+
+			// Settle traded tokens
+			nextDestinationFilledCoin := sdk.NewCoin(passiveOrder.Destination.Denom, stepDestinationFilled.RoundInt())
+			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, stepSourceFilled.RoundInt())
+			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
+			if err != nil {
+				panic(err)
 			}
 
 			if passiveOrder.IsFilled() {
 				// Order has been filled. Remove it from queue.
 				// Tx sender should not pay gas for completely filling passive orders.
 				k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
-				fmt.Println(" --- Passive order COMPLETELY filled", passiveOrder)
 			} else {
 				k.setOrder(ctx, passiveOrder)
-				fmt.Println(" --- Passive order PARTIALLY filled", passiveOrder)
 			}
 
-			nextDestinationFilled = nextSourceFilled
-		}
-
-		if aggressiveOrder.DestinationRemaining.LT(sdk.ZeroInt()) {
-			msg := fmt.Sprintf("Remaining field is less than zero. order: %v", aggressiveOrder)
-			//panic(msg)
-			fmt.Println(msg)
+			stepDestinationFilled = stepSourceFilled
 		}
 
 		if aggressiveOrder.IsFilled() {
@@ -211,7 +201,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 	}
 
 	if !aggressiveOrder.IsFilled() {
-		fmt.Println(" --- Adding order to book", aggressiveOrder)
 		// Order was not fully matched. Add to book.
 		op := &aggressiveOrder
 		k.instruments.InsertOrder(op)
@@ -219,8 +208,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		k.setOrder(ctx, op)
 		// NOTE This should be the only place that an order is added to the book!
 		// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
-	} else {
-		fmt.Println("Aggressive order was completely filled", aggressiveOrder.ID)
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
@@ -270,8 +257,9 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	}
 
 	// Adjust remaining according to how much of the replaced order was filled:
+	newOrder.SourceFilled = origOrder.SourceFilled
+	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
 	newOrder.DestinationFilled = origOrder.DestinationFilled
-	newOrder.DestinationRemaining = newOrder.Destination.Amount.Sub(origOrder.DestinationFilled)
 
 	resAdd := k.NewOrderSingle(ctx, newOrder)
 	if !resAdd.IsOK() {
@@ -309,10 +297,10 @@ func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
 		order := v.(*types.Order)
 		denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
 
-		order.DestinationRemaining = order.Destination.Amount.Sub(order.DestinationFilled)
-		order.DestinationRemaining = sdk.MinInt(order.DestinationRemaining, denomBalance.ToDec().Mul(order.Price()).TruncateInt())
+		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
+		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
 
-		if order.DestinationRemaining.IsZero() {
+		if order.SourceRemaining.IsZero() {
 			k.deleteOrder(ctx, order)
 		}
 	})
