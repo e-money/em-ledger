@@ -435,7 +435,7 @@ func TestInvalidInstrument(t *testing.T) {
 	require.False(t, res.IsOK())
 }
 
-func TestSyntheticPrice1(t *testing.T) {
+func TestSyntheticInstruments1(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "6500usd")
@@ -465,6 +465,72 @@ func TestSyntheticPrice1(t *testing.T) {
 	fmt.Println("acc3:", ak.GetAccount(ctx, acc3.GetAddress()).GetCoins())
 
 	printTotalBalance(ak.GetAccount(ctx, acc1.GetAddress()), ak.GetAccount(ctx, acc2.GetAddress()), ak.GetAccount(ctx, acc3.GetAddress()))
+}
+
+func TestNonMatchingOrders(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, "acc1", "100000usd")
+	acc2 := createAccount(ctx, ak, "acc2", "240000eur")
+
+	res := k.NewOrderSingle(ctx, order(acc1, "20000usd", "20000eur"))
+	require.True(t, res.IsOK())
+	res = k.NewOrderSingle(ctx, order(acc2, "20000eur", "50000usd"))
+	require.True(t, res.IsOK())
+
+	acc1Orders := k.GetOrdersByOwner(acc1.GetAddress())
+	require.Len(t, acc1Orders, 1)
+	require.Equal(t, sdk.ZeroInt(), acc1Orders[0].DestinationFilled)
+	require.Equal(t, sdk.ZeroInt(), acc1Orders[0].SourceFilled)
+
+	acc2Orders := k.GetOrdersByOwner(acc2.GetAddress())
+	require.Len(t, acc2Orders, 1)
+	require.Equal(t, sdk.ZeroInt(), acc2Orders[0].DestinationFilled)
+	require.Equal(t, sdk.ZeroInt(), acc2Orders[0].SourceFilled)
+}
+
+func TestSyntheticInstruments2(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, "acc1", "972000chf,4000000usd")
+	acc2 := createAccount(ctx, ak, "acc2", "765000gbp,108000000jpy")
+
+	acc3 := createAccount(ctx, ak, "acc3", "3700000eur")
+
+	passiveOrders := []types.Order{
+		order(acc1, "1000000usd", "896000eur"),
+
+		order(acc1, "1000000usd", "972000chf"),
+		order(acc1, "972000chf", "897000eur"),
+
+		order(acc1, "1000000usd", "108000000jpy"),
+		order(acc2, "40000000jpy", "331000eur"),
+		order(acc2, "68000000jpy", "563000eur"),
+
+		order(acc1, "400000usd", "306000gbp"),
+		order(acc1, "600000usd", "459000gbp"),
+		order(acc2, "765000gbp", "896000eur"),
+	}
+
+	for _, o := range passiveOrders {
+		res := k.NewOrderSingle(ctx, o)
+		require.True(t, res.IsOK(), res.Log)
+	}
+
+	fmt.Println(k.instruments)
+
+	monsterOrder := order(acc3, "3700000eur", "4000000usd")
+	res := k.NewOrderSingle(ctx, monsterOrder)
+	require.True(t, res.IsOK(), res.Log)
+
+	fmt.Println("acc1:", ak.GetAccount(ctx, acc1.GetAddress()).GetCoins())
+	fmt.Println("acc2:", ak.GetAccount(ctx, acc2.GetAddress()).GetCoins())
+	fmt.Println("acc3:", ak.GetAccount(ctx, acc3.GetAddress()).GetCoins())
+
+	//sum := sdk.NewCoins()
+	//for _, o := range passiveOrders {
+	//	sum = sum.Add(sdk.NewCoins(o.Source))
+	//}
+	//
+	//fmt.Println(sum)
 
 }
 
@@ -509,7 +575,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	maccPerms := map[string][]string{}
 
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, supplyKey, accountKeeper, bankKeeper, maccPerms)
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy")))
+	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp")))
 
 	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper, supplyKeeper)
 

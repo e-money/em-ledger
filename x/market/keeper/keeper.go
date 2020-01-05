@@ -46,8 +46,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 
 func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, DestinationDenom string) types.ExecutionPlan {
 	result := types.ExecutionPlan{
-		Price: sdk.ZeroDec(),
-		//Orders:          make([]*types.Order, 0),
+		Price: sdk.NewDec(math.MaxInt64),
 	}
 
 	// Find the best direct or synthetic price for a given source/destination denom
@@ -62,9 +61,11 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 			// Check direct price
 			if firstInstrument.Destination == DestinationDenom {
 				// Direct price is better than current plan
-				if firstPassiveOrder.Price().GT(result.Price) {
+
+				planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
+				if planPrice.LT(result.Price) {
 					result = types.ExecutionPlan{
-						Price:      firstPassiveOrder.Price(),
+						Price:      planPrice,
 						FirstOrder: firstPassiveOrder,
 					}
 				}
@@ -87,11 +88,11 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 
 				secondPassiveOrder := secondInstrument.Orders.LeftKey().(*types.Order)
 
-				syntheticPrice := firstPassiveOrder.Price().Mul(secondPassiveOrder.Price())
+				planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
 
-				if syntheticPrice.GT(result.Price) {
+				if planPrice.LT(result.Price) {
 					result = types.ExecutionPlan{
-						Price:       syntheticPrice,
+						Price:       planPrice,
 						FirstOrder:  firstPassiveOrder,
 						SecondOrder: secondPassiveOrder,
 					}
@@ -139,6 +140,14 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		if plan.FirstOrder == nil {
 			break
 		}
+
+		if aggressiveOrder.Price().GT(plan.Price) {
+			fmt.Println("Spread has not been crossed", aggressiveOrder.Price(), plan.Price, sdk.OneDec().Quo(plan.Price))
+			// Spread has not been crossed. Aggressive order should be added to book.
+			break
+		}
+
+		fmt.Println(" --- Spread has been crossed")
 
 		// All variables are named from the perspective of the passive order
 
@@ -363,9 +372,6 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destination
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(" *** <- ", sourceFilled)
-	fmt.Println(" *** -> ", destinationFilled)
 
 	err = k.bk.SendCoins(ctx, passiveAccountAddr, aggressiveAccountAddr, sdk.NewCoins(destinationFilled))
 	if err != nil {
