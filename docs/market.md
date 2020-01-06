@@ -1,4 +1,6 @@
-## Market Module
+# Market Module
+
+## Overview
 
 The market module enable accounts to sell an amount of *source* tokens in exchange for an fixed amount of *destination* tokens, where the price is derived from the amount of *source* and *destination* tokens.
 
@@ -11,7 +13,7 @@ This is a generalisation of the classic limit order for two-sided markets:
 
 As the *destination* amount is fixed, less than *source* amount of tokens will be paid if a better price exist in the market. Having the *destination* amount fixed is useful for payments where a fixed amount of foreign currency needs to be delivered.
 
-### Order Data
+## Order Data
 
 An order consists of the following data:
 
@@ -19,12 +21,13 @@ An order consists of the following data:
 * OrderId: a `uint64` assigned by the market module, monotonically increasing.
 * ClientOrderId: a `string` assigned by owner, which must not be a duplicate of an existing order.
 * Source: a `Coin` representing the desired amount of tokens to sell.
+* SourceFilled: `Int` that tracks the sold amount so far.
+* SourceRemaining: a `Int` that is adjusted with *SourceFilled* and if the owner account balance change.
 * Destination: a `Coin` representing the minimum amount of tokens to buy.
-* DestinationFilled: `Coin` that tracks the sold amount so far.
-* DestinationRemaining: a `Coin` that is adjusted with *DestinationFilled* and relevant changes to the owner account balance.
+* DestinationFilled: `Int` that tracks the bought amount so far.
 * Price: a `Dec` calculated as *Destination* / *Source*.
 
-### Features
+## Features
 
 *No instrument listing required*. Any token is immediately tradeable against other tokens.
 
@@ -41,15 +44,18 @@ When the balance of the owner account changes, SourceRemaining is adjusted accor
 
 *Immediate settlement*. Matched orders are settled immediately with finality.
 
-### Transaction Types
+## Transaction Types
 
 The transaction types mirror those of the [FIX trading specification](https://www.fixtrading.org/online-specification/business-area-trade/) for single order handling.
 
-#### NewOrderSingle
+### NewOrderSingle
+
 Adds a new order to the order book. The ClientOrderId must be unique among existing orders for the same owner account.
 
-#### CancelOrder
+### CancelOrder
+
 Cancels the remaining part of an existing order, referenced by it's ClientOrderId. In case the order has already been fully filled, an error will be returned. 
 
-#### CancelReplaceOrder
+### CancelReplaceOrder
+
 Cancels the remaining part of an existing order, referenced by it's ClientOrderId. The filled part of the cancelled order is carried over into the new order.
