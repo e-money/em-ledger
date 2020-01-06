@@ -135,6 +135,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
 
+	types.EmitNewOrderEvent(ctx, aggressiveOrder)
+
 	for {
 		plan := k.createExecutionPlan(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
 		if plan.FirstOrder == nil {
@@ -210,6 +212,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 				// Tx sender should not pay gas for completely filling passive orders.
 				k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
 			} else {
+				types.EmitPartiallyFilledEvent(ctx, *passiveOrder)
 				k.setOrder(ctx, passiveOrder)
 			}
 
@@ -221,6 +224,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 			// Order has been filled.
 			break
 		}
+
+		types.EmitPartiallyFilledEvent(ctx, aggressiveOrder)
 	}
 
 	if !aggressiveOrder.IsFilled() {

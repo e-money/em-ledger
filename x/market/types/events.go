@@ -12,9 +12,10 @@ import (
 
 // market module event types
 const (
-	EventTypeCancel = "market_cancel"
-	EventTypeFill   = "market_fill"
-	EventTypeTouch  = "market_touch"
+	EventTypeCancel          = "market_cancel"
+	EventTypeFilled          = "market_fill"
+	EventTypePartiallyFilled = "market_partial_fill"
+	EventNewOrder            = "market_new"
 
 	AttributeKeyClientOrderID     = "client_order_id"
 	AttributeKeyOrderID           = "order_id"
@@ -37,9 +38,30 @@ func EmitCancelEvent(ctx sdk.Context, order Order) {
 		),
 	)
 }
-func EmitFilledEvent(ctx sdk.Context, order Order) {
+
+func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeFill,
+		sdk.NewEvent(EventNewOrder,
+			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
+			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
+			sdk.NewAttribute(AttributeKeyDestination, order.Destination.String()),
+		),
+	)
+}
+
+func EmitPartiallyFilledEvent(ctx sdk.Context, order Order) {
+	emitFilledEvent(ctx, order, EventTypePartiallyFilled)
+}
+
+func EmitFilledEvent(ctx sdk.Context, order Order) {
+	emitFilledEvent(ctx, order, EventTypeFilled)
+}
+
+func emitFilledEvent(ctx sdk.Context, order Order, eventtype string) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(eventtype,
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),

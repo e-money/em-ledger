@@ -6,26 +6,32 @@ package keeper
 
 import (
 	"fmt"
+	"math"
+	"testing"
+	"time"
+
+	emauth "github.com/e-money/em-ledger/hooks/auth"
+	emtypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/market/types"
+
 	"github.com/cosmos/cosmos-sdk/store"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/libs/log"
-	"math"
-	"testing"
-	"time"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	emauth "github.com/e-money/em-ledger/hooks/auth"
-	"github.com/e-money/em-ledger/x/market/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
+
+func init() {
+	emtypes.ConfigureSDK()
+}
 
 func TestBasicTrade(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
