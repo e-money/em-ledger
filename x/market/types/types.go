@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/emirpasic/gods/utils"
-	"math"
 	"strings"
 	"time"
 
@@ -170,7 +169,7 @@ func OrderPriorityComparator(a, b interface{}) int {
 
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
 func (o Order) IsFilled() bool {
-	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec())
+	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec()) || o.DestinationFilled.GTE(o.Destination.Amount)
 }
 
 func (o Order) IsValid() sdk.Error {
@@ -194,7 +193,7 @@ func (o Order) Price() sdk.Dec {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v (%v%v remaining) %v", o.ID, o.Source, o.Destination, o.price, o.SourceRemaining, o.Source.Denom, o.Owner.String())
+	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.price, o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner.String())
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
@@ -202,13 +201,10 @@ func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
 		return sdk.ZeroDec()
 	}
 
-	res := sdk.NewDec(math.MaxInt64)
+	res := ep.FirstOrder.SourceRemaining.ToDec().Mul(ep.FirstOrder.Price())
 
-	for _, order := range []*Order{ep.FirstOrder, ep.SecondOrder} {
-		if order == nil {
-			continue
-		}
-		res = sdk.MinDec(res, order.SourceRemaining.ToDec().Mul(order.Price()))
+	if ep.SecondOrder != nil {
+		res = sdk.MinDec(ep.SecondOrder.SourceRemaining.ToDec().Mul(ep.SecondOrder.Price()), res.Mul(ep.SecondOrder.Price()))
 	}
 
 	return res

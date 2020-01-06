@@ -142,7 +142,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		}
 
 		if aggressiveOrder.Price().GT(plan.Price) {
-			fmt.Println("Spread has not been crossed", aggressiveOrder.Price(), plan.Price, sdk.OneDec().Quo(plan.Price))
 			// Spread has not been crossed. Aggressive order should be added to book.
 			break
 		}
@@ -152,6 +151,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		stepDestinationFilled := plan.DestinationCapacity()
 		// Don't try to fill more than either the aggressive order capacity or the plan capacity (capacity of passive orders).
 		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveOrder.SourceRemaining.ToDec())
+
+		// Do not purchase more destination tokens than the order warrants
+		aggressiveDestinationRemaining := aggressiveOrder.Destination.Amount.Sub(aggressiveOrder.DestinationFilled).ToDec().Quo(plan.Price)
+		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveDestinationRemaining)
 
 		for _, passiveOrder := range []*types.Order{plan.SecondOrder, plan.FirstOrder} {
 			if passiveOrder == nil {
@@ -165,11 +168,19 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 			if passiveOrder.Destination.Denom == aggressiveOrder.Source.Denom {
 				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(stepDestinationFilled.RoundInt())
 				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(stepDestinationFilled.RoundInt())
-				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(stepSourceFilled.RoundInt())
 
 				// Invariant check
 				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
-					panic(fmt.Sprintf("Remaining field is less than zero. order: %v", aggressiveOrder))
+					panic(fmt.Sprintf("Agggressive order's SourceRemaining field is less than zero. order: %v", aggressiveOrder))
+				}
+			}
+
+			if passiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
+				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(stepSourceFilled.RoundInt())
+
+				// Invariant check
+				if aggressiveOrder.DestinationFilled.GT(aggressiveOrder.Destination.Amount) {
+					panic(fmt.Sprintf("Aggressive order's DestinationFilled field is greater than Destination.Amount. order: %v", aggressiveOrder))
 				}
 			}
 
@@ -177,9 +188,12 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 			passiveOrder.SourceFilled = passiveOrder.SourceFilled.Add(stepSourceFilled.RoundInt())
 			passiveOrder.DestinationFilled = passiveOrder.DestinationFilled.Add(stepDestinationFilled.RoundInt())
 
-			// Invariant check
+			// Invariant checks
 			if passiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
-				panic(fmt.Sprintf("Remaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder))
+				panic(fmt.Sprintf("Passive order's SourceRemaining field is less than zero. order: %v candidate: %v", aggressiveOrder, passiveOrder))
+			}
+			if passiveOrder.DestinationFilled.GT(passiveOrder.Destination.Amount) {
+				panic(fmt.Sprintf("Passive order's DestinationFilled field is greater than Destination.Amount. order: %v", passiveOrder))
 			}
 
 			// Settle traded tokens

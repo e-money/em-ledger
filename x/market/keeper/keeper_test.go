@@ -105,8 +105,8 @@ func TestMultipleOrders(t *testing.T) {
 	orders := k.GetOrdersByOwner(acc1.GetAddress())
 	require.Len(t, orders, 0)
 
-	// Only a single instrument should remain chf -> eur
-	require.Len(t, k.instruments, 1)
+	// All orders should be filled
+	require.Empty(t, k.instruments)
 }
 
 func TestCancelZeroRemainingOrders(t *testing.T) {
@@ -286,19 +286,15 @@ func TestCancelReplaceOrder(t *testing.T) {
 	res = k.CancelReplaceOrder(ctx, order3, order2cid)
 	require.Equal(t, types.CodeOrderInstrumentChanged, res.Code)
 
-	o, _ := types.NewOrder(coin("2600usd"), coin("300eur"), acc2.GetAddress(), time.Now(), cid())
+	o := order(acc2, "2600usd", "300eur")
 	res = k.NewOrderSingle(ctx, o)
 	require.True(t, res.IsOK())
 
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
 	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
 
-	require.Equal(t, int64(765), acc2.GetCoins().AmountOf("eur").Int64())
-	require.Equal(t, int64(2600), acc1.GetCoins().AmountOf("usd").Int64())
-
-	//fmt.Println("acc1", acc1.GetCoins())
-	//fmt.Println("acc2", acc2.GetCoins())
-	//fmt.Println("Total supply:", acc1.GetCoins().Add(acc2.GetCoins()))
+	require.Equal(t, int64(300), acc2.GetCoins().AmountOf("eur").Int64())
+	require.Equal(t, int64(1020), acc1.GetCoins().AmountOf("usd").Int64())
 
 	filled := sdk.ZeroInt()
 	{
@@ -490,7 +486,7 @@ func TestNonMatchingOrders(t *testing.T) {
 
 func TestSyntheticInstruments2(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
-	acc1 := createAccount(ctx, ak, "acc1", "972000chf,4000000usd")
+	acc1 := createAccount(ctx, ak, "acc1", "972000chf,5000000usd")
 	acc2 := createAccount(ctx, ak, "acc2", "765000gbp,108000000jpy")
 
 	acc3 := createAccount(ctx, ak, "acc3", "3700000eur")
@@ -515,23 +511,14 @@ func TestSyntheticInstruments2(t *testing.T) {
 		require.True(t, res.IsOK(), res.Log)
 	}
 
-	fmt.Println(k.instruments)
-
 	monsterOrder := order(acc3, "3700000eur", "4000000usd")
 	res := k.NewOrderSingle(ctx, monsterOrder)
 	require.True(t, res.IsOK(), res.Log)
 
-	fmt.Println("acc1:", ak.GetAccount(ctx, acc1.GetAddress()).GetCoins())
-	fmt.Println("acc2:", ak.GetAccount(ctx, acc2.GetAddress()).GetCoins())
-	fmt.Println("acc3:", ak.GetAccount(ctx, acc3.GetAddress()).GetCoins())
+	require.Len(t, k.instruments, 0)
 
-	//sum := sdk.NewCoins()
-	//for _, o := range passiveOrders {
-	//	sum = sum.Add(sdk.NewCoins(o.Source))
-	//}
-	//
-	//fmt.Println(sum)
-
+	acc3bal := ak.GetAccount(ctx, acc3.GetAddress()).GetCoins()
+	require.Equal(t, "4000000", acc3bal.AmountOf("usd").String())
 }
 
 func printTotalBalance(accs ...exported.Account) {
