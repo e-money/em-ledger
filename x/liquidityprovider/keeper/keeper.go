@@ -15,11 +15,11 @@ import (
 )
 
 type Keeper struct {
-	authKeeper   auth.AccountKeeper
+	authKeeper   types.AccountKeeper
 	supplyKeeper supply.Keeper
 }
 
-func NewKeeper(ak auth.AccountKeeper, sk supply.Keeper) Keeper {
+func NewKeeper(ak types.AccountKeeper, sk supply.Keeper) Keeper {
 	return Keeper{
 		authKeeper:   ak,
 		supplyKeeper: sk,

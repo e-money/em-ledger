@@ -7,9 +7,11 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/e-money/em-ledger/x/market"
 	"os"
 	"path/filepath"
 
+	emauth "github.com/e-money/em-ledger/hooks/auth"
 	emdistr "github.com/e-money/em-ledger/hooks/distribution"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/inflation"
@@ -58,6 +60,7 @@ var (
 		liquidityprovider.AppModuleBasic{},
 		issuer.AppModuleBasic{},
 		authority.AppModule{},
+		market.AppModule{},
 	)
 
 	// module account permissions
@@ -79,7 +82,7 @@ type emoneyApp struct {
 	database     db.DB
 	currentBatch db.Batch
 
-	accountKeeper   auth.AccountKeeper
+	accountKeeper   emauth.AccountKeeper
 	paramsKeeper    params.Keeper
 	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
@@ -90,6 +93,7 @@ type emoneyApp struct {
 	lpKeeper        liquidityprovider.Keeper
 	issuerKeeper    issuer.Keeper
 	authorityKeeper authority.Keeper
+	marketKeeper    *market.Keeper
 
 	mm *module.Manager
 }
@@ -120,6 +124,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		slashing.StoreKey,
 		issuer.StoreKey,
 		authority.StoreKey,
+		market.StoreKey,
 	)
 
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
@@ -134,8 +139,8 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	)
 
 	accountBlacklist := application.ModuleAccountAddrs()
+	application.accountKeeper = emauth.Wrap(auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount))
 
-	application.accountKeeper = auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount)
 	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
 	application.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], application.accountKeeper, application.bankKeeper, maccPerms)
 	application.stakingKeeper = staking.NewKeeper(cdc, keys[staking.StoreKey], tkeys[staking.TStoreKey], application.supplyKeeper,
@@ -149,6 +154,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper)
+	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, application.bankKeeper, application.supplyKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
@@ -156,7 +162,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.mm = module.NewManager(
 		genaccounts.NewAppModule(application.accountKeeper),
 		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
-		auth.NewAppModule(application.accountKeeper),
+		auth.NewAppModule(application.accountKeeper.InnerKeeper()),
 		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
@@ -166,6 +172,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		liquidityprovider.NewAppModule(application.lpKeeper),
 		issuer.NewAppModule(application.issuerKeeper),
 		authority.NewAppModule(application.authorityKeeper),
+		market.NewAppModule(application.marketKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
@@ -182,12 +189,13 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		genutil.ModuleName,
 		issuer.ModuleName,
 		authority.ModuleName,
+		market.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
 
 	application.SetInitChainer(application.InitChainer)
-	application.SetAnteHandler(auth.NewAnteHandler(application.accountKeeper, application.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
+	application.SetAnteHandler(auth.NewAnteHandler(application.accountKeeper.InnerKeeper(), application.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
 	application.SetBeginBlocker(application.BeginBlocker)
 	application.SetEndBlocker(application.EndBlocker)
 
@@ -217,6 +225,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	app.currentBatch = app.database.NewBatch()
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 
+	market.BeginBlocker(ctx, app.marketKeeper)
 	inflation.BeginBlocker(ctx, app.inflationKeeper)
 	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)
