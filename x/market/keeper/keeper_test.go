@@ -33,6 +33,8 @@ func TestBasicTrade(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
 
+	totalSupply := snapshotAccounts(ctx, ak)
+
 	order1 := order(acc1, "100eur", "120usd")
 	res := k.NewOrderSingle(ctx, order1)
 	require.True(t, res.IsOK())
@@ -57,6 +59,8 @@ func TestBasicTrade(t *testing.T) {
 	i := k.instruments[0]
 	remainingOrder := i.Orders.LeftKey().(*types.Order)
 	require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestBasicTrade2(t *testing.T) {
@@ -64,6 +68,8 @@ func TestBasicTrade2(t *testing.T) {
 
 	acc1 := createAccount(ctx, ak, "acc1", "888eur")
 	acc2 := createAccount(ctx, ak, "acc2", "1120usd")
+
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	order1 := order(acc1, "888eur", "1121usd")
 	res := k.NewOrderSingle(ctx, order1)
@@ -73,10 +79,7 @@ func TestBasicTrade2(t *testing.T) {
 	res = k.NewOrderSingle(ctx, order2)
 	require.True(t, res.IsOK(), res.Log)
 
-	bal1 := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
-	bal2 := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
-	fmt.Println("acc1", bal1)
-	fmt.Println("acc2", bal2)
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestMultipleOrders(t *testing.T) {
@@ -85,6 +88,8 @@ func TestMultipleOrders(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
 	acc3 := createAccount(ctx, ak, "acc3", "2200chf")
+
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	// Add two orders that draw on the same balance.
 	res := k.NewOrderSingle(ctx, order(acc1, "10000eur", "11000usd"))
@@ -107,6 +112,8 @@ func TestMultipleOrders(t *testing.T) {
 
 	// All orders should be filled
 	require.Empty(t, k.instruments)
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestCancelZeroRemainingOrders(t *testing.T) {
@@ -130,6 +137,8 @@ func TestInsufficientBalance1(t *testing.T) {
 	acc2 := createAccount(ctx, ak, "acc2", "740usd")
 	acc3 := createAccount(ctx, ak, "acc3", "")
 
+	totalSupply := snapshotAccounts(ctx, ak)
+
 	o := order(acc1, "300eur", "360usd")
 	k.NewOrderSingle(ctx, o)
 
@@ -144,6 +153,8 @@ func TestInsufficientBalance1(t *testing.T) {
 	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
 	require.Equal(t, "300usd", acc1.GetCoins().String())
 	require.Equal(t, "250eur,440usd", acc2.GetCoins().String())
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func Test2(t *testing.T) {
@@ -151,6 +162,8 @@ func Test2(t *testing.T) {
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "121usd")
+
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	o := order(acc1, "100eur", "120usd")
 	res := k.NewOrderSingle(ctx, o)
@@ -163,6 +176,8 @@ func Test2(t *testing.T) {
 	require.Empty(t, k.instruments)
 	require.Equal(t, coins("120usd"), ak.GetAccount(ctx, acc1.GetAddress()).GetCoins())
 	require.Equal(t, coins("100eur,1usd"), ak.GetAccount(ctx, acc2.GetAddress()).GetCoins())
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func Test3(t *testing.T) {
@@ -170,6 +185,8 @@ func Test3(t *testing.T) {
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
+
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	o := order(acc1, "100eur", "120usd")
 	k.NewOrderSingle(ctx, o)
@@ -184,12 +201,15 @@ func Test3(t *testing.T) {
 	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
 	require.Equal(t, coins("120usd"), acc1.GetCoins())
 	require.Equal(t, coins("100eur"), acc2.GetCoins())
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestDeleteOrder(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, "acc1", "100eur")
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	cid := cid()
 
@@ -205,6 +225,8 @@ func TestDeleteOrder(t *testing.T) {
 
 	k.deleteOrder(ctx, &order1)
 	require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestGetOrdersByOwnerAndCancel(t *testing.T) {
@@ -265,6 +287,8 @@ func TestCancelReplaceOrder(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "20000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "45000usd")
 
+	totalSupply := snapshotAccounts(ctx, ak)
+
 	order1cid := cid()
 	order1, _ := types.NewOrder(coin("500eur"), coin("1200usd"), acc1.GetAddress(), time.Now(), order1cid)
 	res := k.NewOrderSingle(ctx, order1)
@@ -324,6 +348,8 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, coin("35050usd"), orders[0].Destination)
 		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
 	}
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestOrdersChangeWithAccountBalance(t *testing.T) {
@@ -342,6 +368,8 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 		res = k.NewOrderSingle(ctx, order2)
 		require.True(t, res.IsOK())
 	}
+
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	err := bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("8000eur"))
 	require.Nil(t, err)
@@ -367,6 +395,8 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 
 	orders = k.GetOrdersByOwner(acc.GetAddress())
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestUnknownAsset(t *testing.T) {
@@ -444,11 +474,7 @@ func TestSyntheticInstruments1(t *testing.T) {
 	acc2 := createAccount(ctx, ak, "acc2", "6500usd")
 	acc3 := createAccount(ctx, ak, "acc3", "4500chf")
 
-	printTotalBalance(acc1, acc2, acc3)
-
-	fmt.Println("acc1:", ak.GetAccount(ctx, acc1.GetAddress()).GetCoins(), acc1.GetAddress().String())
-	fmt.Println("acc2:", ak.GetAccount(ctx, acc2.GetAddress()).GetCoins(), acc2.GetAddress().String())
-	fmt.Println("acc3:", ak.GetAccount(ctx, acc3.GetAddress()).GetCoins(), acc3.GetAddress().String())
+	totalSupply := snapshotAccounts(ctx, ak)
 
 	o := order(acc1, "1000eur", "1114usd")
 	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
@@ -463,11 +489,8 @@ func TestSyntheticInstruments1(t *testing.T) {
 	o = order(acc2, "5000usd", "4490eur")
 	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
 
-	fmt.Println("acc1:", ak.GetAccount(ctx, acc1.GetAddress()).GetCoins())
-	fmt.Println("acc2:", ak.GetAccount(ctx, acc2.GetAddress()).GetCoins())
-	fmt.Println("acc3:", ak.GetAccount(ctx, acc3.GetAddress()).GetCoins())
-
-	printTotalBalance(ak.GetAccount(ctx, acc1.GetAddress()), ak.GetAccount(ctx, acc2.GetAddress()), ak.GetAccount(ctx, acc3.GetAddress()))
+	// Ensure that all tokens are accounted for.
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func TestNonMatchingOrders(t *testing.T) {
@@ -498,6 +521,9 @@ func TestSyntheticInstruments2(t *testing.T) {
 
 	acc3 := createAccount(ctx, ak, "acc3", "3700000eur")
 
+	totalSupply := snapshotAccounts(ctx, ak)
+	fmt.Println("Total token supply:", totalSupply)
+
 	passiveOrders := []types.Order{
 		order(acc1, "1000000usd", "896000eur"),
 
@@ -526,6 +552,9 @@ func TestSyntheticInstruments2(t *testing.T) {
 
 	acc3bal := ak.GetAccount(ctx, acc3.GetAddress()).GetCoins()
 	require.Equal(t, "4000000", acc3bal.AmountOf("usd").String())
+
+	// Ensure that all tokens are accounted for.
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
 func printTotalBalance(accs ...exported.Account) {
@@ -622,4 +651,12 @@ func dumpEvents(events sdk.Events) {
 		}
 	}
 
+}
+
+func snapshotAccounts(ctx sdk.Context, ak auth.AccountKeeper) (totalBalance sdk.Coins) {
+	ak.IterateAccounts(ctx, func(acc exported.Account) (stop bool) {
+		totalBalance = totalBalance.Add(acc.GetCoins())
+		return
+	})
+	return
 }
