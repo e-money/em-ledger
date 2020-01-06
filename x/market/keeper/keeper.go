@@ -171,7 +171,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 
 				// Invariant check
 				if aggressiveOrder.SourceRemaining.LT(sdk.ZeroInt()) {
-					panic(fmt.Sprintf("Agggressive order's SourceRemaining field is less than zero. order: %v", aggressiveOrder))
+					panic(fmt.Sprintf("Aggressive order's SourceRemaining field is less than zero. order: %v", aggressiveOrder))
 				}
 			}
 
@@ -205,6 +205,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 			}
 
 			if passiveOrder.IsFilled() {
+				types.EmitFilledEvent(ctx, *passiveOrder)
 				// Order has been filled. Remove it from queue.
 				// Tx sender should not pay gas for completely filling passive orders.
 				k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
@@ -216,6 +217,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		}
 
 		if aggressiveOrder.IsFilled() {
+			types.EmitFilledEvent(ctx, aggressiveOrder)
 			// Order has been filled.
 			break
 		}
@@ -307,6 +309,8 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 	}
 
 	k.deleteOrder(ctx, order)
+	types.EmitCancelEvent(ctx, *order)
+
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 

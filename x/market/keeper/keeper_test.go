@@ -242,6 +242,13 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	allOrders3 := k.GetOrdersByOwner(acc1.GetAddress())
 	require.Len(t, allOrders3, 3)
+
+	found := false
+	for _, e := range ctx.EventManager().Events() {
+		found = found || (e.Type == types.EventTypeCancel)
+	}
+
+	require.True(t, found)
 }
 
 func TestCancelOrders1(t *testing.T) {
@@ -604,4 +611,15 @@ func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance stri
 // Generate a random string to use as a client order id
 func cid() string {
 	return cmn.RandStr(10)
+}
+
+func dumpEvents(events sdk.Events) {
+	fmt.Println("Number of events:", len(events))
+	for _, evt := range events {
+		fmt.Println(evt.Type)
+		for _, kv := range evt.Attributes {
+			fmt.Println(" - ", string(kv.Key), string(kv.Value))
+		}
+	}
+
 }
