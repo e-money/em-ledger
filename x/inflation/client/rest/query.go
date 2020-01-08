@@ -8,19 +8,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
-
-func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(
-		"/inflation/current",
-		queryInflationHandlerFn(cliCtx),
-	).Methods("GET")
-}
 
 func queryInflationHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

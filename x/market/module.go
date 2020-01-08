@@ -6,6 +6,7 @@ package market
 
 import (
 	"encoding/json"
+	"github.com/e-money/em-ledger/x/market/client/rest"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -51,17 +52,18 @@ func (amb AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 }
 
 func (amb AppModuleBasic) DefaultGenesis() (_ json.RawMessage) {
-	// TODO
+	// Market data will never be part of a hard fork.
 	return
 }
 
 func (amb AppModuleBasic) ValidateGenesis(json.RawMessage) error {
-	// TODO
+	// Market data will never be part of a hard fork.
 	return nil
 }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(context.CLIContext, *mux.Router) {
-	// TODO
+func (amb AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+	rest.RegisterQueryRoutes(ctx, r)
+	// TODO Tx routes
 }
 
 func (amb AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
@@ -73,10 +75,12 @@ func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func (am AppModule) InitGenesis(sdk.Context, json.RawMessage) (_ []abci.ValidatorUpdate) {
+	// Market data will never be part of a hard fork.
 	return
 }
 
 func (am AppModule) ExportGenesis(sdk.Context) (_ json.RawMessage) {
+	// Market data will never be part of a hard fork.
 	return
 }
 

@@ -11,6 +11,10 @@ const (
 	StoreKey     = ModuleName
 	RouterKey    = ModuleName
 	QuerierRoute = ModuleName
+
+	// Query endpoints supported by the market querier
+	QueryInstruments = "instruments"
+	QueryInstrument  = "instrument"
 )
 
 var (

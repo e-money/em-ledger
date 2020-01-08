@@ -44,15 +44,14 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 	source, destination := path[0], path[1]
 
 	instrument := k.instruments.GetInstrument(source, destination)
-	if instrument == nil {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("Could not find instrument %s/%s", source, destination))
-	}
 
 	orders := make([]types.Order, 0)
-	it := instrument.Orders.Iterator()
-	for it.Next() {
-		order := it.Key().(*types.Order)
-		orders = append(orders, *order)
+	if instrument != nil {
+		it := instrument.Orders.Iterator()
+		for it.Next() {
+			order := it.Key().(*types.Order)
+			orders = append(orders, *order)
+		}
 	}
 
 	resp := queryInstrumentResponse{
