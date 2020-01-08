@@ -42,9 +42,8 @@ type queryOrderResponse struct {
 	ID      uint64    `json:"id" yaml:"id"`
 	Created time.Time `json:"created" yaml:"created"`
 
-	Owner       sdk.AccAddress `json:"owner" yaml:"owner"`
-	Source      string         `json:"source" yaml:"source"`
-	Destination string         `json:"destination" yaml:"destination"`
+	Owner     sdk.AccAddress `json:"owner" yaml:"owner"`
+	Remaining string         `json:"remaining" yaml:"remaining"`
 
 	Price sdk.Dec
 }
@@ -68,12 +67,11 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 		for it.Next() {
 			order := it.Key().(*types.Order)
 			orders = append(orders, queryOrderResponse{
-				ID:          order.ID,
-				Created:     order.Created,
-				Owner:       order.Owner,
-				Source:      fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom),
-				Destination: fmt.Sprintf("%v%v", order.Destination.Amount.Sub(order.DestinationFilled), order.Destination.Denom),
-				Price:       order.Price(),
+				ID:        order.ID,
+				Created:   order.Created,
+				Owner:     order.Owner,
+				Remaining: fmt.Sprintf("%v%v", order.Destination.Amount.Sub(order.DestinationFilled), order.Destination.Denom),
+				Price:     order.Price(),
 			})
 		}
 	}
