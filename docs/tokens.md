@@ -21,11 +21,6 @@ The list of supported tokens and their respective exchange rates are available a
   "last_updated": "2020-01-01T00:00:00.000000Z",
   "tokens": [
     {
-      "token": "ngm",
-      "description": "Staking and reward token for the e-Money ledger",
-      "exponent": 6
-    },
-    {
       "token": "eeur",
       "description": "Interest bearing EUR token",
       "exponent": 6,
@@ -36,6 +31,12 @@ The list of supported tokens and their respective exchange rates are available a
       "description": "Interest bearing CHF token",
       "exponent": 6,
       "underlying_currency": "CHF"
+    },
+    {
+      "token": "ejpy",
+      "description": "Interest bearing JPY token",
+      "exponent": 6,
+      "underlying_currency": "JPY"
     }
   ],
   "currencies": [
@@ -56,7 +57,6 @@ The list of supported tokens and their respective exchange rates are available a
 ```
 
 The number of decimal places to display for a currency or token is available in `exponent` (see [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html)).
-Only currency-backed tokens have an `underlying_currency`.
 
 ### Getting Exchange Rates
 
@@ -64,10 +64,6 @@ The current exchange rate from a token to underlying currency can be fetched via
 
 ```json
 {
-  "ngm": {
-    "EUR": 0.500000,
-    "USD": 0.555748
-  },
   "eeur": {
     "EUR": 0.999950
   },
