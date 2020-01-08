@@ -11,7 +11,7 @@ The list of supported tokens and their respective exchange rates are available a
 
 ## API
 
-### List of Supported Tokens
+### Getting Supported Tokens
 
 [https://api.e-money.com/v1/tokens.json](https://api.e-money.com/v1/tokens.json).
 
@@ -21,39 +21,67 @@ The list of supported tokens and their respective exchange rates are available a
   "last_updated": "2020-01-01T00:00:00.000000Z",
   "tokens": [
     {
+      "token": "ngm",
+      "description": "Staking and reward token for the e-Money ledger",
+      "exponent": 6
+    },
+    {
       "token": "eeur",
-      "minor_units": 1000000,
-      "underlying_currency": "EUR",
-      "underlying_exponent": 2,
-      "underlying_rate": "https://api.e-money.com/v1/rates/eeur.json"
+      "description": "Interest bearing EUR token",
+      "exponent": 6,
+      "underlying_currency": "EUR"
     },
     {
       "token": "echf",
-      "minor_units": 1000000,
-      "underlying_currency": "CHF",
-      "underlying_exponent": 2,
-      "underlying_rate": "https://api.e-money.com/v1/rates/echf.json"
+      "description": "Interest bearing CHF token",
+      "exponent": 6,
+      "underlying_currency": "CHF"
+    }
+  ],
+  "currencies": [
+    {
+      "currency": "EUR",
+      "exponent": 2
+    },
+    {
+      "currency": "CHF",
+      "exponent": 2
+    },
+    {
+      "currency": "JPY",
+      "exponent": 0
     }
   ]
 }
 ```
 
-### Getting the Underlying Rate
+The number of decimal places to display for a currency or token is available in `exponent` (see [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html)).
+Only currency-backed tokens have an `underlying_currency`.
 
-Using the URI in the "underlying_rate" attribute, the current exchange rate from token -> underlying currency can be fetched periodically:
-[https://api.e-money.com/v1/rates/eeur.json](https://api.e-money.com/v1/rates/eeur.json)
+### Getting Exchange Rates
+
+The current exchange rate from a token to underlying currency can be fetched via [https://api.e-money.com/v1/rates.json](https://api.e-money.com/v1/rates.json):
 
 ```json
 {
-  "underlying_rate": 0.995
+  "ngm": {
+    "EUR": 0.500000,
+    "USD": 0.555748
+  },
+  "eeur": {
+    "EUR": 0.999950
+  },
+  "echf": {
+    "CHF": 0.999980
+  }
 }
 ```
 
-The response is kept short to conserve bandwidth. As the rate changes slowly, it is not necessary to query more than once per day.
+As the rates change slowly, it is typically not necessary to query more than once per hour.
 
 ## Displaying Amounts
 
 To display a `eeur` amount in terms of `EUR`, the following calculation must be made:  
-`EUR_amount = eeur_amount * underlying_rate / minor_units`
+`EUR_amount = eeur_amount * exchange_rate / 10^eeur_exponent`
 
-The `underlying_exponent` specifies the number of digits to display. For instance, `eeur 1234567890` at an `underlying_rate` of `0.995` should be displayed as `EUR 122,84` (after rounding up).
+The `exponent` for EUR specifies the number of digits to display. For instance, `eeur 1234567890` at an exchange rate of 0.999950 should be displayed as `EUR 123,45` (after rounding down).
