@@ -8,8 +8,10 @@ import (
 	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"time"
 )
 
 const (
@@ -31,9 +33,20 @@ func NewQuerier(k *Keeper) sdk.Querier {
 }
 
 type queryInstrumentResponse struct {
-	Source      string        `json:"source" yaml:"source"`
-	Destination string        `json:"destination" yaml:"destination"`
-	Orders      []types.Order `json:"orders" yaml:"orders"`
+	Source      string               `json:"source" yaml:"source"`
+	Destination string               `json:"destination" yaml:"destination"`
+	Orders      []queryOrderResponse `json:"orders" yaml:"orders"`
+}
+
+type queryOrderResponse struct {
+	ID      uint64    `json:"id" yaml:"id"`
+	Created time.Time `json:"created" yaml:"created"`
+
+	Owner       sdk.AccAddress `json:"owner" yaml:"owner"`
+	Source      string         `json:"source" yaml:"source"`
+	Destination string         `json:"destination" yaml:"destination"`
+
+	Price sdk.Dec
 }
 
 func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
@@ -43,14 +56,25 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 
 	source, destination := path[0], path[1]
 
+	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
+		return nil, sdk.ErrInvalidCoins(fmt.Sprintf("Invalid denoms: %v %v", source, destination))
+	}
+
 	instrument := k.instruments.GetInstrument(source, destination)
 
-	orders := make([]types.Order, 0)
+	orders := make([]queryOrderResponse, 0)
 	if instrument != nil {
 		it := instrument.Orders.Iterator()
 		for it.Next() {
 			order := it.Key().(*types.Order)
-			orders = append(orders, *order)
+			orders = append(orders, queryOrderResponse{
+				ID:          order.ID,
+				Created:     order.Created,
+				Owner:       order.Owner,
+				Source:      fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom),
+				Destination: fmt.Sprintf("%v%v", order.Destination.Amount.Sub(order.DestinationFilled), order.Destination.Denom),
+				Price:       order.Price(),
+			})
 		}
 	}
 
