@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 
 	"github.com/spf13/cobra"
@@ -48,7 +49,7 @@ func getCmdCreateIssuer(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			denoms, err := types.ParseDenominations(args[2])
+			denoms, err := util.ParseDenominations(args[2])
 			if err != nil {
 				return err
 			}

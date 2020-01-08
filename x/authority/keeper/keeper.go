@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
 
@@ -49,7 +50,7 @@ func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
-		if !types.ValidateDenom(denom) {
+		if !util.ValidateDenom(denom) {
 			return types.ErrInvalidDenom(denom).Result()
 		}
 	}
