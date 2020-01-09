@@ -317,7 +317,7 @@ func mintDefaultInflationState() func() inflation.InflationState {
 
 func stakingGenesisState() stakingtypes.GenesisState {
 	genesisState := stakingtypes.DefaultGenesisState()
-	genesisState.Params.BondDenom = "ngm"
+	genesisState.Params.BondDenom = "ungm"
 
 	return genesisState
 }

@@ -228,7 +228,7 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 	for i, k := range keys {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
-			sdk.NewCoin("ngm", sdk.NewInt(99000000000)),
+			sdk.NewCoin("ungm", sdk.NewInt(99000000000)),
 			sdk.NewCoin("eeur", sdk.NewInt(10000000000)),
 			sdk.NewCoin("ejpy", sdk.NewInt(3500000000000)),
 			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
@@ -246,7 +246,7 @@ func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount 
 	account := genaccounts.GenesisAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
-			sdk.NewCoin("ngm", accStakingTokens),
+			sdk.NewCoin("ungm", accStakingTokens),
 		},
 	}
 
@@ -276,7 +276,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,
-		sdk.NewCoin("ngm", valTokens),
+		sdk.NewCoin("ungm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
 		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())
