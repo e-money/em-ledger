@@ -57,6 +57,19 @@ services:
       localnet:
         ipv4_address: 192.168.10.5
 
+  rest-server:
+    container_name: rest-server
+    image: "emoney/rest-server"
+    environment:
+      - NODE=http://emdnode0:26657
+    ports:
+      - "1317:1317"
+    volumes:
+      - ./build:/emoney:Z
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.128
+
 networks:
   localnet:
     driver: bridge
