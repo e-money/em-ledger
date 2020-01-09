@@ -396,7 +396,6 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destination
 
 	err = k.bk.SendCoins(ctx, passiveAccountAddr, aggressiveAccountAddr, sdk.NewCoins(destinationFilled))
 	if err != nil {
-		// TODO Reverse the successful send?
 		return err
 	}
 

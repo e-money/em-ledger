@@ -40,7 +40,8 @@ import (
 )
 
 const (
-	appName = "emoneyd"
+	appName           = "emoneyd"
+	stakingTokenDenom = "ungm"
 )
 
 var (
@@ -317,7 +318,7 @@ func mintDefaultInflationState() func() inflation.InflationState {
 
 func stakingGenesisState() stakingtypes.GenesisState {
 	genesisState := stakingtypes.DefaultGenesisState()
-	genesisState.Params.BondDenom = "ungm"
+	genesisState.Params.BondDenom = stakingTokenDenom
 
 	return genesisState
 }
