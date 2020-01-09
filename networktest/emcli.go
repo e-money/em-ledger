@@ -17,8 +17,8 @@ const (
 	EMCLI = "./build/emcli"
 
 	// gjson paths
-	QGetMintableEUR = "value.mintable.#(denom==\"x2eur\").amount"
-	QGetBalanceEUR  = "value.Account.value.coins.#(denom==\"x2eur\").amount"
+	QGetMintableEUR = "value.mintable.#(denom==\"eeur\").amount"
+	QGetBalanceEUR  = "value.Account.value.coins.#(denom==\"eeur\").amount"
 )
 
 type Emcli struct {
@@ -61,7 +61,7 @@ func (cli Emcli) QueryRewards(delegator string) (gjson.Result, error) {
 	return gjson.ParseBytes(bz), nil
 }
 
-// NOTE Hardcoded to x2eur for now.
+// NOTE Hardcoded to eeur for now.
 func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error) {
 	args := cli.addQueryFlags("query", "account", account)
 	bz, err := execCmdAndCollectResponse(args)

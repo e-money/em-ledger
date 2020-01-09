@@ -48,7 +48,7 @@ var _ = Describe("Staking", func() {
 
 				for i := 0; i < 100; i++ {
 					go func() {
-						coins, _ := sdk.ParseCoins("15000x2eur")
+						coins, _ := sdk.ParseCoins("15000eeur")
 						txResponse, err := sendTx(Key1, Key2, coins, testnet.ChainID())
 						if err != nil {
 							fmt.Println(err)
@@ -58,7 +58,7 @@ var _ = Describe("Staking", func() {
 					}()
 
 					go func() {
-						coins, _ := sdk.ParseCoins("9000x2eur")
+						coins, _ := sdk.ParseCoins("9000eeur")
 						txResponse, err := sendTx(Key2, Key1, coins, testnet.ChainID())
 						if err != nil {
 							fmt.Println(err)
@@ -68,7 +68,7 @@ var _ = Describe("Staking", func() {
 					}()
 
 					go func() {
-						coins, _ := sdk.ParseCoins("4000x2eur")
+						coins, _ := sdk.ParseCoins("4000eeur")
 						txResponse, err := sendTx(Key3, Key1, coins, testnet.ChainID())
 						if err != nil {
 							fmt.Println(err)
@@ -78,7 +78,7 @@ var _ = Describe("Staking", func() {
 					}()
 
 					go func() {
-						coins, _ := sdk.ParseCoins("7700x2eur")
+						coins, _ := sdk.ParseCoins("7700eeur")
 						txResponse, err := sendTx(Key3, Key2, coins, testnet.ChainID())
 						if err != nil {
 							fmt.Println(err)

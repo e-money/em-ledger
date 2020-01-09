@@ -188,7 +188,7 @@ func initializeTestnet(
 }
 
 func createInflationGenesis() json.RawMessage {
-	state := inflation.NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01")
+	state := inflation.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01")
 
 	gen := inflation.GenesisState{
 		InflationState: state,
@@ -228,10 +228,10 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 	for i, k := range keys {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
-			sdk.NewCoin("x3ngm", sdk.NewInt(99000000000)),
-			sdk.NewCoin("x2eur", sdk.NewInt(10000000000)),
-			sdk.NewCoin("x0jpy", sdk.NewInt(3500000000000)),
-			sdk.NewCoin("x2chf", sdk.NewInt(10000000000)),
+			sdk.NewCoin("ngm", sdk.NewInt(99000000000)),
+			sdk.NewCoin("eeur", sdk.NewInt(10000000000)),
+			sdk.NewCoin("ejpy", sdk.NewInt(3500000000000)),
+			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
 		)
 
 		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
@@ -246,7 +246,7 @@ func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount 
 	account := genaccounts.GenesisAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
-			sdk.NewCoin("x3ngm", accStakingTokens),
+			sdk.NewCoin("ngm", accStakingTokens),
 		},
 	}
 
@@ -276,7 +276,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,
-		sdk.NewCoin("x3ngm", valTokens),
+		sdk.NewCoin("ngm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
 		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())

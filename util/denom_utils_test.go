@@ -4,13 +4,14 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDenoms(t *testing.T) {
-	assert.True(t, ValidateDenom("x2eur"))
-	assert.False(t, ValidateDenom("X2EUR"))
+	assert.True(t, ValidateDenom("eeur"))
+	assert.False(t, ValidateDenom("EEUR"))
 	assert.False(t, ValidateDenom("123456"))
 }
 
@@ -20,11 +21,11 @@ func TestParseDenominations(t *testing.T) {
 		valid  bool
 		count  int
 	}{
-		{"x2eur,x0jpy", true, 2},
-		{"  x2eur, x0jpy ", true, 2},
-		{" x2eur,,x0jpy ", true, 2},
+		{"eeur,ejpy", true, 2},
+		{"  eeur, ejpy ", true, 2},
+		{" eeur,,ejpy ", true, 2},
 		{"", true, 0},
-		{"  x2EUR, x0jpy ", false, -1},
+		{"  EEUR, ejpy ", false, -1},
 	}
 
 	for _, d := range testdata {
@@ -38,5 +39,4 @@ func TestParseDenominations(t *testing.T) {
 
 		assert.Len(t, denoms, d.count)
 	}
-
 }

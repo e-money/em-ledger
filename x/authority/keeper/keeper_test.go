@@ -83,13 +83,13 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	result := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"x2eur", "x0jpy"})
+	result := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"eeur", "ejpy"})
 	require.True(t, result.IsOK())
 
-	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp", "x2eur"})
+	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"})
 	require.False(t, result.IsOK()) // Must fail due to duplicate token denomination
 
-	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp"})
+	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp"})
 	require.True(t, result.IsOK())
 	require.Len(t, ik.GetIssuers(ctx), 2)
 
@@ -121,10 +121,10 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	result := keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"x2eur", "x0jpy"})
+	result := keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
 	require.True(t, result.IsOK())
 
-	result = keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"x2krw"})
+	result = keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"ekrw"})
 	require.True(t, result.IsOK())
 	issuers := ik.GetIssuers(ctx)
 

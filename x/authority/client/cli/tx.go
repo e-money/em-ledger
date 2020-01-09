@@ -37,7 +37,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 func getCmdCreateIssuer(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "create-issuer [authority_key_or_address] [issuer_address] [denominations]",
-		Example: "emcli authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu x2eur,x0jpy",
+		Example: "emcli authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu eeur,ejpy",
 		Short:   "Create a new issuer",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
