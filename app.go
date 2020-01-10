@@ -165,7 +165,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		genaccounts.NewAppModule(application.accountKeeper),
 		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
 		auth.NewAppModule(application.accountKeeper.InnerKeeper()),
-		bank.NewAppModule(embank.Wrap(bankKeeper), application.accountKeeper),
+		bank.NewAppModule(embank.Wrap(bankKeeper, application.authorityKeeper), application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.inflationKeeper),
