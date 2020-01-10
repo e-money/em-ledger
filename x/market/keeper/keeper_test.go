@@ -474,6 +474,79 @@ func TestInvalidInstrument(t *testing.T) {
 	require.False(t, res.IsOK())
 }
 
+func TestRestrictedDenominations1(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "5000gbp, 10000eur")
+	acc2 := createAccount(ctx, ak, "acc2", "6500usd,1200gbp")
+
+	// Restrict trading of gbp
+	k.authorityk = dummyAuthority{
+		RestrictedDenoms: []emtypes.RestrictedDenom{
+			{"gbp", []sdk.AccAddress{acc1.GetAddress()}},
+		}}
+
+	k.initializeFromStore(ctx)
+
+	{ // Verify that acc2 can't create a passive gbp order
+		o := order(acc2, "500gbp", "542eur")
+		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		require.Empty(t, k.instruments)
+
+		o = order(acc2, "542usd", "500gbp")
+		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		require.Empty(t, k.instruments)
+	}
+
+	{ // Verify that acc1 can create a passive gbp order
+		o := order(acc1, "542eur", "500gbp")
+		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		require.Len(t, k.instruments, 1)
+
+		o = order(acc1, "200gbp", "333usd")
+		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		require.Len(t, k.instruments, 2)
+	}
+
+	{ // Verify that acc2 managed to sell its gbp to a passive order
+		o := order(acc2, "500gbp", "542eur")
+		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+
+		balance := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
+		require.Equal(t, "542", balance.AmountOf("eur").String())
+
+		o = order(acc2, "333usd", "200gbp")
+		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		balance = ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
+		require.Equal(t, "900", balance.AmountOf("gbp").String())
+	}
+}
+
+func TestRestrictedDenominations2(t *testing.T) {
+	// Two instruments are restricted.
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "5000gbp, 10000usd")
+
+	// Restrict trading of gbp and usd
+	k.authorityk = dummyAuthority{
+		RestrictedDenoms: []emtypes.RestrictedDenom{
+			{"gbp", []sdk.AccAddress{}},
+			{"usd", []sdk.AccAddress{acc1.GetAddress()}},
+		}}
+
+	k.initializeFromStore(ctx)
+
+	// Ensure that no orders can be created, even though acc1 is allowed to create usd orders
+	o := order(acc1, "542usd", "500gbp")
+	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	require.Empty(t, k.instruments)
+
+	o = order(acc1, "500gbp", "542usd")
+	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	require.Empty(t, k.instruments)
+}
+
 func TestSyntheticInstruments1(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur")
@@ -485,7 +558,6 @@ func TestSyntheticInstruments1(t *testing.T) {
 	o := order(acc1, "1000eur", "1114usd")
 	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
 
-	//o = order(acc1, "1000eur", "1084chf")
 	o = order(acc1, "500eur", "542chf")
 	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
 
@@ -606,9 +678,17 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, supplyKey, accountKeeper, bankKeeper, maccPerms)
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp")))
 
-	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper, supplyKeeper)
+	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper, supplyKeeper, dummyAuthority{})
 
 	return ctx, marketKeeper, accountKeeper, bankKeeper, supplyKeeper
+}
+
+type dummyAuthority struct {
+	RestrictedDenoms emtypes.RestrictedDenoms
+}
+
+func (da dummyAuthority) GetRestrictedDenoms(sdk.Context) emtypes.RestrictedDenoms {
+	return da.RestrictedDenoms
 }
 
 func coin(s string) sdk.Coin {

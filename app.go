@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	emauth "github.com/e-money/em-ledger/hooks/auth"
+	embank "github.com/e-money/em-ledger/hooks/bank"
 	emdistr "github.com/e-money/em-ledger/hooks/distribution"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/inflation"
@@ -85,7 +86,6 @@ type emoneyApp struct {
 
 	accountKeeper   emauth.AccountKeeper
 	paramsKeeper    params.Keeper
-	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
 	stakingKeeper   staking.Keeper
 	inflationKeeper inflation.Keeper
@@ -142,8 +142,9 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	accountBlacklist := application.ModuleAccountAddrs()
 	application.accountKeeper = emauth.Wrap(auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount))
 
-	application.bankKeeper = bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
-	application.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], application.accountKeeper, application.bankKeeper, maccPerms)
+	bankKeeper := bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
+
+	application.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], application.accountKeeper, bankKeeper, maccPerms)
 	application.stakingKeeper = staking.NewKeeper(cdc, keys[staking.StoreKey], tkeys[staking.TStoreKey], application.supplyKeeper,
 		stakingSubspace, staking.DefaultCodespace)
 	application.distrKeeper = distr.NewKeeper(application.cdc, keys[distr.StoreKey], distrSubspace, &application.stakingKeeper,
@@ -155,7 +156,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper)
-	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, application.bankKeeper, application.supplyKeeper)
+	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
@@ -164,7 +165,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyAp
 		genaccounts.NewAppModule(application.accountKeeper),
 		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
 		auth.NewAppModule(application.accountKeeper.InnerKeeper()),
-		bank.NewAppModule(application.bankKeeper, application.accountKeeper),
+		bank.NewAppModule(embank.Wrap(bankKeeper), application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
 		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.inflationKeeper),
