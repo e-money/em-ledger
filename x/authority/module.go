@@ -70,7 +70,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) (_ []abci
 
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	genesis := GenesisState{
-		AuthorityKey: am.keeper.GetAuthority(ctx),
+		AuthorityKey:     am.keeper.GetAuthority(ctx),
+		RestrictedDenoms: am.keeper.GetRestrictedDenoms(ctx),
 	}
 	return ModuleCdc.MustMarshalJSON(genesis)
 }

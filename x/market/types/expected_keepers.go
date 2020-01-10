@@ -8,6 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
+
+	"github.com/e-money/em-ledger/types"
 )
 
 type (
@@ -22,5 +24,9 @@ type (
 
 	SupplyKeeper interface {
 		GetSupply(ctx sdk.Context) (supply supply.SupplyI)
+	}
+
+	RestrictedKeeper interface {
+		GetRestrictedDenoms(sdk.Context) types.RestrictedDenoms
 	}
 )

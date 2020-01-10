@@ -13,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 
+	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/market/types"
 )
 
@@ -23,12 +24,15 @@ type Keeper struct {
 	ak          types.AccountKeeper
 	bk          types.BankKeeper
 	sk          types.SupplyKeeper
+	authorityk  types.RestrictedKeeper
 
 	accountOrders types.Orders
 	appstateInit  *sync.Once
+
+	restrictedDenoms emtypes.RestrictedDenoms
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, supplyKeeper types.SupplyKeeper) *Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, supplyKeeper types.SupplyKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
 	k := &Keeper{
 		cdc: cdc,
 		key: key,
@@ -38,6 +42,8 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 
 		accountOrders: types.NewOrders(),
 		appstateInit:  new(sync.Once),
+
+		authorityk: authorityKeeper,
 	}
 
 	authKeeper.AddAccountListener(k.accountChanged)
@@ -63,6 +69,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 				// Direct price is better than current plan
 
 				planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
+				planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
 				if planPrice.LT(result.Price) {
 					result = types.ExecutionPlan{
 						Price:      planPrice,
@@ -89,6 +96,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 				secondPassiveOrder := secondInstrument.Orders.LeftKey().(*types.Order)
 
 				planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
+				planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
 
 				if planPrice.LT(result.Price) {
 					result = types.ExecutionPlan{
@@ -228,22 +236,37 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		types.EmitPartiallyFilledEvent(ctx, aggressiveOrder)
 	}
 
+	// Order was not fully matched. Add to book unless restricted.
 	if !aggressiveOrder.IsFilled() {
-		// Order was not fully matched. Add to book.
-		op := &aggressiveOrder
-		k.instruments.InsertOrder(op)
-		k.accountOrders.AddOrder(op)
-		k.setOrder(ctx, op)
-		// NOTE This should be the only place that an order is added to the book!
-		// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
+		// Check whether this denomination is restricted and thus cannot create passive orders
+		addToBook := true
+		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Source.Denom); found {
+			addToBook = denom.IsAnyAllowed(aggressiveOrder.Owner)
+		}
+
+		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Destination.Denom); addToBook && found {
+			addToBook = denom.IsAnyAllowed(aggressiveOrder.Owner)
+		}
+
+		if addToBook {
+			op := &aggressiveOrder
+			k.instruments.InsertOrder(op)
+			k.accountOrders.AddOrder(op)
+			k.setOrder(ctx, op)
+			// NOTE This should be the only place that an order is added to the book!
+			// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
+		}
 	}
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func (k *Keeper) initializeFromStore(ctx sdk.Context) {
-	// Loads the last known market state from app state.
 	k.appstateInit.Do(func() {
+		// Load the restricted denominations from the authority module
+		k.restrictedDenoms = k.authorityk.GetRestrictedDenoms(ctx)
+
+		// Load the last known market state from app state.
 		store := ctx.KVStore(k.key)
 		it := store.Iterator(types.GetOrderKey(0), types.GetOrderKey(math.MaxUint64))
 		for ; it.Valid(); it.Next() {
