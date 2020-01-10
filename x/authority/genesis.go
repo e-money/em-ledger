@@ -4,15 +4,20 @@
 
 package authority
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	emtypes "github.com/e-money/em-ledger/types"
+)
 
 type GenesisState struct {
-	AuthorityKey sdk.AccAddress `json:"key" yaml:"key"`
+	AuthorityKey     sdk.AccAddress           `json:"key" yaml:"key"`
+	RestrictedDenoms emtypes.RestrictedDenoms `json:"blacklisted_denoms" yaml:"blacklisted_denoms"`
 }
 
-func NewGenesisState(authorityKey sdk.AccAddress) GenesisState {
+func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms emtypes.RestrictedDenoms) GenesisState {
 	return GenesisState{
-		AuthorityKey: authorityKey,
+		AuthorityKey:     authorityKey,
+		RestrictedDenoms: restrictedDenoms,
 	}
 }
 
@@ -22,4 +27,5 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, state GenesisState) {
 	keeper.SetAuthority(ctx, state.AuthorityKey)
+	keeper.SetRestrictedDenoms(ctx, state.RestrictedDenoms)
 }

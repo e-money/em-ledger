@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
@@ -14,6 +15,7 @@ import (
 
 const (
 	keyAuthorityAccAddress = "AuthorityAccountAddress"
+	keyRestrictedDenoms    = "RestrictedDenoms"
 )
 
 type Keeper struct {
@@ -76,4 +78,19 @@ func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
 	}
 
 	panic(types.ErrNotAuthority(address.String()))
+}
+
+func (k Keeper) SetRestrictedDenoms(ctx sdk.Context, denoms emtypes.RestrictedDenoms) {
+	store := ctx.KVStore(k.storeKey)
+	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(denoms)
+	store.Set([]byte(keyRestrictedDenoms), bz)
+}
+
+func (k Keeper) GetRestrictedDenoms(ctx sdk.Context) (res emtypes.RestrictedDenoms) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get([]byte(keyRestrictedDenoms))
+	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+
+	return
 }

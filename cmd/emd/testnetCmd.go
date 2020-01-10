@@ -7,19 +7,24 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	emtypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/inflation"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/inflation"
-	"github.com/tendermint/tendermint/crypto"
-	"net"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -28,12 +33,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/common"
 
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -203,7 +207,7 @@ func createInflationGenesis() json.RawMessage {
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
-	gen := authority.NewGenesisState(akey)
+	gen := authority.NewGenesisState(akey, emtypes.RestrictedDenoms{})
 
 	bz, err := json.Marshal(gen)
 	if err != nil {
