@@ -11,7 +11,7 @@ import (
 
 type GenesisState struct {
 	AuthorityKey     sdk.AccAddress           `json:"key" yaml:"key"`
-	RestrictedDenoms emtypes.RestrictedDenoms `json:"blacklisted_denoms" yaml:"blacklisted_denoms"`
+	RestrictedDenoms emtypes.RestrictedDenoms `json:"restricted_denoms" yaml:"restricted_denoms"`
 }
 
 func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms emtypes.RestrictedDenoms) GenesisState {
