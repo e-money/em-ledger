@@ -42,7 +42,6 @@ func EmitCancelEvent(ctx sdk.Context, order Order) {
 func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventNewOrder,
-			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
@@ -62,7 +61,6 @@ func EmitFilledEvent(ctx sdk.Context, order Order) {
 func emitFilledEvent(ctx sdk.Context, order Order, eventtype string) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(eventtype,
-			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
