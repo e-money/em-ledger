@@ -7,6 +7,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
 
 	"github.com/e-money/em-ledger/types"
@@ -19,7 +20,7 @@ type (
 	}
 
 	BankKeeper interface {
-		SendCoins(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
+		InputOutputCoins(ctx sdk.Context, inputs []bank.Input, outputs []bank.Output) sdk.Error
 	}
 
 	SupplyKeeper interface {

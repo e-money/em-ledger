@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -396,33 +397,17 @@ func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {
 }
 
 func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destinationFilled sdk.Coin, passiveAccountAddr, aggressiveAccountAddr sdk.AccAddress) sdk.Error {
-	var (
-		passiveAccount    = k.ak.GetAccount(ctx, passiveAccountAddr)
-		aggressiveAccount = k.ak.GetAccount(ctx, aggressiveAccountAddr)
-	)
-
-	// Verify that the passive order still holds the balance
-	if _, anyNegative := passiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(destinationFilled)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(passiveAccount.GetAddress(), destinationFilled, passiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(destinationFilled.Denom))
+	inputs := []bank.Input{
+		{aggressiveAccountAddr, sdk.NewCoins(sourceFilled)},
+		{passiveAccountAddr, sdk.NewCoins(destinationFilled)},
 	}
 
-	// Verify that the aggressive order still holds the balance
-	if _, anyNegative := aggressiveAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(sourceFilled)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(aggressiveAccount.GetAddress(), sourceFilled, aggressiveAccount.SpendableCoins(ctx.BlockTime()).AmountOf(sourceFilled.Denom))
+	outputs := []bank.Output{
+		{aggressiveAccountAddr, sdk.NewCoins(destinationFilled)},
+		{passiveAccountAddr, sdk.NewCoins(sourceFilled)},
 	}
 
-	// Balances appear sufficient. Do the transfers
-	err := k.bk.SendCoins(ctx, aggressiveAccountAddr, passiveAccountAddr, sdk.NewCoins(sourceFilled))
-	if err != nil {
-		return err
-	}
-
-	err = k.bk.SendCoins(ctx, passiveAccountAddr, aggressiveAccountAddr, sdk.NewCoins(destinationFilled))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return k.bk.InputOutputCoins(ctx, inputs, outputs)
 }
 
 func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
