@@ -6,6 +6,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/store"
 	"io"
 
 	app "github.com/e-money/em-ledger"
@@ -64,6 +66,10 @@ func main() {
 
 func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtypes.Application {
 	return func(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
-		return app.NewApp(logger, db, ctx)
+		return app.NewApp(logger, db, ctx,
+			baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
+			baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
+			baseapp.SetHaltHeight(uint64(viper.GetInt(server.FlagHaltHeight))),
+		)
 	}
 }

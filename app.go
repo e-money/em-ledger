@@ -101,11 +101,11 @@ type emoneyApp struct {
 
 type GenesisState map[string]json.RawMessage
 
-func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context) *emoneyApp {
+func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOptions ...func(*bam.BaseApp)) *emoneyApp {
 	cdc := MakeCodec()
 	txDecoder := auth.DefaultTxDecoder(cdc)
 
-	bApp := bam.NewBaseApp(appName, logger, sdkdb, txDecoder)
+	bApp := bam.NewBaseApp(appName, logger, sdkdb, txDecoder, baseAppOptions...)
 
 	application := &emoneyApp{
 		BaseApp:  bApp,
