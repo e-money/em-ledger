@@ -20,7 +20,7 @@ import (
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"github.com/e-money/em-ledger/x/slashing"
 
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -79,7 +79,7 @@ var (
 )
 
 type emoneyApp struct {
-	*bam.BaseApp
+	*baseapp.BaseApp
 	cdc          *codec.Codec
 	database     db.DB
 	currentBatch db.Batch
@@ -101,11 +101,11 @@ type emoneyApp struct {
 
 type GenesisState map[string]json.RawMessage
 
-func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOptions ...func(*bam.BaseApp)) *emoneyApp {
+func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOptions ...func(*baseapp.BaseApp)) *emoneyApp {
 	cdc := MakeCodec()
 	txDecoder := auth.DefaultTxDecoder(cdc)
 
-	bApp := bam.NewBaseApp(appName, logger, sdkdb, txDecoder, baseAppOptions...)
+	bApp := baseapp.NewBaseApp(appName, logger, sdkdb, txDecoder, baseAppOptions...)
 
 	application := &emoneyApp{
 		BaseApp:  bApp,
@@ -155,7 +155,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
-	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper)
+	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper, application)
 	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
 
 	application.MountKVStores(keys)
@@ -273,6 +273,15 @@ func (app *emoneyApp) ModuleAccountAddrs() map[string]bool {
 	}
 
 	return modAccAddrs
+}
+
+func (app emoneyApp) SetMinimumGasPrices(gasPricesStr string) (err error) {
+	if _, err = sdk.ParseDecCoins(gasPricesStr); err != nil {
+		return
+	}
+
+	baseapp.SetMinGasPrices(gasPricesStr)(app.BaseApp)
+	return
 }
 
 func init() {

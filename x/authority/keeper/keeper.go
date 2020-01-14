@@ -21,11 +21,13 @@ const (
 type Keeper struct {
 	storeKey sdk.StoreKey
 	ik       issuer.Keeper
+	gpk      types.GasPricesKeeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
 	return Keeper{
 		ik:       issuerKeeper,
+		gpk:      gasPricesKeeper,
 		storeKey: storeKey,
 	}
 }

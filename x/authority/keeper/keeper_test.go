@@ -178,9 +178,15 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	// Empty supply
 	sk.SetSupply(ctx, supply.NewSupply(sdk.NewCoins()))
 
-	keeper := NewKeeper(keyAuthority, ik)
+	keeper := NewKeeper(keyAuthority, ik, mockGasPricesKeeper{})
 
 	return ctx, keeper, ik
+}
+
+type mockGasPricesKeeper struct{}
+
+func (m mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) (_ error) {
+	return
 }
 
 type mockInflationKeeper struct{}
