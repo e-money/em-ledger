@@ -28,10 +28,36 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		client.PostCommands(
 			getCmdCreateIssuer(cdc),
 			getCmdDestroyIssuer(cdc),
+			getCmdSetGasPrices(cdc),
 		)...,
 	)
 
 	return authorityCmds
+}
+
+func getCmdSetGasPrices(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:     "set-gas-prices [authority_key_or_address] [minimum_gas_prices]",
+		Example: "emcli authority set-gas-prices masterkey 0.0005eeur,0.0000001ejpy",
+		Short:   "Control the minimum gas prices for the chain",
+		Args:    cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+
+			gasPrices, err := sdk.ParseDecCoins(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.MsgSetGasPrices{
+				GasPrices: gasPrices,
+				Authority: cliCtx.GetFromAddress(),
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 func getCmdCreateIssuer(cdc *codec.Codec) *cobra.Command {

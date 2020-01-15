@@ -214,5 +214,31 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeFalse())
 		})
+
+		It("Authority sets new gas prices", func() {
+			prices, err := sdk.ParseDecCoins("0.00005eeur")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, success, err := emcli.AuthoritySetMinGasPrices(Authority, prices.String())
+			Expect(success).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+
+			bz, err := emcli.QueryMinGasPrices()
+			Expect(err).ToNot(HaveOccurred())
+
+			// Should fail due to missing fees.
+			_, success, err = emcli.AuthoritySetMinGasPrices(Authority, prices.String(), "--fees", "50eeur")
+			Expect(success).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+
+			gasPrices := gjson.ParseBytes(bz).Get("min_gas_prices")
+			queriedPrices, err := sdk.ParseDecCoins(gasPrices.Str)
+			Expect(queriedPrices).To(Equal(prices))
+
+			// A non-authority attempts to set gas prices
+			_, success, err = emcli.AuthoritySetMinGasPrices(Issuer, prices.String(), "--fees", "50eeur")
+			Expect(success).To(BeFalse())
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 })

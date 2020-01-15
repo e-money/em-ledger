@@ -36,13 +36,24 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 }
 
 func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
-	args := cli.addTransactionFlags("authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
+	args := cli.addTransactionFlags("tx", "authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, error) {
-	args := cli.addTransactionFlags("authority", "destroy-issuer", authority.name, issuer.GetAddress())
+	args := cli.addTransactionFlags("tx", "authority", "destroy-issuer", authority.name, issuer.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, params ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", authority.name, minGasPrices)
+	args = append(args, params...)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
+	args := cli.addQueryFlags("query", "authority", "gas-prices")
+	return execCmdAndCollectResponse(args)
 }
 
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
@@ -113,32 +124,32 @@ func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
 }
 
 func (cli Emcli) IssuerIncreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "increase-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
+	args := cli.addTransactionFlags("tx", "issuer", "increase-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) IssuerRevokeMinting(issuer, liquidityprovider Key) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "revoke-mint", issuer.name, liquidityprovider.GetAddress())
+	args := cli.addTransactionFlags("tx", "issuer", "revoke-mint", issuer.name, liquidityprovider.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) IssuerDecreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "decrease-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
+	args := cli.addTransactionFlags("tx", "issuer", "decrease-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) IssuerSetInflation(issuer Key, denom string, inflation string) (string, bool, error) {
-	args := cli.addTransactionFlags("issuer", "set-inflation", issuer.name, denom, inflation)
+	args := cli.addTransactionFlags("tx", "issuer", "set-inflation", issuer.name, denom, inflation)
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) LiquidityProviderMint(key Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("liquidityprovider", "mint", key.name, amount)
+	args := cli.addTransactionFlags("tx", "liquidityprovider", "mint", key.name, amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
 func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("liquidityprovider", "burn", key.name, amount)
+	args := cli.addTransactionFlags("tx", "liquidityprovider", "burn", key.name, amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 

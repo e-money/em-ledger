@@ -16,16 +16,21 @@ import (
 const (
 	keyAuthorityAccAddress = "AuthorityAccountAddress"
 	keyRestrictedDenoms    = "RestrictedDenoms"
+	keyGasPrices           = "GasPrices"
 )
 
 type Keeper struct {
 	storeKey sdk.StoreKey
 	ik       issuer.Keeper
+	sk       types.SupplyKeeper
+	gpk      types.GasPricesKeeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, supplyKeeper types.SupplyKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
 	return Keeper{
 		ik:       issuerKeeper,
+		sk:       supplyKeeper,
+		gpk:      gasPricesKeeper,
 		storeKey: storeKey,
 	}
 }
@@ -59,6 +64,41 @@ func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 
 	i := issuer.NewIssuer(issuerAddress, denoms...)
 	return k.ik.AddIssuer(ctx, i)
+}
+
+func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) sdk.Result {
+	k.MustBeAuthority(ctx, authority)
+
+	if !gasprices.IsValid() {
+		return types.ErrInvalidGasPrices(gasprices.String()).Result()
+	}
+
+	// Check that the denominations actually exis before setting the gas prices to avoid being "locked out" of the blockchain
+	supply := k.sk.GetSupply(ctx).GetTotal()
+	for _, d := range gasprices {
+		if supply.AmountOf(d.Denom).IsZero() {
+			return types.ErrUnknownDenom(d.Denom).Result()
+		}
+	}
+
+	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(gasprices)
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(keyGasPrices), bz)
+
+	k.gpk.SetMinimumGasPrices(gasprices.String())
+	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte(keyGasPrices))
+
+	if bz == nil {
+		return
+	}
+
+	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &gasPrices)
+	return
 }
 
 func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {
