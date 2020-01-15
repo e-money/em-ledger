@@ -55,9 +55,6 @@ func main() {
 		txCmds(cdc),
 		lcd.ServeCommand(cdc, registerLCDRoutes),
 		keys.Commands(),
-		lpcli.GetTxCmd(cdc),
-		issuercli.GetTxCmd(cdc),
-		authoritycli.GetTxCmd(cdc),
 
 		version.Cmd,
 	)
@@ -118,6 +115,9 @@ func txCmds(cdc *amino.Codec) *cobra.Command {
 		authcmd.GetMultiSignCommand(cdc),
 		authcmd.GetBroadcastCommand(cdc),
 		marketcli.GetTxCmd(cdc),
+		lpcli.GetTxCmd(cdc),
+		issuercli.GetTxCmd(cdc),
+		authoritycli.GetTxCmd(cdc),
 	)
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)
