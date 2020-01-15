@@ -160,6 +160,12 @@ func TestManageGasPrices(t *testing.T) {
 
 	gasPrices = keeper.GetGasPrices(ctx)
 	require.Equal(t, coins, gasPrices)
+
+	// Do not allow fees to be set in token denominations that are not present in the chain
+	coins, _ = sdk.ParseDecCoins("0.0005eeur,0.000001echf,0.0000001esek")
+	res = keeper.SetGasPrices(ctx, accAuthority, coins)
+	require.False(t, res.IsOK(), res.Log)
+	require.Equal(t, res.Code, types.CodeUnknownDenomination)
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
@@ -204,10 +210,13 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 		ik  = issuer.NewKeeper(keySupply, lpk, mockInflationKeeper{})
 	)
 
-	// Empty supply
-	sk.SetSupply(ctx, supply.NewSupply(sdk.NewCoins()))
+	sk.SetSupply(ctx, supply.NewSupply(
+		sdk.NewCoins(
+			sdk.NewCoin("echf", sdk.NewInt(5000)),
+			sdk.NewCoin("eeur", sdk.NewInt(5000)),
+		)))
 
-	keeper := NewKeeper(keyAuthority, ik, mockGasPricesKeeper{})
+	keeper := NewKeeper(keyAuthority, ik, sk, mockGasPricesKeeper{})
 
 	return ctx, keeper, ik
 }

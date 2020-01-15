@@ -155,7 +155,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
-	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper, application)
+	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper, application.supplyKeeper, application)
 	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
 
 	application.MountKVStores(keys)

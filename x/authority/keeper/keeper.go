@@ -22,12 +22,14 @@ const (
 type Keeper struct {
 	storeKey sdk.StoreKey
 	ik       issuer.Keeper
+	sk       types.SupplyKeeper
 	gpk      types.GasPricesKeeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, supplyKeeper types.SupplyKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
 	return Keeper{
 		ik:       issuerKeeper,
+		sk:       supplyKeeper,
 		gpk:      gasPricesKeeper,
 		storeKey: storeKey,
 	}
@@ -69,6 +71,14 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprice
 
 	if !gasprices.IsValid() {
 		return types.ErrInvalidGasPrices(gasprices.String()).Result()
+	}
+
+	// Check that the denominations actually exis before setting the gas prices to avoid being "locked out" of the blockchain
+	supply := k.sk.GetSupply(ctx).GetTotal()
+	for _, d := range gasprices {
+		if supply.AmountOf(d.Denom).IsZero() {
+			return types.ErrUnknownDenom(d.Denom).Result()
+		}
 	}
 
 	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(gasprices)

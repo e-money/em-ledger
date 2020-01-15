@@ -2,16 +2,13 @@ package keeper
 
 import (
 	"encoding/json"
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/authority/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func NewQuerier(k Keeper) sdk.Querier {
-	fmt.Println(" *** Creating authority module querier")
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
-		fmt.Println("Handling authority module query:", path)
 		switch path[0] {
 		case types.QueryGasPrices:
 			return queryGasPrices(ctx, k)
