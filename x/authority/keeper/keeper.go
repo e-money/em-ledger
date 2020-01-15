@@ -71,7 +71,7 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprice
 		return types.ErrInvalidGasPrices(gasprices.String()).Result()
 	}
 
-	bz := types.ModuleCdc.MustMarshalBinaryBare(gasprices)
+	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(gasprices)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(keyGasPrices), bz)
 
@@ -82,7 +82,12 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprice
 func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyGasPrices))
-	types.ModuleCdc.MustUnmarshalBinaryBare(bz, &gasPrices)
+
+	if bz == nil {
+		return
+	}
+
+	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &gasPrices)
 	return
 }
 

@@ -152,7 +152,10 @@ func TestManageGasPrices(t *testing.T) {
 		keeper.SetGasPrices(ctx, accRandom, coins)
 	})
 
-	res := keeper.SetGasPrices(ctx, accAuthority, coins)
+	res := keeper.SetGasPrices(ctx, accAuthority, sdk.NewDecCoins(sdk.NewCoins()))
+	require.True(t, res.IsOK(), res.Log)
+
+	res = keeper.SetGasPrices(ctx, accAuthority, coins)
 	require.True(t, res.IsOK(), res.Log)
 
 	gasPrices = keeper.GetGasPrices(ctx)
