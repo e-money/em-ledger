@@ -16,6 +16,7 @@ import (
 const (
 	keyAuthorityAccAddress = "AuthorityAccountAddress"
 	keyRestrictedDenoms    = "RestrictedDenoms"
+	keyGasPrices           = "GasPrices"
 )
 
 type Keeper struct {
@@ -61,6 +62,28 @@ func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 
 	i := issuer.NewIssuer(issuerAddress, denoms...)
 	return k.ik.AddIssuer(ctx, i)
+}
+
+func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) sdk.Result {
+	k.MustBeAuthority(ctx, authority)
+
+	if !gasprices.IsValid() {
+		return types.ErrInvalidGasPrices(gasprices.String()).Result()
+	}
+
+	bz := types.ModuleCdc.MustMarshalBinaryBare(gasprices)
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(keyGasPrices), bz)
+
+	k.gpk.SetMinimumGasPrices(gasprices.String())
+	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte(keyGasPrices))
+	types.ModuleCdc.MustUnmarshalBinaryBare(bz, &gasPrices)
+	return
 }
 
 func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {

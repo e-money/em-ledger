@@ -24,7 +24,7 @@ type (
 	}
 
 	MsgSetGasPrices struct {
-		GasPrices string
+		GasPrices sdk.DecCoins
 		Authority sdk.AccAddress
 	}
 )
@@ -68,8 +68,8 @@ func (msg MsgSetGasPrices) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress("missing authority address")
 	}
 
-	if _, err := sdk.ParseDecCoins(msg.GasPrices); err != nil {
-		return sdk.ErrInvalidCoins(msg.GasPrices)
+	if !msg.GasPrices.IsValid() {
+		return sdk.ErrInvalidCoins(msg.GasPrices.String())
 	}
 
 	return nil

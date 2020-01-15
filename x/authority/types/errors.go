@@ -17,10 +17,11 @@ const (
 	CodeMissingDenomination sdk.CodeType = 2
 	CodeInvalidDenomination sdk.CodeType = 3
 	CodeNoAuthority         sdk.CodeType = 4
+	CodeInvalidGasPrices    sdk.CodeType = 5
 )
 
 func ErrNotAuthority(address string) sdk.Error {
-	return sdk.NewError(Codespace, CodeMissingDenomination, "No denominations specified in authority call")
+	return sdk.NewError(Codespace, CodeMissingDenomination, "%v is not the authority", address)
 }
 
 func ErrNoDenomsSpecified() sdk.Error {
@@ -32,4 +33,8 @@ func ErrInvalidDenom(denom string) sdk.Error {
 }
 func ErrNoAuthorityConfigured() sdk.Error {
 	return sdk.NewError(Codespace, CodeNoAuthority, "No authority configured")
+}
+
+func ErrInvalidGasPrices(amt string) sdk.Error {
+	return sdk.NewError(Codespace, CodeInvalidGasPrices, "Invalid gas prices : %v", amt)
 }

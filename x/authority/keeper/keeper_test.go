@@ -133,6 +133,32 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 	require.Len(t, issuers[0].Denoms, 3)
 }
 
+func TestManageGasPrices(t *testing.T) {
+	ctx, keeper, _ := createTestComponents(t)
+
+	var (
+		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accRandom    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+	)
+
+	keeper.SetAuthority(ctx, accAuthority)
+
+	gasPrices := keeper.GetGasPrices(ctx)
+	require.True(t, gasPrices.Empty())
+
+	coins, _ := sdk.ParseDecCoins("0.0005eeur,0.000001echf")
+
+	require.Panics(t, func() {
+		keeper.SetGasPrices(ctx, accRandom, coins)
+	})
+
+	res := keeper.SetGasPrices(ctx, accAuthority, coins)
+	require.True(t, res.IsOK(), res.Log)
+
+	gasPrices = keeper.GetGasPrices(ctx)
+	require.Equal(t, coins, gasPrices)
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	cdc := makeTestCodec()
 
@@ -183,10 +209,18 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 	return ctx, keeper, ik
 }
 
-type mockGasPricesKeeper struct{}
+type mockGasPricesKeeper struct {
+	gasPrices sdk.DecCoins
+}
 
-func (m mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) (_ error) {
-	return
+func (m mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) error {
+	if coins, err := sdk.ParseDecCoins(gasPricesStr); err != nil {
+		return err
+	} else {
+		m.gasPrices = coins
+	}
+
+	return nil
 }
 
 type mockInflationKeeper struct{}

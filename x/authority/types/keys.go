@@ -9,4 +9,7 @@ const (
 	StoreKey     = ModuleName
 	RouterKey    = ModuleName
 	QuerierRoute = ModuleName
+
+	// Query endpoints supported by the authority querier
+	QueryGasPrices = "gasprices"
 )

@@ -7,8 +7,10 @@ package authority
 import (
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/authority/keeper"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/e-money/em-ledger/x/authority/client/rest"
 	"github.com/e-money/em-ledger/x/authority/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -42,8 +44,8 @@ func (amb AppModuleBasic) ValidateGenesis(json.RawMessage) error {
 	return nil
 }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(context.CLIContext, *mux.Router) {
-
+func (amb AppModuleBasic) RegisterRESTRoutes(clictx context.CLIContext, r *mux.Router) {
+	rest.RegisterQueryRoutes(clictx, r)
 }
 
 func (amb AppModuleBasic) GetTxCmd(*codec.Codec) *cobra.Command {
@@ -87,7 +89,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper)
 }
 
 func (am AppModule) BeginBlock(sdk.Context, abci.RequestBeginBlock) {}
