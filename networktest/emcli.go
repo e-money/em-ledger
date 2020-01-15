@@ -45,6 +45,17 @@ func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, er
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, params ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", authority.name, minGasPrices)
+	args = append(args, params...)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
+	args := cli.addQueryFlags("query", "authority", "gas-prices")
+	return execCmdAndCollectResponse(args)
+}
+
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "tx", txhash)
 	return execCmdAndCollectResponse(args)
