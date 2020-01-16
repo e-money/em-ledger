@@ -217,7 +217,6 @@ func (cli Emcli) addQueryFlags(arguments ...string) []string {
 
 func (cli Emcli) addTransactionFlags(arguments ...string) []string {
 	arguments = append(arguments,
-		"--broadcast-mode", "block",
 		"--home", cli.keystore.path,
 		"--yes",
 	)
