@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/spf13/viper"
 	"os"
 
 	"github.com/tendermint/go-amino"
@@ -64,24 +65,13 @@ func main() {
 		"query.distribution.community-pool",
 	)
 
-	makeBroadcastBlocked(rootCmd)
+	viper.Set(flags.FlagBroadcastMode, "block")
 
 	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
 		os.Exit(1)
-	}
-}
-
-// Switch the default value of --broadcast-mode to "block"
-func makeBroadcastBlocked(cmd *cobra.Command) {
-	if flag := cmd.Flag(flags.FlagBroadcastMode); flag != nil {
-		flag.DefValue = flags.BroadcastBlock
-	}
-
-	for _, child := range cmd.Commands() {
-		makeBroadcastBlocked(child)
 	}
 }
 
