@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -26,7 +27,6 @@ import (
 	marketcli "github.com/e-money/em-ledger/x/market/client/cli"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -65,7 +65,8 @@ func main() {
 		"query.distribution.community-pool",
 	)
 
-	viper.Set(flags.FlagBroadcastMode, "block")
+	viper.SetDefault(flags.FlagBroadcastMode, "block")
+	makeBroadcastBlocked(rootCmd)
 
 	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
 	err := executor.Execute()
@@ -77,6 +78,17 @@ func main() {
 
 func init() {
 	registerTypesInAuthModule()
+}
+
+// Switch the default value of --broadcast-mode to "block"
+func makeBroadcastBlocked(cmd *cobra.Command) {
+	if flag := cmd.Flag(flags.FlagBroadcastMode); flag != nil {
+		flag.DefValue = flags.BroadcastBlock
+	}
+
+	for _, child := range cmd.Commands() {
+		makeBroadcastBlocked(child)
+	}
 }
 
 func registerTypesInAuthModule() {
