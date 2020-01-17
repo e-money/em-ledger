@@ -114,6 +114,10 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sdk.Result {
+	// Use a fixed gas amount
+	ctx.GasMeter().ConsumeGas(25000, "NewOrderSingle")
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return err.Result()
 	}
@@ -218,8 +222,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 			if passiveOrder.IsFilled() {
 				types.EmitFilledEvent(ctx, *passiveOrder)
 				// Order has been filled. Remove it from queue.
-				// Tx sender should not pay gas for completely filling passive orders.
-				k.deleteOrder(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), passiveOrder)
+				k.deleteOrder(ctx, passiveOrder)
 			} else {
 				types.EmitPartiallyFilledEvent(ctx, *passiveOrder)
 				k.setOrder(ctx, passiveOrder)
@@ -290,6 +293,10 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 }
 
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
+	// Use a fixed gas amount
+	ctx.GasMeter().ConsumeGas(25000, "CancelReplaceOrder")
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
 	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
 	if origOrder == nil {
 		return types.ErrClientOrderIdNotFound(newOrder.Owner, origClientOrderId).Result()
@@ -325,6 +332,10 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 }
 
 func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) sdk.Result {
+	// Use a fixed gas amount
+	ctx.GasMeter().ConsumeGas(12500, "CancelOrder")
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
 	orders := k.accountOrders.GetAllOrders(owner)
 
 	var order *types.Order
