@@ -168,6 +168,7 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
 	for i, _ := range issuers {
 		if issuers[i].Address.Equals(newIssuer.Address) {
 			issuers[i].Denoms = append(issuers[i].Denoms, newIssuer.Denoms...)
+			sort.Strings(issuers[i].Denoms)
 			found = true
 			break
 		}
