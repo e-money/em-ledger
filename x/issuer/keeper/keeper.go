@@ -51,7 +51,9 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	if lpAcc == nil {
 		logger.Info("Creating liquidity provider", "account", liquidityProvider, "increase", mintableIncrease)
 		// Account was not previously a liquidity provider. Create it
-		k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease)
+		if res := k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease); !res.IsOK() {
+			return res
+		}
 	} else {
 		logger.Info("Increasing liquidity provider mintable amount", "account", liquidityProvider, "increase", mintableIncrease)
 		lpAcc.IncreaseMintableAmount(mintableIncrease)
