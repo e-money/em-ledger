@@ -18,6 +18,13 @@ import (
 	"github.com/e-money/em-ledger/x/market/types"
 )
 
+const (
+	// Gas prices must be predictable, and not depend on the number of passive orders matched.
+	gasPriceNewOrder           = uint64(25000)
+	gasPriceCancelReplaceOrder = uint64(25000)
+	gasPriceCancelOrder        = uint64(12500)
+)
+
 type Keeper struct {
 	key         sdk.StoreKey
 	cdc         *codec.Codec
@@ -115,7 +122,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sdk.Result {
 	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(25000, "NewOrderSingle")
+	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	if err := aggressiveOrder.IsValid(); err != nil {
@@ -294,7 +301,7 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 
 func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
 	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(25000, "CancelReplaceOrder")
+	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
@@ -333,7 +340,7 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 
 func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) sdk.Result {
 	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(12500, "CancelOrder")
+	ctx.GasMeter().ConsumeGas(gasPriceCancelOrder, "CancelOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	orders := k.accountOrders.GetAllOrders(owner)
