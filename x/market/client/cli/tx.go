@@ -109,7 +109,7 @@ func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cancelreplace [original-client-order-id] [source-amount] [destination-amount] [client-orderid]",
 		Short: "Update an existing order",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
