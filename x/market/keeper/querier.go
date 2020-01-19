@@ -70,7 +70,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 				ID:        order.ID,
 				Created:   order.Created,
 				Owner:     order.Owner,
-				Remaining: fmt.Sprintf("%v%v", order.Destination.Amount.Sub(order.DestinationFilled), order.Destination.Denom),
+				Remaining: fmt.Sprintf("%v%v", order.SourceRemaining, order.Source.Denom),
 				Price:     order.Price(),
 			})
 		}
