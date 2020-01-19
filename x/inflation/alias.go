@@ -24,19 +24,12 @@ const (
 
 var (
 	// functions aliases
-	NewKeeper  = keeper.NewKeeper
-	NewQuerier = keeper.NewQuerier
-	//NewMinter            = types.NewMinter
-	//InitialMinter        = types.InitialMinter
-	//DefaultInitialMinter = types.DefaultInitialMinter
-	//ValidateMinter       = types.ValidateMinter
+	NewKeeper              = keeper.NewKeeper
+	NewQuerier             = keeper.NewQuerier
 	ParamKeyTable          = types.ParamKeyTable
 	NewInflationState      = types.NewInflationState
 	DefaultInflationState  = types.DefaultInflationState
 	ValidateInflationState = types.ValidateInflationState
-	//NewParams            = types.NewParams
-	//DefaultParams        = types.DefaultParams
-	//ValidateParams       = types.ValidateParams
 
 	// variable aliases
 	ModuleCdc    = types.ModuleCdc

@@ -68,7 +68,7 @@ func newTestInput(t *testing.T) testInput {
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, keySupply, accountKeeper, bankKeeper, maccPerms)
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(sdk.Coins{}))
 
-	inflationKeeper := NewKeeper(types.ModuleCdc, keyInflation, paramsKeeper.Subspace(types.DefaultParamspace), supplyKeeper, auth.FeeCollectorName)
+	inflationKeeper := NewKeeper(types.ModuleCdc, keyInflation, supplyKeeper, auth.FeeCollectorName)
 
 	// set module accounts
 	feeCollectorAcc := supply.NewEmptyModuleAccount(auth.FeeCollectorName)

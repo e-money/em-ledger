@@ -131,12 +131,11 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 
 	var (
-		authSubspace      = application.paramsKeeper.Subspace(auth.DefaultParamspace)
-		bankSubspace      = application.paramsKeeper.Subspace(bank.DefaultParamspace)
-		stakingSubspace   = application.paramsKeeper.Subspace(staking.DefaultParamspace)
-		inflationSubspace = application.paramsKeeper.Subspace(inflation.DefaultParamspace)
-		distrSubspace     = application.paramsKeeper.Subspace(distr.DefaultParamspace)
-		slashingSubspace  = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+		authSubspace     = application.paramsKeeper.Subspace(auth.DefaultParamspace)
+		bankSubspace     = application.paramsKeeper.Subspace(bank.DefaultParamspace)
+		stakingSubspace  = application.paramsKeeper.Subspace(staking.DefaultParamspace)
+		distrSubspace    = application.paramsKeeper.Subspace(distr.DefaultParamspace)
+		slashingSubspace = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	)
 
 	accountBlacklist := application.ModuleAccountAddrs()
@@ -150,7 +149,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.distrKeeper = distr.NewKeeper(application.cdc, keys[distr.StoreKey], distrSubspace, &application.stakingKeeper,
 		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName, accountBlacklist)
 
-	application.inflationKeeper = inflation.NewKeeper(application.cdc, keys[inflation.StoreKey], inflationSubspace, application.supplyKeeper, auth.FeeCollectorName)
+	application.inflationKeeper = inflation.NewKeeper(application.cdc, keys[inflation.StoreKey], application.supplyKeeper, auth.FeeCollectorName)
 	application.slashingKeeper = slashing.NewKeeper(application.cdc, keys[slashing.StoreKey], &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
