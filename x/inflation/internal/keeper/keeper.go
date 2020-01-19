@@ -85,6 +85,10 @@ func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string
 func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) sdk.Result {
 	state := k.GetState(ctx)
 
+	if len(state.InflationAssets) == 0 {
+		state.LastAppliedTime = ctx.BlockTime()
+	}
+
 	for _, denom := range denoms {
 		if state.FindByDenom(denom) != nil {
 			continue
