@@ -98,20 +98,3 @@ func TestMultipleCoinsAccrual(t *testing.T) {
 	assert.Equal(t, sdk.NewInt(1001), supply.AmountOf("credit"))
 	assert.Equal(t, sdk.NewInt(1030454533), supply.AmountOf("buck"))
 }
-
-func TestStartTimeInFuture(t *testing.T) {
-	currentTime := time.Now().UTC()
-	state := NewInflationState("credit", "0.001", "buck", "0.03")
-
-	supply := sdk.NewCoins(
-		sdk.NewCoin("buck", sdk.NewInt(1000000000)),
-		sdk.NewCoin("credit", sdk.NewInt(1000)),
-	)
-
-	state.LastAppliedTime = currentTime.Add(24 * time.Hour)
-
-	mintedCoins := applyInflation(&state, supply, currentTime)
-	assert.True(t, mintedCoins.IsZero())
-	assert.Equal(t, sdk.ZeroDec(), state.InflationAssets[0].Accum)
-	assert.Equal(t, sdk.ZeroDec(), state.InflationAssets[1].Accum)
-}
