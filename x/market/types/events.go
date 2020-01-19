@@ -32,9 +32,9 @@ const (
 func EmitCancelEvent(ctx sdk.Context, order Order) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeCancel,
-			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 		),
 	)
 }
@@ -44,6 +44,7 @@ func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 		sdk.NewEvent(EventNewOrder,
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeyDestination, order.Destination.String()),
 		),
@@ -63,6 +64,7 @@ func emitFilledEvent(ctx sdk.Context, order Order, eventtype string) {
 		sdk.NewEvent(eventtype,
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),
 			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", order.SourceFilled.String(), order.Source.Denom)),
