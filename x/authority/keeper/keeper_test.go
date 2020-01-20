@@ -83,13 +83,13 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	result := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"x2eur", "x0jpy"})
+	result := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"eeur", "ejpy"})
 	require.True(t, result.IsOK())
 
-	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp", "x2eur"})
+	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"})
 	require.False(t, result.IsOK()) // Must fail due to duplicate token denomination
 
-	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"x2chf", "x2gbp"})
+	result = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp"})
 	require.True(t, result.IsOK())
 	require.Len(t, ik.GetIssuers(ctx), 2)
 
@@ -121,16 +121,51 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	result := keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"x2eur", "x0jpy"})
+	result := keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
 	require.True(t, result.IsOK())
 
-	result = keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"x2krw"})
+	result = keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"ekrw"})
 	require.True(t, result.IsOK())
 	issuers := ik.GetIssuers(ctx)
 
 	// Ensure that the denomination has been added to the existing issuer, not to a new entry with the same key
 	require.Len(t, issuers, 1)
 	require.Len(t, issuers[0].Denoms, 3)
+}
+
+func TestManageGasPrices(t *testing.T) {
+	ctx, keeper, _ := createTestComponents(t)
+
+	var (
+		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accRandom    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+	)
+
+	keeper.SetAuthority(ctx, accAuthority)
+
+	gasPrices := keeper.GetGasPrices(ctx)
+	require.True(t, gasPrices.Empty())
+
+	coins, _ := sdk.ParseDecCoins("0.0005eeur,0.000001echf")
+
+	require.Panics(t, func() {
+		keeper.SetGasPrices(ctx, accRandom, coins)
+	})
+
+	res := keeper.SetGasPrices(ctx, accAuthority, sdk.NewDecCoins(sdk.NewCoins()))
+	require.True(t, res.IsOK(), res.Log)
+
+	res = keeper.SetGasPrices(ctx, accAuthority, coins)
+	require.True(t, res.IsOK(), res.Log)
+
+	gasPrices = keeper.GetGasPrices(ctx)
+	require.Equal(t, coins, gasPrices)
+
+	// Do not allow fees to be set in token denominations that are not present in the chain
+	coins, _ = sdk.ParseDecCoins("0.0005eeur,0.000001echf,0.0000001esek")
+	res = keeper.SetGasPrices(ctx, accAuthority, coins)
+	require.False(t, res.IsOK(), res.Log)
+	require.Equal(t, res.Code, types.CodeUnknownDenomination)
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
@@ -175,12 +210,29 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 		ik  = issuer.NewKeeper(keySupply, lpk, mockInflationKeeper{})
 	)
 
-	// Empty supply
-	sk.SetSupply(ctx, supply.NewSupply(sdk.NewCoins()))
+	sk.SetSupply(ctx, supply.NewSupply(
+		sdk.NewCoins(
+			sdk.NewCoin("echf", sdk.NewInt(5000)),
+			sdk.NewCoin("eeur", sdk.NewInt(5000)),
+		)))
 
-	keeper := NewKeeper(keyAuthority, ik)
+	keeper := NewKeeper(keyAuthority, ik, sk, mockGasPricesKeeper{})
 
 	return ctx, keeper, ik
+}
+
+type mockGasPricesKeeper struct {
+	gasPrices sdk.DecCoins
+}
+
+func (m mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) error {
+	if coins, err := sdk.ParseDecCoins(gasPricesStr); err != nil {
+		return err
+	} else {
+		m.gasPrices = coins
+	}
+
+	return nil
 }
 
 type mockInflationKeeper struct{}

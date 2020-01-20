@@ -7,19 +7,24 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	emtypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/inflation"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/inflation"
-	"github.com/tendermint/tendermint/crypto"
-	"net"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -28,12 +33,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/common"
 
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -188,7 +192,7 @@ func initializeTestnet(
 }
 
 func createInflationGenesis() json.RawMessage {
-	state := inflation.NewInflationState("x0jpy", "0.05", "x2chf", "0.10", "x2eur", "0.01")
+	state := inflation.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01")
 
 	gen := inflation.GenesisState{
 		InflationState: state,
@@ -203,7 +207,7 @@ func createInflationGenesis() json.RawMessage {
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
-	gen := authority.NewGenesisState(akey)
+	gen := authority.NewGenesisState(akey, emtypes.RestrictedDenoms{}, sdk.NewDecCoins(sdk.NewCoins()))
 
 	bz, err := json.Marshal(gen)
 	if err != nil {
@@ -228,10 +232,10 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 	for i, k := range keys {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
-			sdk.NewCoin("x3ngm", sdk.NewInt(99000000000)),
-			sdk.NewCoin("x2eur", sdk.NewInt(10000000000)),
-			sdk.NewCoin("x0jpy", sdk.NewInt(3500000000000)),
-			sdk.NewCoin("x2chf", sdk.NewInt(10000000000)),
+			sdk.NewCoin("ungm", sdk.NewInt(99000000000)),
+			sdk.NewCoin("eeur", sdk.NewInt(10000000000)),
+			sdk.NewCoin("ejpy", sdk.NewInt(3500000000000)),
+			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
 		)
 
 		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
@@ -246,7 +250,7 @@ func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount 
 	account := genaccounts.GenesisAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
-			sdk.NewCoin("x3ngm", accStakingTokens),
+			sdk.NewCoin("ungm", accStakingTokens),
 		},
 	}
 
@@ -276,7 +280,7 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,
-		sdk.NewCoin("x3ngm", valTokens),
+		sdk.NewCoin("ungm", valTokens),
 		staking.NewDescription(moniker, "", "", ""),
 		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())

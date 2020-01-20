@@ -32,6 +32,8 @@ func newHandler(keeper Keeper) sdk.Handler {
 			return keeper.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
 		case types.MsgDestroyIssuer:
 			return keeper.DestroyIssuer(ctx, msg.Authority, msg.Issuer)
+		case types.MsgSetGasPrices:
+			return keeper.SetGasPrices(ctx, msg.Authority, msg.GasPrices)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized inflation Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()

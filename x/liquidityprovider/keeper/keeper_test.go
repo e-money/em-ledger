@@ -29,12 +29,12 @@ var (
 	accAddr1 = sdk.AccAddress([]byte("account1"))
 
 	defaultMintable = sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(1000, 2)),
+		sdk.NewCoin("eeur", sdk.NewIntWithDecimal(1000, 2)),
 	)
 
 	initialBalance = sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(50, 2)),
-		sdk.NewCoin("x0jpy", sdk.NewInt(250)),
+		sdk.NewCoin("eeur", sdk.NewIntWithDecimal(50, 2)),
+		sdk.NewCoin("ejpy", sdk.NewInt(250)),
 	)
 )
 
@@ -54,7 +54,7 @@ func TestCreateAndMint(t *testing.T) {
 
 	assert.IsType(t, &types.LiquidityProviderAccount{}, account)
 
-	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
+	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)))
 	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
@@ -78,7 +78,7 @@ func TestMintTooMuch(t *testing.T) {
 	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
 	account = ak.GetAccount(ctx, acc)
 
-	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(5000, 2)))
+	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(5000, 2)))
 	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
@@ -93,7 +93,7 @@ func TestMintTooMuch(t *testing.T) {
 func TestMintMultipleDenoms(t *testing.T) {
 	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
 
-	jpy := sdk.NewCoins(sdk.NewCoin("x0jpy", sdk.NewInt(1000000)))
+	jpy := sdk.NewCoins(sdk.NewCoin("ejpy", sdk.NewInt(1000000)))
 	extendedMintable := defaultMintable.Add(jpy)
 
 	acc := accAddr1
@@ -106,8 +106,8 @@ func TestMintMultipleDenoms(t *testing.T) {
 	account = ak.GetAccount(ctx, acc)
 
 	toMint := sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)),
-		sdk.NewCoin("x0jpy", sdk.NewInt(500000)),
+		sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)),
+		sdk.NewCoin("ejpy", sdk.NewInt(500000)),
 	)
 
 	keeper.MintTokens(ctx, acc, toMint)
@@ -128,7 +128,7 @@ func TestMintWithoutLPAccount(t *testing.T) {
 	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
 
-	toMint := sdk.NewCoins(sdk.NewCoin("x2eur", sdk.NewIntWithDecimal(500, 2)))
+	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)))
 	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)

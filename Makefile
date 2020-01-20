@@ -73,9 +73,14 @@ test:
 	go test ./...
 
 bdd-test:
-	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go authority_test.go capacity_test.go
+	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go authority_test.go capacity_test.go market_test.go
 
 clean:
 	rm -rf ./build ./data ./config
 
-.PHONY: build build-linux clean test bdd-test build-docker
+license:
+	GO111MODULE=off go get github.com/google/addlicense/
+	addlicense -f LICENSE .
+
+
+.PHONY: build build-linux clean test bdd-test build-docker license

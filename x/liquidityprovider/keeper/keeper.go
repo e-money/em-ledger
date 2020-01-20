@@ -15,29 +15,30 @@ import (
 )
 
 type Keeper struct {
-	authKeeper   auth.AccountKeeper
+	authKeeper   types.AccountKeeper
 	supplyKeeper supply.Keeper
 }
 
-func NewKeeper(ak auth.AccountKeeper, sk supply.Keeper) Keeper {
+func NewKeeper(ak types.AccountKeeper, sk supply.Keeper) Keeper {
 	return Keeper{
 		authKeeper:   ak,
 		supplyKeeper: sk,
 	}
 }
 
-func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress, mintable sdk.Coins) {
+func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress, mintable sdk.Coins) sdk.Result {
 	logger := k.Logger(ctx)
 
 	account := k.authKeeper.GetAccount(ctx, address)
 	if account == nil {
 		logger.Info("Account not found", "account", address)
-		return
+		return types.ErrAccountDoesNotExist(address).Result()
 	}
 	lpAcc := types.NewLiquidityProviderAccount(account, mintable)
 	k.authKeeper.SetAccount(ctx, lpAcc)
 
 	logger.Info("Created liquidity provider account.", "account", lpAcc.GetAddress())
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
 func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) sdk.Result {

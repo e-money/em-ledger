@@ -7,8 +7,11 @@ package authority
 import (
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/authority/keeper"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/e-money/em-ledger/x/authority/client/cli"
+	"github.com/e-money/em-ledger/x/authority/client/rest"
 	"github.com/e-money/em-ledger/x/authority/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -42,16 +45,16 @@ func (amb AppModuleBasic) ValidateGenesis(json.RawMessage) error {
 	return nil
 }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(context.CLIContext, *mux.Router) {
-
+func (amb AppModuleBasic) RegisterRESTRoutes(clictx context.CLIContext, r *mux.Router) {
+	rest.RegisterQueryRoutes(clictx, r)
 }
 
 func (amb AppModuleBasic) GetTxCmd(*codec.Codec) *cobra.Command {
 	return nil
 }
 
-func (amb AppModuleBasic) GetQueryCmd(*codec.Codec) *cobra.Command {
-	return nil
+func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return cli.GetQueryCmd(cdc)
 }
 
 func NewAppModule(keeper Keeper) *AppModule {
@@ -70,7 +73,9 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) (_ []abci
 
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	genesis := GenesisState{
-		AuthorityKey: am.keeper.GetAuthority(ctx),
+		AuthorityKey:     am.keeper.GetAuthority(ctx),
+		RestrictedDenoms: am.keeper.GetRestrictedDenoms(ctx),
+		MinGasPrices:     am.keeper.GetGasPrices(ctx),
 	}
 	return ModuleCdc.MustMarshalJSON(genesis)
 }
@@ -86,7 +91,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper)
 }
 
 func (am AppModule) BeginBlock(sdk.Context, abci.RequestBeginBlock) {}

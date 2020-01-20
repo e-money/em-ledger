@@ -11,6 +11,7 @@ var ModuleCdc *codec.Codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgCreateIssuer{}, "e-money/MsgCreateIssuer", nil)
 	cdc.RegisterConcrete(MsgDestroyIssuer{}, "e-money/MsgDestroyIssuer", nil)
+	cdc.RegisterConcrete(MsgSetGasPrices{}, "e-money/MsgSetGasPrices", nil)
 }
 
 func init() {

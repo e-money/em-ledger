@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("Staking", func() {
 	const (
-		QueryNgmRewards            = "total.#(denom==\"x3ngm\")"
+		QueryNgmRewards            = "total.#(denom==\"ungm\")"
 		QueryJailedValidatorsCount = "#(jailed==true)#"
 	)
 

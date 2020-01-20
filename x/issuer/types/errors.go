@@ -35,7 +35,7 @@ func ErrNotLiquidityProvider(lp sdk.AccAddress) sdk.Error {
 }
 
 func ErrDoesNotControlDenomination(denom string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeDoesNotControlDenom, fmt.Sprintf("issuer does not control inflation of denomination %v", denom))
+	return sdk.NewError(DefaultCodespace, CodeDoesNotControlDenom, fmt.Sprintf("issuer does not control denomination %v", denom))
 }
 
 func ErrDenominationAlreadyAssigned() sdk.Error {

@@ -25,6 +25,8 @@ func init() {
 
 var (
 	testnet = nt.NewTestnet()
+	// If set to false, the tests will not clean up the docker containers that are started during the tests.
+	tearDownAfterTests = true
 )
 
 func createNewTestnet() {
@@ -40,8 +42,10 @@ func TestSuite(t *testing.T) {
 	})
 
 	AfterSuite(func() {
-		err := testnet.Teardown()
-		Expect(err).ShouldNot(HaveOccurred())
+		if tearDownAfterTests {
+			err := testnet.Teardown()
+			Expect(err).ShouldNot(HaveOccurred())
+		}
 	})
 
 	RegisterFailHandler(Fail)

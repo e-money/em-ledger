@@ -18,9 +18,9 @@ const (
 	// StoreKey is the default store key for mint
 	StoreKey = ModuleName
 
-	// QuerierRoute is the querier route for the minting store.
+	// QuerierRoute is the querier route for the inflation store.
 	QuerierRoute = StoreKey
 
-	// Query endpoints supported by the minting querier
+	// Query endpoints supported by the inflation querier
 	QueryInflation = "inflation"
 )
