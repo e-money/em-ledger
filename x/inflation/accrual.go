@@ -30,10 +30,17 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
+	// Inflation may be set to start in the future. Do nothing in that case.
+	if blockTime.Before(state.LastAppliedTime) {
+		return
+	}
+
 	totalTokenSupply := k.TotalTokenSupply(ctx)
 
 	mintedCoins := applyInflation(&state, totalTokenSupply, blockTime)
 	state.LastAppliedHeight = sdk.NewInt(ctx.BlockHeight())
+
+	k.SetState(ctx, state)
 
 	if mintedCoins.IsZero() {
 		return
@@ -41,7 +48,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	k.Logger(ctx).Info("Inflation minted coins", toKeyValuePairs(mintedCoins)...)
 
-	k.SetState(ctx, state)
 	err := k.MintCoins(ctx, mintedCoins)
 	if err != nil {
 		panic(err)
@@ -64,11 +70,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 func applyInflation(state *InflationState, totalTokenSupply sdk.Coins, currentTime time.Time) sdk.Coins {
 	lastAccrual := state.LastAppliedTime
 	mintedCoins := sdk.Coins{}
-
-	// Inflation may be set to start in the future. Do nothing in that case.
-	if currentTime.Before(lastAccrual) {
-		return mintedCoins
-	}
 
 	state.LastAppliedTime = currentTime
 

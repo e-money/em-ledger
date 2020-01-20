@@ -39,8 +39,8 @@ func TestAddIssuer(t *testing.T) {
 		acc1, _      = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 		acc2, _      = sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 		randomacc, _ = sdk.AccAddressFromBech32("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
-		issuer1      = types.NewIssuer(acc1, "x2eur", "x0jpy")
-		issuer2      = types.NewIssuer(acc2, "x2chf")
+		issuer1      = types.NewIssuer(acc1, "eeur", "ejpy")
+		issuer2      = types.NewIssuer(acc2, "echf")
 	)
 
 	require.True(t, issuer1.IsValid())
@@ -50,7 +50,7 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, result.IsOK())
 	result = keeper.AddIssuer(ctx, issuer1)
 	require.False(t, result.IsOK())
-	result = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "x2dkk"))
+	result = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
 	require.True(t, result.IsOK())
 
 	require.Len(t, keeper.GetIssuers(ctx), 1)
@@ -75,7 +75,7 @@ func TestRemoveIssuer(t *testing.T) {
 	acc1, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	acc2, _ := sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 
-	issuer := types.NewIssuer(acc1, "x2eur", "x0jpy")
+	issuer := types.NewIssuer(acc1, "eeur", "ejpy")
 
 	result := keeper.AddIssuer(ctx, issuer)
 	require.True(t, result.IsOK())
@@ -100,10 +100,10 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lpacc))
 
-	issuer := types.NewIssuer(iacc, "x2eur", "x0jpy")
+	issuer := types.NewIssuer(iacc, "eeur", "ejpy")
 
 	keeper.AddIssuer(ctx, issuer)
-	mintable := MustParseCoins("100000x2eur,5000x0jpy")
+	mintable := MustParseCoins("100000eeur,5000ejpy")
 
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
@@ -112,11 +112,11 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	// Verify the two increases in mintable balance
 	a := ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
-	expected := MustParseCoins("200000x2eur,10000x0jpy")
+	expected := MustParseCoins("200000eeur,10000ejpy")
 	require.Equal(t, expected, a.Mintable)
 
 	// Decrease the mintable amount too much
-	mintable, _ = sdk.ParseCoins("400000x2eur")
+	mintable, _ = sdk.ParseCoins("400000eeur")
 	result := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.NotNil(t, result)
 
@@ -125,11 +125,11 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	require.Equal(t, expected, a.Mintable)
 
 	// Decrease mintable balance.
-	mintable = MustParseCoins("50000x2eur, 2000x0jpy")
+	mintable = MustParseCoins("50000eeur, 2000ejpy")
 	result = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.True(t, result.IsOK())
 
-	expected = MustParseCoins("150000x2eur,8000x0jpy")
+	expected = MustParseCoins("150000eeur,8000ejpy")
 	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
 	require.Equal(t, expected, a.Mintable)
 }
@@ -145,9 +145,9 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 
 	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lpacc))
 
-	keeper.AddIssuer(ctx, types.NewIssuer(iacc, "x2eur", "x0jpy"))
+	keeper.AddIssuer(ctx, types.NewIssuer(iacc, "eeur", "ejpy"))
 
-	mintable := MustParseCoins("100000x2eur,5000x0jpy")
+	mintable := MustParseCoins("100000eeur,5000ejpy")
 
 	// Ensure that a random account can't create a LP
 	res := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, randomacc, mintable)
@@ -176,11 +176,11 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	)
 
 	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lp))
-	keeper.AddIssuer(ctx, types.NewIssuer(issuer1, "x2eur", "x0jpy"))
-	keeper.AddIssuer(ctx, types.NewIssuer(issuer2, "x2dkk", "x2sek"))
+	keeper.AddIssuer(ctx, types.NewIssuer(issuer1, "eeur", "ejpy"))
+	keeper.AddIssuer(ctx, types.NewIssuer(issuer2, "edkk", "esek"))
 
-	mintable1 := MustParseCoins("100000x2eur,5000x0jpy")
-	mintable2 := MustParseCoins("250000x2dkk,1000x2sek")
+	mintable1 := MustParseCoins("100000eeur,5000ejpy")
+	mintable2 := MustParseCoins("250000edkk,1000esek")
 
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer1, mintable1)
 
@@ -208,11 +208,11 @@ func TestCollectDenominations(t *testing.T) {
 	issuers := []types.Issuer{
 		{
 			Address: nil,
-			Denoms:  []string{"x2eur", "x0jpy"},
+			Denoms:  []string{"eeur", "ejpy"},
 		},
 		{
 			Address: nil,
-			Denoms:  []string{"x2chf", "x0dkk"},
+			Denoms:  []string{"echf", "edkk"},
 		},
 	}
 
@@ -237,15 +237,15 @@ func TestAnyContains(t *testing.T) {
 
 func TestRemoveDenom(t *testing.T) {
 	coins := sdk.NewCoins(
-		sdk.NewCoin("x2eur", sdk.NewInt(5)),
-		sdk.NewCoin("x2dkk", sdk.NewInt(5)),
-		sdk.NewCoin("x0jpy", sdk.NewInt(5)),
+		sdk.NewCoin("eeur", sdk.NewInt(5)),
+		sdk.NewCoin("edkk", sdk.NewInt(5)),
+		sdk.NewCoin("ejpy", sdk.NewInt(5)),
 	)
 
-	res := removeDenom(coins, "x2chf")
+	res := removeDenom(coins, "echf")
 	require.EqualValues(t, coins, res)
 
-	res = removeDenom(coins, "x2eur")
+	res = removeDenom(coins, "ejpy")
 	require.Len(t, res, 2)
 	require.EqualValues(t, coins[:len(coins)-1], res)
 }

@@ -1,7 +1,13 @@
 # Makefile for the "emdnode" docker image.
 
-all:
+all: emdnode rest-server
+
+emdnode:
 	docker build --tag emoney/emdnode emdnode
 
-.PHONY: all
+rest-server:
+	docker build --tag emoney/rest-server rest-server
+
+
+.PHONY: all rest-server emdnode
 

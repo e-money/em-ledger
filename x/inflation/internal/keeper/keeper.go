@@ -10,7 +10,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
@@ -18,15 +17,13 @@ import (
 type Keeper struct {
 	cdc              *codec.Codec
 	storeKey         sdk.StoreKey
-	paramSpace       params.Subspace
 	supplyKeeper     types.SupplyKeeper
 	feeCollectorName string
 }
 
 // NewKeeper creates a new mint Keeper instance
 func NewKeeper(
-	cdc *codec.Codec, key sdk.StoreKey, paramSpace params.Subspace,
-	supplyKeeper types.SupplyKeeper, feeCollectorName string) Keeper {
+	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, feeCollectorName string) Keeper {
 
 	// ensure mint module account is set
 	if addr := supplyKeeper.GetModuleAddress(types.ModuleName); addr == nil {
@@ -36,7 +33,6 @@ func NewKeeper(
 	return Keeper{
 		cdc:              cdc,
 		storeKey:         key,
-		paramSpace:       paramSpace.WithKeyTable(types.ParamKeyTable()),
 		supplyKeeper:     supplyKeeper,
 		feeCollectorName: feeCollectorName,
 	}

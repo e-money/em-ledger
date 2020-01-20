@@ -51,7 +51,9 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	if lpAcc == nil {
 		logger.Info("Creating liquidity provider", "account", liquidityProvider, "increase", mintableIncrease)
 		// Account was not previously a liquidity provider. Create it
-		k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease)
+		if res := k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease); !res.IsOK() {
+			return res
+		}
 	} else {
 		logger.Info("Increasing liquidity provider mintable amount", "account", liquidityProvider, "increase", mintableIncrease)
 		lpAcc.IncreaseMintableAmount(mintableIncrease)
@@ -168,6 +170,7 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
 	for i, _ := range issuers {
 		if issuers[i].Address.Equals(newIssuer.Address) {
 			issuers[i].Denoms = append(issuers[i].Denoms, newIssuer.Denoms...)
+			sort.Strings(issuers[i].Denoms)
 			found = true
 			break
 		}

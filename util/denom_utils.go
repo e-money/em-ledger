@@ -2,7 +2,7 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
-package types
+package util
 
 import (
 	"fmt"

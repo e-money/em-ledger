@@ -39,7 +39,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 func getCmdSetInflation(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-inflation [issuer_key_or_address] [denomination] [inflation]",
-		Example: "emcli issuer set-inflation issuerkey x2eur 0.02",
+		Example: "emcli issuer set-inflation issuerkey eeur 0.02",
 		Short:   "Set the inflation rate for a denomination",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
