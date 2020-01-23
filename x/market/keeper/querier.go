@@ -45,7 +45,7 @@ type queryOrderResponse struct {
 	Owner     sdk.AccAddress `json:"owner" yaml:"owner"`
 	Remaining string         `json:"remaining" yaml:"remaining"`
 
-	Price sdk.Dec
+	Price sdk.Dec `json:"price" yaml:"price"`
 }
 
 func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
