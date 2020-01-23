@@ -684,9 +684,7 @@ func TestSyntheticInstruments2(t *testing.T) {
 func TestDestinationCapacity(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 
-	// 800000000eusd -- passive
 	acc1 := createAccount(ctx, ak, "acc1", "900000000usd")
-	// 471096868463eeur -- aggressive
 	acc2 := createAccount(ctx, ak, "acc2", "500000000000eur")
 
 	order1 := order(acc1, "800000000usd", "720000000eur")
@@ -695,12 +693,36 @@ func TestDestinationCapacity(t *testing.T) {
 	order1.DestinationFilled = sdk.NewInt(645161290)
 
 	res := k.NewOrderSingle(ctx, order1)
-	fmt.Println(res.Log)
 	require.True(t, res.IsOK())
 
 	order2 := order(acc2, "471096868463eur", "500182000000usd")
 	res = k.NewOrderSingle(ctx, order2)
-	fmt.Println(res.Log)
+	require.True(t, res.IsOK())
+}
+
+func TestDestinationCapacity2(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "900000000usd")
+	acc2 := createAccount(ctx, ak, "acc2", "500000000000eur")
+	acc3 := createAccount(ctx, ak, "acc3", "140000000000chf")
+
+	// chf -> usd -> eur
+
+	order1 := order(acc1, "800000000usd", "720000000eur")
+	order1.SourceRemaining = sdk.NewInt(182000000)
+	order1.SourceFilled = sdk.NewInt(618000000)
+	order1.DestinationFilled = sdk.NewInt(645161290)
+
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	order2 := order(acc3, "130000000000chf", "800000000usd")
+	res = k.NewOrderSingle(ctx, order2)
+	require.True(t, res.IsOK())
+
+	aggressiveOrder := order(acc2, "471096868463eur", "120000000000chf")
+	res = k.NewOrderSingle(ctx, aggressiveOrder)
 	require.True(t, res.IsOK())
 }
 
