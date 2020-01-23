@@ -201,10 +201,17 @@ func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
 		return sdk.ZeroDec()
 	}
 
+	// Find capacity of the first order.
 	res := ep.FirstOrder.SourceRemaining.ToDec().Mul(ep.FirstOrder.Price())
+	res = sdk.MinDec(res, ep.FirstOrder.Destination.Amount.Sub(ep.FirstOrder.DestinationFilled).ToDec())
 
 	if ep.SecondOrder != nil {
-		res = sdk.MinDec(ep.SecondOrder.SourceRemaining.ToDec().Mul(ep.SecondOrder.Price()), res.Mul(ep.SecondOrder.Price()))
+		// Convert first order capacity to second order destination.
+		res = res.Mul(ep.SecondOrder.Price())
+
+		// Determine which of the orders have the lowest capacity.
+		res = sdk.MinDec(res, ep.SecondOrder.SourceRemaining.ToDec().Mul(ep.SecondOrder.Price()))
+		res = sdk.MinDec(res, ep.SecondOrder.Destination.Amount.Sub(ep.SecondOrder.DestinationFilled).ToDec())
 	}
 
 	return res
