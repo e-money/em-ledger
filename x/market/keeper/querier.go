@@ -11,21 +11,19 @@ import (
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"sort"
 	"time"
 )
 
-const (
-	QueryInstruments = "instruments"
-	QueryInstrument  = "instrument"
-)
-
 func NewQuerier(k *Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
-		case QueryInstruments:
-			return queryInstruments(ctx, k)
-		case QueryInstrument:
-			return queryInstrument(ctx, k, path[1:], req)
+		case types.QueryInstruments:
+			return queryInstruments(k)
+		case types.QueryInstrument:
+			return queryInstrument(k, path[1:], req)
+		case types.QueryByAccount:
+			return queryByAccount(k, path[1:], req)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown market query endpoint")
 		}
@@ -38,6 +36,10 @@ type queryInstrumentResponse struct {
 	Orders      []queryOrderResponse `json:"orders" yaml:"orders"`
 }
 
+type queryByAccountResponse struct {
+	Orders orderResponses `json:"orders" yaml:"orders"`
+}
+
 type queryOrderResponse struct {
 	ID      uint64    `json:"id" yaml:"id"`
 	Created time.Time `json:"created" yaml:"created"`
@@ -45,10 +47,58 @@ type queryOrderResponse struct {
 	Owner     sdk.AccAddress `json:"owner" yaml:"owner"`
 	Remaining string         `json:"remaining" yaml:"remaining"`
 
+	ClientOrderId *string `json:"client_order_id,omitempty" yaml:"client_order_id,omitempty"`
+
 	Price sdk.Dec `json:"price" yaml:"price"`
 }
 
-func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+type orderResponses []types.Order
+
+func (o orderResponses) Len() int {
+	return len(o)
+}
+
+func (o orderResponses) Less(i, j int) bool {
+	return o[i].ID < o[j].ID
+}
+
+func (o orderResponses) Swap(i, j int) {
+	o[i], o[j] = o[j], o[i]
+}
+
+var _ sort.Interface = orderResponses{}
+
+func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	if len(path) != 1 {
+		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("%s is not a valid query request path", req.Path))
+	}
+
+	account, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdk.ErrInvalidAddress(fmt.Sprint("Address could not be parsed", path[0], err))
+	}
+
+	o := k.accountOrders.GetAllOrders(account)
+	orders := make(orderResponses, 0)
+
+	it := o.Iterator()
+	for it.Next() {
+		order := it.Value().(*types.Order)
+		orders = append(orders, *order)
+	}
+
+	sort.Sort(orders)
+
+	resp := queryByAccountResponse{orders}
+	bz, err := json.Marshal(resp)
+	if err != nil {
+		return []byte{}, sdk.ErrInternal(err.Error())
+	}
+
+	return bz, nil
+}
+
+func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 	if len(path) != 2 {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("%s is not a valid query request path", req.Path))
 	}
@@ -96,7 +146,7 @@ type queryInstrumentsResponse struct {
 	OrderCount  int    `json:"order_count" yaml:"order_count"`
 }
 
-func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, sdk.Error) {
+func queryInstruments(k *Keeper) ([]byte, sdk.Error) {
 	response := make([]queryInstrumentsResponse, len(k.instruments))
 	for i, v := range k.instruments {
 		response[i] = queryInstrumentsResponse{
