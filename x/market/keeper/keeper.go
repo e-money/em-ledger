@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-
 	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/market/types"
 )
@@ -23,6 +23,11 @@ const (
 	gasPriceNewOrder           = uint64(25000)
 	gasPriceCancelReplaceOrder = uint64(25000)
 	gasPriceCancelOrder        = uint64(12500)
+)
+
+var (
+	// The time at which all validators will switch to the bug-fixed version of Market.
+	switchTime = time.Date(2020, 1, 27, 22, 0, 0, 0, time.UTC)
 )
 
 type Keeper struct {
@@ -170,7 +175,13 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 
 		// All variables are named from the perspective of the passive order
 
-		stepDestinationFilled := plan.DestinationCapacity()
+		var stepDestinationFilled sdk.Dec
+		if ctx.BlockTime().After(switchTime) {
+			stepDestinationFilled = plan.DestinationCapacity()
+		} else {
+			stepDestinationFilled = plan.DeprecatedDestinationCapacity()
+		}
+
 		// Don't try to fill more than either the aggressive order capacity or the plan capacity (capacity of passive orders).
 		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveOrder.SourceRemaining.ToDec())
 

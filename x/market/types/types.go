@@ -217,6 +217,20 @@ func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
 	return res
 }
 
+func (ep ExecutionPlan) DeprecatedDestinationCapacity() sdk.Dec {
+	if ep.FirstOrder == nil {
+		return sdk.ZeroDec()
+	}
+
+	res := ep.FirstOrder.SourceRemaining.ToDec().Mul(ep.FirstOrder.Price())
+
+	if ep.SecondOrder != nil {
+		res = sdk.MinDec(ep.SecondOrder.SourceRemaining.ToDec().Mul(ep.SecondOrder.Price()), res.Mul(ep.SecondOrder.Price()))
+	}
+
+	return res
+}
+
 func (ep ExecutionPlan) String() string {
 	var buf strings.Builder
 
