@@ -67,6 +67,10 @@ func TestFuzzing1(t *testing.T) {
 
 	for _, order := range allOrders {
 		res := k.NewOrderSingle(ctx, order)
+		if order.IsFilled() {
+			fmt.Println("Order is filled on creation. Ignoring.", order)
+			continue
+		}
 		require.True(t, res.IsOK())
 	}
 
