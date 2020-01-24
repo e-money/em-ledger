@@ -28,6 +28,10 @@ func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, ba
 	return sdk.NewError(Codespace, CodeInsufficientBalance, "Account %v has insufficient balance to execute trade: %v < %v", address.String(), balance, required)
 }
 
+func ErrAccountBalanceInsufficientForInstrument(address sdk.AccAddress, required sdk.Coin, balance sdk.Int, dst string) sdk.Error {
+	return sdk.NewError(Codespace, CodeInsufficientBalance, "Account %v has insufficient balance to execute all orders on instrument %v/%v: %v < %v", address.String(), required.Denom, dst, balance, required)
+}
+
 func ErrNonUniqueClientOrderId(address sdk.AccAddress, clientOrderId string) sdk.Error {
 	return sdk.NewError(Codespace, CodeNonUniqueClientOrderId, "Account %v already has an active order with client order id: %v", address.String(), clientOrderId)
 }

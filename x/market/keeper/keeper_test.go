@@ -726,6 +726,27 @@ func TestDestinationCapacity2(t *testing.T) {
 	require.True(t, res.IsOK())
 }
 
+func TestPreventPhantomLiquidity(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
+
+	order1 := order(acc1, "8000eur", "9000usd")
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	// Cannot sell more than the balance in the same instrument
+	order2 := order(acc1, "8000eur", "9000usd")
+	res = k.NewOrderSingle(ctx, order2)
+	fmt.Println(res.Log)
+	require.False(t, res.IsOK())
+
+	// Can sell the balance in another instrument
+	order3 := order(acc1, "8000eur", "6000chf")
+	res = k.NewOrderSingle(ctx, order3)
+	require.True(t, res.IsOK())
+}
+
 func printTotalBalance(accs ...exported.Account) {
 	sum := sdk.NewCoins()
 

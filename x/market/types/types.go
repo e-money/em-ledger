@@ -270,6 +270,23 @@ func NewOrders() Orders {
 	return Orders{make(map[string]*treeset.Set)}
 }
 
+// Get the sum of all of the seller's orders in the given instrument
+func (o Orders) GetAccountSourceDemand(owner sdk.AccAddress, src, dst string) sdk.Coin {
+	allOrders := o.GetAllOrders(owner)
+
+	sumSourceRemaining := sdk.ZeroInt()
+	for it := allOrders.Iterator(); it.Next(); {
+		order := it.Value().(*Order)
+		if order.Source.Denom != src || order.Destination.Denom != dst {
+			continue
+		}
+
+		sumSourceRemaining = sumSourceRemaining.Add(order.SourceRemaining)
+	}
+
+	return sdk.NewCoin(src, sumSourceRemaining)
+}
+
 func (o Orders) ContainsClientOrderId(owner sdk.AccAddress, clientOrderId string) bool {
 	allOrders := o.GetAllOrders(owner)
 
