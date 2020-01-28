@@ -20,7 +20,7 @@ const (
 	CodeInvalidClientOrderId   sdk.CodeType = 5
 	CodeInvalidInstrument      sdk.CodeType = 6
 	CodeInvalidOrderPrice      sdk.CodeType = 7
-	CodeInvalidOrder           sdk.CodeType = 8
+	CodeNoSourceRemaining      sdk.CodeType = 8
 	CodeUnknownAsset           sdk.CodeType = 9
 )
 
@@ -56,8 +56,8 @@ func ErrInvalidPrice(src, dst sdk.Coin) sdk.Error {
 	return sdk.NewError(Codespace, CodeInvalidOrderPrice, "Order price is invalid: %s -> %s", src, dst)
 }
 
-func ErrInvalidOrder(order *Order) sdk.Error {
-	return sdk.NewError(Codespace, CodeInvalidOrder, "Order is not valid: %v", order)
+func ErrNoSourceRemaining() sdk.Error {
+	return sdk.NewError(Codespace, CodeNoSourceRemaining, "Source remaining of new order is less than zero")
 }
 
 func ErrUnknownAsset(coin sdk.Coin) sdk.Error {
