@@ -329,6 +329,11 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 		).Result()
 	}
 
+	// Has the previous order already achieved the goal on the source side?
+	if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
+		return types.ErrNoSourceRemaining().Result()
+	}
+
 	resCancel := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
 	if !resCancel.IsOK() {
 		return resCancel

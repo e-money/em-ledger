@@ -328,7 +328,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	order2cid := cid()
 	order2, _ := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), time.Now(), order2cid)
 	res = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
-	require.True(t, res.IsOK())
+	require.True(t, res.IsOK(), res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	{
@@ -382,6 +382,16 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, coin("35050usd"), orders[0].Destination)
 		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
 	}
+
+	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
+	order5 := order(acc2, "42000usd", "8000eur")
+	k.NewOrderSingle(ctx, order5)
+	require.True(t, res.IsOK(), res.Log)
+
+	order6 := order(acc1, "8000eur", "30000usd")
+	res = k.CancelReplaceOrder(ctx, order6, order4cid)
+	require.False(t, res.IsOK())
+	require.Equal(t, types.CodeNoSourceRemaining, res.Code)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
