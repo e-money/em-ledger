@@ -9,6 +9,7 @@ import (
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
+	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -24,6 +25,8 @@ type Keeper struct {
 	ik       issuer.Keeper
 	sk       types.SupplyKeeper
 	gpk      types.GasPricesKeeper
+
+	gasPricesInit *sync.Once
 }
 
 func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, supplyKeeper types.SupplyKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
@@ -32,6 +35,8 @@ func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, supplyKeeper t
 		sk:       supplyKeeper,
 		gpk:      gasPricesKeeper,
 		storeKey: storeKey,
+
+		gasPricesInit: new(sync.Once),
 	}
 }
 
@@ -73,7 +78,7 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprice
 		return types.ErrInvalidGasPrices(gasprices.String()).Result()
 	}
 
-	// Check that the denominations actually exis before setting the gas prices to avoid being "locked out" of the blockchain
+	// Check that the denominations actually exist before setting the gas prices to avoid being "locked out" of the blockchain
 	supply := k.sk.GetSupply(ctx).GetTotal()
 	for _, d := range gasprices {
 		if supply.AmountOf(d.Denom).IsZero() {
@@ -133,4 +138,12 @@ func (k Keeper) GetRestrictedDenoms(ctx sdk.Context) (res emtypes.RestrictedDeno
 	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
 
 	return
+}
+
+// Gas prices are kept in-memory in the app structure. Make sure they are initialized on node restart.
+func (k Keeper) initGasPrices(ctx sdk.Context) {
+	k.gasPricesInit.Do(func() {
+		gps := k.GetGasPrices(ctx)
+		k.gpk.SetMinimumGasPrices(gps.String())
+	})
 }

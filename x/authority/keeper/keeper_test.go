@@ -32,7 +32,7 @@ func init() {
 }
 
 func TestAuthorityBasicPersistence(t *testing.T) {
-	ctx, keeper, _ := createTestComponents(t)
+	ctx, keeper, _, _ := createTestComponents(t)
 
 	require.Panics(t, func() {
 		// Keeper must panic if no authority has been specified
@@ -47,7 +47,7 @@ func TestAuthorityBasicPersistence(t *testing.T) {
 }
 
 func TestMustBeAuthority(t *testing.T) {
-	ctx, keeper, _ := createTestComponents(t)
+	ctx, keeper, _, _ := createTestComponents(t)
 
 	var (
 		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -73,7 +73,7 @@ func TestMustBeAuthority(t *testing.T) {
 }
 
 func TestCreateAndRevokeIssuer(t *testing.T) {
-	ctx, keeper, ik := createTestComponents(t)
+	ctx, keeper, ik, _ := createTestComponents(t)
 
 	var (
 		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -112,7 +112,7 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 }
 
 func TestAddMultipleDenomsSameIssuer(t *testing.T) {
-	ctx, keeper, ik := createTestComponents(t)
+	ctx, keeper, ik, _ := createTestComponents(t)
 
 	var (
 		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -133,8 +133,8 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 	require.Len(t, issuers[0].Denoms, 3)
 }
 
-func TestManageGasPrices(t *testing.T) {
-	ctx, keeper, _ := createTestComponents(t)
+func TestManageGasPrices1(t *testing.T) {
+	ctx, keeper, _, _ := createTestComponents(t)
 
 	var (
 		accAuthority = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -168,7 +168,34 @@ func TestManageGasPrices(t *testing.T) {
 	require.Equal(t, res.Code, types.CodeUnknownDenomination)
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
+func TestManageGasPrices2(t *testing.T) {
+	ctx, keeper, _, gpk := createTestComponents(t)
+
+	// Manually write gas prices to appstate, circumventing the keeper
+	setGasPrices := func(gp sdk.DecCoins) {
+		bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(gp)
+		store := ctx.KVStore(keeper.storeKey)
+		store.Set([]byte(keyGasPrices), bz)
+	}
+
+	gp, _ := sdk.ParseDecCoins("0.00005eeur")
+	setGasPrices(gp)
+
+	require.True(t, gpk.gasPrices.IsZero())
+	BeginBlocker(ctx, keeper)
+	require.Equal(t, gp, gpk.gasPrices)
+
+	// Ensure that the initialization can only be invoked once
+
+	gp2, _ := sdk.ParseDecCoins("0.003eusd")
+	setGasPrices(gp2)
+
+	BeginBlocker(ctx, keeper)
+	// Verify that the gas prices remain the same
+	require.Equal(t, gp, gpk.gasPrices)
+}
+
+func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper, *mockGasPricesKeeper) {
 	cdc := makeTestCodec()
 
 	logger := log.NewNopLogger() // Default
@@ -216,16 +243,17 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper) {
 			sdk.NewCoin("eeur", sdk.NewInt(5000)),
 		)))
 
-	keeper := NewKeeper(keyAuthority, ik, sk, mockGasPricesKeeper{})
+	gpk := new(mockGasPricesKeeper)
+	keeper := NewKeeper(keyAuthority, ik, sk, gpk)
 
-	return ctx, keeper, ik
+	return ctx, keeper, ik, gpk
 }
 
 type mockGasPricesKeeper struct {
 	gasPrices sdk.DecCoins
 }
 
-func (m mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) error {
+func (m *mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) error {
 	if coins, err := sdk.ParseDecCoins(gasPricesStr); err != nil {
 		return err
 	} else {
