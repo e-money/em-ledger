@@ -226,6 +226,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	app.currentBatch = app.database.NewBatch()
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 
+	authority.BeginBlocker(ctx, app.authorityKeeper)
 	market.BeginBlocker(ctx, app.marketKeeper)
 	inflation.BeginBlocker(ctx, app.inflationKeeper)
 	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
