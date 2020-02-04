@@ -91,6 +91,11 @@ func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller exporte
 			destination = sdk.NewCoin(dstDenom, source.Amount.ToDec().Mul(priceGen()).RoundInt())
 		)
 
+		if destination.IsZero() {
+			// A low number of source tokens combined with a low price may create invalid orders. Skip these. (Seed 1580745227 if you want to see for yourself)
+			continue
+		}
+
 		res = append(res, order(seller, source.String(), destination.String()))
 	}
 
