@@ -4,8 +4,18 @@
 
 package keeper
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/market/types"
+	"sync"
+)
 
 func BeginBlocker(ctx sdk.Context, sk *Keeper) {
+	if ctx.BlockHeight() == 25652 {
+		sk.accountOrders = types.NewOrders()
+		sk.instruments = types.Instruments{}
+		sk.appstateInit = new(sync.Once)
+	}
+
 	sk.initializeFromStore(ctx)
 }
