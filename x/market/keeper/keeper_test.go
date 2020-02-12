@@ -328,7 +328,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	order2cid := cid()
 	order2, _ := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), time.Now(), order2cid)
 	res = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
-	require.True(t, res.IsOK())
+	require.True(t, res.IsOK(), res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	{
@@ -382,6 +382,16 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, coin("35050usd"), orders[0].Destination)
 		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
 	}
+
+	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
+	order5 := order(acc2, "42000usd", "8000eur")
+	k.NewOrderSingle(ctx, order5)
+	require.True(t, res.IsOK(), res.Log)
+
+	order6 := order(acc1, "8000eur", "30000usd")
+	res = k.CancelReplaceOrder(ctx, order6, order4cid)
+	require.False(t, res.IsOK())
+	require.Equal(t, types.CodeNoSourceRemaining, res.Code)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
@@ -679,6 +689,72 @@ func TestSyntheticInstruments2(t *testing.T) {
 
 	// Ensure that all tokens are accounted for.
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
+}
+
+func TestDestinationCapacity(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "900000000usd")
+	acc2 := createAccount(ctx, ak, "acc2", "500000000000eur")
+
+	order1 := order(acc1, "800000000usd", "720000000eur")
+	order1.SourceRemaining = sdk.NewInt(182000000)
+	order1.SourceFilled = sdk.NewInt(618000000)
+	order1.DestinationFilled = sdk.NewInt(645161290)
+
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	order2 := order(acc2, "471096868463eur", "500182000000usd")
+	res = k.NewOrderSingle(ctx, order2)
+	require.True(t, res.IsOK())
+}
+
+func TestDestinationCapacity2(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "900000000usd")
+	acc2 := createAccount(ctx, ak, "acc2", "500000000000eur")
+	acc3 := createAccount(ctx, ak, "acc3", "140000000000chf")
+
+	// chf -> usd -> eur
+
+	order1 := order(acc1, "800000000usd", "720000000eur")
+	order1.SourceRemaining = sdk.NewInt(182000000)
+	order1.SourceFilled = sdk.NewInt(618000000)
+	order1.DestinationFilled = sdk.NewInt(645161290)
+
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	order2 := order(acc3, "130000000000chf", "800000000usd")
+	res = k.NewOrderSingle(ctx, order2)
+	require.True(t, res.IsOK())
+
+	aggressiveOrder := order(acc2, "471096868463eur", "120000000000chf")
+	res = k.NewOrderSingle(ctx, aggressiveOrder)
+	require.True(t, res.IsOK())
+}
+
+func TestPreventPhantomLiquidity(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
+
+	order1 := order(acc1, "8000eur", "9000usd")
+	res := k.NewOrderSingle(ctx, order1)
+	require.True(t, res.IsOK())
+
+	// Cannot sell more than the balance in the same instrument
+	order2 := order(acc1, "8000eur", "9000usd")
+	res = k.NewOrderSingle(ctx, order2)
+	fmt.Println(res.Log)
+	require.False(t, res.IsOK())
+
+	// Can sell the balance in another instrument
+	order3 := order(acc1, "8000eur", "6000chf")
+	res = k.NewOrderSingle(ctx, order3)
+	require.True(t, res.IsOK())
 }
 
 func printTotalBalance(accs ...exported.Account) {

@@ -15,6 +15,7 @@ const (
 	// Query endpoints supported by the market querier
 	QueryInstruments = "instruments"
 	QueryInstrument  = "instrument"
+	QueryByAccount   = "account"
 )
 
 var (

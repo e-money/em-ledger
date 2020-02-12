@@ -6,6 +6,7 @@ package rest
 
 import (
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -20,7 +21,36 @@ import (
 func RegisterQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc("/market/instruments", queryInstrumentsHandlerFn(cliCtx)).Methods("GET")
 	r.HandleFunc("/market/instrument/{src}/{dst}", queryInstrumentHandlerFn(cliCtx)).Methods("GET")
+	r.HandleFunc("/market/account/{address}", queryByAccountHandlerFn(cliCtx)).Methods("GET")
 
+}
+
+func queryByAccountHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		account, err := sdk.AccAddressFromBech32(vars["address"])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		route := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QueryByAccount, account)
+		res, height, err := cliCtx.QueryWithData(route, nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		cliCtx = cliCtx.WithHeight(height)
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
 }
 
 func queryInstrumentHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {

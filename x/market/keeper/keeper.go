@@ -143,6 +143,18 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		return types.ErrAccountBalanceInsufficient(aggressiveOrder.Owner, aggressiveOrder.Source, sourceAccount.SpendableCoins(ctx.BlockTime()).AmountOf(aggressiveOrder.Source.Denom)).Result()
 	}
 
+	// Ensure that the market is not showing "phantom liquidity" by rejecting multiple orders in an instrument based on the same balance.
+	totalSourceDemand := k.accountOrders.GetAccountSourceDemand(aggressiveOrder.Owner, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
+	totalSourceDemand = totalSourceDemand.Add(aggressiveOrder.Source)
+	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(totalSourceDemand)); anyNegative {
+		return types.ErrAccountBalanceInsufficientForInstrument(
+			aggressiveOrder.Owner,
+			totalSourceDemand,
+			sourceAccount.SpendableCoins(ctx.BlockTime()).AmountOf(aggressiveOrder.Source.Denom),
+			aggressiveOrder.Destination.Denom,
+		).Result()
+	}
+
 	// Verify uniqueness of client order id among active orders
 	if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
 		return types.ErrNonUniqueClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
@@ -315,6 +327,11 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 			origOrder.Source.Denom, origOrder.Destination.Denom,
 			newOrder.Source.Denom, newOrder.Destination.Denom,
 		).Result()
+	}
+
+	// Has the previous order already achieved the goal on the source side?
+	if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
+		return types.ErrNoSourceRemaining().Result()
 	}
 
 	resCancel := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)

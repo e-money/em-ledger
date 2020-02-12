@@ -27,7 +27,7 @@ func TestQuerier1(t *testing.T) {
 	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := queryInstruments(k)
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")
@@ -35,7 +35,7 @@ func TestQuerier1(t *testing.T) {
 		require.Len(t, instr.Array(), 3)
 	}
 	{
-		bz, err := queryInstrument(ctx, k, []string{"eur", "usd"}, abci.RequestQuery{})
+		bz, err := queryInstrument(k, []string{"eur", "usd"}, abci.RequestQuery{})
 		require.NoError(t, err)
 
 		json := gjson.ParseBytes(bz)
