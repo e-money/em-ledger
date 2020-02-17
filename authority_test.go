@@ -232,7 +232,13 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			gasPrices := gjson.ParseBytes(bz).Get("min_gas_prices")
-			queriedPrices, err := sdk.ParseDecCoins(gasPrices.Str)
+
+			queriedPrices := sdk.DecCoins{}
+			for _, price := range gasPrices.Array() {
+				gasPrice := sdk.NewDecCoinFromDec(price.Get("denom").Str, sdk.MustNewDecFromStr(price.Get("amount").Str))
+				queriedPrices = append(queriedPrices, gasPrice)
+			}
+
 			Expect(queriedPrices).To(Equal(prices))
 
 			// A non-authority attempts to set gas prices
