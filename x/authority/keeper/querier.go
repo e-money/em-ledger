@@ -20,13 +20,13 @@ func NewQuerier(k Keeper) sdk.Querier {
 }
 
 type queryGasPricesResponse struct {
-	MinGasPrices string `json:"min_gas_prices" yaml:"min_gas_prices"`
+	MinGasPrices []sdk.DecCoin `json:"min_gas_prices" yaml:"min_gas_prices"`
 }
 
 func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 	gasPrices := k.GetGasPrices(ctx)
 
-	response := queryGasPricesResponse{gasPrices.String()}
+	response := queryGasPricesResponse{gasPrices}
 	bz, err := json.Marshal(response)
 	if err != nil {
 		return []byte{}, sdk.ErrInternal(err.Error())
