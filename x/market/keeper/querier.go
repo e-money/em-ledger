@@ -44,8 +44,8 @@ type queryOrderResponse struct {
 	ID      uint64    `json:"id" yaml:"id"`
 	Created time.Time `json:"created" yaml:"created"`
 
-	Owner     sdk.AccAddress `json:"owner" yaml:"owner"`
-	Remaining string         `json:"remaining" yaml:"remaining"`
+	Owner           sdk.AccAddress `json:"owner" yaml:"owner"`
+	SourceRemaining string         `json:"source_remaining" yaml:"sourceremaining"`
 
 	ClientOrderId *string `json:"client_order_id,omitempty" yaml:"client_order_id,omitempty"`
 
@@ -117,11 +117,11 @@ func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, s
 		for it.Next() {
 			order := it.Key().(*types.Order)
 			orders = append(orders, queryOrderResponse{
-				ID:        order.ID,
-				Created:   order.Created,
-				Owner:     order.Owner,
-				Remaining: fmt.Sprintf("%v%v", order.SourceRemaining, order.Source.Denom),
-				Price:     order.Price(),
+				ID:              order.ID,
+				Created:         order.Created,
+				Owner:           order.Owner,
+				SourceRemaining: order.SourceRemaining.String(),
+				Price:           order.Price(),
 			})
 		}
 	}
