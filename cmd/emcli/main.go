@@ -20,7 +20,7 @@ import (
 	app "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/util"
-	authoritycli "github.com/e-money/em-ledger/x/authority/client/cli"
+	"github.com/e-money/em-ledger/x/authority"
 	issuercli "github.com/e-money/em-ledger/x/issuer/client/cli"
 	lpcli "github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
 	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
@@ -119,7 +119,7 @@ func txCmds(cdc *amino.Codec) *cobra.Command {
 		marketcli.GetTxCmd(cdc),
 		lpcli.GetTxCmd(cdc),
 		issuercli.GetTxCmd(cdc),
-		authoritycli.GetTxCmd(cdc),
+		authority.GetTxCmd(cdc),
 	)
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)

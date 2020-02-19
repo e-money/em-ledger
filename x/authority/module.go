@@ -10,7 +10,6 @@ import (
 	"github.com/e-money/em-ledger/x/authority/keeper"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/e-money/em-ledger/x/authority/client/cli"
 	"github.com/e-money/em-ledger/x/authority/client/rest"
 	"github.com/e-money/em-ledger/x/authority/types"
 
@@ -54,7 +53,7 @@ func (amb AppModuleBasic) GetTxCmd(*codec.Codec) *cobra.Command {
 }
 
 func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(cdc)
+	return GetQueryCmd(cdc)
 }
 
 func NewAppModule(keeper Keeper) *AppModule {
