@@ -6,6 +6,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/emirpasic/gods/utils"
@@ -49,6 +50,49 @@ type (
 		SecondOrder *Order
 	}
 )
+
+func (o Order) MarshalJSON() ([]byte, error) {
+	createdJson, err := json.Marshal(o.Created)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	s := fmt.Sprintf(`
+{
+  "id": %v,
+  "created": %v,
+  "owner": "%v",
+  "client_order_id": "%v",
+  "price": "%v",
+  "source": {
+    "denom": "%v",
+    "amount": "%v"
+  },
+  "source_remaining": "%v",
+  "source_filled": "%v",
+  "destination": {
+    "denom": "%v",
+    "amount": "%v"
+  },
+  "destination_filled": "%v"
+}
+`,
+		o.ID,
+		string(createdJson),
+		o.Owner.String(),
+		o.ClientOrderID,
+		o.Price().String(),
+		o.Source.Denom,
+		o.Source.Amount,
+		o.SourceRemaining,
+		o.SourceFilled,
+		o.Destination.Denom,
+		o.Destination.Amount,
+		o.DestinationFilled,
+	)
+
+	return []byte(s), nil
+}
 
 func (is Instruments) String() string {
 	sb := strings.Builder{}

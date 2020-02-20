@@ -9,6 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/market/keeper"
+	"github.com/tidwall/gjson"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -39,7 +42,7 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 func GetByAccountCmd(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "account [key_or_address]",
 		Short: "Query orders placed by a specific account",
 		Args:  cobra.ExactArgs(1),
@@ -58,23 +61,54 @@ func GetByAccountCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out string
-			if cliCtx.Indent {
-				var buf bytes.Buffer
-				err = json.Indent(&buf, bz, "", "  ")
-				out = buf.String()
-			} else {
-				out = string(bz)
+			switch cliCtx.OutputFormat {
+			case "text":
+				fmt.Println(stringifyOrders(bz))
+
+			case "json":
+				if cliCtx.Indent {
+					buf := new(bytes.Buffer)
+					err = json.Indent(buf, bz, "", "  ")
+					if err != nil {
+						return err
+					}
+
+					bz = buf.Bytes()
+				}
+
+				fmt.Println(string(bz))
 			}
 
-			if err != nil {
-				return err
-			}
-
-			_, err = fmt.Println(out)
-			return err
+			return nil
 		},
 	}
+
+	return flags.GetCommands(cmd)[0]
+}
+
+func stringifyOrders(bz []byte) string {
+	sb := new(strings.Builder)
+
+	allOrders := gjson.ParseBytes(bz).Get("orders")
+
+	for _, order := range allOrders.Array() {
+		srcDenom, dstDenom := order.Get("source.denom").Str, order.Get("destination.denom").Str
+
+		sb.WriteString(
+			fmt.Sprintf("%v : %v -> %v @ %v (%v)\n - (%v%v remaining) (%v%v filled) (%v%v filled)\n",
+				order.Get("id").Raw,
+				srcDenom,
+				dstDenom,
+				order.Get("price").Str,
+				order.Get("owner").Str,
+				order.Get("source_remaining").Str, srcDenom,
+				order.Get("source_filled").Str, srcDenom,
+				order.Get("destination_filled").Str, dstDenom,
+			),
+		)
+	}
+
+	return sb.String()
 }
 
 func GetInstrumentCmd(cdc *codec.Codec) *cobra.Command {
@@ -91,21 +125,13 @@ func GetInstrumentCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out string
-			if cliCtx.Indent {
-				var buf bytes.Buffer
-				err = json.Indent(&buf, bz, "", "  ")
-				out = buf.String()
-			} else {
-				out = string(bz)
-			}
-
+			resp := new(keeper.QueryInstrumentResponse)
+			err = json.Unmarshal(bz, resp)
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Println(out)
-			return err
+			return cliCtx.PrintOutput(resp)
 		},
 	}
 
@@ -125,21 +151,13 @@ func GetInstrumentsCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out string
-			if cliCtx.Indent {
-				var buf bytes.Buffer
-				err = json.Indent(&buf, bz, "", "  ")
-				out = buf.String()
-			} else {
-				out = string(bz)
-			}
-
+			resp := new(keeper.QueryInstrumentsWrapperResponse)
+			err = json.Unmarshal(bz, resp)
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Println(out)
-			return err
+			return cliCtx.PrintOutput(resp)
 		},
 	}
 
