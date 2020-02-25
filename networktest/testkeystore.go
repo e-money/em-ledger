@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/multisig"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -28,6 +29,8 @@ type (
 		Key2,
 		Key3 Key
 
+		MultiKey Key
+
 		Validators []Key
 	}
 
@@ -35,6 +38,7 @@ type (
 		name    string
 		keybase keys.Keybase
 		privkey crypto.PrivKey
+		pubkey  crypto.PubKey
 		address sdk.AccAddress
 	}
 )
@@ -47,7 +51,9 @@ func newKey(name string, keybase keys.Keybase) Key {
 	)
 
 	var address sdk.AccAddress
+	var pubKey crypto.PubKey
 	if info != nil {
+		pubKey = info.GetPubKey()
 		address = info.GetAddress()
 	}
 
@@ -55,6 +61,7 @@ func newKey(name string, keybase keys.Keybase) Key {
 		name:    name,
 		keybase: keybase,
 		privkey: privkey,
+		pubkey:  pubKey,
 		address: address,
 	}
 }
@@ -73,6 +80,10 @@ func (k Key) GetAddress() string {
 }
 
 func (k Key) GetPublicKey() crypto.PubKey {
+	if k.pubkey != nil {
+		return k.pubkey
+	}
+
 	return k.privkey.PubKey()
 }
 
@@ -101,6 +112,7 @@ func NewKeystore() (*KeyStore, error) {
 		Key1:      newKey("key1", keybase),
 		Key2:      newKey("key2", keybase),
 		Key3:      newKey("key3", keybase),
+		MultiKey:  newKey("multikey", keybase),
 		Validators: []Key{
 			newKey("validator0", keybase),
 			newKey("validator1", keybase),
@@ -156,4 +168,21 @@ func initializeKeystore(kb keys.Keybase) {
 	_, _ = kb.CreateAccount("key3",
 		"rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel",
 		"", KeyPwd, 0, 0)
+
+	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
+	pks := make([]crypto.PubKey, 3)
+	for i, keyname := range []string{"key1", "key2", "key3"} {
+		keyinfo, err := kb.Get(keyname)
+		if err != nil {
+			panic(err)
+		}
+
+		pks[i] = keyinfo.GetPubKey()
+	}
+
+	pk := multisig.NewPubKeyMultisigThreshold(2, pks)
+	_, err := kb.CreateMulti("multikey", pk)
+	if err != nil {
+		panic(err)
+	}
 }

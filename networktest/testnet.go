@@ -8,7 +8,6 @@ package networktest
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,9 +23,9 @@ import (
 
 // Handles running a testnet using docker-compose.
 type Testnet struct {
-	ctx      context.Context
 	Keystore *KeyStore
 	chainID  string
+	genesis  []byte // Holds the unaltered genesis file that is re-created on every restart.
 }
 
 const (
@@ -59,7 +58,7 @@ func locateExecutable(name string) (path string) {
 	return
 }
 
-func NewTestnetWithContext(ctx context.Context) Testnet {
+func NewTestnet() Testnet {
 	ks, err := NewKeystore()
 	if err != nil {
 		panic(err)
@@ -68,17 +67,12 @@ func NewTestnetWithContext(ctx context.Context) Testnet {
 	chainID := fmt.Sprintf("localnet-%s", cmn.RandStr(6))
 
 	return Testnet{
-		ctx:      ctx,
 		Keystore: ks,
 		chainID:  chainID,
 	}
 }
 
-func NewTestnet() Testnet {
-	return NewTestnetWithContext(nil)
-}
-
-func (t Testnet) Setup() error {
+func (t *Testnet) Setup() error {
 	err := compileBinaries()
 	if err != nil {
 		return err
@@ -90,18 +84,27 @@ func (t Testnet) Setup() error {
 	return nil
 }
 
-func (t Testnet) Start() (func() bool, error) {
-	if t.ctx != nil {
-		go func() {
-			<-t.ctx.Done()
-			t.Teardown()
-		}()
-	}
-
-	return dockerComposeUp()
+func writeGenesisFiles(newGenesisFile []byte) error {
+	return filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
+		if fileinfo.Name() == "genesis.json" {
+			err := ioutil.WriteFile(path, newGenesisFile, 0644)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (t Testnet) Restart() (func() bool, error) {
+	return t.restart(nil)
+}
+
+func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (func() bool, error) {
+	return t.restart(genesisModifier)
+}
+
+func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
 	err := dockerComposeDown()
 	if err != nil {
 		return nil, err
@@ -114,7 +117,15 @@ func (t Testnet) Restart() (func() bool, error) {
 		}
 	}
 
-	t.updateGenesis()
+	if genesismodifier != nil {
+		modifiedGenesis := make([]byte, len(t.genesis))
+		copy(modifiedGenesis, t.genesis)
+		modifiedGenesis = genesismodifier(modifiedGenesis)
+		writeGenesisFiles(modifiedGenesis)
+	} else {
+		// Restore the default genesis files
+		writeGenesisFiles(t.genesis)
+	}
 
 	return dockerComposeUp()
 }
@@ -163,20 +174,24 @@ func (t Testnet) makeTestnet() error {
 	return nil
 }
 
-func (t Testnet) updateGenesis() {
-	genesisPaths := make([]string, 0)
+func (t *Testnet) updateGenesis() {
+	var genesisPath string
 	filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
+		if genesisPath != "" {
+			return filepath.SkipDir
+		}
+
 		if fileinfo.Name() == "genesis.json" {
-			genesisPaths = append(genesisPaths, path)
+			genesisPath = path
 		}
 		return nil
 	})
 
-	if len(genesisPaths) == 0 {
+	if genesisPath == "" {
 		panic("Unable to locate genesis.json for testnet.")
 	}
 
-	bz, err := ioutil.ReadFile(genesisPaths[0])
+	bz, err := ioutil.ReadFile(genesisPath)
 	if err != nil {
 		panic(err)
 	}
@@ -199,12 +214,9 @@ func (t Testnet) updateGenesis() {
 	genesisTime := time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339)
 	bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime)
 
-	for _, path := range genesisPaths {
-		err = ioutil.WriteFile(path, bz, 0644)
-		if err != nil {
-			panic(err)
-		}
-	}
+	t.genesis = bz
+
+	writeGenesisFiles(bz)
 }
 
 func compileBinaries() error {

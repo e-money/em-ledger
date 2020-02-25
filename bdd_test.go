@@ -7,12 +7,11 @@
 package emoney
 
 import (
+	apptypes "github.com/e-money/em-ledger/types"
 	"testing"
 	"time"
 
 	nt "github.com/e-money/em-ledger/networktest"
-	apptypes "github.com/e-money/em-ledger/types"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -20,11 +19,15 @@ import (
 )
 
 func init() {
-	apptypes.ConfigureSDK()
+
 }
 
 var (
-	testnet = nt.NewTestnet()
+	testnet = func() nt.Testnet {
+		apptypes.ConfigureSDK()
+		return nt.NewTestnet()
+	}()
+
 	// If set to false, the tests will not clean up the docker containers that are started during the tests.
 	tearDownAfterTests = true
 )

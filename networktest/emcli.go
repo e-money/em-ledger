@@ -5,6 +5,7 @@
 package networktest
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"io"
@@ -43,6 +44,17 @@ func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) 
 func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "destroy-issuer", authority.name, issuer.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) CustomCommand(params ...string) (string, error) {
+	args := cli.addTransactionFlags(params...)
+	return execCmdCollectOutput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthoritySetMinGasPricesMulti(from, minGasPrices string, params ...string) (string, error) {
+	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", from, minGasPrices)
+	args = append(args, params...)
+	return execCmdCollectOutput(args, KeyPwd)
 }
 
 func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, params ...string) (string, bool, error) {
@@ -123,6 +135,11 @@ func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
 	return execCmdAndCollectResponse(args)
 }
 
+func (cli Emcli) SignTranscation(txPath, fromAddress, multisigAddress string) (string, error) {
+	args := cli.addTransactionFlags("tx", "sign", txPath, "--from", fromAddress, "--multisig", multisigAddress)
+	return execCmdCollectOutput(args, KeyPwd)
+}
+
 func (cli Emcli) IssuerIncreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "issuer", "increase-mintable", issuer.name, liquidityprovider.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
@@ -181,6 +198,32 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	return txhashjson.Str, successjson.Bool(), nil
 }
 
+func execCmdCollectOutput(arguments []string, input string) (string, error) {
+	cmd := exec.Command(EMCLI, arguments...)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+
+	_, err = io.WriteString(stdin, input+"\n")
+	if err != nil {
+		return "", err
+	}
+
+	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	//bz, err := cmd.CombinedOutput()
+	var b bytes.Buffer
+	cmd.Stderr = &b
+
+	bz, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return string(bz), nil
+}
+
 func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 	cmd := exec.Command(EMCLI, arguments...)
 
@@ -196,7 +239,7 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 
 	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
-	//fmt.Println(" *** Output", string(bz))
+	//fmt.Println(" *** CombinedOutput", string(bz))
 	if err != nil {
 		return "", false, err
 	}
