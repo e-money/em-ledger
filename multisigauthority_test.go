@@ -73,10 +73,16 @@ var _ = Describe("Market", func() {
 
 			bz, err := emcli.QueryMinGasPrices()
 			Expect(err).To(BeNil())
-			minGasPricesStr := gjson.GetBytes(bz, "min_gas_prices").Str
-			minGasPrices, err := sdk.ParseDecCoins(minGasPricesStr)
+
+			jsonGP := gjson.GetBytes(bz, "min_gas_prices")
+			Expect(jsonGP.IsArray()).To(BeTrue())
+			Expect(jsonGP.Array()).To(HaveLen(1))
+
+			jsonGP = jsonGP.Get("0")
+			Expect(jsonGP.Get("denom").Str).To(Equal("eeur"))
+			amount, err := sdk.NewDecFromStr(jsonGP.Get("amount").Str)
 			Expect(err).To(BeNil())
-			Expect(minGasPrices).To(Equal(newMinGasPrices))
+			Expect(amount).To(Equal(sdk.NewDecWithPrec(6, 4)))
 		})
 	})
 })
