@@ -15,13 +15,13 @@ var (
 
 type (
 	MsgMintTokens struct {
-		Amount            sdk.Coins
 		LiquidityProvider sdk.AccAddress
+		Amount            sdk.Coins
 	}
 
 	MsgBurnTokens struct {
-		Amount            sdk.Coins
 		LiquidityProvider sdk.AccAddress
+		Amount            sdk.Coins
 	}
 )
 

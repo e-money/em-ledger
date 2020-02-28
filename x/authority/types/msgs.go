@@ -14,18 +14,18 @@ var (
 
 type (
 	MsgCreateIssuer struct {
+		Authority     sdk.AccAddress
 		Issuer        sdk.AccAddress
 		Denominations []string
-		Authority     sdk.AccAddress
 	}
 	MsgDestroyIssuer struct {
-		Issuer    sdk.AccAddress
 		Authority sdk.AccAddress
+		Issuer    sdk.AccAddress
 	}
 
 	MsgSetGasPrices struct {
-		GasPrices sdk.DecCoins
 		Authority sdk.AccAddress
+		GasPrices sdk.DecCoins
 	}
 )
 
