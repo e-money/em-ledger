@@ -18,20 +18,23 @@ var (
 
 type (
 	MsgAddOrder struct {
-		Owner               sdk.AccAddress
-		Source, Destination sdk.Coin
-		ClientOrderId       string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		Source        sdk.Coin       `json:"source" yaml:"source"`
+		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
 	MsgCancelOrder struct {
-		Owner         sdk.AccAddress
-		ClientOrderId string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
 	MsgCancelReplaceOrder struct {
-		Owner                               sdk.AccAddress
-		Source, Destination                 sdk.Coin
-		OrigClientOrderId, NewClientOrderId string
+		Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
+		Source            sdk.Coin       `json:"source" yaml:"source"`
+		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
+		OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
+		NewClientOrderId  string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 )
 

@@ -14,18 +14,18 @@ var (
 
 type (
 	MsgCreateIssuer struct {
-		Authority     sdk.AccAddress
-		Issuer        sdk.AccAddress
-		Denominations []string
+		Authority     sdk.AccAddress `json:"authority" yaml:"authority"`
+		Issuer        sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		Denominations []string       `json:"denoms" yaml:"denoms"`
 	}
 	MsgDestroyIssuer struct {
-		Authority sdk.AccAddress
-		Issuer    sdk.AccAddress
+		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
+		Issuer    sdk.AccAddress `json:"issuer" yaml:"issuer"`
 	}
 
 	MsgSetGasPrices struct {
-		Authority sdk.AccAddress
-		GasPrices sdk.DecCoins
+		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
+		GasPrices sdk.DecCoins   `json:"gas_prices" yaml:"gas_prices"`
 	}
 )
 
