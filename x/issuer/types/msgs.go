@@ -17,26 +17,26 @@ var (
 
 type (
 	MsgIncreaseMintable struct {
-		MintableIncrease  sdk.Coins
-		LiquidityProvider sdk.AccAddress
 		Issuer            sdk.AccAddress
+		LiquidityProvider sdk.AccAddress
+		MintableIncrease  sdk.Coins
 	}
 
 	MsgDecreaseMintable struct {
-		MintableDecrease  sdk.Coins
-		LiquidityProvider sdk.AccAddress
 		Issuer            sdk.AccAddress
+		LiquidityProvider sdk.AccAddress
+		MintableDecrease  sdk.Coins
 	}
 
 	MsgRevokeLiquidityProvider struct {
-		LiquidityProvider sdk.AccAddress
 		Issuer            sdk.AccAddress
+		LiquidityProvider sdk.AccAddress
 	}
 
 	MsgSetInflation struct {
+		Issuer        sdk.AccAddress
 		Denom         string
 		InflationRate sdk.Dec
-		Issuer        sdk.AccAddress
 	}
 )
 
