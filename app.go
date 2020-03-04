@@ -10,6 +10,7 @@ import (
 	"github.com/e-money/em-ledger/x/market"
 	"os"
 	"path/filepath"
+	"time"
 
 	emauth "github.com/e-money/em-ledger/hooks/auth"
 	embank "github.com/e-money/em-ledger/hooks/bank"
@@ -223,6 +224,16 @@ func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	// Due to how the current Tendermint implementation calculates blocktime, a byzantine 1/3 of voting power can move time forward an arbitrary amount.
+	// Have non-malicious nodes shut down if this appears to be happening.
+	// This will effectively halt the chain and require off-chain coordination to remedy.
+	walltime := time.Now().UTC()
+	if walltime.Add(time.Hour).Before(ctx.BlockTime()) {
+		s := fmt.Sprintf("Blocktime %v is too far ahead of local wall clock %v.\nSuspending node without processing block %v.\n", ctx.BlockTime(), walltime, ctx.BlockHeight())
+		fmt.Println(s)
+		panic(s)
+	}
+
 	app.currentBatch = app.database.NewBatch()
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 
