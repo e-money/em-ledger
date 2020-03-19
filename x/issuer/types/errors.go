@@ -20,6 +20,7 @@ const (
 	CodeNegativeInflation     sdk.CodeType = 5
 	CodeDoesNotControlDenom   sdk.CodeType = 6
 	CodeNotAnIssuer           sdk.CodeType = 7
+	CodeInvalidDenomination   sdk.CodeType = 8
 )
 
 func ErrNotAnIssuer(address sdk.AccAddress) sdk.Error {
@@ -48,4 +49,8 @@ func ErrIssuerNotFound(issuer sdk.AccAddress) sdk.Error {
 
 func ErrNegativeInflation() sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeNegativeInflation, "cannot set negative inflation")
+}
+
+func ErrInvalidDenomination(denom string) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeInvalidDenomination, fmt.Sprintf("invalid denomination: %v", denom))
 }

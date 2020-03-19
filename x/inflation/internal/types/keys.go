@@ -22,5 +22,5 @@ const (
 	QuerierRoute = StoreKey
 
 	// Query endpoints supported by the inflation querier
-	QueryInflation = "inflation"
+	QueryInflation = ModuleName
 )

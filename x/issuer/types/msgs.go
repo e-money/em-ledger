@@ -6,6 +6,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/util"
 )
 
 var (
@@ -51,6 +52,10 @@ func (msg MsgSetInflation) ValidateBasic() sdk.Error {
 
 	if msg.Issuer.Empty() {
 		return sdk.ErrInvalidAddress("missing issuer address")
+	}
+
+	if !util.ValidateDenom(msg.Denom) {
+		return ErrInvalidDenomination(msg.Denom)
 	}
 
 	return nil

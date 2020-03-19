@@ -12,7 +12,7 @@ import (
 
 // Wraps the auth's modules keeper in order to emit events when an account's balance changes.
 
-// Expected interface is copied from bank module
+// Expected interface is copied from auth module
 type AccountKeeper interface {
 	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) exported.Account
 	NewAccount(sdk.Context, exported.Account) exported.Account

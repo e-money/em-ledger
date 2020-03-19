@@ -27,6 +27,10 @@ func newHandler(keeper Keeper) sdk.Handler {
 			}
 		}()
 
+		if err := msg.ValidateBasic(); err != nil {
+			return sdk.ErrUnknownRequest(err.Error()).Result()
+		}
+
 		switch msg := msg.(type) {
 		case types.MsgCreateIssuer:
 			return keeper.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
