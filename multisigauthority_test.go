@@ -39,6 +39,39 @@ var _ = Describe("Market", func() {
 			Expect(awaitReady()).To(BeTrue())
 		})
 
+		It("Same key signs twice", func() {
+			jsonPath, err := ioutil.TempDir("", "")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(jsonPath)
+
+			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
+
+			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
+			Expect(err).To(BeNil())
+
+			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
+			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+
+			sigPaths := make([]string, 0)
+			// Sign twice with key1. Signature count is above threshold, but ...
+			for i := 0; i < 2; i++ {
+				tx, err = emcli.SignTranscation(transactionPath, key1.GetAddress(), authorityaddress)
+				signaturePath := fmt.Sprintf("%v/sign%v.json", jsonPath, i)
+				ioutil.WriteFile(signaturePath, []byte(tx), 0777)
+				sigPaths = append(sigPaths, signaturePath)
+			}
+
+			// Combine the two signatures
+			tx, err = emcli.CustomCommand("tx", "multisign", transactionPath, "multikey", sigPaths[0], sigPaths[1])
+			Expect(err).To(BeNil())
+			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+
+			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
+			Expect(err).To(BeNil())
+			Expect(gjson.Parse(tx).Get("logs.0.success").Exists()).To(Equal(false))
+		})
+
 		It("set global gas prices", func() {
 			jsonPath, err := ioutil.TempDir("", "")
 			Expect(err).To(BeNil())
@@ -64,10 +97,23 @@ var _ = Describe("Market", func() {
 
 			// Combine the two signatures
 			tx, err = emcli.CustomCommand("tx", "multisign", transactionPath, "multikey", signature1Path, signature2Path)
+
+			// Manipulate threshold!
+			//val := gjson.Parse(tx).Get("value.signatures.0.pub_key.value.threshold").Raw
+			//fmt.Println("threshold :", val)
+
+			//{
+			//	bz, _ := sjson.SetBytes([]byte(tx), "value.signatures.0.pub_key.value.threshold", "1")
+			//	tx = string(bz)
+			//}
+
 			Expect(err).To(BeNil())
 			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
 
+			fmt.Println("Ready for broadcast:\n", tx)
+
 			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
+			fmt.Println("Output:\n", tx)
 			Expect(err).To(BeNil())
 			Expect(gjson.Parse(tx).Get("logs.0.success").Type).To(Equal(gjson.True))
 
