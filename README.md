@@ -12,6 +12,10 @@ cd em-ledger
 make build
 ```
 
+## Production Network
+
+See [https://github.com/e-money/launch](https://github.com/e-money/launch) for instructions on how to join our production network.
+
 ## Test Network
 
 See [https://github.com/e-money/testnets](https://github.com/e-money/testnets) for instructions on how to join our test network.
