@@ -19,7 +19,6 @@ var (
 	KeyParams    = []byte("MintParameters")
 )
 
-// TODO Divide into two? One "base class" holding Denom and inflation for use in Genesis and a "subclass" with current state
 type InflationAsset struct {
 	Denom     string  `json:"denom" yaml:"denom"`
 	Inflation sdk.Dec `json:"inflation" yaml:"inflation"`

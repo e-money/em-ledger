@@ -234,7 +234,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper, *mo
 		bk  = bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
 		sk  = supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 		lpk = liquidityprovider.NewKeeper(ak, sk)
-		ik  = issuer.NewKeeper(keySupply, lpk, mockInflationKeeper{})
+		ik  = issuer.NewKeeper(keyIssuer, lpk, mockInflationKeeper{})
 	)
 
 	sk.SetSupply(ctx, supply.NewSupply(
