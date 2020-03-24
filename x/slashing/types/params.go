@@ -15,7 +15,7 @@ import (
 // Default parameter namespace
 const (
 	DefaultParamspace                 = ModuleName
-	DefaultMaxEvidenceAge             = 2 * time.Minute
+	DefaultMaxEvidenceAge             = 30 * time.Minute
 	DefaultSignedBlocksWindowDuration = time.Hour
 	DefaultDowntimeJailDuration       = DefaultSignedBlocksWindowDuration
 )
