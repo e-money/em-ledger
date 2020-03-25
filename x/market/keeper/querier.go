@@ -7,12 +7,13 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"sort"
-	"time"
 )
 
 func NewQuerier(k *Keeper) sdk.Querier {
@@ -45,7 +46,7 @@ type queryOrderResponse struct {
 	Created time.Time `json:"created" yaml:"created"`
 
 	Owner           sdk.AccAddress `json:"owner" yaml:"owner"`
-	SourceRemaining string         `json:"source_remaining" yaml:"sourceremaining"`
+	SourceRemaining string         `json:"source_remaining" yaml:"source_remaining"`
 
 	ClientOrderId *string `json:"client_order_id,omitempty" yaml:"client_order_id,omitempty"`
 
