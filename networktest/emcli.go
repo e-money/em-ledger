@@ -36,6 +36,11 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addQueryFlags("q", "inflation"))
 }
 
+func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "send", from.name, to.GetAddress(), amount)
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
 	return execCmdWithInput(args, KeyPwd)

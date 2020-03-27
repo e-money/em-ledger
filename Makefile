@@ -73,7 +73,7 @@ test:
 	go test ./...
 
 bdd-test:
-	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go
+	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go
 
 clean:
 	rm -rf ./build ./data ./config
