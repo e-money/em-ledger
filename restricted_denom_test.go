@@ -1,3 +1,5 @@
+// +build bdd
+
 package emoney
 
 import (
