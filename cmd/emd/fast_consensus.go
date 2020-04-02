@@ -14,9 +14,17 @@ import (
 func init() {
 	previousConfig := configureConsensus
 	configureConsensus = func() {
-		fmt.Println("Overriding consensus parameters to achieve 4 second block time")
 		previousConfig()
+		fmt.Println(" --- Overriding consensus parameters for tests!")
 
-		viper.Set("consensus.create_empty_blocks_interval", "4s")
+		configChanges := map[string]string{
+			"consensus.create_empty_blocks_interval": "4s",
+			"consensus.timeout_commit":               "1500ms",
+		}
+
+		for k, v := range configChanges {
+			fmt.Println(" --- Overriding:", k, v)
+			viper.Set(k, v)
+		}
 	}
 }
