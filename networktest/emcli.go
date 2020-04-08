@@ -57,7 +57,7 @@ func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
 }
 
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
-	args := cli.addQueryFlags("query", "tx", txhash)
+	args := cli.addQueryFlags("query", "tx", txhash, "--trust-node")
 	return execCmdAndCollectResponse(args)
 }
 
