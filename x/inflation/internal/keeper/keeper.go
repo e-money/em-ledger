@@ -57,7 +57,6 @@ func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 	return
 }
 
-// TODO Should really be internal
 func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryLengthPrefixed(is)

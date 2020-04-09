@@ -43,6 +43,7 @@ func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 	gasPrices := k.GetGasPrices(ctx)
 
 	response := QueryGasPricesResponse{gasPrices}
+
 	bz, err := json.Marshal(response)
 	if err != nil {
 		return []byte{}, sdk.ErrInternal(err.Error())

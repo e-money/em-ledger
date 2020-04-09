@@ -270,6 +270,7 @@ func (k Keeper) mustBeIssuerOfDenom(ctx sdk.Context, address sdk.AccAddress, den
 					return issuer, nil
 				}
 			}
+
 		}
 	}
 

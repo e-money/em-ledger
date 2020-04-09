@@ -66,6 +66,11 @@ func main() {
 	)
 
 	viper.SetDefault(flags.FlagBroadcastMode, "block")
+	// TODO Appears to be necessary after the upgrade from cosmos-sdk v0.37.3 -> v0.37.8
+	// TODO This also upgraded viper v1.5.0 -> v1.6.1 which may be the cause of change in behaviour
+	// TODO The createVerifier() funcion in cosmos-sdk@v0.37.8/client/context/context.go seems to be the issue
+	viper.SetDefault(flags.FlagTrustNode, "false")
+
 	makeBroadcastBlocked(rootCmd)
 
 	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)

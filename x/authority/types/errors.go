@@ -22,7 +22,7 @@ const (
 )
 
 func ErrNotAuthority(address string) sdk.Error {
-	return sdk.NewError(Codespace, CodeMissingDenomination, "%v is not the authority", address)
+	return sdk.NewError(Codespace, CodeNotAuthority, "%v is not the authority", address)
 }
 
 func ErrNoDenomsSpecified() sdk.Error {
