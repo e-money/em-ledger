@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
+	"time"
 )
 
 const (
@@ -35,6 +36,8 @@ var _ = Describe("Authority", func() {
 		It("creates a new testnet", createNewTestnet)
 
 		It("creates an issuer", func() {
+			time.Sleep(5 * time.Second)
+
 			_, success, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "eeur", "ejpy")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).To(BeTrue())
