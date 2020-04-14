@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/sjson"
+	"time"
 )
 
 var _ = Describe("Restricted denominationsq", func() {
@@ -39,6 +40,8 @@ var _ = Describe("Restricted denominationsq", func() {
 	})
 
 	It("tests transfer restrictions", func() {
+		time.Sleep(8 * time.Second) // Allow for a few blocks to avoid querying at height 1.
+
 		emcli := testnet.NewEmcli()
 		{
 			// Key1 is whitelisted

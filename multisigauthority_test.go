@@ -15,6 +15,7 @@ import (
 	"github.com/tidwall/sjson"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 var _ = Describe("Market", func() {
@@ -40,6 +41,8 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Same key signs twice", func() {
+			time.Sleep(8 * time.Second) // Avoid querying while block height is 1
+
 			jsonPath, err := ioutil.TempDir("", "")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(jsonPath)
