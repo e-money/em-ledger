@@ -8,6 +8,8 @@ package emoney
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/spf13/viper"
 	"sync"
 	"time"
 
@@ -40,6 +42,9 @@ var _ = Describe("Staking", func() {
 			It("creates a new testnet", createNewTestnet)
 
 			It("Creates a lot of send transactions", func() {
+				viper.Set(flags.FlagTrustNode, true)
+				defer viper.Set(flags.FlagTrustNode, nil)
+
 				emcli := testnet.NewEmcli()
 
 				time.Sleep(2 * time.Second)
@@ -147,6 +152,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		WithCodec(cdc).
 		//WithBroadcastMode("block").
 		WithBroadcastMode("async").
+		WithTrustNode(true).
 		WithClient(rpcclient.NewHTTP("tcp://localhost:26657", "/websocket"))
 
 	to, err := sdk.AccAddressFromBech32(toKey.GetAddress())
