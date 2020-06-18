@@ -8,18 +8,19 @@ import (
 	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"strings"
 )
 
 func NewQuerier(k Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryGasPrices:
 			return queryGasPrices(ctx, k)
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown authority query endpoint")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown authority query endpoint")
 		}
 	}
 
@@ -39,15 +40,10 @@ func (q QueryGasPricesResponse) String() string {
 	return sb.String()
 }
 
-func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
+func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, error) {
 	gasPrices := k.GetGasPrices(ctx)
 
 	response := QueryGasPricesResponse{gasPrices}
 
-	bz, err := json.Marshal(response)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
-	}
-
-	return bz, nil
+	return json.Marshal(response)
 }

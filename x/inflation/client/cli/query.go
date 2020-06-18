@@ -6,8 +6,8 @@ package cli
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -39,7 +39,7 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	inflationQueryCmd = client.GetCommands(inflationQueryCmd)[0]
+	inflationQueryCmd = flags.GetCommands(inflationQueryCmd)[0]
 
 	return inflationQueryCmd
 }

@@ -6,6 +6,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var (
@@ -15,13 +16,13 @@ var (
 
 type (
 	MsgMintTokens struct {
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-		Amount            sdk.Coins      `json:"amount" yaml:"amount"`
+		Amount            sdk.Coins
+		LiquidityProvider sdk.AccAddress
 	}
 
 	MsgBurnTokens struct {
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-		Amount            sdk.Coins      `json:"amount" yaml:"amount"`
+		Amount            sdk.Coins
+		LiquidityProvider sdk.AccAddress
 	}
 )
 
@@ -29,13 +30,15 @@ func (msg MsgBurnTokens) Route() string { return RouterKey }
 
 func (msg MsgBurnTokens) Type() string { return "burn_tokens" }
 
-func (msg MsgBurnTokens) ValidateBasic() sdk.Error {
+func (msg MsgBurnTokens) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
-		return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.LiquidityProvider.String())
+		//return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
 	}
 
 	if !msg.Amount.IsValid() {
-		return sdk.ErrInvalidCoins(msg.Amount.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
+		//return sdk.ErrInvalidCoins(msg.Amount.String())
 	}
 
 	return nil
@@ -53,13 +56,15 @@ func (msg MsgMintTokens) Route() string { return RouterKey }
 
 func (msg MsgMintTokens) Type() string { return "mint_tokens" }
 
-func (msg MsgMintTokens) ValidateBasic() sdk.Error {
+func (msg MsgMintTokens) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
-		return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.LiquidityProvider.String())
+		//return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
 	}
 
 	if !msg.Amount.IsValid() {
-		return sdk.ErrInvalidCoins(msg.Amount.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
+		//return sdk.ErrInvalidCoins(msg.Amount.String())
 	}
 
 	return nil

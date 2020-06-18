@@ -7,7 +7,7 @@ package types
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
 )
 
 var _ auth.Account = LiquidityProviderAccount{}
@@ -26,7 +26,7 @@ func NewLiquidityProviderAccount(baseAccount auth.Account, mintable sdk.Coins) *
 }
 
 func (acc *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
-	acc.Mintable = acc.Mintable.Add(increase)
+	acc.Mintable = acc.Mintable.Add(increase...)
 }
 
 // Function panics if resulting mintable amount is negative. Should be checked prior to invocation for cleaner handling.
@@ -43,7 +43,7 @@ func (acc LiquidityProviderAccount) String() string {
 	var pubkey string
 
 	if acc.GetPubKey() != nil {
-		pubkey = sdk.MustBech32ifyAccPub(acc.GetPubKey())
+		pubkey = sdk.MustBech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, acc.GetPubKey())
 	}
 
 	return fmt.Sprintf(`Account:

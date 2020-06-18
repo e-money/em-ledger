@@ -7,6 +7,7 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"sort"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 )
 
 func NewQuerier(k *Keeper) sdk.Querier {
-	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryInstruments:
 			return queryInstruments(k)
@@ -28,7 +29,7 @@ func NewQuerier(k *Keeper) sdk.Querier {
 		case types.QueryByAccount:
 			return queryByAccount(k, path[1:], req)
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown market query endpoint")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unrecognized market query endpoint")
 		}
 	}
 }
@@ -100,14 +101,14 @@ func (o OrderResponses) Swap(i, j int) {
 
 var _ sort.Interface = OrderResponses{}
 
-func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
 	if len(path) != 1 {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("%s is not a valid query request path", req.Path))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
 	}
 
 	account, err := sdk.AccAddressFromBech32(path[0])
 	if err != nil {
-		return nil, sdk.ErrInvalidAddress(fmt.Sprint("Address could not be parsed", path[0], err))
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
 	}
 
 	o := k.accountOrders.GetAllOrders(account)
@@ -122,23 +123,18 @@ func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sd
 	sort.Sort(orders)
 
 	resp := QueryByAccountResponse{orders}
-	bz, err := json.Marshal(resp)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
-	}
-
-	return bz, nil
+	return json.Marshal(resp)
 }
 
-func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
 	if len(path) != 2 {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("%s is not a valid query request path", req.Path))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
 	}
 
 	source, destination := path[0], path[1]
 
 	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
-		return nil, sdk.ErrInvalidCoins(fmt.Sprintf("Invalid denoms: %v %v", source, destination))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
 	}
 
 	instrument := k.instruments.GetInstrument(source, destination)
@@ -165,12 +161,7 @@ func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, s
 		Orders:      orders,
 	}
 
-	bz, err := json.Marshal(resp)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
-	}
-
-	return bz, nil
+	return json.Marshal(resp)
 }
 
 type QueryInstrumentsWrapperResponse struct {
@@ -196,7 +187,7 @@ func (q QueryInstrumentsResponse) String() string {
 	return fmt.Sprintf("%v => %v (%v)", q.Source, q.Destination, q.OrderCount)
 }
 
-func queryInstruments(k *Keeper) ([]byte, sdk.Error) {
+func queryInstruments(k *Keeper) ([]byte, error) {
 	response := make([]QueryInstrumentsResponse, len(k.instruments))
 	for i, v := range k.instruments {
 		response[i] = QueryInstrumentsResponse{
@@ -208,10 +199,5 @@ func queryInstruments(k *Keeper) ([]byte, sdk.Error) {
 
 	// Wrap the instruments in an object in anticipation of later expansion
 	instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
-	bz, err := json.Marshal(instrumentsWrapper)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
-	}
-
-	return bz, nil
+	return json.Marshal(instrumentsWrapper)
 }

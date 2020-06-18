@@ -32,9 +32,8 @@ var (
 	ValidateInflationState = types.ValidateInflationState
 
 	// variable aliases
-	ModuleCdc    = types.ModuleCdc
-	MinterKey    = types.MinterKey
-	KeyMintDenom = types.KeyMintDenom
+	ModuleCdc = types.ModuleCdc
+	MinterKey = types.MinterKey
 )
 
 type (

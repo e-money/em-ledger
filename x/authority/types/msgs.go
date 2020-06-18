@@ -4,7 +4,10 @@
 
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+)
 
 var (
 	_ sdk.Msg = MsgCreateIssuer{}
@@ -14,18 +17,18 @@ var (
 
 type (
 	MsgCreateIssuer struct {
-		Authority     sdk.AccAddress `json:"authority" yaml:"authority"`
-		Issuer        sdk.AccAddress `json:"issuer" yaml:"issuer"`
-		Denominations []string       `json:"denoms" yaml:"denoms"`
+		Issuer        sdk.AccAddress
+		Denominations []string
+		Authority     sdk.AccAddress
 	}
 	MsgDestroyIssuer struct {
-		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
-		Issuer    sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		Issuer    sdk.AccAddress
+		Authority sdk.AccAddress
 	}
 
 	MsgSetGasPrices struct {
-		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
-		GasPrices sdk.DecCoins   `json:"gas_prices" yaml:"gas_prices"`
+		GasPrices sdk.DecCoins
+		Authority sdk.AccAddress
 	}
 )
 
@@ -35,41 +38,48 @@ func (msg MsgCreateIssuer) Type() string { return "createIssuer" }
 
 func (msg MsgSetGasPrices) Type() string { return "setgasprices" }
 
-func (msg MsgDestroyIssuer) ValidateBasic() sdk.Error {
+func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if msg.Issuer.Empty() {
-		return sdk.ErrInvalidAddress("missing issuer address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing issuer address")
+		//return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	if msg.Authority.Empty() {
-		return sdk.ErrInvalidAddress("missing authority address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
+		//return sdk.ErrInvalidAddress("missing authority address")
 	}
 
 	return nil
 }
 
-func (msg MsgCreateIssuer) ValidateBasic() sdk.Error {
+func (msg MsgCreateIssuer) ValidateBasic() error {
 	if msg.Issuer.Empty() {
-		return sdk.ErrInvalidAddress("missing issuer address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing issuer address")
+		//return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	if msg.Authority.Empty() {
-		return sdk.ErrInvalidAddress("missing authority address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
+		//return sdk.ErrInvalidAddress("missing authority address")
 	}
 
 	if len(msg.Denominations) == 0 {
-		return ErrNoDenomsSpecified()
+		return sdkerrors.Wrap(ErrNoDenomsSpecified, "No denomination specified")
+		//return ErrNoDenomsSpecified()
 	}
 
 	return nil
 }
 
-func (msg MsgSetGasPrices) ValidateBasic() sdk.Error {
+func (msg MsgSetGasPrices) ValidateBasic() error {
 	if msg.Authority.Empty() {
-		return sdk.ErrInvalidAddress("missing authority address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
+		//return sdk.ErrInvalidAddress("missing authority address")
 	}
 
 	if !msg.GasPrices.IsValid() {
-		return sdk.ErrInvalidCoins(msg.GasPrices.String())
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "%v", msg.GasPrices)
+		//return sdk.ErrInvalidCoins(msg.GasPrices.String())
 	}
 
 	return nil

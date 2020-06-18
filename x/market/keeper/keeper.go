@@ -6,6 +6,7 @@ package keeper
 
 import (
 	"fmt"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"math"
 	"sync"
 
@@ -58,7 +59,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 	return k
 }
 
-func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, DestinationDenom string) types.ExecutionPlan {
+func (k *Keeper) createExecutionPlan(SourceDenom string, DestinationDenom string) types.ExecutionPlan {
 	result := types.ExecutionPlan{
 		Price: sdk.NewDec(math.MaxInt64),
 	}
@@ -120,49 +121,52 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, Destin
 	return result
 }
 
-func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sdk.Result {
+func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	if err := aggressiveOrder.IsValid(); err != nil {
-		return err.Result()
+		return nil, err
 	}
 
 	if aggressiveOrder.IsFilled() {
-		return types.ErrInvalidPrice(aggressiveOrder.Source, aggressiveOrder.Destination).Result()
+		return nil, sdkerrors.Wrapf(types.ErrInvalidPrice, "Order price is invalid: %s -> %s", aggressiveOrder.Source, aggressiveOrder.Destination)
 	}
 
 	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.Owner)
 	if sourceAccount == nil {
-		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.Owner.String())).Result()
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", aggressiveOrder.Owner.String())
+		//return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.Owner.String())).Result()
 	}
 
 	// Verify account balance
 	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
-		return types.ErrAccountBalanceInsufficient(aggressiveOrder.Owner, aggressiveOrder.Source, sourceAccount.SpendableCoins(ctx.BlockTime()).AmountOf(aggressiveOrder.Source.Denom)).Result()
+		return nil, sdkerrors.Wrapf(
+			types.ErrAccountBalanceInsufficient,
+			"Account %v has insufficient balance to execute trade: %v < %v",
+			aggressiveOrder.Owner,
+			sourceAccount.SpendableCoins(ctx.BlockTime()),
+			aggressiveOrder.Source,
+		)
 	}
 
 	// Ensure that the market is not showing "phantom liquidity" by rejecting multiple orders in an instrument based on the same balance.
 	totalSourceDemand := k.accountOrders.GetAccountSourceDemand(aggressiveOrder.Owner, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
 	totalSourceDemand = totalSourceDemand.Add(aggressiveOrder.Source)
 	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(totalSourceDemand)); anyNegative {
-		return types.ErrAccountBalanceInsufficientForInstrument(
-			aggressiveOrder.Owner,
-			totalSourceDemand,
-			sourceAccount.SpendableCoins(ctx.BlockTime()).AmountOf(aggressiveOrder.Source.Denom),
-			aggressiveOrder.Destination.Denom,
-		).Result()
+		// TODO Improve message
+		return nil, sdkerrors.Wrapf(types.ErrAccountBalanceInsufficientForInstrument, "")
 	}
 
 	// Verify uniqueness of client order id among active orders
 	if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
-		return types.ErrNonUniqueClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID).Result()
+		return nil, sdkerrors.Wrap(types.ErrNonUniqueClientOrderId, aggressiveOrder.ClientOrderID)
 	}
 
 	// Verify that the destination asset actually exists on chain before creating an instrument
 	if !k.assetExists(ctx, aggressiveOrder.Destination) {
-		return types.ErrUnknownAsset(aggressiveOrder.Destination).Result()
+		return nil, sdkerrors.Wrap(types.ErrUnknownAsset, aggressiveOrder.Destination.Denom)
 	}
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
@@ -170,7 +174,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 	types.EmitNewOrderEvent(ctx, aggressiveOrder)
 
 	for {
-		plan := k.createExecutionPlan(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
+		plan := k.createExecutionPlan(aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
 		if plan.FirstOrder == nil {
 			break
 		}
@@ -281,7 +285,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) sd
 		}
 	}
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func (k *Keeper) initializeFromStore(ctx sdk.Context) {
@@ -311,32 +315,29 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
-func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) sdk.Result {
+func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
 	if origOrder == nil {
-		return types.ErrClientOrderIdNotFound(newOrder.Owner, origClientOrderId).Result()
+		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
 	}
 
 	// Verify that instrument is the same.
 	if origOrder.Source.Denom != newOrder.Source.Denom || origOrder.Destination.Denom != newOrder.Destination.Denom {
-		return types.ErrOrderInstrumentChanged(
-			origOrder.Source.Denom, origOrder.Destination.Denom,
-			newOrder.Source.Denom, newOrder.Destination.Denom,
-		).Result()
+		return nil, sdkerrors.Wrap(types.ErrOrderInstrumentChanged, "")
 	}
 
 	// Has the previous order already achieved the goal on the source side?
 	if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
-		return types.ErrNoSourceRemaining().Result()
+		return nil, sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
 	}
 
-	resCancel := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
-	if !resCancel.IsOK() {
-		return resCancel
+	resCancel, err := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
+	if err != nil {
+		return nil, err
 	}
 
 	// Adjust remaining according to how much of the replaced order was filled:
@@ -344,18 +345,17 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
 	newOrder.DestinationFilled = origOrder.DestinationFilled
 
-	resAdd := k.NewOrderSingle(ctx, newOrder)
-	if !resAdd.IsOK() {
-		resAdd.Events = append(resAdd.Events, resCancel.Events...)
-		return resAdd
+	resAdd, err := k.NewOrderSingle(ctx, newOrder)
+	if err != nil {
+		return nil, err
 	}
 
 	evts := append(ctx.EventManager().Events(), resCancel.Events...)
 	evts = append(evts, resAdd.Events...)
-	return sdk.Result{Events: evts}
+	return &sdk.Result{Events: evts}, nil
 }
 
-func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) sdk.Result {
+func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelOrder, "CancelOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -369,13 +369,13 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 	})
 
 	if i == -1 {
-		return types.ErrClientOrderIdNotFound(owner, clientOrderId).Result()
+		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, clientOrderId)
 	}
 
 	k.deleteOrder(ctx, order)
 	types.EmitCancelEvent(ctx, *order)
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // Update any orders that can no longer be filled with the account's balance.
@@ -431,7 +431,7 @@ func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {
 	return res
 }
 
-func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destinationFilled sdk.Coin, passiveAccountAddr, aggressiveAccountAddr sdk.AccAddress) sdk.Error {
+func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destinationFilled sdk.Coin, passiveAccountAddr, aggressiveAccountAddr sdk.AccAddress) error {
 	inputs := []bank.Input{
 		{aggressiveAccountAddr, sdk.NewCoins(sourceFilled)},
 		{passiveAccountAddr, sdk.NewCoins(destinationFilled)},

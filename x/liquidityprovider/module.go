@@ -113,7 +113,7 @@ func (AppModule) QuerierRoute() string {
 // module querier
 func (am AppModule) NewQuerierHandler() sdk.Querier {
 	//return NewQuerier(am.keeper)
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		return []byte{}, nil
 	}
 }

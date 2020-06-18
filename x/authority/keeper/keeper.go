@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -58,12 +59,12 @@ func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress) {
 	return
 }
 
-func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) sdk.Result {
+func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
 		if !util.ValidateDenom(denom) {
-			return types.ErrInvalidDenom(denom).Result()
+			return nil, sdkerrors.Wrapf(types.ErrInvalidDenom, "Invalid denom: %v", denom)
 		}
 	}
 
@@ -71,18 +72,18 @@ func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 	return k.ik.AddIssuer(ctx, i)
 }
 
-func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) sdk.Result {
+func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	if !gasprices.IsValid() {
-		return types.ErrInvalidGasPrices(gasprices.String()).Result()
+		return nil, sdkerrors.Wrapf(types.ErrInvalidGasPrices, "%v", gasprices)
 	}
 
 	// Check that the denominations actually exist before setting the gas prices to avoid being "locked out" of the blockchain
 	supply := k.sk.GetSupply(ctx).GetTotal()
 	for _, d := range gasprices {
 		if supply.AmountOf(d.Denom).IsZero() {
-			return types.ErrUnknownDenom(d.Denom).Result()
+			return nil, sdkerrors.Wrapf(types.ErrUnknownDenom, "%v", d.Denom)
 		}
 	}
 
@@ -91,7 +92,7 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprice
 	store.Set([]byte(keyGasPrices), bz)
 
 	k.gpk.SetMinimumGasPrices(gasprices.String())
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
@@ -106,7 +107,7 @@ func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
 	return
 }
 
-func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {
+func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	return k.ik.RemoveIssuer(ctx, issuerAddress)
@@ -115,14 +116,14 @@ func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerA
 func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
 	authority := k.GetAuthority(ctx)
 	if authority == nil {
-		panic(types.ErrNoAuthorityConfigured())
+		panic(types.ErrNoAuthorityConfigured)
 	}
 
 	if authority.Equals(address) {
 		return
 	}
 
-	panic(types.ErrNotAuthority(address.String()))
+	panic(sdkerrors.Wrap(types.ErrNotAuthority, address.String()))
 }
 
 func (k Keeper) SetRestrictedDenoms(ctx sdk.Context, denoms emtypes.RestrictedDenoms) {

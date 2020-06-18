@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/emirpasic/gods/utils"
 	"strings"
@@ -216,17 +217,20 @@ func (o Order) IsFilled() bool {
 	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec()) || o.DestinationFilled.GTE(o.Destination.Amount)
 }
 
-func (o Order) IsValid() sdk.Error {
+func (o Order) IsValid() error {
 	if o.Source.Amount.LTE(sdk.ZeroInt()) {
-		return ErrInvalidPrice(o.Source, o.Destination)
+		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
+		//return ErrInvalidPrice(o.Source, o.Destination)
 	}
 
 	if o.Destination.Amount.LTE(sdk.ZeroInt()) {
-		return ErrInvalidPrice(o.Source, o.Destination)
+		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
+		//return ErrInvalidPrice(o.Source, o.Destination)
 	}
 
 	if o.Source.Denom == o.Destination.Denom {
-		return ErrInvalidInstrument(o.Source.Denom, o.Destination.Denom)
+		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", o.Source.Denom, o.Destination.Denom)
+		//return ErrInvalidInstrument(o.Source.Denom, o.Destination.Denom)
 	}
 
 	return nil
@@ -279,9 +283,9 @@ func (ep ExecutionPlan) String() string {
 	return buf.String()
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clientOrderId string) (Order, sdk.Error) {
+func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clientOrderId string) (Order, error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
-		return Order{}, ErrInvalidPrice(src, dst)
+		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
 	}
 
 	o := Order{

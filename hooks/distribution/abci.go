@@ -32,7 +32,10 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 		}
 	}
 
-	previousProposer := db.Get(previousProposerKey)
+	previousProposer, err := db.Get(previousProposerKey)
+	if err != nil {
+		panic(err)
+	}
 
 	// TODO this is Tendermint-dependent
 	// ref https://github.com/cosmos/cosmos-sdk/issues/3095
@@ -46,6 +49,6 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 		}
 	}
 
-	previousProposer = sdk.ConsAddress(req.Header.ProposerAddress)
+	previousProposer = req.Header.ProposerAddress
 	batch.Set(previousProposerKey, previousProposer)
 }
