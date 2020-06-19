@@ -77,7 +77,7 @@ func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) sdk.Result {
+func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) (*sdk.Result, error) {
 	state := k.GetState(ctx)
 
 	for _, denom := range denoms {
@@ -95,7 +95,7 @@ func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) sdk.Result {
 	}
 
 	k.SetState(ctx, state)
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {

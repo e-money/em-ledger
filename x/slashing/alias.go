@@ -13,13 +13,6 @@ import (
 )
 
 const (
-	DefaultCodespace                  = types.DefaultCodespace
-	CodeInvalidValidator              = types.CodeInvalidValidator
-	CodeValidatorJailed               = types.CodeValidatorJailed
-	CodeValidatorNotJailed            = types.CodeValidatorNotJailed
-	CodeMissingSelfDelegation         = types.CodeMissingSelfDelegation
-	CodeSelfDelegationTooLow          = types.CodeSelfDelegationTooLow
-	CodeMissingSigningInfo            = types.CodeMissingSigningInfo
 	ModuleName                        = types.ModuleName
 	PenaltyAccount                    = types.PenaltyAccount
 	StoreKey                          = types.StoreKey
@@ -78,7 +71,6 @@ var (
 )
 
 type (
-	CodeType                = types.CodeType
 	GenesisState            = types.GenesisState
 	MissedBlock             = types.MissedBlock
 	MsgUnjail               = types.MsgUnjail

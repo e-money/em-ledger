@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/store"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"io"
 
 	app "github.com/e-money/em-ledger"
@@ -52,8 +53,8 @@ func main() {
 	}
 
 	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
-	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
+	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics, auth.GenesisAccountIterator{}))
 
 	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), nil)
 

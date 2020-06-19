@@ -47,7 +47,7 @@ func main() {
 		Use:   "emcli",
 		Short: "Command line interface for interacting with e-money daemon",
 	}
-	rootCmd.PersistentFlags().String(client.FlagChainID, "", "Chain ID of tendermint node")
+	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "Chain ID of tendermint node")
 
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),

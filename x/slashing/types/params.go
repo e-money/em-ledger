@@ -84,12 +84,12 @@ func (p Params) String() string {
 // Implements params.ParamSet
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
-		{KeyMaxEvidenceAge, &p.MaxEvidenceAge},
-		{KeySignedBlocksWindowDuration, &p.SignedBlocksWindowDuration},
-		{KeyMinSignedPerWindow, &p.MinSignedPerWindow},
-		{KeyDowntimeJailDuration, &p.DowntimeJailDuration},
-		{KeySlashFractionDoubleSign, &p.SlashFractionDoubleSign},
-		{KeySlashFractionDowntime, &p.SlashFractionDowntime},
+		{KeyMaxEvidenceAge, &p.MaxEvidenceAge, nil},
+		{KeySignedBlocksWindowDuration, &p.SignedBlocksWindowDuration, nil},
+		{KeyMinSignedPerWindow, &p.MinSignedPerWindow, nil},
+		{KeyDowntimeJailDuration, &p.DowntimeJailDuration, nil},
+		{KeySlashFractionDoubleSign, &p.SlashFractionDoubleSign, nil},
+		{KeySlashFractionDowntime, &p.SlashFractionDowntime, nil},
 	}
 }
 
