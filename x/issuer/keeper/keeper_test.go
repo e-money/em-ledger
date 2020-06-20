@@ -1,14 +1,15 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package keeper
 
 import (
-	apptypes "github.com/e-money/em-ledger/types"
-	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"sort"
 	"testing"
+
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
 
 	"github.com/e-money/em-ledger/x/issuer/types"
 

@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -7,10 +7,11 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/x/market"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/e-money/em-ledger/x/market"
 
 	emauth "github.com/e-money/em-ledger/hooks/auth"
 	embank "github.com/e-money/em-ledger/hooks/bank"

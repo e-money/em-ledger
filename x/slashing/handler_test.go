@@ -1,14 +1,15 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package slashing
 
 import (
-	db "github.com/tendermint/tm-db"
 	"strings"
 	"testing"
 	"time"
+
+	db "github.com/tendermint/tm-db"
 
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"

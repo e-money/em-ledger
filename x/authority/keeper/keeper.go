@@ -1,16 +1,17 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package keeper
 
 import (
+	"sync"
+
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
-	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
