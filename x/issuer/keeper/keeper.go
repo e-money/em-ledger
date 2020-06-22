@@ -202,7 +202,7 @@ func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) (*sdk.Resul
 	}
 
 	if len(updatedIssuers) == len(issuers) {
-		return nil, sdkerrors.Wrap(types.ErrIssuerNotFound, issuer.String())
+		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuer.String())
 	}
 
 	k.setIssuers(ctx, updatedIssuers)
