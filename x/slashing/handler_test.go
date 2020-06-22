@@ -135,6 +135,6 @@ func TestInvalidMsg(t *testing.T) {
 	h := NewHandler(k)
 
 	res := h(sdk.NewContext(nil, abci.Header{}, false, nil), sdk.NewTestMsg())
-	require.False(t, res.IsOK())
+	require.Error(t, err)
 	require.True(t, strings.Contains(res.Log, "unrecognized slashing message type"))
 }

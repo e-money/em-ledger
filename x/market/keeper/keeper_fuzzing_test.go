@@ -75,7 +75,7 @@ func TestFuzzing1(t *testing.T) {
 			fmt.Println("Order is filled on creation. Ignoring.", order)
 			continue
 		}
-		require.True(t, res.IsOK())
+		require.NoError(t, err)
 	}
 
 	//dumpEvents(ctx.EventManager().Events())

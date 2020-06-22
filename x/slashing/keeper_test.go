@@ -96,7 +96,7 @@ func TestHandleDoubleSign(t *testing.T) {
 	// Still shouldn't be able to unjail
 	msgUnjail := types.NewMsgUnjail(operatorAddr)
 	res := handleMsgUnjail(ctx, msgUnjail, keeper)
-	require.False(t, res.IsOK())
+	require.Error(t, err)
 
 	// Should be able to unbond now
 	del, _ := sk.GetDelegation(ctx, sdk.AccAddress(operatorAddr), operatorAddr)
@@ -105,7 +105,7 @@ func TestHandleDoubleSign(t *testing.T) {
 	totalBond := validator.TokensFromShares(del.GetShares()).TruncateInt()
 	msgUnbond := staking.NewMsgUndelegate(sdk.AccAddress(operatorAddr), operatorAddr, sdk.NewCoin(sk.GetParams(ctx).BondDenom, totalBond))
 	res = staking.NewHandler(sk)(ctx, msgUnbond)
-	require.True(t, res.IsOK())
+	require.NoError(t, err)
 }
 
 // ______________________________________________________________

@@ -47,12 +47,12 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, issuer1.IsValid())
 	require.True(t, issuer2.IsValid())
 
-	result := keeper.AddIssuer(ctx, issuer1)
-	require.True(t, result.IsOK())
-	result = keeper.AddIssuer(ctx, issuer1)
-	require.False(t, result.IsOK())
-	result = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
-	require.True(t, result.IsOK())
+	result, err := keeper.AddIssuer(ctx, issuer1)
+	require.NoError(t, err)
+	result, err = keeper.AddIssuer(ctx, issuer1)
+	require.Error(t, err)
+	result, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
+	require.NoError(t, err)
 
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
@@ -78,16 +78,16 @@ func TestRemoveIssuer(t *testing.T) {
 
 	issuer := types.NewIssuer(acc1, "eeur", "ejpy")
 
-	result := keeper.AddIssuer(ctx, issuer)
-	require.True(t, result.IsOK())
+	_, err := keeper.AddIssuer(ctx, issuer)
+	require.NoError(t, err)
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
-	result = keeper.RemoveIssuer(ctx, acc2)
-	require.False(t, result.IsOK())
+	_, err = keeper.RemoveIssuer(ctx, acc2)
+	require.Error(t, err)
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
-	result = keeper.RemoveIssuer(ctx, acc1)
-	require.True(t, result.IsOK())
+	_, err = keeper.RemoveIssuer(ctx, acc1)
+	require.NoError(t, err)
 	require.Empty(t, keeper.GetIssuers(ctx))
 }
 
@@ -128,7 +128,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	// Decrease mintable balance.
 	mintable = MustParseCoins("50000eeur, 2000ejpy")
 	result = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
-	require.True(t, result.IsOK())
+	require.NoError(t, err)
 
 	expected = MustParseCoins("150000eeur,8000ejpy")
 	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
@@ -152,14 +152,14 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 
 	// Ensure that a random account can't create a LP
 	res := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, randomacc, mintable)
-	require.False(t, res.IsOK())
+	require.Error(t, err)
 
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
 	// Make sure a random account can't revoke LP status
 	res = keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
-	require.False(t, res.IsOK())
+	require.Error(t, err)
 
 	result := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
 	require.True(t, result.IsOK(), "%v", result)
@@ -187,7 +187,7 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 
 	// Attempt to revoke liquidity given by other issuer
 	res := keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
-	require.False(t, res.IsOK())
+	require.Error(t, err)
 
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer2, mintable2)
 
@@ -195,13 +195,13 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	require.Len(t, lpAccount.Mintable, 4)
 
 	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
-	require.True(t, res.IsOK())
+	require.NoError(t, err)
 
 	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp)
 	require.Len(t, lpAccount.Mintable, 2)
 
 	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
-	require.True(t, res.IsOK())
+	require.NoError(t, err)
 	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lp))
 }
 

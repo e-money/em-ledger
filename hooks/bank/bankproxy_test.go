@@ -6,9 +6,10 @@ package bank
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/e-money/em-ledger/types"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 
@@ -60,8 +61,7 @@ func TestProxySendCoins(t *testing.T) {
 		if d.valid {
 			require.NoError(t, err)
 		} else {
-			require.Equal(t, Codespace, err.Codespace())
-			require.Equal(t, CodeRestrictedDenomination, err.Code())
+			require.Equal(t, err, ErrRestrictedDenomination)
 		}
 	}
 }
@@ -126,8 +126,7 @@ func TestInputOutputCoins(t *testing.T) {
 		if d.valid {
 			require.NoError(t, err)
 		} else {
-			require.Equal(t, Codespace, err.Codespace())
-			require.Equal(t, CodeRestrictedDenomination, err.Code())
+			require.Equal(t, err, ErrRestrictedDenomination)
 		}
 	}
 
@@ -154,13 +153,13 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, ProxyK
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
 	accountKeeper := auth.NewAccountKeeper(cdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
-	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
+	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), blacklistedAddrs)
 
 	wrappedBK := Wrap(bankKeeper, restrictedKeeper{})
 

@@ -27,7 +27,7 @@ func (pk ProxyKeeper) InputOutputCoins(ctx types.Context, inputs []bank.Input, o
 	for _, input := range inputs {
 		for _, coin := range input.Coins {
 			if _, found := restrictedDenoms.Find(coin.Denom); found {
-				return sdkerrors.Wrap(ErrRestrictedDenominationUsed, coin.Denom)
+				return sdkerrors.Wrap(ErrRestrictedDenomination, coin.Denom)
 			}
 		}
 	}
@@ -40,7 +40,7 @@ func (pk ProxyKeeper) SendCoins(ctx types.Context, fromAddr types.AccAddress, to
 	for _, c := range amt {
 		if denom, found := restrictedDenoms.Find(c.Denom); found {
 			if !denom.IsAnyAllowed(fromAddr, toAddr) {
-				return sdkerrors.Wrap(ErrRestrictedDenominationUsed, c.Denom)
+				return sdkerrors.Wrap(ErrRestrictedDenomination, c.Denom)
 			}
 		}
 	}

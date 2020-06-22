@@ -19,6 +19,7 @@ import (
 )
 
 const KeyPwd = "pwd12345"
+const Bip39Pwd = "pwd54321"
 
 type (
 	KeyStore struct {
@@ -146,7 +147,7 @@ func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 
 	for i, mnemonic := range seeds {
 		accountName := fmt.Sprintf("validator%v", i)
-		_, err := ks.keybase.CreateAccount(accountName, mnemonic, "", KeyPwd, 0, 0)
+		_, err := ks.keybase.CreateAccount(accountName, mnemonic, Bip39Pwd, KeyPwd, 0, 0)
 		if err != nil {
 			panic(err)
 		}

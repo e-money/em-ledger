@@ -6,4 +6,4 @@ package bank
 
 import sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-var ErrRestrictedDenominationUsed = sdkerrors.Register("embank", 1, "restricted denomination")
+var ErrRestrictedDenomination = sdkerrors.Register("embank", 1, "Denomination is restricted")

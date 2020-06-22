@@ -7,11 +7,11 @@ package types
 import sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 var (
-	ErrNegativeMintableBalance     = sdkerrors.Register(ModuleName, 1, "")
-	ErrNotLiquidityProvider        = sdkerrors.Register(ModuleName, 2, "")
-	ErrDoesNotControlDenomination  = sdkerrors.Register(ModuleName, 3, "")
-	ErrDenominationAlreadyAssigned = sdkerrors.Register(ModuleName, 4, "")
-	ErrIssuerNotFound              = sdkerrors.Register(ModuleName, 5, "")
+	ErrNegativeMintableBalance     = sdkerrors.Register(ModuleName, 1, "Mintable balance became negative")
+	ErrNotLiquidityProvider        = sdkerrors.Register(ModuleName, 2, "Account is not a Liquidity Provider")
+	ErrDoesNotControlDenomination  = sdkerrors.Register(ModuleName, 3, "Not Issuer of this Token Denomination")
+	ErrDenominationAlreadyAssigned = sdkerrors.Register(ModuleName, 4, "Token Denomination has already been assigned")
+	ErrIssuerNotFound              = sdkerrors.Register(ModuleName, 5, "Issuer does not exist")
 	ErrNegativeInflation           = sdkerrors.Register(ModuleName, 6, "")
 	ErrNotAnIssuer                 = sdkerrors.Register(ModuleName, 7, "")
 )
