@@ -165,7 +165,7 @@ func TestManageGasPrices1(t *testing.T) {
 	// Do not allow fees to be set in token denominations that are not present in the chain
 	coins, _ = sdk.ParseDecCoins("0.0005eeur,0.000001echf,0.0000001esek")
 	res, err = keeper.SetGasPrices(ctx, accAuthority, coins)
-	require.Equal(t, err, types.ErrUnknownDenom)
+	require.True(t, types.ErrUnknownDenom.Is(err))
 }
 
 func TestManageGasPrices2(t *testing.T) {

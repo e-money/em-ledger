@@ -49,7 +49,7 @@ func TestFuzzing1(t *testing.T) {
 	testdata := []struct {
 		src, dst string
 		price    sdk.Dec
-		seller   authexported.Account
+		seller   exported.Account
 	}{
 		{"eur", "usd", basepriceEURUSD, acc1},
 		{"usd", "eur", ONE.Quo(basepriceEURUSD), acc2},
@@ -70,7 +70,7 @@ func TestFuzzing1(t *testing.T) {
 	})
 
 	for _, order := range allOrders {
-		res := k.NewOrderSingle(ctx, order)
+		_, err := k.NewOrderSingle(ctx, order)
 		if order.IsFilled() {
 			fmt.Println("Order is filled on creation. Ignoring.", order)
 			continue
@@ -82,7 +82,7 @@ func TestFuzzing1(t *testing.T) {
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
-func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller authexported.Account, r *rand.Rand) (res []types.Order) {
+func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller exported.Account, r *rand.Rand) (res []types.Order) {
 	priceGen := priceGenerator(basePrice, r)
 
 	for i := 0; i < 500; i++ {

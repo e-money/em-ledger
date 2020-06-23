@@ -61,7 +61,7 @@ func TestProxySendCoins(t *testing.T) {
 		if d.valid {
 			require.NoError(t, err)
 		} else {
-			require.Equal(t, err, ErrRestrictedDenomination)
+			require.True(t, ErrRestrictedDenomination.Is(err), "Actual error \"%s\" (%T)", err.Error(), err)
 		}
 	}
 }
@@ -126,7 +126,7 @@ func TestInputOutputCoins(t *testing.T) {
 		if d.valid {
 			require.NoError(t, err)
 		} else {
-			require.Equal(t, err, ErrRestrictedDenomination)
+			require.True(t, ErrRestrictedDenomination.Is(err), "Actual error \"%s\" (%T)", err.Error(), err)
 		}
 	}
 

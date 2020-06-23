@@ -6,6 +6,8 @@ package keeper
 
 import (
 	"fmt"
+	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"math"
 	"testing"
 	"time"
@@ -17,14 +19,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -43,13 +44,13 @@ func TestBasicTrade(t *testing.T) {
 
 	gasmeter := sdk.NewGasMeter(math.MaxUint64)
 	order1 := order(acc1, "100eur", "120usd")
-	res := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order1)
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order1)
 	require.NoError(t, err)
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
 
 	gasmeter = sdk.NewGasMeter(math.MaxUint64)
 	order2 := order(acc2, "60usd", "50eur")
-	res = k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order2)
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order2)
 	require.NoError(t, err)
 
 	// Ensure that gas usage is not higher due to the order being matched.
@@ -84,11 +85,11 @@ func TestBasicTrade2(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, ak)
 
 	order1 := order(acc1, "888eur", "1121usd")
-	res := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	order2 := order(acc2, "1120usd", "890eur")
-	res = k.NewOrderSingle(ctx, order2)
+	res, err := k.NewOrderSingle(ctx, order2)
 	require.True(t, err == nil, res.Log)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
@@ -117,18 +118,18 @@ func TestMultipleOrders(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, ak)
 
 	// Add two orders that draw on the same balance.
-	res := k.NewOrderSingle(ctx, order(acc1, "10000eur", "11000usd"))
+	_, err := k.NewOrderSingle(ctx, order(acc1, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
-	res = k.NewOrderSingle(ctx, order(acc1, "10000eur", "1400chf"))
+	_, err = k.NewOrderSingle(ctx, order(acc1, "10000eur", "1400chf"))
 	require.NoError(t, err)
 
 	require.Len(t, k.instruments, 2)
 
-	res = k.NewOrderSingle(ctx, order(acc2, "7400usd", "5000eur"))
+	res, err := k.NewOrderSingle(ctx, order(acc2, "7400usd", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
-	res = k.NewOrderSingle(ctx, order(acc3, "2200chf", "5000eur"))
+	res, err = k.NewOrderSingle(ctx, order(acc3, "2200chf", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
@@ -145,10 +146,10 @@ func TestCancelZeroRemainingOrders(t *testing.T) {
 	ctx, k, ak, bk, _ := createTestComponents(t)
 
 	acc := createAccount(ctx, ak, "acc1", "10000eur")
-	res := k.NewOrderSingle(ctx, order(acc, "10000eur", "11000usd"))
+	_, err := k.NewOrderSingle(ctx, order(acc, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
-	err := bk.SendCoins(ctx, acc.GetAddress(), sdk.AccAddress([]byte("void")), coins("10000eur"))
+	err = bk.SendCoins(ctx, acc.GetAddress(), sdk.AccAddress([]byte("void")), coins("10000eur"))
 	require.NoError(t, err)
 
 	orders := k.GetOrdersByOwner(acc.GetAddress())
@@ -171,7 +172,7 @@ func TestInsufficientBalance1(t *testing.T) {
 	bk.SendCoins(ctx, acc1.GetAddress(), acc3.GetAddress(), coins("250eur"))
 
 	o = order(acc2, "360usd", "300eur")
-	res := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
@@ -191,11 +192,11 @@ func Test2(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, ak)
 
 	o := order(acc1, "100eur", "120usd")
-	res := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	o = order(acc2, "121usd", "100eur")
-	res = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	require.Empty(t, k.instruments)
@@ -241,11 +242,11 @@ func TestDeleteOrder(t *testing.T) {
 	cid := cid()
 
 	order1, _ := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), time.Now(), cid)
-	res := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	order2, _ := types.NewOrder(coin("100eur"), coin("77chf"), acc1.GetAddress(), time.Now(), cid)
-	res = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2)
 	require.Error(t, err) // Verify that client order ids cannot be duplicated.
 
 	require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
@@ -263,13 +264,13 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		order, _ := types.NewOrder(coin("5eur"), coin("12usd"), acc1.GetAddress(), time.Now(), cid())
-		res := k.NewOrderSingle(ctx, order)
+		_, err := k.NewOrderSingle(ctx, order)
 		require.NoError(t, err)
 	}
 
 	for i := 0; i < 5; i++ {
 		order, _ := types.NewOrder(coin("7usd"), coin("3chf"), acc2.GetAddress(), time.Now(), cid())
-		res := k.NewOrderSingle(ctx, order)
+		res, err := k.NewOrderSingle(ctx, order)
 		require.True(t, err == nil, res.Log)
 	}
 
@@ -278,7 +279,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	{
 		order, _ := types.NewOrder(coin("12usd"), coin("5eur"), acc2.GetAddress(), time.Now(), cid())
-		res := k.NewOrderSingle(ctx, order)
+		res, err := k.NewOrderSingle(ctx, order)
 		require.True(t, err == nil, res.Log)
 	}
 
@@ -287,8 +288,11 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	cid := allOrders2[2].ClientOrderID
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
-	require.True(t, k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), cid).IsOK())
-	require.False(t, k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), cid).IsOK())
+	_, err := k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), cid)
+	require.NoError(t, err)
+
+	_, err = k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), cid)
+	require.Error(t, err)
 
 	require.Equal(t, 2*gasPriceCancelOrder, gasMeter.GasConsumed())
 
@@ -308,7 +312,7 @@ func TestCancelOrders1(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 	acc := createAccount(ctx, ak, "acc1", "100eur")
 
-	res := k.CancelOrder(ctx, acc.GetAddress(), "abcde")
+	_, err := k.CancelOrder(ctx, acc.GetAddress(), "abcde")
 	require.Error(t, err)
 }
 
@@ -321,13 +325,13 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	order1cid := cid()
 	order1, _ := types.NewOrder(coin("500eur"), coin("1200usd"), acc1.GetAddress(), time.Now(), order1cid)
-	res := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	order2cid := cid()
 	order2, _ := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), time.Now(), order2cid)
-	res = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
+	res, err := k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
 	require.True(t, err == nil, res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
@@ -342,17 +346,19 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	order3, _ := types.NewOrder(coin("500chf"), coin("1700usd"), acc1.GetAddress(), time.Now(), cid())
 	// Wrong client order id for previous order submitted.
-	res = k.CancelReplaceOrder(ctx, order3, order1cid)
-	require.Equal(t, types.CodeClientOrderIdNotFound, res.Code)
+	_, err = k.CancelReplaceOrder(ctx, order3, order1cid)
+	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
+	//require.Equal(t, types.CodeClientOrderIdNotFound, res.Code)
 
 	// Changing instrument of order
 	gasMeter = sdk.NewGasMeter(math.MaxUint64)
-	res = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
-	require.Equal(t, types.CodeOrderInstrumentChanged, res.Code)
+	_, err = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
+	//require.Equal(t, types.CodeOrderInstrumentChanged, res.Code)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	o := order(acc2, "2600usd", "300eur")
-	res = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
@@ -371,7 +377,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
 	order4cid := cid()
 	order4, _ := types.NewOrder(coin("10000eur"), coin("35050usd"), acc1.GetAddress(), time.Now(), order4cid)
-	res = k.CancelReplaceOrder(ctx, order4, order2cid)
+	res, err = k.CancelReplaceOrder(ctx, order4, order2cid)
 	require.True(t, err == nil, res.Log)
 
 	{
@@ -389,9 +395,9 @@ func TestCancelReplaceOrder(t *testing.T) {
 	require.True(t, err == nil, res.Log)
 
 	order6 := order(acc1, "8000eur", "30000usd")
-	res = k.CancelReplaceOrder(ctx, order6, order4cid)
-	require.Error(t, err)
-	require.Equal(t, types.CodeNoSourceRemaining, res.Code)
+	_, err = k.CancelReplaceOrder(ctx, order6, order4cid)
+	require.True(t, types.ErrNoSourceRemaining.Is(err))
+	//require.Equal(t, types.CodeNoSourceRemaining, res.Code)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
@@ -402,20 +408,20 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	acc2 := createAccount(ctx, ak, "acc2", "11000chf,100000eur")
 
 	order, _ := types.NewOrder(coin("10000eur"), coin("1000usd"), acc.GetAddress(), time.Now(), cid())
-	res := k.NewOrderSingle(ctx, order)
+	_, err := k.NewOrderSingle(ctx, order)
 	require.NoError(t, err)
 
 	{
 		// Partially fill the order above
 		acc2 := createAccount(ctx, ak, "acc2", "900000usd")
 		order2, _ := types.NewOrder(coin("400usd"), coin("4000eur"), acc2.GetAddress(), time.Now(), cid())
-		res = k.NewOrderSingle(ctx, order2)
+		_, err = k.NewOrderSingle(ctx, order2)
 		require.NoError(t, err)
 	}
 
 	totalSupply := snapshotAccounts(ctx, ak)
 
-	err := bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("8000eur"))
+	err = bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("8000eur"))
 	require.Nil(t, err)
 
 	// Seller's account balance drops, remaining should be adjusted accordingly.
@@ -452,10 +458,10 @@ func TestUnknownAsset(t *testing.T) {
 
 	// Make an order with a destination that is not known by the supply module
 	o := order(acc1, "1000eur", "1200nok")
-	res := k1.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
-	require.Error(t, err)
-	require.Equal(t, types.Codespace, res.Codespace)
-	require.Equal(t, types.CodeUnknownAsset, res.Code)
+	_, err := k1.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
+	require.True(t, types.ErrUnknownAsset.Is(err))
+	//require.Equal(t, types.Codespace, res.Codespace)
+	//require.Equal(t, types.CodeUnknownAsset, res.Code)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 }
 
@@ -467,10 +473,12 @@ func TestLoadFromStore(t *testing.T) {
 	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
 
 	o := order(acc1, "1000eur", "1200usd")
-	require.True(t, k1.NewOrderSingle(ctx, o).IsOK())
+	_, err := k1.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	o = order(acc2, "5000usd", "3500chf")
-	require.True(t, k1.NewOrderSingle(ctx, o).IsOK())
+	_, err = k1.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	_, k2, _, _, _ := createTestComponents(t)
 
@@ -489,11 +497,13 @@ func TestVestingAccount(t *testing.T) {
 	ctx, keeper, ak, _, _ := createTestComponents(t)
 	account := createAccount(ctx, ak, "acc1", "110000eur")
 
-	vestingAcc := auth.NewDelayedVestingAccount(account.(*auth.BaseAccount), math.MaxInt64)
+	vestingAcc := vesting.NewDelayedVestingAccount(account.(*auth.BaseAccount), math.MaxInt64)
 	ak.SetAccount(ctx, vestingAcc)
 
-	res := keeper.NewOrderSingle(ctx, order(vestingAcc, "5000eur", "4700chf"))
+	_, err := keeper.NewOrderSingle(ctx, order(vestingAcc, "5000eur", "4700chf"))
+	fmt.Println(err.Error())
 	require.Error(t, err)
+	// TODO Verify error type
 }
 
 func TestInvalidInstrument(t *testing.T) {
@@ -511,8 +521,8 @@ func TestInvalidInstrument(t *testing.T) {
 		ClientOrderID:     "abcddeg",
 	}
 
-	res := k.NewOrderSingle(ctx, o)
-	require.Error(t, err)
+	_, err := k.NewOrderSingle(ctx, o)
+	require.True(t, types.ErrInvalidInstrument.Is(err))
 }
 
 func TestRestrictedDenominations1(t *testing.T) {
@@ -531,33 +541,39 @@ func TestRestrictedDenominations1(t *testing.T) {
 
 	{ // Verify that acc2 can't create a passive gbp order
 		o := order(acc2, "500gbp", "542eur")
-		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		_, err := k.NewOrderSingle(ctx, o)
+		require.NoError(t, err)
 		require.Empty(t, k.instruments)
 
 		o = order(acc2, "542usd", "500gbp")
-		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		_, err = k.NewOrderSingle(ctx, o)
+		require.NoError(t, err)
 		require.Empty(t, k.instruments)
 	}
 
 	{ // Verify that acc1 can create a passive gbp order
 		o := order(acc1, "542eur", "500gbp")
-		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		_, err := k.NewOrderSingle(ctx, o)
+		require.NoError(t, err)
 		require.Len(t, k.instruments, 1)
 
 		o = order(acc1, "200gbp", "333usd")
-		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		_, err = k.NewOrderSingle(ctx, o)
+		require.NoError(t, err)
 		require.Len(t, k.instruments, 2)
 	}
 
 	{ // Verify that acc2 managed to sell its gbp to a passive order
 		o := order(acc2, "500gbp", "542eur")
-		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		_, err := k.NewOrderSingle(ctx, o)
+		require.NoError(t, err)
 
 		balance := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
 		require.Equal(t, "542", balance.AmountOf("eur").String())
 
 		o = order(acc2, "333usd", "200gbp")
-		require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+		_, err = k.NewOrderSingle(ctx, o)
+		require.NoError(t, err)
 		balance = ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
 		require.Equal(t, "900", balance.AmountOf("gbp").String())
 	}
@@ -581,12 +597,14 @@ func TestRestrictedDenominations2(t *testing.T) {
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	// Ensure that no orders can be created, even though acc1 is allowed to create usd orders
 	o := order(acc1, "542usd", "500gbp")
-	require.True(t, k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o).IsOK())
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
+	require.NoError(t, err)
 	require.Empty(t, k.instruments)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 
 	o = order(acc1, "500gbp", "542usd")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 	require.Empty(t, k.instruments)
 }
 
@@ -599,17 +617,21 @@ func TestSyntheticInstruments1(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, ak)
 
 	o := order(acc1, "1000eur", "1114usd")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	o = order(acc1, "500eur", "542chf")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	o = order(acc3, "1000chf", "1028usd")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	o = order(acc2, "5000usd", "4485eur")
-	require.True(t, k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o).IsOK())
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
+	require.NoError(t, err)
 	require.Equal(t, gasMeter.GasConsumed(), gasPriceNewOrder) // Matches several orders, but should pay only the fixed fee
 
 	// Ensure acc2 received at least some euro
@@ -631,9 +653,9 @@ func TestNonMatchingOrders(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "100000usd")
 	acc2 := createAccount(ctx, ak, "acc2", "240000eur")
 
-	res := k.NewOrderSingle(ctx, order(acc1, "20000usd", "20000eur"))
+	_, err := k.NewOrderSingle(ctx, order(acc1, "20000usd", "20000eur"))
 	require.NoError(t, err)
-	res = k.NewOrderSingle(ctx, order(acc2, "20000eur", "50000usd"))
+	_, err = k.NewOrderSingle(ctx, order(acc2, "20000eur", "50000usd"))
 	require.NoError(t, err)
 
 	acc1Orders := k.GetOrdersByOwner(acc1.GetAddress())
@@ -672,14 +694,14 @@ func TestSyntheticInstruments2(t *testing.T) {
 	}
 
 	for _, o := range passiveOrders {
-		res := k.NewOrderSingle(ctx, o)
-		require.True(t, err == nil, res.Log)
+		res, err := k.NewOrderSingle(ctx, o)
+		require.NoError(t, err, res.Log)
 	}
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	monsterOrder := order(acc3, "3700000eur", "4000000usd")
-	res := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), monsterOrder)
-	require.True(t, err == nil, res.Log)
+	res, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), monsterOrder)
+	require.NoError(t, err, res.Log)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 
 	require.Len(t, k.instruments, 0)
@@ -702,11 +724,11 @@ func TestDestinationCapacity(t *testing.T) {
 	order1.SourceFilled = sdk.NewInt(618000000)
 	order1.DestinationFilled = sdk.NewInt(645161290)
 
-	res := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	order2 := order(acc2, "471096868463eur", "500182000000usd")
-	res = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2)
 	require.NoError(t, err)
 }
 
@@ -724,15 +746,15 @@ func TestDestinationCapacity2(t *testing.T) {
 	order1.SourceFilled = sdk.NewInt(618000000)
 	order1.DestinationFilled = sdk.NewInt(645161290)
 
-	res := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	order2 := order(acc3, "130000000000chf", "800000000usd")
-	res = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2)
 	require.NoError(t, err)
 
 	aggressiveOrder := order(acc2, "471096868463eur", "120000000000chf")
-	res = k.NewOrderSingle(ctx, aggressiveOrder)
+	_, err = k.NewOrderSingle(ctx, aggressiveOrder)
 	require.NoError(t, err)
 }
 
@@ -742,18 +764,17 @@ func TestPreventPhantomLiquidity(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
 
 	order1 := order(acc1, "8000eur", "9000usd")
-	res := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	// Cannot sell more than the balance in the same instrument
 	order2 := order(acc1, "8000eur", "9000usd")
-	res = k.NewOrderSingle(ctx, order2)
-	fmt.Println(res.Log)
+	_, err = k.NewOrderSingle(ctx, order2)
 	require.Error(t, err)
 
 	// Can sell the balance in another instrument
 	order3 := order(acc1, "8000eur", "6000chf")
-	res = k.NewOrderSingle(ctx, order3)
+	_, err = k.NewOrderSingle(ctx, order3)
 	require.NoError(t, err)
 }
 
@@ -761,7 +782,7 @@ func printTotalBalance(accs ...authexported.Account) {
 	sum := sdk.NewCoins()
 
 	for _, acc := range accs {
-		sum = sum.Add(acc.GetCoins())
+		sum = sum.Add(acc.GetCoins()...)
 	}
 
 	fmt.Println(sum)
@@ -787,13 +808,13 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	pk := params.NewKeeper(types.ModuleCdc, keyParams, tkeyParams, params.DefaultCodespace)
+	pk := params.NewKeeper(types.ModuleCdc, keyParams, tkeyParams)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
 	accountKeeper := auth.NewAccountKeeper(types.ModuleCdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 
-	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, blacklistedAddrs)
+	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), blacklistedAddrs)
 
 	maccPerms := map[string][]string{}
 
@@ -847,7 +868,7 @@ func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance stri
 
 // Generate a random string to use as a client order id
 func cid() string {
-	return cmn.RandStr(10)
+	return tmrand.Str(10)
 }
 
 func dumpEvents(events sdk.Events) {
@@ -863,7 +884,7 @@ func dumpEvents(events sdk.Events) {
 
 func snapshotAccounts(ctx sdk.Context, ak auth.AccountKeeper) (totalBalance sdk.Coins) {
 	ak.IterateAccounts(ctx, func(acc authexported.Account) (stop bool) {
-		totalBalance = totalBalance.Add(acc.GetCoins())
+		totalBalance = totalBalance.Add(acc.GetCoins()...)
 		return
 	})
 	return

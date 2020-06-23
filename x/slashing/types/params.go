@@ -84,12 +84,12 @@ func (p Params) String() string {
 // Implements params.ParamSet
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
-		{KeyMaxEvidenceAge, &p.MaxEvidenceAge, nil},
-		{KeySignedBlocksWindowDuration, &p.SignedBlocksWindowDuration, nil},
-		{KeyMinSignedPerWindow, &p.MinSignedPerWindow, nil},
-		{KeyDowntimeJailDuration, &p.DowntimeJailDuration, nil},
-		{KeySlashFractionDoubleSign, &p.SlashFractionDoubleSign, nil},
-		{KeySlashFractionDowntime, &p.SlashFractionDowntime, nil},
+		{KeyMaxEvidenceAge, &p.MaxEvidenceAge, validateMaxEvidenceAge},
+		{KeySignedBlocksWindowDuration, &p.SignedBlocksWindowDuration, validateSignedBlocksWindowDuration},
+		{KeyMinSignedPerWindow, &p.MinSignedPerWindow, validateMinSignedPerWindow},
+		{KeyDowntimeJailDuration, &p.DowntimeJailDuration, validateDowntimeJailDuration},
+		{KeySlashFractionDoubleSign, &p.SlashFractionDoubleSign, validateSlashFractionDoubleSign},
+		{KeySlashFractionDowntime, &p.SlashFractionDowntime, validateSlashFractionDowntime},
 	}
 }
 
@@ -103,4 +103,93 @@ func DefaultParams() Params {
 		SlashFractionDoubleSign:    DefaultSlashFractionDoubleSign,
 		SlashFractionDowntime:      DefaultSlashFractionDowntime,
 	}
+}
+
+func validateMaxEvidenceAge(i interface{}) error {
+	v, ok := i.(time.Duration)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.Milliseconds() < 0 {
+		return fmt.Errorf("max evidence age cannot be negative: %s", v)
+	}
+
+	return nil
+}
+
+func validateSignedBlocksWindowDuration(i interface{}) error {
+	v, ok := i.(time.Duration)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.Milliseconds() < 0 {
+		return fmt.Errorf("min signed per window cannot be negative: %s", v)
+	}
+
+	// TODO More?
+
+	return nil
+}
+
+func validateMinSignedPerWindow(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("min signed per window cannot be negative: %s", v)
+	}
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("min signed per window too large: %s", v)
+	}
+
+	return nil
+}
+
+func validateDowntimeJailDuration(i interface{}) error {
+	v, ok := i.(time.Duration)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v <= 0 {
+		return fmt.Errorf("downtime jail duration must be positive: %s", v)
+	}
+
+	return nil
+}
+
+func validateSlashFractionDowntime(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("downtime slash fraction cannot be negative: %s", v)
+	}
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("downtime slash fraction too large: %s", v)
+	}
+
+	return nil
+}
+
+func validateSlashFractionDoubleSign(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("double sign slash fraction cannot be negative: %s", v)
+	}
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("double sign slash fraction too large: %s", v)
+	}
+
+	return nil
 }
