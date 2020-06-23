@@ -6,9 +6,9 @@ package bank
 
 import (
 	"fmt"
+	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/e-money/em-ledger/types"
 
 	"github.com/stretchr/testify/require"
@@ -174,7 +174,7 @@ func (rk restrictedKeeper) GetRestrictedDenoms(sdk.Context) types.RestrictedDeno
 	return rk.RestrictedDenoms
 }
 
-func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) exported.Account {
+func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) authexported.Account {
 	acc := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte(address)))
 	acc.SetCoins(coins(balance))
 	ak.SetAccount(ctx, acc)

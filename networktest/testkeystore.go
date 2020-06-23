@@ -147,7 +147,7 @@ func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 
 	for i, mnemonic := range seeds {
 		accountName := fmt.Sprintf("validator%v", i)
-		_, err := ks.keybase.CreateAccount(accountName, mnemonic, Bip39Pwd, KeyPwd, 0, 0)
+		_, err := ks.keybase.CreateAccount(accountName, mnemonic, Bip39Pwd, KeyPwd, "0", keys.Secp256k1)
 		if err != nil {
 			panic(err)
 		}
@@ -157,19 +157,19 @@ func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 func initializeKeystore(kb keys.Keybase) {
 	_, _ = kb.CreateAccount("authoritykey",
 		"play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty",
-		"", KeyPwd, 0, 0)
+		"", KeyPwd, "0", keys.Secp256k1)
 
 	_, _ = kb.CreateAccount("key1",
 		"document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil",
-		"", KeyPwd, 0, 0)
+		"", KeyPwd, "0", keys.Secp256k1)
 
 	_, _ = kb.CreateAccount("key2",
 		"treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich",
-		"", KeyPwd, 0, 0)
+		"", KeyPwd, "0", keys.Secp256k1)
 
 	_, _ = kb.CreateAccount("key3",
 		"rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel",
-		"", KeyPwd, 0, 0)
+		"", KeyPwd, "0", keys.Secp256k1)
 
 	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
 	pks := make([]crypto.PubKey, 3)

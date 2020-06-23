@@ -757,7 +757,7 @@ func TestPreventPhantomLiquidity(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func printTotalBalance(accs ...exported.Account) {
+func printTotalBalance(accs ...authexported.Account) {
 	sum := sdk.NewCoins()
 
 	for _, acc := range accs {
@@ -829,7 +829,7 @@ func coins(s string) sdk.Coins {
 	return coins
 }
 
-func order(account exported.Account, src, dst string) types.Order {
+func order(account authexported.Account, src, dst string) types.Order {
 	o, err := types.NewOrder(coin(src), coin(dst), account.GetAddress(), time.Now(), cid())
 	if err != nil {
 		panic(err)
@@ -838,7 +838,7 @@ func order(account exported.Account, src, dst string) types.Order {
 	return o
 }
 
-func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) exported.Account {
+func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) authexported.Account {
 	acc := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte(address)))
 	acc.SetCoins(coins(balance))
 	ak.SetAccount(ctx, acc)
@@ -862,7 +862,7 @@ func dumpEvents(events sdk.Events) {
 }
 
 func snapshotAccounts(ctx sdk.Context, ak auth.AccountKeeper) (totalBalance sdk.Coins) {
-	ak.IterateAccounts(ctx, func(acc exported.Account) (stop bool) {
+	ak.IterateAccounts(ctx, func(acc authexported.Account) (stop bool) {
 		totalBalance = totalBalance.Add(acc.GetCoins())
 		return
 	})

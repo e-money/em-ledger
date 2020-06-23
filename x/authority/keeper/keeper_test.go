@@ -153,7 +153,7 @@ func TestManageGasPrices1(t *testing.T) {
 		keeper.SetGasPrices(ctx, accRandom, coins)
 	})
 
-	res, err := keeper.SetGasPrices(ctx, accAuthority, sdk.NewDecCoins(sdk.NewCoins()))
+	res, err := keeper.SetGasPrices(ctx, accAuthority, sdk.NewDecCoins())
 	require.True(t, err == nil, res.Log)
 
 	res, err = keeper.SetGasPrices(ctx, accAuthority, coins)
@@ -265,11 +265,11 @@ func (m *mockGasPricesKeeper) SetMinimumGasPrices(gasPricesStr string) error {
 
 type mockInflationKeeper struct{}
 
-func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Result) {
+func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ *sdk.Result, _ error) {
 	return
 }
 
-func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ sdk.Result) {
+func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ *sdk.Result, _ error) {
 	return
 }
 

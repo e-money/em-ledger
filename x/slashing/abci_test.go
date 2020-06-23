@@ -30,10 +30,10 @@ func TestBeginBlocker(t *testing.T) {
 	require.True(t, penalties.IsZero())
 
 	// bond the validators
-	got := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr1, pk1, amt))
-	require.True(t, got.IsOK())
-	got = staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr2, pk2, amt))
-	require.True(t, got.IsOK())
+	_, err := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr1, pk1, amt))
+	require.NoError(t, err)
+	_, err = staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr2, pk2, amt))
+	require.NoError(t, err)
 
 	staking.EndBlocker(ctx, sk)
 	require.Equal(

@@ -6,10 +6,10 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 )
 
 type AccountKeeper interface {
-	GetAccount(sdk.Context, sdk.AccAddress) exported.Account
-	SetAccount(sdk.Context, exported.Account)
+	GetAccount(sdk.Context, sdk.AccAddress) authexported.Account
+	SetAccount(sdk.Context, authexported.Account)
 }

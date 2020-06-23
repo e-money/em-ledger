@@ -93,7 +93,7 @@ func TestMultipleCoinsAccrual(t *testing.T) {
 		mintedCoins := applyInflation(&state, supply, currentTime)
 
 		// Add the minted coins to the total supply
-		supply = supply.Add(mintedCoins)
+		supply = supply.Add(mintedCoins...)
 	}
 
 	assert.Equal(t, sdk.NewInt(1001), supply.AmountOf("credit"))

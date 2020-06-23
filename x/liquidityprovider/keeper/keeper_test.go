@@ -58,8 +58,8 @@ func TestCreateAndMint(t *testing.T) {
 	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
-	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
-	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).GetTotal())
+	assert.Equal(t, initialBalance.Add(toMint...), account.GetCoins())
+	assert.Equal(t, initialBalance.Add(toMint...), sk.GetSupply(ctx).GetTotal())
 
 	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -94,7 +94,7 @@ func TestMintMultipleDenoms(t *testing.T) {
 	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
 
 	jpy := sdk.NewCoins(sdk.NewCoin("ejpy", sdk.NewInt(1000000)))
-	extendedMintable := defaultMintable.Add(jpy)
+	extendedMintable := defaultMintable.Add(jpy...)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
@@ -112,8 +112,8 @@ func TestMintMultipleDenoms(t *testing.T) {
 
 	keeper.MintTokens(ctx, acc, toMint)
 	account = ak.GetAccount(ctx, acc)
-	assert.Equal(t, initialBalance.Add(toMint), account.GetCoins())
-	assert.Equal(t, initialBalance.Add(toMint), sk.GetSupply(ctx).GetTotal())
+	assert.Equal(t, initialBalance.Add(toMint...), account.GetCoins())
+	assert.Equal(t, initialBalance.Add(toMint...), sk.GetSupply(ctx).GetTotal())
 
 	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -202,9 +202,9 @@ func createTestComponents(t *testing.T, initialSupply sdk.Coins) (sdk.Context, a
 		types.ModuleName: {supply.Minter},
 	}
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
 	ak := auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
+	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), make(map[string]bool))
 	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 
 	// Empty supply

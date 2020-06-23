@@ -47,11 +47,11 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, issuer1.IsValid())
 	require.True(t, issuer2.IsValid())
 
-	result, err := keeper.AddIssuer(ctx, issuer1)
+	_, err := keeper.AddIssuer(ctx, issuer1)
 	require.NoError(t, err)
-	result, err = keeper.AddIssuer(ctx, issuer1)
+	_, err = keeper.AddIssuer(ctx, issuer1)
 	require.Error(t, err)
-	result, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
+	_, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
 	require.NoError(t, err)
 
 	require.Len(t, keeper.GetIssuers(ctx), 1)
@@ -63,7 +63,7 @@ func TestAddIssuer(t *testing.T) {
 	issuer, _ := keeper.mustBeIssuer(ctx, acc2)
 	require.Equal(t, issuer2, issuer)
 
-	_, err := keeper.mustBeIssuer(ctx, randomacc)
+	_, err = keeper.mustBeIssuer(ctx, randomacc)
 	require.Error(t, err)
 
 	_, err = keeper.mustBeIssuer(ctx, nil)
@@ -118,8 +118,8 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	// Decrease the mintable amount too much
 	mintable, _ = sdk.ParseCoins("400000eeur")
-	result := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
-	require.NotNil(t, result)
+	_, err := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
+	require.NotNil(t, err)
 
 	// Verify unchanged mintable amount
 	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
@@ -127,7 +127,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	// Decrease mintable balance.
 	mintable = MustParseCoins("50000eeur, 2000ejpy")
-	result = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
+	_, err = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
 	require.NoError(t, err)
 
 	expected = MustParseCoins("150000eeur,8000ejpy")
@@ -151,18 +151,18 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 	mintable := MustParseCoins("100000eeur,5000ejpy")
 
 	// Ensure that a random account can't create a LP
-	res := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, randomacc, mintable)
+	_, err := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, randomacc, mintable)
 	require.Error(t, err)
 
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
 	// Make sure a random account can't revoke LP status
-	res = keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
 	require.Error(t, err)
 
-	result := keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
-	require.True(t, result.IsOK(), "%v", result)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
+	require.NoError(t, err)
 	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lpacc))
 }
 
@@ -186,7 +186,7 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer1, mintable1)
 
 	// Attempt to revoke liquidity given by other issuer
-	res := keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
+	_, err := keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
 	require.Error(t, err)
 
 	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer2, mintable2)
@@ -194,13 +194,13 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	lpAccount := lpk.GetLiquidityProviderAccount(ctx, lp)
 	require.Len(t, lpAccount.Mintable, 4)
 
-	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
 	require.NoError(t, err)
 
 	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp)
 	require.Len(t, lpAccount.Mintable, 2)
 
-	res = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
 	require.NoError(t, err)
 	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lp))
 }
@@ -282,9 +282,9 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 		types.ModuleName: {supply.Minter},
 	}
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
 	ak := auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
+	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), make(map[string]bool))
 	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 
 	// Empty supply
@@ -298,11 +298,11 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 
 type mockInflationKeeper struct{}
 
-func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ sdk.Result) {
+func (m mockInflationKeeper) SetInflation(ctx sdk.Context, inflation sdk.Dec, denom string) (_ *sdk.Result, _ error) {
 	return
 }
 
-func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ sdk.Result) {
+func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ *sdk.Result, _ error) {
 	return
 }
 
