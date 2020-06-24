@@ -48,12 +48,12 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 install:
-	go install $(BUILD_FLAGS) ./cmd/emd
-	go install $(BUILD_FLAGS) ./cmd/emcli
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emcli
 
 build:
-	go build $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
-	go build $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/emcli
+	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+	go build -mod=readonly $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/emcli
 
 build-linux:
 	# Linux images for docker-compose
@@ -70,10 +70,10 @@ run-single-node: clean
 	go run cmd/daemon/*.go start
 
 test:
-	go test ./...
+	go test -mod=readonly ./...
 
 bdd-test:
-	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go
+	go test -mod=readonly -v -p 1 --tags="bdd" bdd_test.go staking_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go
 
 clean:
 	rm -rf ./build ./data ./config
