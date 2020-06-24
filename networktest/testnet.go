@@ -78,7 +78,11 @@ func (t *Testnet) Setup() error {
 		return err
 	}
 
-	t.makeTestnet()
+	err = t.makeTestnet()
+	if err != nil {
+		return err
+	}
+
 	t.updateGenesis()
 
 	return nil
@@ -164,6 +168,7 @@ func (t Testnet) makeTestnet() error {
 		t.chainID,
 		t.Keystore.Authority.name,
 		"-o", WorkingDir,
+		"--keyring-backend file",
 		"--keyaccounts", t.Keystore.path)
 
 	if err != nil {
