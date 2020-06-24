@@ -79,7 +79,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	ctx, _, stakingKeeper, _, slashingKeeper, _ := createTestInput(t, DefaultParams(), db.NewMemDB())
 
 	stakingParams := stakingKeeper.GetParams(ctx)
-	stakingParams.UnbondingTime = 0
+	stakingParams.UnbondingTime = 1
 	stakingKeeper.SetParams(ctx, stakingParams)
 
 	// create a validator

@@ -7,6 +7,7 @@ package types
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 )
 
@@ -26,6 +27,7 @@ func init() {
 	codec.RegisterCrypto(ModuleCdc)
 	auth.RegisterCodec(ModuleCdc)
 	supply.RegisterCodec(ModuleCdc)
+	vesting.RegisterCodec(ModuleCdc)
 
 	ModuleCdc.Seal()
 }

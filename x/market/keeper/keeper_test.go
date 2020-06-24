@@ -501,9 +501,7 @@ func TestVestingAccount(t *testing.T) {
 	ak.SetAccount(ctx, vestingAcc)
 
 	_, err := keeper.NewOrderSingle(ctx, order(vestingAcc, "5000eur", "4700chf"))
-	fmt.Println(err.Error())
-	require.Error(t, err)
-	// TODO Verify error type
+	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
 func TestInvalidInstrument(t *testing.T) {

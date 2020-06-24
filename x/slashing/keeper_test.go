@@ -243,7 +243,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 
 	// 502nd block *also* missed (since the LastCommit would have still included the just-unbonded validator)
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	batch = database.NewBatch()
 	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockWindow)
+	batch.Write()
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
@@ -291,7 +293,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 	// validator should not be immediately jailed again
 	height++
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	batch = database.NewBatch()
 	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockWindow)
+	batch.Write()
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 
@@ -299,7 +303,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 	nextHeight = height + 501
 	for ; height < nextHeight; height++ {
 		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		batch = database.NewBatch()
 		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockWindow)
+		batch.Write()
 	}
 
 	// end block

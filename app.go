@@ -7,6 +7,7 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"os"
 	"path/filepath"
 	"time"
@@ -349,6 +350,7 @@ func MakeCodec() *codec.Codec {
 	ModuleBasics.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
+	vesting.RegisterCodec(cdc) // TODO Verify that this is needed
 
 	return cdc.Seal()
 }
