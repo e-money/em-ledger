@@ -8,6 +8,7 @@ package emoney
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -149,12 +150,17 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	bank.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
+	httpClient, err := rpcclient.NewHTTP("tcp://localhost:26657", "/websocket")
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
+
 	cliCtx := context.NewCLIContext().
 		WithCodec(cdc).
 		//WithBroadcastMode("block").
 		WithBroadcastMode("async").
 		WithTrustNode(true).
-		WithClient(rpcclient.NewHTTP("tcp://localhost:26657", "/websocket"))
+		WithClient(httpClient)
 
 	to, err := sdk.AccAddressFromBech32(toKey.GetAddress())
 	if err != nil {
@@ -188,7 +194,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		Amount:      amount,
 	}
 
-	txBldr := auth.NewTxBuilderFromCLI().
+	txBldr := auth.NewTxBuilderFromCLI(strings.NewReader("")).
 		WithTxEncoder(utils.GetTxEncoder(cdc)).
 		WithChainID(chainID).
 		WithAccountNumber(accInfo.AccountNo).

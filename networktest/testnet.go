@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/sjson"
 )
 
@@ -64,7 +64,7 @@ func NewTestnet() Testnet {
 		panic(err)
 	}
 
-	chainID := fmt.Sprintf("localnet-%s", cmn.RandStr(6))
+	chainID := fmt.Sprintf("localnet-%s", tmrand.Str(6))
 
 	return Testnet{
 		Keystore: ks,

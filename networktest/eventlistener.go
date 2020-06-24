@@ -23,7 +23,11 @@ type EventListener struct {
 }
 
 func NewEventListener() (EventListener, error) {
-	httpClient := client.NewHTTP("http://localhost:26657", "/websocket")
+	httpClient, err := client.NewHTTP("http://localhost:26657", "/websocket")
+	if err != nil {
+		return EventListener{}, err
+	}
+
 	if err := httpClient.OnStart(); err != nil {
 		return EventListener{}, err
 	}
