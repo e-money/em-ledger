@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 
-	keys2 "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -19,7 +18,7 @@ import (
 )
 
 const KeyPwd = "pwd12345"
-const Bip39Pwd = "pwd54321"
+const Bip39Pwd = ""
 
 type (
 	KeyStore struct {
@@ -99,7 +98,7 @@ func NewKeystore() (*KeyStore, error) {
 		return nil, err
 	}
 
-	keybase, err := keys2.NewKeyBaseFromDir(path)
+	keybase, err := keys.NewKeyring(sdk.KeyringServiceName(), keys.BackendTest, path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +133,20 @@ func (ks KeyStore) GetPath() string {
 	return ks.path
 }
 
+func (ks KeyStore) String() string {
+	keyinfos, err := ks.keybase.List()
+	if err != nil {
+		return err.Error()
+	}
+
+	var sb strings.Builder
+	for _, info := range keyinfos {
+		sb.WriteString(fmt.Sprintf("%v - %v (%v)\n", info.GetName(), info.GetAddress().String(), info.GetAlgo()))
+	}
+
+	return sb.String()
+}
+
 func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 	scan := bufio.NewScanner(strings.NewReader(testnetoutput))
 	seeds := make([]string, 0)
@@ -147,7 +160,8 @@ func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 
 	for i, mnemonic := range seeds {
 		accountName := fmt.Sprintf("validator%v", i)
-		_, err := ks.keybase.CreateAccount(accountName, mnemonic, Bip39Pwd, KeyPwd, "0", keys.Secp256k1)
+		hdPath := sdk.GetConfig().GetFullFundraiserPath()
+		_, err := ks.keybase.CreateAccount(accountName, mnemonic, Bip39Pwd, KeyPwd, hdPath, keys.Secp256k1)
 		if err != nil {
 			panic(err)
 		}

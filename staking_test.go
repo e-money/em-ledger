@@ -73,11 +73,16 @@ var _ = Describe("Staking", func() {
 			})
 
 			It("validator unjails", func() {
-				_, success, err := emcli.UnjailValidator(Validator2Key)
+				validators, err := emcli.QueryValidators()
+				Expect(err).ToNot(HaveOccurred())
+				validators = validators.Get(QueryJailedValidatorsCount)
+				Expect(validators.Array()).To(HaveLen(1))
+
+				_, success, err := emcli.UnjailValidator(Validator2Key.GetAddress())
 				Expect(success).To(BeTrue())
 				Expect(err).ToNot(HaveOccurred())
 
-				validators, err := emcli.QueryValidators()
+				validators, err = emcli.QueryValidators()
 				Expect(err).ToNot(HaveOccurred())
 				validators = validators.Get(QueryJailedValidatorsCount)
 				Expect(validators.Array()).To(BeEmpty())

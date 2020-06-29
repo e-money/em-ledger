@@ -27,9 +27,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
-	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -222,7 +221,7 @@ func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
 }
 
 func addRandomTestAccounts(keystorepath string) exported.GenesisAccounts {
-	kb, err := keys.NewKeyBaseFromDir(keystorepath)
+	kb, err := keys.NewKeyring(sdk.KeyringServiceName(), keys.BackendTest, keystorepath, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -242,7 +241,8 @@ func addRandomTestAccounts(keystorepath string) exported.GenesisAccounts {
 			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
 		)
 
-		genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
+		//genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
+		genAcc := auth.NewBaseAccount(k.GetAddress(), coins, nil, 0, 0)
 		//genAcc := exported.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
 		result[i] = genAcc
 	}
@@ -278,8 +278,8 @@ func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []ty
 }
 
 func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string) (types.StdTx, crypto.Address) {
-	kb := keys.NewInMemoryKeyBase()
-	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, defaultKeyPass, ckeys.Secp256k1)
+	kb := keys.NewInMemory()
+	info, secret, err := kb.CreateMnemonic("nodename", keys.English, defaultKeyPass, keys.Secp256k1)
 	if err != nil {
 		panic(err)
 	}
@@ -294,7 +294,6 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())
 
-	// TODO Write mnemonic to file in the validator directory.
 	fmt.Printf("Key mnemonic for %v : %v\n", moniker, secret)
 
 	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, " - ")
@@ -391,7 +390,7 @@ func getAuthorityKey(param string, keystorePath string) sdk.AccAddress {
 		return key
 	}
 
-	kb, err := keys.NewKeyBaseFromDir(keystorePath)
+	kb, err := keys.NewKeyring(sdk.KeyringServiceName(), keys.BackendTest, keystorePath, nil)
 	if err != nil {
 		panic(err)
 	}

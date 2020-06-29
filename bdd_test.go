@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/version"
+
 	apptypes "github.com/e-money/em-ledger/types"
 
 	nt "github.com/e-money/em-ledger/networktest"
@@ -25,6 +27,10 @@ func init() {
 
 var (
 	testnet = func() nt.Testnet {
+		version.Name = "e-money" // Used by the keyring library.
+		version.ClientName = "emcli"
+		version.ServerName = "emd"
+
 		apptypes.ConfigureSDK()
 		return nt.NewTestnet()
 	}()
