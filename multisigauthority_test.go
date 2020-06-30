@@ -51,7 +51,7 @@ var _ = Describe("Market", func() {
 			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress, "--trust-node")
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
@@ -84,7 +84,7 @@ var _ = Describe("Market", func() {
 			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress, "--trust-node")
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
@@ -119,7 +119,7 @@ var _ = Describe("Market", func() {
 			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			fmt.Println("Output:\n", tx)
 			Expect(err).To(BeNil())
-			Expect(gjson.Parse(tx).Get("logs.0.success").Type).To(Equal(gjson.True))
+			Expect(gjson.Parse(tx).Get("logs").Array()).To(Not(BeEmpty()))
 
 			bz, err := emcli.QueryMinGasPrices()
 			Expect(err).To(BeNil())
