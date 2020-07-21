@@ -9,7 +9,6 @@ import (
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	app "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -66,8 +65,13 @@ func main() {
 
 func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtypes.Application {
 	return func(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
+		pruningOpts, err := server.GetPruningOptionsFromFlags()
+		if err != nil {
+			panic(err)
+		}
+
 		return app.NewApp(logger, db, ctx,
-			baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
+			baseapp.SetPruning(pruningOpts),
 			baseapp.SetHaltHeight(uint64(viper.GetInt(server.FlagHaltHeight))),
 		)
 	}
