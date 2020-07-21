@@ -28,7 +28,7 @@ func NewEventListener() (EventListener, error) {
 		return EventListener{}, err
 	}
 
-	if err := httpClient.OnStart(); err != nil {
+	if err := httpClient.Start(); err != nil {
 		return EventListener{}, err
 	}
 
