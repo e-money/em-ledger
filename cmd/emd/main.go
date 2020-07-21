@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/store"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	app "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
 	tmtypes "github.com/tendermint/tendermint/abci/types"

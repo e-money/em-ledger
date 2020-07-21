@@ -13,7 +13,7 @@ import (
 	"time"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/rpc/client"
+	client "github.com/tendermint/tendermint/rpc/client/http"
 	ct "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 )
@@ -23,7 +23,7 @@ type EventListener struct {
 }
 
 func NewEventListener() (EventListener, error) {
-	httpClient, err := client.NewHTTP("http://localhost:26657", "/websocket")
+	httpClient, err := client.New("http://localhost:26657", "/websocket")
 	if err != nil {
 		return EventListener{}, err
 	}

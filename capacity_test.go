@@ -8,6 +8,7 @@ package emoney
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"strings"
 	"sync"
 	"time"
@@ -24,7 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -46,6 +47,9 @@ var _ = Describe("Staking", func() {
 			It("Creates a lot of send transactions", func() {
 				viper.Set(flags.FlagTrustNode, true)
 				defer viper.Set(flags.FlagTrustNode, nil)
+
+				viper.Set(flags.FlagKeyringBackend, keys.BackendTest)
+				defer viper.Set(flags.FlagKeyringBackend, nil)
 
 				emcli := testnet.NewEmcli()
 
@@ -113,8 +117,8 @@ var _ = Describe("Staking", func() {
 						continue
 					}
 
-					s := gjson.ParseBytes(bz).Get("logs.0.success")
-					if s.Bool() {
+					s := gjson.ParseBytes(bz).Get("txhash")
+					if s.Exists() {
 						success++
 					} else {
 						failure++
@@ -150,7 +154,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	bank.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
-	httpClient, err := rpcclient.NewHTTP("tcp://localhost:26657", "/websocket")
+	httpClient, err := rpcclient.New("tcp://localhost:26657", "/websocket")
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
