@@ -6,6 +6,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const ClientOrderIDMaxLength = 32
@@ -18,23 +19,20 @@ var (
 
 type (
 	MsgAddOrder struct {
-		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
-		Source        sdk.Coin       `json:"source" yaml:"source"`
-		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
+		Owner               sdk.AccAddress
+		Source, Destination sdk.Coin
+		ClientOrderId       string
 	}
 
 	MsgCancelOrder struct {
-		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
+		Owner         sdk.AccAddress
+		ClientOrderId string
 	}
 
 	MsgCancelReplaceOrder struct {
-		Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
-		Source            sdk.Coin       `json:"source" yaml:"source"`
-		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
-		OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
-		NewClientOrderId  string         `json:"client_order_id" yaml:"client_order_id"`
+		Owner                               sdk.AccAddress
+		Source, Destination                 sdk.Coin
+		OrigClientOrderId, NewClientOrderId string
 	}
 )
 
@@ -46,21 +44,25 @@ func (m MsgCancelReplaceOrder) Type() string {
 	return "cancelreplaceorder"
 }
 
-func (m MsgCancelReplaceOrder) ValidateBasic() sdk.Error {
+func (m MsgCancelReplaceOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
-		return sdk.ErrInvalidAddress("missing owner address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+		//return sdk.ErrInvalidAddress("missing owner address")
 	}
 
 	if !m.Destination.IsValid() {
-		return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "destination amount is invalid: %v", m.Destination.String())
+		//return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
 	}
 
 	if !m.Source.IsValid() {
-		return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "source amount is invalid: %v", m.Source.String())
+		//return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
 	}
 
 	if m.Source.Denom == m.Destination.Denom {
-		return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
+		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", m.Source.Denom, m.Destination.Denom)
+		//return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
 	}
 
 	err := validateClientOrderID(m.OrigClientOrderId)
@@ -87,9 +89,9 @@ func (m MsgCancelOrder) Type() string {
 	return "cancelorder"
 }
 
-func (m MsgCancelOrder) ValidateBasic() sdk.Error {
+func (m MsgCancelOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
-		return sdk.ErrInvalidAddress("missing owner address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
 	}
 
 	return validateClientOrderID(m.ClientOrderId)
@@ -111,21 +113,25 @@ func (m MsgAddOrder) Type() string {
 	return "addorder"
 }
 
-func (m MsgAddOrder) ValidateBasic() sdk.Error {
+func (m MsgAddOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
-		return sdk.ErrInvalidAddress("missing owner address")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+		//return sdk.ErrInvalidAddress("missing owner address")
 	}
 
 	if !m.Destination.IsValid() {
-		return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "destination amount is invalid: %v", m.Destination.String())
+		//return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
 	}
 
 	if !m.Source.IsValid() {
-		return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "source amount is invalid: %v", m.Source.String())
+		//return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
 	}
 
 	if m.Source.Denom == m.Destination.Denom {
-		return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
+		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", m.Source.Denom, m.Destination.Denom)
+		//return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
 	}
 
 	return validateClientOrderID(m.ClientOrderId)
@@ -139,9 +145,10 @@ func (m MsgAddOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
 }
 
-func validateClientOrderID(id string) sdk.Error {
+func validateClientOrderID(id string) error {
 	if len(id) > ClientOrderIDMaxLength {
-		return ErrInvalidClientOrderId(id)
+		return sdkerrors.Wrap(ErrInvalidClientOrderId, id)
+		//return ErrInvalidClientOrderId(id)
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -13,7 +13,7 @@ import (
 	"time"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/rpc/client"
+	client "github.com/tendermint/tendermint/rpc/client/http"
 	ct "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 )
@@ -23,8 +23,12 @@ type EventListener struct {
 }
 
 func NewEventListener() (EventListener, error) {
-	httpClient := client.NewHTTP("http://localhost:26657", "/websocket")
-	if err := httpClient.OnStart(); err != nil {
+	httpClient, err := client.New("http://localhost:26657", "/websocket")
+	if err != nil {
+		return EventListener{}, err
+	}
+
+	if err := httpClient.Start(); err != nil {
 		return EventListener{}, err
 	}
 

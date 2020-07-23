@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -77,10 +77,10 @@ func createTestInput(t *testing.T, defaults Params, database dbm.DB) (sdk.Contex
 	require.Nil(t, err)
 	ctx := sdk.NewContext(ms, abci.Header{Time: time.Unix(0, 0)}, false, log.NewNopLogger())
 	cdc := createTestCodec()
-	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams)
 	accountKeeper := auth.NewAccountKeeper(cdc, keyAcc, paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 
-	bk := bank.NewBaseKeeper(accountKeeper, paramsKeeper.Subspace(bank.DefaultParamspace), bank.DefaultCodespace, make(map[string]bool))
+	bk := bank.NewBaseKeeper(accountKeeper, paramsKeeper.Subspace(bank.DefaultParamspace), make(map[string]bool))
 	maccPerms := map[string][]string{
 		auth.FeeCollectorName:     nil,
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
@@ -93,7 +93,7 @@ func createTestInput(t *testing.T, defaults Params, database dbm.DB) (sdk.Contex
 	totalSupply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens.MulRaw(int64(len(addrs)))))
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
 
-	sk := staking.NewKeeper(cdc, keyStaking, tkeyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace), staking.DefaultCodespace)
+	sk := staking.NewKeeper(cdc, keyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace))
 	genesis := staking.DefaultGenesisState()
 
 	// set module accounts
@@ -112,7 +112,7 @@ func createTestInput(t *testing.T, defaults Params, database dbm.DB) (sdk.Contex
 	}
 	require.Nil(t, err)
 	paramstore := paramsKeeper.Subspace(DefaultParamspace)
-	keeper := NewKeeper(cdc, keySlashing, &sk, supplyKeeper, auth.FeeCollectorName, paramstore, DefaultCodespace, database)
+	keeper := NewKeeper(cdc, keySlashing, &sk, supplyKeeper, auth.FeeCollectorName, paramstore, database)
 	sk.SetHooks(keeper.Hooks())
 
 	require.NotPanics(t, func() {

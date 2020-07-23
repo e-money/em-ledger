@@ -5,8 +5,10 @@
 package cli
 
 import (
+	"bufio"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -41,7 +43,8 @@ func AddOrderCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "Create an order and send it to the market",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			src, err := sdk.ParseCoin(args[0])
@@ -72,7 +75,7 @@ func AddOrderCmd(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	cmd = client.PostCommands(cmd)[0]
+	cmd = flags.PostCommands(cmd)[0]
 	return cmd
 }
 
@@ -82,7 +85,8 @@ func CancelOrderCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "Cancel an order in the market",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			clientOrderID := args[0]
@@ -101,7 +105,7 @@ func CancelOrderCmd(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	cmd = client.PostCommands(cmd)[0]
+	cmd = flags.PostCommands(cmd)[0]
 	return cmd
 }
 
@@ -111,7 +115,8 @@ func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
 		Short: "Update an existing order",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			src, err := sdk.ParseCoin(args[1])
@@ -144,6 +149,6 @@ func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	cmd = client.PostCommands(cmd)[0]
+	cmd = flags.PostCommands(cmd)[0]
 	return cmd
 }

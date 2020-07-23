@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -16,8 +16,8 @@ type SupplyKeeper interface {
 	// TODO remove with genesis 2-phases refactor https://github.com/cosmos/cosmos-sdk/issues/2862
 	SetModuleAccount(sdk.Context, exported.ModuleAccountI)
 
-	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
-	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) sdk.Error
-	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) sdk.Error
+	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) error
 	GetSupply(ctx sdk.Context) (supply exported.SupplyI)
 }

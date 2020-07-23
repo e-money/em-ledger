@@ -1,10 +1,11 @@
 package keeper
 
 import (
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"testing"
 )
 
 func TestName(t *testing.T) {
@@ -14,8 +15,8 @@ func TestName(t *testing.T) {
 	ctx, k, _, _ := createTestComponents(t)
 
 	k.SetAuthority(ctx, authority)
-	res := k.SetGasPrices(ctx, authority, gp)
-	require.True(t, res.IsOK(), res.Log)
+	res, err := k.SetGasPrices(ctx, authority, gp)
+	require.True(t, err == nil, res.Log)
 
 	prices, err := queryGasPrices(ctx, k)
 	require.NoError(t, err)

@@ -53,7 +53,7 @@ var _ = Describe("Restricted denominationsq", func() {
 		{
 			// No white-listed accounts involved.
 			txid, success, err := emcli.Send(Key3, Key2, "5000ungm")
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
 			Expect(success).To(BeFalse(), txid)
 		}
 		{

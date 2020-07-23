@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -8,14 +8,15 @@ package emoney
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"io/ioutil"
-	"os"
-	"time"
 )
 
 var _ = Describe("Market", func() {
@@ -50,7 +51,7 @@ var _ = Describe("Market", func() {
 			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress, "--trust-node")
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
@@ -83,7 +84,7 @@ var _ = Describe("Market", func() {
 			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress, "--trust-node")
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
@@ -118,7 +119,7 @@ var _ = Describe("Market", func() {
 			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			fmt.Println("Output:\n", tx)
 			Expect(err).To(BeNil())
-			Expect(gjson.Parse(tx).Get("logs.0.success").Type).To(Equal(gjson.True))
+			Expect(gjson.Parse(tx).Get("logs").Array()).To(Not(BeEmpty()))
 
 			bz, err := emcli.QueryMinGasPrices()
 			Expect(err).To(BeNil())

@@ -1,14 +1,15 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package slashing
 
 import (
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	db "github.com/tendermint/tm-db"
 	"testing"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	db "github.com/tendermint/tm-db"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -29,10 +30,10 @@ func TestBeginBlocker(t *testing.T) {
 	require.True(t, penalties.IsZero())
 
 	// bond the validators
-	got := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr1, pk1, amt))
-	require.True(t, got.IsOK())
-	got = staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr2, pk2, amt))
-	require.True(t, got.IsOK())
+	_, err := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr1, pk1, amt))
+	require.NoError(t, err)
+	_, err = staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(addr2, pk2, amt))
+	require.NoError(t, err)
 
 	staking.EndBlocker(ctx, sk)
 	require.Equal(

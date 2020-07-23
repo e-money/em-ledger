@@ -5,61 +5,18 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-type CodeType = sdk.CodeType
-
-const (
-	Codespace sdk.CodespaceType = ModuleName
-
-	CodeInsufficientBalance    sdk.CodeType = 1
-	CodeNonUniqueClientOrderId sdk.CodeType = 2
-	CodeClientOrderIdNotFound  sdk.CodeType = 3
-	CodeOrderInstrumentChanged sdk.CodeType = 4
-	CodeInvalidClientOrderId   sdk.CodeType = 5
-	CodeInvalidInstrument      sdk.CodeType = 6
-	CodeInvalidOrderPrice      sdk.CodeType = 7
-	CodeNoSourceRemaining      sdk.CodeType = 8
-	CodeUnknownAsset           sdk.CodeType = 9
+var (
+	ErrAccountBalanceInsufficient              = sdkerrors.Register(ModuleName, 1, "insufficient account balance")
+	ErrAccountBalanceInsufficientForInstrument = sdkerrors.Register(ModuleName, 2, "")
+	ErrNonUniqueClientOrderId                  = sdkerrors.Register(ModuleName, 3, "")
+	ErrClientOrderIdNotFound                   = sdkerrors.Register(ModuleName, 4, "")
+	ErrOrderInstrumentChanged                  = sdkerrors.Register(ModuleName, 5, "")
+	ErrInvalidClientOrderId                    = sdkerrors.Register(ModuleName, 6, "")
+	ErrInvalidInstrument                       = sdkerrors.Register(ModuleName, 7, "")
+	ErrInvalidPrice                            = sdkerrors.Register(ModuleName, 8, "")
+	ErrNoSourceRemaining                       = sdkerrors.Register(ModuleName, 9, "")
+	ErrUnknownAsset                            = sdkerrors.Register(ModuleName, 10, "")
 )
-
-func ErrAccountBalanceInsufficient(address sdk.AccAddress, required sdk.Coin, balance sdk.Int) sdk.Error {
-	return sdk.NewError(Codespace, CodeInsufficientBalance, "Account %v has insufficient balance to execute trade: %v < %v", address.String(), balance, required)
-}
-
-func ErrAccountBalanceInsufficientForInstrument(address sdk.AccAddress, required sdk.Coin, balance sdk.Int, dst string) sdk.Error {
-	return sdk.NewError(Codespace, CodeInsufficientBalance, "Account %v has insufficient balance to execute all orders on instrument %v/%v: %v < %v", address.String(), required.Denom, dst, balance, required)
-}
-
-func ErrNonUniqueClientOrderId(address sdk.AccAddress, clientOrderId string) sdk.Error {
-	return sdk.NewError(Codespace, CodeNonUniqueClientOrderId, "Account %v already has an active order with client order id: %v", address.String(), clientOrderId)
-}
-
-func ErrClientOrderIdNotFound(address sdk.AccAddress, clientOrderId string) sdk.Error {
-	return sdk.NewError(Codespace, CodeClientOrderIdNotFound, "Account %v does not have an active order with client order id: %v", address.String(), clientOrderId)
-}
-
-func ErrOrderInstrumentChanged(origSrc, origDst, newSrc, newDst string) sdk.Error {
-	return sdk.NewError(Codespace, CodeOrderInstrumentChanged, "Instrument cannot be changed when using CancelReplace : %v -> %v != %v -> %v", origSrc, origDst, newSrc, newDst)
-}
-
-func ErrInvalidClientOrderId(clientorderid string) sdk.Error {
-	return sdk.NewError(Codespace, CodeInvalidClientOrderId, "Specified client order ID is not valid: '%v'", clientorderid)
-}
-
-func ErrInvalidInstrument(src, dst string) sdk.Error {
-	return sdk.NewError(Codespace, CodeInvalidInstrument, "'%v/%v' is not a valid instrument", src, dst)
-}
-
-func ErrInvalidPrice(src, dst sdk.Coin) sdk.Error {
-	return sdk.NewError(Codespace, CodeInvalidOrderPrice, "Order price is invalid: %s -> %s", src, dst)
-}
-
-func ErrNoSourceRemaining() sdk.Error {
-	return sdk.NewError(Codespace, CodeNoSourceRemaining, "Source remaining of new order is less than zero")
-}
-
-func ErrUnknownAsset(coin sdk.Coin) sdk.Error {
-	return sdk.NewError(Codespace, CodeUnknownAsset, "'%v' is not a known asset.", coin.Denom)
-}

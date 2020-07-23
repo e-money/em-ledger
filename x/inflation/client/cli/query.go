@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -6,8 +6,9 @@ package cli
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -39,7 +40,7 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	inflationQueryCmd = client.GetCommands(inflationQueryCmd)[0]
+	inflationQueryCmd = flags.GetCommands(inflationQueryCmd)[0]
 
 	return inflationQueryCmd
 }

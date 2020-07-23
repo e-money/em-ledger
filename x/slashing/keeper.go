@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -30,9 +30,6 @@ type Keeper struct {
 	feeModuleName string
 	paramspace    params.Subspace
 
-	// codespace
-	codespace sdk.CodespaceType
-
 	// Alternative to IAVL KV storage. For data that should not be part of consensus.
 	database types.ReadOnlyDB
 }
@@ -44,7 +41,7 @@ const (
 )
 
 // NewKeeper creates a slashing keeper
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, supplyKeeper types.SupplyKeeper, feeModuleName string, paramspace params.Subspace, codespace sdk.CodespaceType, database db.DB) Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, supplyKeeper types.SupplyKeeper, feeModuleName string, paramspace params.Subspace, database db.DB) Keeper {
 	keeper := Keeper{
 		storeKey:      key,
 		cdc:           cdc,
@@ -52,7 +49,6 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, sk types.StakingKeeper, suppl
 		supplyKeeper:  supplyKeeper,
 		feeModuleName: feeModuleName,
 		paramspace:    paramspace.WithKeyTable(ParamKeyTable()),
-		codespace:     codespace,
 		database:      database,
 	}
 	return keeper
@@ -236,7 +232,11 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 
 func (k Keeper) getMissingBlocksForValidator(address sdk.ConsAddress) []time.Time {
 	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
-	bz := k.database.Get(key)
+	bz, err := k.database.Get(key)
+	if err != nil {
+		panic(err) // TODO Better handling
+	}
+
 	if len(bz) == 0 {
 		return nil
 	}
@@ -245,7 +245,7 @@ func (k Keeper) getMissingBlocksForValidator(address sdk.ConsAddress) []time.Tim
 	dec := gob.NewDecoder(b)
 
 	res := make([]time.Time, 0)
-	err := dec.Decode(&res)
+	err = dec.Decode(&res)
 	if err != nil {
 		panic(err)
 	}
@@ -313,7 +313,11 @@ func (k Keeper) setPendingPenalties(batch db.Batch, penalties map[string]sdk.Coi
 }
 
 func (k Keeper) getPendingPenalties() map[string]sdk.Coins {
-	bz := k.database.Get([]byte(dbKeyPendingPenalties))
+	bz, err := k.database.Get([]byte(dbKeyPendingPenalties))
+	if err != nil {
+		panic(err) // TODO Better handling
+	}
+
 	if len(bz) == 0 {
 		return make(map[string]sdk.Coins)
 	}
@@ -325,7 +329,11 @@ func (k Keeper) getPendingPenalties() map[string]sdk.Coins {
 }
 
 func (k Keeper) getBlockTimes() []time.Time {
-	bz := k.database.Get([]byte(dbKeyBlockTimes))
+	bz, err := k.database.Get([]byte(dbKeyBlockTimes))
+	if err != nil {
+		panic(err) // TODO Better handling
+	}
+
 	if len(bz) == 0 {
 		return make([]time.Time, 0)
 	}

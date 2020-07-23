@@ -1,18 +1,19 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package slashing
 
 import (
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/e-money/em-ledger/x/slashing/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
-	"testing"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -43,8 +44,9 @@ func TestHandleDoubleSign(t *testing.T) {
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	operatorAddr, val := addrs[0], pks[0]
-	got := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(operatorAddr, val, amt))
-	require.True(t, got.IsOK())
+	_, err := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(operatorAddr, val, amt))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 	require.Equal(
 		t, ck.GetCoins(ctx, sdk.AccAddress(operatorAddr)),
@@ -94,8 +96,8 @@ func TestHandleDoubleSign(t *testing.T) {
 
 	// Still shouldn't be able to unjail
 	msgUnjail := types.NewMsgUnjail(operatorAddr)
-	res := handleMsgUnjail(ctx, msgUnjail, keeper)
-	require.False(t, res.IsOK())
+	_, err = handleMsgUnjail(ctx, msgUnjail, keeper)
+	require.Error(t, err)
 
 	// Should be able to unbond now
 	del, _ := sk.GetDelegation(ctx, sdk.AccAddress(operatorAddr), operatorAddr)
@@ -103,8 +105,8 @@ func TestHandleDoubleSign(t *testing.T) {
 
 	totalBond := validator.TokensFromShares(del.GetShares()).TruncateInt()
 	msgUnbond := staking.NewMsgUndelegate(sdk.AccAddress(operatorAddr), operatorAddr, sdk.NewCoin(sk.GetParams(ctx).BondDenom, totalBond))
-	res = staking.NewHandler(sk)(ctx, msgUnbond)
-	require.True(t, res.IsOK())
+	_, err = staking.NewHandler(sk)(ctx, msgUnbond)
+	require.NoError(t, err)
 }
 
 // ______________________________________________________________
@@ -121,8 +123,9 @@ func TestPastMaxEvidenceAge(t *testing.T) {
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	operatorAddr, val := addrs[0], pks[0]
-	got := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(operatorAddr, val, amt))
-	require.True(t, got.IsOK())
+	_, err := staking.NewHandler(sk)(ctx, NewTestMsgCreateValidator(operatorAddr, val, amt))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 	require.Equal(
 		t, ck.GetCoins(ctx, sdk.AccAddress(operatorAddr)),
@@ -163,8 +166,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 	addr, val := addrs[0], pks[0]
 	sh := staking.NewHandler(sk)
 	slh := NewHandler(keeper)
-	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	require.True(t, got.IsOK())
+	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 
 	require.Equal(
@@ -239,7 +243,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 
 	// 502nd block *also* missed (since the LastCommit would have still included the just-unbonded validator)
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	batch = database.NewBatch()
 	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockWindow)
+	batch.Write()
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
 	require.True(t, found)
 	//require.Equal(t, int64(0), info.StartHeight)
@@ -254,15 +260,17 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.True(t, validator.Jailed)
 
 	// unrevocation should fail prior to jail expiration
-	got = slh(ctx, NewMsgUnjail(addr))
-	require.False(t, got.IsOK())
+	_, err = slh(ctx, NewMsgUnjail(addr))
+	require.Error(t, err)
+	//require.False(t, got.IsOK())
 
 	// unrevocation should succeed after jail expiration
 	height++
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(5))
 
-	got = slh(ctx, NewMsgUnjail(addr))
-	require.True(t, got.IsOK())
+	_, err = slh(ctx, NewMsgUnjail(addr))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 
 	// end block
 	staking.EndBlocker(ctx, sk)
@@ -285,7 +293,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 	// validator should not be immediately jailed again
 	height++
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+	batch = database.NewBatch()
 	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockWindow)
+	batch.Write()
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, sdk.Bonded, validator.GetStatus())
 
@@ -293,7 +303,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 	nextHeight = height + 501
 	for ; height < nextHeight; height++ {
 		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
+		batch = database.NewBatch()
 		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockWindow)
+		batch.Write()
 	}
 
 	// end block
@@ -333,8 +345,9 @@ func TestHandleNewValidator(t *testing.T) {
 	ctx = ctx.WithBlockHeight(1001).WithBlockTime(nextBlocktime(1001))
 
 	// Validator created
-	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	require.True(t, got.IsOK())
+	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 
 	require.Equal(
@@ -379,8 +392,9 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	amt := sdk.TokensFromConsensusPower(power)
 	addr, val := addrs[0], pks[0]
 	sh := staking.NewHandler(sk)
-	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	require.True(t, got.IsOK())
+	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	//require.True(t, got.IsOK())
+	require.NoError(t, err)
 	staking.EndBlocker(ctx, sk)
 
 	preSlashingSupply := supplyKeeper.GetSupply(ctx)
@@ -443,8 +457,9 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	addr, val := addrs[0], pks[0]
 	consAddr := sdk.ConsAddress(addr)
 	sh := staking.NewHandler(sk)
-	got := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	require.True(t, got.IsOK())
+	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 
 	// 100 first blocks OK
@@ -458,8 +473,9 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// kick first validator out of validator set
 	newAmt := sdk.TokensFromConsensusPower(101)
-	got = sh(ctx, NewTestMsgCreateValidator(addrs[1], pks[1], newAmt))
-	require.True(t, got.IsOK())
+	_, err = sh(ctx, NewTestMsgCreateValidator(addrs[1], pks[1], newAmt))
+	//require.True(t, got.IsOK())
+	require.NoError(t, err)
 	validatorUpdates := staking.EndBlocker(ctx, sk)
 	require.Equal(t, 2, len(validatorUpdates))
 	validator, _ := sk.GetValidator(ctx, addr)
@@ -472,8 +488,9 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// validator added back in
 	delTokens := sdk.TokensFromConsensusPower(50)
-	got = sh(ctx, newTestMsgDelegate(sdk.AccAddress(addrs[2]), addrs[0], delTokens))
-	require.True(t, got.IsOK())
+	_, err = sh(ctx, newTestMsgDelegate(sdk.AccAddress(addrs[2]), addrs[0], delTokens))
+	require.NoError(t, err)
+	//require.True(t, got.IsOK())
 	validatorUpdates = staking.EndBlocker(ctx, sk)
 	require.Equal(t, 2, len(validatorUpdates))
 	validator, _ = sk.GetValidator(ctx, addr)

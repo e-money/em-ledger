@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -7,8 +7,10 @@ package keeper
 import (
 	"fmt"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -26,78 +28,78 @@ func NewKeeper(ak types.AccountKeeper, sk supply.Keeper) Keeper {
 	}
 }
 
-func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress, mintable sdk.Coins) sdk.Result {
+func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress, mintable sdk.Coins) (*sdk.Result, error) {
 	logger := k.Logger(ctx)
 
 	account := k.authKeeper.GetAccount(ctx, address)
 	if account == nil {
 		logger.Info("Account not found", "account", address)
-		return types.ErrAccountDoesNotExist(address).Result()
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownAddress, address.String())
 	}
 	lpAcc := types.NewLiquidityProviderAccount(account, mintable)
 	k.authKeeper.SetAccount(ctx, lpAcc)
 
 	logger.Info("Created liquidity provider account.", "account", lpAcc.GetAddress())
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) sdk.Result {
+func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
 	account := k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if account == nil {
-		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s is not a liquidity provider or does not exist", liquidityProvider.String())).Result()
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s is not a liquidity provider or does not exist", liquidityProvider.String())
 	}
 
 	_, anynegative := account.Account.GetCoins().SafeSub(amount)
 	if anynegative {
-		return sdk.ErrInsufficientCoins(fmt.Sprintf("Insufficient balance for burn operation: %s < %s", account.Account.GetCoins(), amount)).Result()
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "Insufficient balance for burn operation: %s < %s", account.Account.GetCoins(), amount)
 	}
 
 	err := k.supplyKeeper.SendCoinsFromAccountToModule(ctx, liquidityProvider, types.ModuleName, amount)
 	if err != nil {
-		return err.Result()
+		return nil, err
 	}
 
 	err = k.supplyKeeper.BurnCoins(ctx, types.ModuleName, amount)
 	if err != nil {
-		return err.Result()
+		return nil, err
 	}
 
 	account = k.GetLiquidityProviderAccount(ctx, liquidityProvider)
-	account.Mintable = account.Mintable.Add(amount)
+	account.Mintable = account.Mintable.Add(amount...)
 	k.SetLiquidityProviderAccount(ctx, account)
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) sdk.Result {
+func (k Keeper) MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
 	logger := k.Logger(ctx)
 
 	account := k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if account == nil {
-		return sdk.ErrUnknownAddress(fmt.Sprintf("account %s is not a liquidity provider or does not exist", liquidityProvider.String())).Result()
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s is not a liquidity provider or does not exist", liquidityProvider.String())
 	}
 
 	updatedMintableAmount, anyNegative := account.Mintable.SafeSub(amount)
 	if anyNegative {
 		logger.Debug(fmt.Sprintf("Insufficient mintable amount for minting operation"), "requested", amount, "available", account.Mintable)
-		return sdk.ErrInsufficientCoins(fmt.Sprintf("insufficient liquidity provider mintable amount: %s < %s", account.Mintable, amount)).Result()
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "insufficient liquidity provider mintable amount: %s < %s", account.Mintable, amount)
 	}
 
 	err := k.supplyKeeper.MintCoins(ctx, types.ModuleName, amount)
 	if err != nil {
-		return err.Result()
+		return nil, err
 	}
 
 	err = k.supplyKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, liquidityProvider, amount)
 	if err != nil {
-		return err.Result()
+		return nil, err
 	}
 
 	account = k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	account.Mintable = updatedMintableAmount
 	k.SetLiquidityProviderAccount(ctx, account)
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func (k Keeper) SetLiquidityProviderAccount(ctx sdk.Context, account *types.LiquidityProviderAccount) {

@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/sjson"
 )
 
@@ -64,7 +64,7 @@ func NewTestnet() Testnet {
 		panic(err)
 	}
 
-	chainID := fmt.Sprintf("localnet-%s", cmn.RandStr(6))
+	chainID := fmt.Sprintf("localnet-%s", tmrand.Str(6))
 
 	return Testnet{
 		Keystore: ks,
@@ -78,7 +78,11 @@ func (t *Testnet) Setup() error {
 		return err
 	}
 
-	t.makeTestnet()
+	err = t.makeTestnet()
+	if err != nil {
+		return err
+	}
+
 	t.updateGenesis()
 
 	return nil

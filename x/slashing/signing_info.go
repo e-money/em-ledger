@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -29,7 +29,10 @@ func (k Keeper) IterateValidatorSigningInfos(
 
 	//store := ctx.KVStore(k.storeKey)
 	//iter := sdk.KVStorePrefixIterator(store, types.ValidatorSigningInfoKey)
-	iter := k.database.Iterator(types.ValidatorSigningInfoKey, sdk.PrefixEndBytes(types.ValidatorSigningInfoKey))
+	iter, err := k.database.Iterator(types.ValidatorSigningInfoKey, sdk.PrefixEndBytes(types.ValidatorSigningInfoKey))
+	if err != nil {
+		panic(err) // TODO Better handling
+	}
 
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -52,7 +55,11 @@ func (k Keeper) SetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress
 
 // Stored by *validator* address (not operator address)
 func (k Keeper) getValidatorMissedBlockBitArray(address sdk.ConsAddress, index int64) (missed bool) {
-	bz := k.database.Get(types.GetValidatorMissedBlockBitArrayKey(address, index))
+	bz, err := k.database.Get(types.GetValidatorMissedBlockBitArrayKey(address, index))
+	if err != nil {
+		panic(err) // TODO Better handling
+	}
+
 	if bz == nil {
 		// lazy: treat empty key as not missed
 		missed = false
@@ -70,7 +77,11 @@ func (k Keeper) setValidatorMissedBlockBitArray(batch db.Batch, address sdk.Cons
 
 // Stored by *validator* address (not operator address)
 func (k Keeper) clearValidatorMissedBlockBitArray(batch db.Batch, address sdk.ConsAddress) {
-	iter := k.database.Iterator(types.GetValidatorMissedBlockBitArrayPrefixKey(address), sdk.PrefixEndBytes(address))
+	iter, err := k.database.Iterator(types.GetValidatorMissedBlockBitArrayPrefixKey(address), sdk.PrefixEndBytes(address))
+	if err != nil {
+		panic(err) // TODO Better handling
+	}
+
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		batch.Delete(iter.Key())

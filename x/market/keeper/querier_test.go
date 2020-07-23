@@ -18,13 +18,16 @@ func TestQuerier1(t *testing.T) {
 	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf")
 
 	o := order(acc1, "100eur", "120usd")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	o = order(acc1, "72eur", "1213jpy")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	o = order(acc1, "72chf", "312usd")
-	require.True(t, k.NewOrderSingle(ctx, o).IsOK())
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	{
 		bz, err := queryInstruments(k)

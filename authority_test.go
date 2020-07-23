@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -9,12 +9,13 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
-	"time"
 )
 
 const (
@@ -54,13 +55,13 @@ var _ = Describe("Authority", func() {
 
 		It("imposter attempts to act as authority", func() {
 			_, success, err := emcli.AuthorityCreateIssuer(Issuer, LiquidityProvider, "echf", "edkk")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 		})
 
 		It("authority assigns a second issuer to same denomination", func() {
 			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "edkk", "ejpy")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 		})
 
@@ -110,7 +111,7 @@ var _ = Describe("Authority", func() {
 		It("attempts to change inflation of denomination not under its control", func() {
 			_, success, err := emcli.IssuerSetInflation(OtherIssuer, "eeur", "0.5")
 
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 		})
 
@@ -148,7 +149,7 @@ var _ = Describe("Authority", func() {
 			balanceBefore, mintableBefore, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
 
 			_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "500000eeur")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 
 			balanceAfter, mintableAfter, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
@@ -199,7 +200,7 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "10000eeur")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 
 			balanceAfter, _, err := emcli.QueryAccount(LiquidityProvider.GetAddress())
@@ -214,7 +215,7 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			_, success, err = emcli.IssuerSetInflation(Issuer, "eeur", "0.5")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 		})
 
@@ -247,7 +248,7 @@ var _ = Describe("Authority", func() {
 			// A non-authority attempts to set gas prices
 			_, success, err = emcli.AuthoritySetMinGasPrices(Issuer, prices.String(), "--fees", "50eeur")
 			Expect(success).To(BeFalse())
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -73,11 +73,16 @@ var _ = Describe("Staking", func() {
 			})
 
 			It("validator unjails", func() {
-				_, success, err := emcli.UnjailValidator(Validator2Key)
+				validators, err := emcli.QueryValidators()
+				Expect(err).ToNot(HaveOccurred())
+				validators = validators.Get(QueryJailedValidatorsCount)
+				Expect(validators.Array()).To(HaveLen(1))
+
+				_, success, err := emcli.UnjailValidator(Validator2Key.GetAddress())
 				Expect(success).To(BeTrue())
 				Expect(err).ToNot(HaveOccurred())
 
-				validators, err := emcli.QueryValidators()
+				validators, err = emcli.QueryValidators()
 				Expect(err).ToNot(HaveOccurred())
 				validators = validators.Get(QueryJailedValidatorsCount)
 				Expect(validators.Array()).To(BeEmpty())

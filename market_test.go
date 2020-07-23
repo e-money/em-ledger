@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -8,13 +8,14 @@ package emoney
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/tidwall/gjson"
 	"strings"
 	"time"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/tidwall/gjson"
+
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 var _ = Describe("Market", func() {
@@ -36,7 +37,7 @@ var _ = Describe("Market", func() {
 			//Expect(err).ShouldNot(HaveOccurred())
 
 			for i := 0; i < 10; i++ {
-				output, success, err := emcli.MarketAddOrder(acc1, "120000eeur", fmt.Sprintf("%dechf", 90000-i*100), cmn.RandStr(10))
+				output, success, err := emcli.MarketAddOrder(acc1, "120000eeur", fmt.Sprintf("%dechf", 90000-i*100), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
 				Expect(success).To(BeTrue())
 			}
@@ -58,13 +59,13 @@ var _ = Describe("Market", func() {
 
 			// Create and execute a couple of orders
 			for i := 0; i < 7; i++ {
-				_, success, err := emcli.MarketAddOrder(acc2, "90500echf", fmt.Sprintf("%deeur", 11000-i*400), cmn.RandStr(10))
+				_, success, err := emcli.MarketAddOrder(acc2, "90500echf", fmt.Sprintf("%deeur", 11000-i*400), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}
 
 			for i := 0; i < 15; i++ {
-				_, success, err := emcli.MarketAddOrder(acc3, "440000ejpy", fmt.Sprintf("%deeur", 100000-i*100), cmn.RandStr(10))
+				_, success, err := emcli.MarketAddOrder(acc3, "440000ejpy", fmt.Sprintf("%deeur", 100000-i*100), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}
@@ -83,7 +84,7 @@ var _ = Describe("Market", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			for i := 0; i < 10; i++ {
-				_, success, err := emcli.MarketAddOrder(acc3, "90000eeur", fmt.Sprintf("%dechf", 50000-i*100), cmn.RandStr(10))
+				_, success, err := emcli.MarketAddOrder(acc3, "90000eeur", fmt.Sprintf("%dechf", 50000-i*100), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}

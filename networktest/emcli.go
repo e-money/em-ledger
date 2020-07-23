@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -7,11 +7,12 @@ package networktest
 import (
 	"bytes"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -185,8 +186,8 @@ func (cli Emcli) MarketCancelOrder(key Key, cid string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) UnjailValidator(key Key) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "slashing", "unjail", "--from", key.name)
+func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "slashing", "unjail", "--from", key)
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -194,13 +195,13 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	json := gjson.ParseBytes(bz)
 
 	txhashjson := json.Get("txhash")
-	successjson := gjson.ParseBytes(bz).Get("logs.0.success")
+	logs := json.Get("logs")
 
-	if !txhashjson.Exists() || !successjson.Exists() {
-		return "", false, fmt.Errorf("could not find status fields in response %v", string(bz))
+	if !txhashjson.Exists() || !logs.Exists() {
+		return "", false, fmt.Errorf("tx appears to have failed %v", string(bz))
 	}
 
-	return txhashjson.Str, successjson.Bool(), nil
+	return txhashjson.Str, true, nil
 }
 
 func execCmdCollectOutput(arguments []string, input string) (string, error) {
@@ -266,6 +267,7 @@ func (cli Emcli) addQueryFlags(arguments ...string) []string {
 func (cli Emcli) addTransactionFlags(arguments ...string) []string {
 	arguments = append(arguments,
 		"--home", cli.keystore.path,
+		"--keyring-backend", "test",
 		"--yes",
 	)
 
