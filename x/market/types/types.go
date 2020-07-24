@@ -9,12 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/emirpasic/gods/sets/treeset"
-	"github.com/emirpasic/gods/utils"
 	"strings"
 	"time"
-
-	"github.com/emirpasic/gods/trees/btree"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -22,11 +18,9 @@ import (
 type (
 	Instrument struct {
 		Source, Destination string
-
-		Orders *btree.Tree
 	}
 
-	Instruments []Instrument
+	//Instruments []Instrument
 
 	Order struct {
 		ID      uint64    `json:"id" yaml:"id"`
@@ -95,52 +89,66 @@ func (o Order) MarshalJSON() ([]byte, error) {
 	return []byte(s), nil
 }
 
-func (is Instruments) String() string {
-	sb := strings.Builder{}
+func ParseInstrumentKey(bz []byte) Instrument {
+	key := string(bz[1:])
+	denoms := strings.Split(key, "/")
 
-	for _, instr := range is {
-		sb.WriteString(fmt.Sprintf("%v/%v - %v\n", instr.Source, instr.Destination, instr.Orders.Size()))
+	if len(denoms) != 2 {
+		panic(fmt.Sprintf("Unexpected key format: %v", key))
 	}
 
-	return sb.String()
-}
-
-func (is *Instruments) InsertOrder(order *Order) {
-	for _, i := range *is {
-		if i.Destination == order.Destination.Denom && i.Source == order.Source.Denom {
-			i.Orders.Put(order, nil)
-			return
-		}
-	}
-
-	i := Instrument{
-		Source:      order.Source.Denom,
-		Destination: order.Destination.Denom,
-		Orders:      btree.NewWith(3, OrderPriorityComparator),
-	}
-
-	*is = append(*is, i)
-	i.Orders.Put(order, nil)
-}
-
-func (is *Instruments) GetInstrument(source, destination string) *Instrument {
-	for _, i := range *is {
-		if i.Source == source && i.Destination == destination {
-			return &i
-		}
-	}
-
-	return nil
-}
-
-func (is *Instruments) RemoveInstrument(instr Instrument) {
-	for index, v := range *is {
-		if instr.Source == v.Source && instr.Destination == v.Destination {
-			*is = append((*is)[:index], (*is)[index+1:]...)
-			return
-		}
+	return Instrument{
+		Source:      denoms[0],
+		Destination: denoms[1],
 	}
 }
+
+//func (is Instruments) String() string {
+//	sb := strings.Builder{}
+//
+//	for _, instr := range is {
+//		sb.WriteString(fmt.Sprintf("%v/%v - %v\n", instr.Source, instr.Destination, instr.Orders.Size()))
+//	}
+//
+//	return sb.String()
+//}
+
+//func (is *Instruments) InsertOrder(order *Order) {
+//	for _, i := range *is {
+//		if i.Destination == order.Destination.Denom && i.Source == order.Source.Denom {
+//			i.Orders.Put(order, nil)
+//			return
+//		}
+//	}
+//
+//	i := Instrument{
+//		Source:      order.Source.Denom,
+//		Destination: order.Destination.Denom,
+//		Orders:      btree.NewWith(3, OrderPriorityComparator),
+//	}
+//
+//	*is = append(*is, i)
+//	i.Orders.Put(order, nil)
+//}
+
+//func (is *Instruments) GetInstrument(source, destination string) *Instrument {
+//	for _, i := range *is {
+//		if i.Source == source && i.Destination == destination {
+//			return &i
+//		}
+//	}
+//
+//	return nil
+//}
+
+//func (is *Instruments) RemoveInstrument(instr Instrument) {
+//	for index, v := range *is {
+//		if instr.Source == v.Source && instr.Destination == v.Destination {
+//			*is = append((*is)[:index], (*is)[index+1:]...)
+//			return
+//		}
+//	}
+//}
 
 // Manual handling of de-/serialization in order to include private fields
 func (o Order) MarshalAmino() ([]byte, error) {
@@ -308,81 +316,4 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clien
 	}
 
 	return o, nil
-}
-
-type Orders struct {
-	accountOrders map[string]*treeset.Set
-}
-
-func NewOrders() Orders {
-	return Orders{make(map[string]*treeset.Set)}
-}
-
-// Get the sum of all of the seller's orders in the given instrument
-func (o Orders) GetAccountSourceDemand(owner sdk.AccAddress, src, dst string) sdk.Coin {
-	allOrders := o.GetAllOrders(owner)
-
-	sumSourceRemaining := sdk.ZeroInt()
-	for it := allOrders.Iterator(); it.Next(); {
-		order := it.Value().(*Order)
-		if order.Source.Denom != src || order.Destination.Denom != dst {
-			continue
-		}
-
-		sumSourceRemaining = sumSourceRemaining.Add(order.SourceRemaining)
-	}
-
-	return sdk.NewCoin(src, sumSourceRemaining)
-}
-
-func (o Orders) ContainsClientOrderId(owner sdk.AccAddress, clientOrderId string) bool {
-	allOrders := o.GetAllOrders(owner)
-
-	order := &Order{ClientOrderID: clientOrderId}
-	return allOrders.Contains(order)
-}
-
-func (o Orders) GetOrder(owner sdk.AccAddress, clientOrderId string) (res *Order) {
-	allOrders := o.GetAllOrders(owner)
-
-	allOrders.Find(func(_ int, value interface{}) bool {
-		order := value.(*Order)
-		if order.ClientOrderID == clientOrderId {
-			res = order
-			return true
-		}
-
-		return false
-	})
-
-	return
-}
-
-func (o *Orders) GetAllOrders(owner sdk.AccAddress) *treeset.Set {
-	allOrders, found := o.accountOrders[owner.String()]
-
-	if !found {
-		// Note that comparator only uses client order id.
-		allOrders = treeset.NewWith(OrderClientIdComparator)
-		o.accountOrders[owner.String()] = allOrders
-	}
-
-	return allOrders
-}
-
-func (o *Orders) AddOrder(order *Order) {
-	orders := o.GetAllOrders(order.Owner)
-	orders.Add(order)
-}
-
-func (o *Orders) RemoveOrder(order *Order) {
-	orders := o.GetAllOrders(order.Owner)
-	orders.Remove(order)
-}
-
-func OrderClientIdComparator(a, b interface{}) int {
-	aAsserted := a.(*Order)
-	bAsserted := b.(*Order)
-
-	return utils.StringComparator(aAsserted.ClientOrderID, bAsserted.ClientOrderID)
 }

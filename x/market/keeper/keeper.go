@@ -5,8 +5,11 @@
 package keeper
 
 import (
+	"bytes"
+
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/util"
 	"math"
 	"sync"
 
@@ -27,30 +30,32 @@ const (
 )
 
 type Keeper struct {
-	key         sdk.StoreKey
-	cdc         *codec.Codec
-	instruments types.Instruments
-	ak          types.AccountKeeper
-	bk          types.BankKeeper
-	sk          types.SupplyKeeper
-	authorityk  types.RestrictedKeeper
+	key        sdk.StoreKey
+	keyIndices sdk.StoreKey
+	cdc        *codec.Codec
+	//instruments types.Instruments
+	ak         types.AccountKeeper
+	bk         types.BankKeeper
+	sk         types.SupplyKeeper
+	authorityk types.RestrictedKeeper
 
-	accountOrders types.Orders
-	appstateInit  *sync.Once
+	//accountOrders types.Orders
+	appstateInit *sync.Once
 
 	restrictedDenoms emtypes.RestrictedDenoms
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, supplyKeeper types.SupplyKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, supplyKeeper types.SupplyKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
 	k := &Keeper{
-		cdc: cdc,
-		key: key,
-		ak:  authKeeper,
-		bk:  bankKeeper,
-		sk:  supplyKeeper,
+		cdc:        cdc,
+		key:        key,
+		keyIndices: key,
+		ak:         authKeeper,
+		bk:         bankKeeper,
+		sk:         supplyKeeper,
 
-		accountOrders: types.NewOrders(),
-		appstateInit:  new(sync.Once),
+		//accountOrders: types.NewOrders(),
+		appstateInit: new(sync.Once),
 
 		authorityk: authorityKeeper,
 	}
@@ -59,9 +64,21 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, authKeeper types.AccountKeepe
 	return k
 }
 
-func (k *Keeper) createExecutionPlan(SourceDenom string, DestinationDenom string) types.ExecutionPlan {
+func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, DestinationDenom string) types.ExecutionPlan {
 	result := types.ExecutionPlan{
 		Price: sdk.NewDec(math.MaxInt64),
+	}
+
+	idxStore := ctx.KVStore(k.keyIndices)
+
+	it := idxStore.Iterator(types.GetInstrumentKeyBySrcAndDst(SourceDenom, ""), nil)
+	if it.Valid() {
+		defer it.Close()
+	}
+
+	for it.Valid() {
+		firstInstrument := types.ParseInstrumentKey(it.Key())
+
 	}
 
 	// Find the best direct or synthetic price for a given source/destination denom
@@ -151,8 +168,11 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		)
 	}
 
+	accountOrders := k.GetOrdersByOwner(ctx, aggressiveOrder.Owner)
+
 	// Ensure that the market is not showing "phantom liquidity" by rejecting multiple orders in an instrument based on the same balance.
-	totalSourceDemand := k.accountOrders.GetAccountSourceDemand(aggressiveOrder.Owner, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
+	//totalSourceDemand := accountOrders.GetAccountSourceDemand(aggressiveOrder.Owner, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
+	totalSourceDemand := getOrdersSourceDemand(accountOrders, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
 	totalSourceDemand = totalSourceDemand.Add(aggressiveOrder.Source)
 	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(totalSourceDemand)); anyNegative {
 		// TODO Improve message
@@ -160,7 +180,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	}
 
 	// Verify uniqueness of client order id among active orders
-	if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
+
+	//if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
+	if containsClientId(accountOrders, aggressiveOrder.ClientOrderID) {
 		return nil, sdkerrors.Wrap(types.ErrNonUniqueClientOrderId, aggressiveOrder.ClientOrderID)
 	}
 
@@ -277,9 +299,19 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 
 		if addToBook {
 			op := &aggressiveOrder
-			k.instruments.InsertOrder(op)
-			k.accountOrders.AddOrder(op)
 			k.setOrder(ctx, op)
+
+			idxStore := ctx.KVStore(k.keyIndices)
+
+			key := types.GetPricingKey(op.Source.Denom, op.Destination.Denom, op.Price(), op.ID)
+			idxStore.Set(key, util.Uint64ToBytes(op.ID))
+
+			key = types.GetInstrumentKeyBySrcAndDst(op.Source.Denom, op.Destination.Denom)
+			if !idxStore.Has(key) {
+				// TODO Value should contain historical order information in the longer term.
+				idxStore.Set(key, []byte{})
+			}
+
 			// NOTE This should be the only place that an order is added to the book!
 			// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
 		}
@@ -293,19 +325,28 @@ func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 		// Load the restricted denominations from the authority module
 		k.restrictedDenoms = k.authorityk.GetRestrictedDenoms(ctx)
 
-		// Load the last known market state from app state.
-		store := ctx.KVStore(k.key)
-		it := store.Iterator(types.GetOrderKey(0), types.GetOrderKey(math.MaxUint64))
-		for ; it.Valid(); it.Next() {
-			o := &types.Order{}
-			err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
-			if err != nil {
-				panic(err)
-			}
-
-			k.instruments.InsertOrder(o)
-			k.accountOrders.AddOrder(o)
-		}
+		// TODO Reinstate this when the mem store arrives in v0.40 of the Cosmos SDK.
+		//// Load the last known market state from app state.
+		//store := ctx.KVStore(k.key)
+		//idxStore := ctx.KVStore(k.keyIndices)
+		//
+		//ownersPrefix := types.GetOwnersPrefix()
+		//it := store.Iterator(ownersPrefix, nil)
+		//if it.Valid() {
+		//	defer it.Close()
+		//}
+		//
+		//for ; it.Valid(); it.Next() {
+		//
+		//	o := &types.Order{}
+		//	err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//
+		//	key := types.GetPricingKey(o.Source.Denom, o.Destination.Denom, o.Price(), o.ID)
+		//	idxStore.Set(key, util.Uint64ToBytes(o.ID))
+		//}
 	})
 }
 
@@ -320,7 +361,9 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
+	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner.String(), origClientOrderId)
+	//origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
+
 	if origOrder == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
 	}
@@ -355,20 +398,52 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	return &sdk.Result{Events: evts}, nil
 }
 
+func (k *Keeper) GetOrderByOwnerAndClientOrderId(ctx sdk.Context, owner, clientOrderId string) *types.Order {
+	store := ctx.KVStore(k.key)
+
+	key := types.GetOwnerKey(owner, clientOrderId)
+
+	bz := store.Get(key)
+	o := &types.Order{}
+	err := k.cdc.UnmarshalBinaryBare(bz, o)
+	if err != nil {
+		panic(err)
+	}
+
+	return o
+}
+
+//func (k *Keeper) GetOrderById(ctx sdk.Context, orderId []byte) *types.Order {
+//	if orderId == nil {
+//		return nil
+//	}
+//
+//	store := ctx.KVStore(k.key)
+//	bz := store.Get(orderId)
+//	o := &types.Order{}
+//	err := k.cdc.UnmarshalBinaryBare(bz, o)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	return o
+//}
+
 func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelOrder, "CancelOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	orders := k.accountOrders.GetAllOrders(owner)
+	//orders := k.accountOrders.GetAllOrders(owner)
+	order := k.GetOrderByOwnerAndClientOrderId(ctx, owner.String(), clientOrderId)
 
-	var order *types.Order
-	i, _ := orders.Find(func(index int, v interface{}) bool {
-		order = v.(*types.Order)
-		return order.ClientOrderID == clientOrderId
-	})
+	//var order *types.Order
+	//i, _ := orders.Find(func(index int, v interface{}) bool {
+	//	order = v.(*types.Order)
+	//	return order.ClientOrderID == clientOrderId
+	//})
 
-	if i == -1 {
+	if order == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, clientOrderId)
 	}
 
@@ -380,55 +455,123 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 
 // Update any orders that can no longer be filled with the account's balance.
 func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
-	orders := k.accountOrders.GetAllOrders(acc.GetAddress())
+	//orders := k.accountOrders.GetAllOrders(acc.GetAddress())
+	orders := k.GetOrdersByOwner(ctx, acc.GetAddress())
 
-	orders.Each(func(_ int, v interface{}) {
-		order := v.(*types.Order)
+	for _, order := range orders {
 		denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
+
+		origSourceRemaining := order.SourceRemaining
 
 		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
 		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
 
 		if order.SourceRemaining.IsZero() {
 			k.deleteOrder(ctx, order)
+		} else if !origSourceRemaining.Equal(order.SourceRemaining) {
+			k.setOrder(ctx, order)
 		}
-	})
+	}
+
+	//orders.Each(func(_ int, v interface{}) {
+	//	order := v.(*types.Order)
+	//	denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
+	//
+	//	order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
+	//	order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
+	//
+	//	if order.SourceRemaining.IsZero() {
+	//		k.deleteOrder(ctx, order)
+	//	}
+	//})
 }
 
 func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
 	store := ctx.KVStore(k.key)
 	bz := k.cdc.MustMarshalBinaryBare(order)
-	store.Set(types.GetOrderKey(order.ID), bz)
+	store.Set(types.GetOwnerKey(order.Owner.String(), order.ClientOrderID), bz)
 }
 
 func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
 	store := ctx.KVStore(k.key)
-	store.Delete(types.GetOrderKey(order.ID))
+	store.Delete(types.GetOwnerKey(order.Owner.String(), order.ClientOrderID))
 
-	k.accountOrders.RemoveOrder(order)
+	idxStore := ctx.KVStore(k.keyIndices)
 
-	instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
-	if instrument == nil {
-		return
-	}
+	key := types.GetPricingKey(order.Source.Denom, order.Destination.Denom, order.Price(), order.ID)
+	idxStore.Delete(key)
 
-	instrument.Orders.Remove(order)
-	if instrument.Orders.Empty() {
-		k.instruments.RemoveInstrument(*instrument)
-	}
+	//k.accountOrders.RemoveOrder(order)
+	//
+	//instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
+	//if instrument == nil {
+	//	return
+	//}
+	//
+	//instrument.Orders.Remove(order)
+	//if instrument.Orders.Empty() {
+	//	k.instruments.RemoveInstrument(*instrument)
+	//}
 }
 
-func (k Keeper) GetOrdersByOwner(owner sdk.AccAddress) []types.Order {
-	orders := k.accountOrders.GetAllOrders(owner)
-	res := make([]types.Order, orders.Size())
+func (k Keeper) GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) (res []*types.Order) {
+	store := ctx.KVStore(k.key)
 
-	it := orders.Iterator()
-	for it.Next() {
-		o := it.Value().(*types.Order)
-		res[it.Index()] = *o // Copy all orders, so that the calling function can't modify state.
+	key := types.GetOwnerKey(owner.String(), "")
+	it := store.Iterator(key, nil)
+	if it.Valid() {
+		defer it.Close()
 	}
 
-	return res
+	for it.Valid() {
+		//if !bytes.HasPrefix(it.Key(), key) {
+		//	break
+		//}
+
+		o := &types.Order{}
+		err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
+		if err != nil {
+			panic(err)
+		}
+
+		res = append(res, o)
+	}
+
+	return
+
+	//orders := k.accountOrders.GetAllOrders(owner)
+	//res := make([]types.Order, orders.Size())
+	//
+	//it := orders.Iterator()
+	//for it.Next() {
+	//	o := it.Value().(*types.Order)
+	//	res[it.Index()] = *o // Copy all orders, so that the calling function can't modify state.
+	//}
+	//
+	//return res
+}
+
+func containsClientId(orders []*types.Order, clientOrderId string) bool {
+	// TODO Orders are already ordered by ClientOrderId. Consider using a binary search.
+	for _, order := range orders {
+		if order.ClientOrderID == clientOrderId {
+			return true
+		}
+	}
+	return false
+}
+
+func getOrdersSourceDemand(orders []*types.Order, src, dst string) sdk.Coin {
+	sumSourceRemaining := sdk.ZeroInt()
+	for _, order := range orders {
+		if order.Source.Denom != src || order.Destination.Denom != dst {
+			continue
+		}
+
+		sumSourceRemaining = sumSourceRemaining.Add(order.SourceRemaining)
+	}
+
+	return sdk.NewCoin(src, sumSourceRemaining)
 }
 
 func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destinationFilled sdk.Coin, passiveAccountAddr, aggressiveAccountAddr sdk.AccAddress) error {

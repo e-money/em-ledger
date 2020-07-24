@@ -4,7 +4,12 @@
 
 package types
 
-import "encoding/binary"
+import (
+	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/e-money/em-ledger/util"
+)
 
 const (
 	ModuleName   = "market"
@@ -22,17 +27,44 @@ var (
 	// Parameter key for global order IDs
 	globalOrderIDKey = []byte("globalOrderID")
 
-	// LevelDB prefixes
-	keysPrefix  = []byte{0x01}
-	orderPrefix = []byte{0x02}
+	// IAVL Store prefixes
+	keysPrefix       = []byte{0x01}
+	instrumentPrefix = []byte{0x02}
+	priorityPrefix   = []byte{0x03}
+	ownerPrefix      = []byte{0x04}
 )
 
 func GetOrderIDGeneratorKey() []byte {
 	return append(keysPrefix, globalOrderIDKey...)
 }
 
-func GetOrderKey(v uint64) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, v)
-	return append(orderPrefix, b...)
+func GetInstrumentsKey() []byte {
+	return instrumentPrefix
+}
+
+func GetInstrumentKeyBySrcAndDst(src, dst string) []byte {
+	instr := fmt.Sprintf("%v/%v", src, dst)
+	return append(instrumentPrefix, []byte(instr)...)
+}
+
+func GetPricingKeyByInstrument(src, dst string) []byte {
+	instr := fmt.Sprintf("%v/%v/", src, dst)
+	return append(priorityPrefix, []byte(instr)...)
+}
+
+func GetPricingKey(src, dst string, price sdk.Dec, orderId uint64) []byte {
+	res := GetPricingKeyByInstrument(src, dst)
+	res = append(res, sdk.SortableDecBytes(price)...)
+	res = append(res, util.Uint64ToBytes(orderId)...)
+	return res
+}
+
+func GetOwnersPrefix() []byte {
+	return ownerPrefix
+}
+
+func GetOwnerKey(acc, clientOrderId string) []byte {
+	res := append(GetOwnersPrefix(), []byte(acc)...)
+	res = append(res, []byte(clientOrderId)...)
+	return res
 }

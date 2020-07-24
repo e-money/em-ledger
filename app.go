@@ -128,6 +128,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		issuer.StoreKey,
 		authority.StoreKey,
 		market.StoreKey,
+		market.StoreKeyIdx,
 	)
 
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
@@ -156,7 +157,8 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper, application.supplyKeeper, application)
-	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
+	// TODO Change market.StoreKeyIdx store to store/mem/store.go from the Cosmos SDK when v0.40 is available
+	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], keys[market.StoreKeyIdx], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
