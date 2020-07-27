@@ -13,7 +13,7 @@ const (
 	ModuleName   = types.ModuleName
 	RouterKey    = types.RouterKey
 	StoreKey     = types.StoreKey
-	StoreKeyIdx  = "market_indices"
+	StoreKeyIdx  = types.StoreKeyIdx
 	QuerierRoute = types.QuerierRoute
 )
 

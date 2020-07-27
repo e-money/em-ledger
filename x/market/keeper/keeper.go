@@ -5,11 +5,9 @@
 package keeper
 
 import (
-	"bytes"
-
+	"encoding/hex"
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/util"
 	"math"
 	"sync"
 
@@ -64,78 +62,87 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, auth
 	return k
 }
 
-func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom string, DestinationDenom string) types.ExecutionPlan {
+func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDenom string) types.ExecutionPlan {
 	result := types.ExecutionPlan{
 		Price: sdk.NewDec(math.MaxInt64),
 	}
 
 	idxStore := ctx.KVStore(k.keyIndices)
 
-	it := idxStore.Iterator(types.GetInstrumentKeyBySrcAndDst(SourceDenom, ""), nil)
-	if it.Valid() {
-		defer it.Close()
-	}
+	prefix := types.GetPriorityKeyByInstrument(SourceDenom, DestinationDenom)
 
-	for it.Valid() {
-		firstInstrument := types.ParseInstrumentKey(it.Key())
+	it := sdk.KVStorePrefixIterator(idxStore, prefix)
+	defer it.Close()
 
-	}
+	for ; it.Valid(); it.Next() {
+		order := k.getOrder(ctx, it.Value())
 
-	// Find the best direct or synthetic price for a given source/destination denom
-	for _, firstInstrument := range k.instruments {
-		if firstInstrument.Source == SourceDenom {
-			if firstInstrument.Orders.Empty() {
-				continue
-			}
+		planPrice := sdk.OneDec().Quo(order.Price())
+		planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
 
-			firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
-
-			// Check direct price
-			if firstInstrument.Destination == DestinationDenom {
-				// Direct price is better than current plan
-
-				planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
-				planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-				if planPrice.LT(result.Price) {
-					result = types.ExecutionPlan{
-						Price:      planPrice,
-						FirstOrder: firstPassiveOrder,
-					}
-				}
-			}
-
-			// Check synthetic price by going through two orders:
-			// (SourceDenom, X) -> (X, DestinationDenom)
-			for _, secondInstrument := range k.instruments {
-				if secondInstrument.Source != firstInstrument.Destination {
-					continue
-				}
-
-				if secondInstrument.Destination != DestinationDenom {
-					continue
-				}
-
-				if secondInstrument.Orders.Empty() {
-					continue
-				}
-
-				secondPassiveOrder := secondInstrument.Orders.LeftKey().(*types.Order)
-
-				planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
-				planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-
-				if planPrice.LT(result.Price) {
-					result = types.ExecutionPlan{
-						Price:       planPrice,
-						FirstOrder:  firstPassiveOrder,
-						SecondOrder: secondPassiveOrder,
-					}
-				}
-			}
+		result = types.ExecutionPlan{
+			Price:       planPrice,
+			FirstOrder:  order,
+			SecondOrder: nil,
 		}
 	}
 
 	return result
+
+	// Find the best direct or synthetic price for a given source/destination denom
+	//for _, firstInstrument := range k.instruments {
+	//	if firstInstrument.Source == SourceDenom {
+	//		if firstInstrument.Orders.Empty() {
+	//			continue
+	//		}
+	//
+	//		firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
+	//
+	//		// Check direct price
+	//		if firstInstrument.Destination == DestinationDenom {
+	//			// Direct price is better than current plan
+	//
+	//			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
+	//			planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
+	//			if planPrice.LT(result.Price) {
+	//				result = types.ExecutionPlan{
+	//					Price:      planPrice,
+	//					FirstOrder: firstPassiveOrder,
+	//				}
+	//			}
+	//		}
+	//
+	//		// Check synthetic price by going through two orders:
+	//		// (SourceDenom, X) -> (X, DestinationDenom)
+	//		for _, secondInstrument := range k.instruments {
+	//			if secondInstrument.Source != firstInstrument.Destination {
+	//				continue
+	//			}
+	//
+	//			if secondInstrument.Destination != DestinationDenom {
+	//				continue
+	//			}
+	//
+	//			if secondInstrument.Orders.Empty() {
+	//				continue
+	//			}
+	//
+	//			secondPassiveOrder := secondInstrument.Orders.LeftKey().(*types.Order)
+	//
+	//			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
+	//			planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
+	//
+	//			if planPrice.LT(result.Price) {
+	//				result = types.ExecutionPlan{
+	//					Price:       planPrice,
+	//					FirstOrder:  firstPassiveOrder,
+	//					SecondOrder: secondPassiveOrder,
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
@@ -196,7 +203,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	types.EmitNewOrderEvent(ctx, aggressiveOrder)
 
 	for {
-		plan := k.createExecutionPlan(aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
+		plan := k.createExecutionPlan(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
 		if plan.FirstOrder == nil {
 			break
 		}
@@ -300,17 +307,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		if addToBook {
 			op := &aggressiveOrder
 			k.setOrder(ctx, op)
-
-			idxStore := ctx.KVStore(k.keyIndices)
-
-			key := types.GetPricingKey(op.Source.Denom, op.Destination.Denom, op.Price(), op.ID)
-			idxStore.Set(key, util.Uint64ToBytes(op.ID))
-
-			key = types.GetInstrumentKeyBySrcAndDst(op.Source.Denom, op.Destination.Denom)
-			if !idxStore.Has(key) {
-				// TODO Value should contain historical order information in the longer term.
-				idxStore.Set(key, []byte{})
-			}
 
 			// NOTE This should be the only place that an order is added to the book!
 			// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
@@ -487,47 +483,59 @@ func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
 }
 
 func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
-	store := ctx.KVStore(k.key)
-	bz := k.cdc.MustMarshalBinaryBare(order)
-	store.Set(types.GetOwnerKey(order.Owner.String(), order.ClientOrderID), bz)
+	var (
+		store    = ctx.KVStore(k.key)
+		idxStore = ctx.KVStore(k.keyIndices)
+	)
+
+	ownerKey := types.GetOwnerKey(order.Owner.String(), order.ClientOrderID)
+	store.Set(ownerKey, k.cdc.MustMarshalBinaryBare(order))
+
+	// Create reference to other index.
+	priorityKey := types.GetPriorityKey(order.Source.Denom, order.Destination.Denom, order.Price(), order.ID)
+	idxStore.Set(priorityKey, ownerKey)
+
+	// TODO Reintroduce
+	//key = types.GetInstrumentKeyBySrcAndDst(op.Source.Denom, op.Destination.Denom)
+	//if !idxStore.Has(key) {
+	//	// TODO Value should contain historical order information in the longer term.
+	//	idxStore.Set(key, []byte{})
+	//}
 }
 
 func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
+	var (
+		store    = ctx.KVStore(k.key)
+		idxStore = ctx.KVStore(k.keyIndices)
+	)
+
+	ownerKey := types.GetOwnerKey(order.Owner.String(), order.ClientOrderID)
+	store.Delete(ownerKey)
+
+	priorityKey := types.GetPriorityKey(order.Source.Denom, order.Destination.Denom, order.Price(), order.ID)
+	idxStore.Delete(priorityKey)
+}
+
+func (k Keeper) getOrder(ctx sdk.Context, key []byte) *types.Order {
 	store := ctx.KVStore(k.key)
-	store.Delete(types.GetOwnerKey(order.Owner.String(), order.ClientOrderID))
+	bz := store.Get(key)
+	if bz == nil {
+		panic(fmt.Sprintln("Unknown key:", hex.EncodeToString(bz)))
+	}
 
-	idxStore := ctx.KVStore(k.keyIndices)
-
-	key := types.GetPricingKey(order.Source.Denom, order.Destination.Denom, order.Price(), order.ID)
-	idxStore.Delete(key)
-
-	//k.accountOrders.RemoveOrder(order)
-	//
-	//instrument := k.instruments.GetInstrument(order.Source.Denom, order.Destination.Denom)
-	//if instrument == nil {
-	//	return
-	//}
-	//
-	//instrument.Orders.Remove(order)
-	//if instrument.Orders.Empty() {
-	//	k.instruments.RemoveInstrument(*instrument)
-	//}
+	order := types.Order{}
+	k.cdc.MustUnmarshalBinaryBare(bz, &order)
+	return &order
 }
 
 func (k Keeper) GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) (res []*types.Order) {
 	store := ctx.KVStore(k.key)
 
 	key := types.GetOwnerKey(owner.String(), "")
-	it := store.Iterator(key, nil)
-	if it.Valid() {
-		defer it.Close()
-	}
+	it := sdk.KVStorePrefixIterator(store, key)
+	defer it.Close()
 
-	for it.Valid() {
-		//if !bytes.HasPrefix(it.Key(), key) {
-		//	break
-		//}
-
+	for ; it.Valid(); it.Next() {
 		o := &types.Order{}
 		err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
 		if err != nil {

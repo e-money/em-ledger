@@ -67,11 +67,11 @@ func TestBasicTrade(t *testing.T) {
 	require.Equal(t, "50", bal2.AmountOf("eur").String())
 	require.Equal(t, "7340", bal2.AmountOf("usd").String())
 
-	require.Len(t, k.instruments, 1)
+	//require.Len(t, k.instruments, 1)
 
-	i := k.instruments[0]
-	remainingOrder := i.Orders.LeftKey().(*types.Order)
-	require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
+	//i := k.instruments[0]
+	//remainingOrder := i.Orders.LeftKey().(*types.Order)
+	//require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
@@ -124,7 +124,7 @@ func TestMultipleOrders(t *testing.T) {
 	_, err = k.NewOrderSingle(ctx, order(acc1, "10000eur", "1400chf"))
 	require.NoError(t, err)
 
-	require.Len(t, k.instruments, 2)
+	//require.Len(t, k.instruments, 2)
 
 	res, err := k.NewOrderSingle(ctx, order(acc2, "7400usd", "5000eur"))
 	require.True(t, err == nil, res.Log)
@@ -133,11 +133,11 @@ func TestMultipleOrders(t *testing.T) {
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
-	orders := k.GetOrdersByOwner(acc1.GetAddress())
+	orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, orders, 0)
 
 	// All orders should be filled
-	require.Empty(t, k.instruments)
+	//require.Empty(t, k.instruments)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
@@ -152,7 +152,7 @@ func TestCancelZeroRemainingOrders(t *testing.T) {
 	err = bk.SendCoins(ctx, acc.GetAddress(), sdk.AccAddress([]byte("void")), coins("10000eur"))
 	require.NoError(t, err)
 
-	orders := k.GetOrdersByOwner(acc.GetAddress())
+	orders := k.GetOrdersByOwner(ctx, acc.GetAddress())
 	require.Len(t, orders, 0)
 }
 
@@ -199,7 +199,7 @@ func Test2(t *testing.T) {
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
-	require.Empty(t, k.instruments)
+	//require.Empty(t, k.instruments)
 	require.Equal(t, coins("120usd"), ak.GetAccount(ctx, acc1.GetAddress()).GetCoins())
 	require.Equal(t, coins("100eur,1usd"), ak.GetAccount(ctx, acc2.GetAddress()).GetCoins())
 
@@ -224,7 +224,7 @@ func Test3(t *testing.T) {
 	}
 	require.Equal(t, 4*gasPriceNewOrder, gasMeter.GasConsumed())
 
-	require.Len(t, k.instruments, 0)
+	//require.Len(t, k.instruments, 0)
 	acc1 = ak.GetAccount(ctx, acc1.GetAddress())
 	acc2 = ak.GetAccount(ctx, acc2.GetAddress())
 	require.Equal(t, coins("120usd"), acc1.GetCoins())
@@ -249,10 +249,10 @@ func TestDeleteOrder(t *testing.T) {
 	_, err = k.NewOrderSingle(ctx, order2)
 	require.Error(t, err) // Verify that client order ids cannot be duplicated.
 
-	require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
+	//require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
 
-	k.deleteOrder(ctx, &order1)
-	require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
+	//k.deleteOrder(ctx, &order1)
+	//require.Len(t, k.instruments, 0) // Removing the only eur->usd order should have removed instrument
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
@@ -274,7 +274,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 		require.True(t, err == nil, res.Log)
 	}
 
-	allOrders1 := k.GetOrdersByOwner(acc1.GetAddress())
+	allOrders1 := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, allOrders1, 5)
 
 	{
@@ -283,7 +283,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 		require.True(t, err == nil, res.Log)
 	}
 
-	allOrders2 := k.GetOrdersByOwner(acc1.GetAddress())
+	allOrders2 := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, allOrders2, 4)
 
 	cid := allOrders2[2].ClientOrderID
@@ -296,7 +296,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	require.Equal(t, 2*gasPriceCancelOrder, gasMeter.GasConsumed())
 
-	allOrders3 := k.GetOrdersByOwner(acc1.GetAddress())
+	allOrders3 := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, allOrders3, 3)
 
 	found := false
@@ -336,7 +336,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	{
-		orders := k.GetOrdersByOwner(acc1.GetAddress())
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 		require.Len(t, orders, 1)
 		require.Equal(t, order2cid, orders[0].ClientOrderID)
 		require.Equal(t, coin("5000eur"), orders[0].Source)
@@ -369,7 +369,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	filled := sdk.ZeroInt()
 	{
-		orders := k.GetOrdersByOwner(acc1.GetAddress())
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 		require.Len(t, orders, 1)
 		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
 	}
@@ -381,7 +381,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	require.True(t, err == nil, res.Log)
 
 	{
-		orders := k.GetOrdersByOwner(acc1.GetAddress())
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 		require.Len(t, orders, 1)
 		require.Equal(t, order4cid, orders[0].ClientOrderID)
 		require.Equal(t, coin("10000eur"), orders[0].Source)
@@ -425,7 +425,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	require.Nil(t, err)
 
 	// Seller's account balance drops, remaining should be adjusted accordingly.
-	orders := k.GetOrdersByOwner(acc.GetAddress())
+	orders := k.GetOrdersByOwner(ctx, acc.GetAddress())
 	require.Len(t, orders, 1)
 	require.Equal(t, coin("10000eur"), orders[0].Source)
 	require.Equal(t, "3000", orders[0].SourceRemaining.String())
@@ -435,7 +435,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	err = bk.SendCoins(ctx, acc2.GetAddress(), acc.GetAddress(), coins("12000eur"))
 	require.Nil(t, err)
 
-	orders = k.GetOrdersByOwner(acc.GetAddress())
+	orders = k.GetOrdersByOwner(ctx, acc.GetAddress())
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 	require.Equal(t, "400", orders[0].DestinationFilled.String())
 
@@ -443,7 +443,7 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	err = bk.SendCoins(ctx, acc.GetAddress(), acc2.GetAddress(), coins("6000eur"))
 	require.Nil(t, err)
 
-	orders = k.GetOrdersByOwner(acc.GetAddress())
+	orders = k.GetOrdersByOwner(ctx, acc.GetAddress())
 	require.Equal(t, "6000", orders[0].SourceRemaining.String())
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
@@ -487,10 +487,10 @@ func TestLoadFromStore(t *testing.T) {
 	k2.initializeFromStore(ctx)
 
 	// Verify that all orders are loaded correctly into the book
-	require.Len(t, k2.instruments, len(k1.instruments))
+	//require.Len(t, k2.instruments, len(k1.instruments))
 
-	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc1.GetAddress()).Size())
-	require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc2.GetAddress()).Size())
+	//require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc1.GetAddress()).Size())
+	//require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc2.GetAddress()).Size())
 }
 
 func TestVestingAccount(t *testing.T) {
@@ -541,24 +541,24 @@ func TestRestrictedDenominations1(t *testing.T) {
 		o := order(acc2, "500gbp", "542eur")
 		_, err := k.NewOrderSingle(ctx, o)
 		require.NoError(t, err)
-		require.Empty(t, k.instruments)
+		//require.Empty(t, k.instruments)
 
 		o = order(acc2, "542usd", "500gbp")
 		_, err = k.NewOrderSingle(ctx, o)
 		require.NoError(t, err)
-		require.Empty(t, k.instruments)
+		//require.Empty(t, k.instruments)
 	}
 
 	{ // Verify that acc1 can create a passive gbp order
 		o := order(acc1, "542eur", "500gbp")
 		_, err := k.NewOrderSingle(ctx, o)
 		require.NoError(t, err)
-		require.Len(t, k.instruments, 1)
+		//require.Len(t, k.instruments, 1)
 
 		o = order(acc1, "200gbp", "333usd")
 		_, err = k.NewOrderSingle(ctx, o)
 		require.NoError(t, err)
-		require.Len(t, k.instruments, 2)
+		//require.Len(t, k.instruments, 2)
 	}
 
 	{ // Verify that acc2 managed to sell its gbp to a passive order
@@ -597,13 +597,13 @@ func TestRestrictedDenominations2(t *testing.T) {
 	o := order(acc1, "542usd", "500gbp")
 	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
 	require.NoError(t, err)
-	require.Empty(t, k.instruments)
+	//require.Empty(t, k.instruments)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 
 	o = order(acc1, "500gbp", "542usd")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
-	require.Empty(t, k.instruments)
+	//require.Empty(t, k.instruments)
 }
 
 func TestSyntheticInstruments1(t *testing.T) {
@@ -656,12 +656,12 @@ func TestNonMatchingOrders(t *testing.T) {
 	_, err = k.NewOrderSingle(ctx, order(acc2, "20000eur", "50000usd"))
 	require.NoError(t, err)
 
-	acc1Orders := k.GetOrdersByOwner(acc1.GetAddress())
+	acc1Orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, acc1Orders, 1)
 	require.Equal(t, sdk.ZeroInt(), acc1Orders[0].DestinationFilled)
 	require.Equal(t, sdk.ZeroInt(), acc1Orders[0].SourceFilled)
 
-	acc2Orders := k.GetOrdersByOwner(acc2.GetAddress())
+	acc2Orders := k.GetOrdersByOwner(ctx, acc2.GetAddress())
 	require.Len(t, acc2Orders, 1)
 	require.Equal(t, sdk.ZeroInt(), acc2Orders[0].DestinationFilled)
 	require.Equal(t, sdk.ZeroInt(), acc2Orders[0].SourceFilled)
@@ -702,7 +702,7 @@ func TestSyntheticInstruments2(t *testing.T) {
 	require.NoError(t, err, res.Log)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 
-	require.Len(t, k.instruments, 0)
+	//require.Len(t, k.instruments, 0)
 
 	acc3bal := ak.GetAccount(ctx, acc3.GetAddress()).GetCoins()
 	require.Equal(t, "4000000", acc3bal.AmountOf("usd").String())
@@ -789,6 +789,7 @@ func printTotalBalance(accs ...authexported.Account) {
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeeper, bank.Keeper, supply.Keeper) {
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
+		keyIndices = sdk.NewKVStoreKey(types.StoreKeyIdx)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
 		supplyKey  = sdk.NewKVStoreKey("supply")
@@ -819,7 +820,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, supplyKey, accountKeeper, bankKeeper, maccPerms)
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp")))
 
-	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, accountKeeperWrapped, bankKeeper, supplyKeeper, dummyAuthority{})
+	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, keyIndices, accountKeeperWrapped, bankKeeper, supplyKeeper, dummyAuthority{})
 
 	return ctx, marketKeeper, accountKeeper, bankKeeper, supplyKeeper
 }

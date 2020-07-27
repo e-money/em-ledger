@@ -5,14 +5,12 @@
 package keeper
 
 import (
-	"encoding/json"
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"sort"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -102,66 +100,68 @@ func (o OrderResponses) Swap(i, j int) {
 var _ sort.Interface = OrderResponses{}
 
 func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
-	if len(path) != 1 {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
-	}
-
-	account, err := sdk.AccAddressFromBech32(path[0])
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
-	}
-
-	o := k.accountOrders.GetAllOrders(account)
-	orders := make(OrderResponses, 0)
-
-	it := o.Iterator()
-	for it.Next() {
-		order := it.Value().(*types.Order)
-		orders = append(orders, *order)
-	}
-
-	sort.Sort(orders)
-
-	resp := QueryByAccountResponse{orders}
-	return json.Marshal(resp)
+	panic("Fix")
+	//if len(path) != 1 {
+	//	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
+	//}
+	//
+	//account, err := sdk.AccAddressFromBech32(path[0])
+	//if err != nil {
+	//	return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
+	//}
+	//
+	//o := k.accountOrders.GetAllOrders(account)
+	//orders := make(OrderResponses, 0)
+	//
+	//it := o.Iterator()
+	//for it.Next() {
+	//	order := it.Value().(*types.Order)
+	//	orders = append(orders, *order)
+	//}
+	//
+	//sort.Sort(orders)
+	//
+	//resp := QueryByAccountResponse{orders}
+	//return json.Marshal(resp)
 }
 
 func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
-	if len(path) != 2 {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
-	}
-
-	source, destination := path[0], path[1]
-
-	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
-	}
-
-	instrument := k.instruments.GetInstrument(source, destination)
-
-	orders := make([]QueryOrderResponse, 0)
-	if instrument != nil {
-		it := instrument.Orders.Iterator()
-		for it.Next() {
-			order := it.Key().(*types.Order)
-
-			orders = append(orders, QueryOrderResponse{
-				ID:              order.ID,
-				Created:         order.Created,
-				Owner:           order.Owner,
-				SourceRemaining: order.SourceRemaining.String(),
-				Price:           order.Price(),
-			})
-		}
-	}
-
-	resp := QueryInstrumentResponse{
-		Source:      source,
-		Destination: destination,
-		Orders:      orders,
-	}
-
-	return json.Marshal(resp)
+	panic("Fix")
+	//if len(path) != 2 {
+	//	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
+	//}
+	//
+	//source, destination := path[0], path[1]
+	//
+	//if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
+	//	return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
+	//}
+	//
+	//instrument := k.instruments.GetInstrument(source, destination)
+	//
+	//orders := make([]QueryOrderResponse, 0)
+	//if instrument != nil {
+	//	it := instrument.Orders.Iterator()
+	//	for it.Next() {
+	//		order := it.Key().(*types.Order)
+	//
+	//		orders = append(orders, QueryOrderResponse{
+	//			ID:              order.ID,
+	//			Created:         order.Created,
+	//			Owner:           order.Owner,
+	//			SourceRemaining: order.SourceRemaining.String(),
+	//			Price:           order.Price(),
+	//		})
+	//	}
+	//}
+	//
+	//resp := QueryInstrumentResponse{
+	//	Source:      source,
+	//	Destination: destination,
+	//	Orders:      orders,
+	//}
+	//
+	//return json.Marshal(resp)
 }
 
 type QueryInstrumentsWrapperResponse struct {
@@ -188,16 +188,17 @@ func (q QueryInstrumentsResponse) String() string {
 }
 
 func queryInstruments(k *Keeper) ([]byte, error) {
-	response := make([]QueryInstrumentsResponse, len(k.instruments))
-	for i, v := range k.instruments {
-		response[i] = QueryInstrumentsResponse{
-			Source:      v.Source,
-			Destination: v.Destination,
-			OrderCount:  v.Orders.Size(),
-		}
-	}
-
-	// Wrap the instruments in an object in anticipation of later expansion
-	instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
-	return json.Marshal(instrumentsWrapper)
+	panic("Fix")
+	//response := make([]QueryInstrumentsResponse, len(k.instruments))
+	//for i, v := range k.instruments {
+	//	response[i] = QueryInstrumentsResponse{
+	//		Source:      v.Source,
+	//		Destination: v.Destination,
+	//		OrderCount:  v.Orders.Size(),
+	//	}
+	//}
+	//
+	//// Wrap the instruments in an object in anticipation of later expansion
+	//instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
+	//return json.Marshal(instrumentsWrapper)
 }

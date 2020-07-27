@@ -14,6 +14,7 @@ import (
 const (
 	ModuleName   = "market"
 	StoreKey     = ModuleName
+	StoreKeyIdx  = "market_indices"
 	RouterKey    = ModuleName
 	QuerierRoute = ModuleName
 
@@ -47,13 +48,13 @@ func GetInstrumentKeyBySrcAndDst(src, dst string) []byte {
 	return append(instrumentPrefix, []byte(instr)...)
 }
 
-func GetPricingKeyByInstrument(src, dst string) []byte {
+func GetPriorityKeyByInstrument(src, dst string) []byte {
 	instr := fmt.Sprintf("%v/%v/", src, dst)
 	return append(priorityPrefix, []byte(instr)...)
 }
 
-func GetPricingKey(src, dst string, price sdk.Dec, orderId uint64) []byte {
-	res := GetPricingKeyByInstrument(src, dst)
+func GetPriorityKey(src, dst string, price sdk.Dec, orderId uint64) []byte {
+	res := GetPriorityKeyByInstrument(src, dst)
 	res = append(res, sdk.SortableDecBytes(price)...)
 	res = append(res, util.Uint64ToBytes(orderId)...)
 	return res
