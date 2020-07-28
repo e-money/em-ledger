@@ -18,9 +18,9 @@ import (
 type (
 	Instrument struct {
 		Source, Destination string
+		LastPrice           sdk.Dec
+		BestPlan            *ExecutionPlan
 	}
-
-	//Instruments []Instrument
 
 	Order struct {
 		ID      uint64    `json:"id" yaml:"id"`
@@ -87,20 +87,6 @@ func (o Order) MarshalJSON() ([]byte, error) {
 	)
 
 	return []byte(s), nil
-}
-
-func ParseInstrumentKey(bz []byte) Instrument {
-	key := string(bz[1:])
-	denoms := strings.Split(key, "/")
-
-	if len(denoms) != 2 {
-		panic(fmt.Sprintf("Unexpected key format: %v", key))
-	}
-
-	return Instrument{
-		Source:      denoms[0],
-		Destination: denoms[1],
-	}
 }
 
 //func (is Instruments) String() string {

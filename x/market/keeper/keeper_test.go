@@ -802,6 +802,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyIndices, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(supplyKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()

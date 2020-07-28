@@ -51,25 +51,26 @@ func TestSerialization(t *testing.T) {
 }
 
 func TestOrders1(t *testing.T) {
-	acc1 := sdk.AccAddress([]byte("acc1"))
-	acc2 := sdk.AccAddress([]byte("acc2"))
-
-	orders := NewOrders()
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), acc1, time.Now(), "A")
-	order1.ID = 1
-
-	order2, _ := NewOrder(coin("250usd"), coin("180chf"), acc2, time.Now(), "A")
-	order2.ID = 2
-
-	orders.AddOrder(&order1)
-	orders.AddOrder(&order2)
-
-	require.True(t, orders.ContainsClientOrderId(acc1, "A"))
-	require.True(t, orders.ContainsClientOrderId(acc2, "A"))
-
-	require.NotNil(t, orders.GetOrder(acc1, "A"))
-	require.NotNil(t, orders.GetOrder(acc2, "A"))
-	require.Nil(t, orders.GetOrder(acc1, "B"))
+	panic("Fix")
+	//acc1 := sdk.AccAddress([]byte("acc1"))
+	//acc2 := sdk.AccAddress([]byte("acc2"))
+	//
+	//orders := NewOrders()
+	//order1, _ := NewOrder(coin("100eur"), coin("120usd"), acc1, time.Now(), "A")
+	//order1.ID = 1
+	//
+	//order2, _ := NewOrder(coin("250usd"), coin("180chf"), acc2, time.Now(), "A")
+	//order2.ID = 2
+	//
+	//orders.AddOrder(&order1)
+	//orders.AddOrder(&order2)
+	//
+	//require.True(t, orders.ContainsClientOrderId(acc1, "A"))
+	//require.True(t, orders.ContainsClientOrderId(acc2, "A"))
+	//
+	//require.NotNil(t, orders.GetOrder(acc1, "A"))
+	//require.NotNil(t, orders.GetOrder(acc2, "A"))
+	//require.Nil(t, orders.GetOrder(acc1, "B"))
 
 }
 
@@ -111,17 +112,18 @@ func TestComparator(t *testing.T) {
 }
 
 func TestOrderClientIdComparator(t *testing.T) {
-	now := time.Now()
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), now, "A")
-	order1.ID = 1
-
-	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc1"), now, "B")
-	order2.ID = 2
-
-	require.True(t, OrderClientIdComparator(&order1, &order2) < 0)
-	require.True(t, OrderClientIdComparator(&order2, &order1) > 0)
-	require.True(t, OrderClientIdComparator(&order1, &order1) == 0)
-	require.True(t, OrderClientIdComparator(&order2, &order2) == 0)
+	panic("Fix")
+	//now := time.Now()
+	//order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), now, "A")
+	//order1.ID = 1
+	//
+	//order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc1"), now, "B")
+	//order2.ID = 2
+	//
+	//require.True(t, OrderClientIdComparator(&order1, &order2) < 0)
+	//require.True(t, OrderClientIdComparator(&order2, &order1) > 0)
+	//require.True(t, OrderClientIdComparator(&order1, &order1) == 0)
+	//require.True(t, OrderClientIdComparator(&order2, &order2) == 0)
 }
 
 func coin(s string) sdk.Coin {
