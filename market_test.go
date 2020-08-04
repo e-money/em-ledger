@@ -8,8 +8,17 @@ package emoney
 
 import (
 	"fmt"
+	market "github.com/e-money/em-ledger/x/market/types"
+	"io/ioutil"
+	"os"
 	"strings"
 	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+
+	emoney "github.com/e-money/em-ledger" // To get around this issue: https://stackoverflow.com/q/14723229
+	"github.com/e-money/em-ledger/networktest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -25,6 +34,8 @@ var _ = Describe("Market", func() {
 		acc1 = testnet.Keystore.Key1
 		acc2 = testnet.Keystore.Key2
 		acc3 = testnet.Keystore.Key3
+
+		Authority = testnet.Keystore.Authority
 	)
 
 	Describe("Authority manages issuers", func() {
@@ -98,6 +109,80 @@ var _ = Describe("Market", func() {
 				strings.Contains(log, "panic") {
 				Fail(fmt.Sprintf("Validator 2 does not appear to have re-established consensus:\n%v", log))
 			}
+		})
+
+		// Create a vanilla testnet to reset market state
+		It("creates a new testnet", createNewTestnet)
+
+		It("Runs out of gas while using the market", func() {
+			time.Sleep(5 * time.Second)
+
+			prices, err := sdk.ParseDecCoins("0.00005eeur")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, success, err := emcli.AuthoritySetMinGasPrices(Authority, prices.String())
+			Expect(success).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+
+			s, success, err := emcli.MarketAddOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1", "--fees", "50eeur")
+
+			// Create one transaction that includes a market order and a lot transfers, which will make the tx run out of gas.
+			jsonPath, err := ioutil.TempDir("", "")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(jsonPath)
+
+			msgs := make([]sdk.Msg, 0)
+
+			addr3, err := sdk.AccAddressFromBech32(acc3.GetAddress())
+			if err != nil {
+				panic(err)
+			}
+
+			clientOrderId := "ShouldNotBePresent"
+			addOrder := market.MsgAddOrder{
+				Owner:         addr3,
+				Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
+				Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
+				ClientOrderId: clientOrderId,
+			}
+
+			msgs = append(msgs, addOrder)
+
+			// Add a few transfers to make sure that gas is exhausted
+			addr2, err := sdk.AccAddressFromBech32(acc2.GetAddress())
+			if err != nil {
+				panic(err)
+			}
+
+			coins := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewInt(5000)))
+			for i := 0; i < 5; i++ {
+				msgs = append(msgs, bank.NewMsgSend(addr3, addr2, coins))
+			}
+
+			accountJson, err := emcli.QueryAccountJson(acc3.GetAddress())
+			Expect(err).To(BeNil())
+			accNum := gjson.ParseBytes(accountJson).Get("value.account_number").Uint()
+			accSeq := gjson.ParseBytes(accountJson).Get("value.sequence").Uint()
+
+			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "500eeur", accNum, accSeq, msgs...)
+
+			cdc := emoney.MakeCodec()
+			json := cdc.MustMarshalJSON(tx)
+
+			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
+			ioutil.WriteFile(transactionPath, json, 0777)
+
+			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
+			Expect(err).To(BeNil())
+			// Transaction must have failed due to insufficient gas
+			Expect(gjson.Parse(s).Get("logs.0.success").Exists()).To(Equal(false))
+
+			// Order must not be available for querying
+			bz, err := emcli.QueryMarketByAccount(addr3.String())
+			Expect(err).To(BeNil())
+
+			query := fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
+			Expect(gjson.ParseBytes(bz).Get(query).Array()).To(BeEmpty())
 		})
 	})
 })

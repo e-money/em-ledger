@@ -7,6 +7,9 @@
 package networktest
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"strings"
 	"sync"
 	"time"
@@ -48,4 +51,49 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 	}
 
 	return
+}
+
+func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) types.StdTx {
+	memo := "+memo"
+	fee := auth.NewStdFee(100000, mustParseCoins(feestring))
+
+	sig, err := key.Sign(
+		auth.StdSignBytes(
+			chainid,
+			accnum,
+			sequence,
+			fee,
+			msgs,
+			memo),
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	signature := auth.StdSignature{
+		PubKey:    key.pubkey,
+		Signature: sig,
+	}
+
+	tx := auth.NewStdTx(msgs, fee, []auth.StdSignature{signature}, memo)
+	return tx
+}
+
+func mustParseCoins(coins string) sdk.Coins {
+	cs, err := sdk.ParseCoins(coins)
+	if err != nil {
+		panic(err)
+	}
+
+	return cs
+}
+
+func mustParseCoin(coin string) sdk.Coin {
+	c, err := sdk.ParseCoin(coin)
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }

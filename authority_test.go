@@ -230,7 +230,6 @@ var _ = Describe("Authority", func() {
 			bz, err := emcli.QueryMinGasPrices()
 			Expect(err).ToNot(HaveOccurred())
 
-			// Should fail due to missing fees.
 			_, success, err = emcli.AuthoritySetMinGasPrices(Authority, prices.String(), "--fees", "50eeur")
 			Expect(success).To(BeTrue())
 			Expect(err).ToNot(HaveOccurred())
