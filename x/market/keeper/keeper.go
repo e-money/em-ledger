@@ -46,7 +46,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, auth
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,
-		keyIndices: key,
+		keyIndices: keyIndices,
 		ak:         authKeeper,
 		bk:         bankKeeper,
 		sk:         supplyKeeper,
@@ -66,131 +66,36 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 		Price: sdk.NewDec(math.MaxInt64),
 	}
 
-	idxStore := ctx.KVStore(k.keyIndices)
-
-	instrumentKey := types.GetInstrumentKeyBySrcAndDst(SourceDenom, DestinationDenom)
-	if !idxStore.Has(instrumentKey) {
-		idxStore.Set(instrumentKey, []byte{})
-	}
-
-	// Find the best direct or synthetic price for a given source/destination denom
-	firstIt := sdk.KVStorePrefixIterator(idxStore, types.GetInstrumentKeyBySrcAndDst(SourceDenom, ""))
-	defer firstIt.Close()
-
-	//for _, firstInstrument := range k.instruments {
-	for ; firstIt.Valid(); firstIt.Next() {
-		_, firstDenom := types.MustParseInstrumentKey(firstIt.Key())
-
-		//firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
-		firstPassiveOrder := k.getBestOrder(ctx, SourceDenom, firstDenom)
-		if firstPassiveOrder == nil {
-			continue
-		}
-
-		// Check direct price
-		if firstDenom == DestinationDenom {
-			// Direct price is better than current plan
-
-			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
-			planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-			if planPrice.LT(bestPlan.Price) {
-				bestPlan = types.ExecutionPlan{
-					Price:      planPrice,
-					FirstOrder: firstPassiveOrder,
-				}
-			}
-		}
-
-		// Check synthetic price by going through two orders:
-		// (SourceDenom, X) -> (X, DestinationDenom)
-		secondPassiveOrder := k.getBestOrder(ctx, firstDenom, DestinationDenom)
-		if secondPassiveOrder == nil {
-			continue
-		}
-
-		planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
-		planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-
-		if planPrice.LT(bestPlan.Price) {
-			bestPlan = types.ExecutionPlan{
-				Price:       planPrice,
-				FirstOrder:  firstPassiveOrder,
-				SecondOrder: secondPassiveOrder,
-			}
-		}
-	}
-
 	return bestPlan
-
-	//result := types.ExecutionPlan{
-	//	Price: sdk.NewDec(math.MaxInt64),
-	//}
 	//
-	//idxStore := ctx.KVStore(k.keyIndices)
+	//	idxStore := ctx.KVStore(k.keyIndices)
 	//
-	//prefix := types.GetPriorityKeyByInstrument(SourceDenom, DestinationDenom)
-	//
-	//it := sdk.KVStorePrefixIterator(idxStore, prefix)
-	//defer it.Close()
-	//
-	//// Find a direct price, if it exists
-	//for ; it.Valid(); it.Next() {
-	//	order := k.getBestOrder(ctx, SourceDenom, DestinationDenom)
-	//
-	//	planPrice := sdk.OneDec().Quo(order.Price())
-	//	planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-	//
-	//	result = types.ExecutionPlan{
-	//		Price:       planPrice,
-	//		FirstOrder:  order,
-	//		SecondOrder: nil,
+	//	instrumentKey := types.GetInstrumentKeyBySrcAndDst(SourceDenom, DestinationDenom)
+	//	if !idxStore.Has(instrumentKey) {
+	//		idxStore.Set(instrumentKey, []byte{})
 	//	}
 	//
-	//	break
-	//}
-
-	// Find synthetic prices
-	// 1. Find all pairs from source
-	// 2. Go through each destination and find all that match the final destination
-	//    - Ignore source -> dest direct pair
+	//	// Find the best direct or synthetic price for a given source/destination denom
+	//	firstIt := sdk.KVStorePrefixIterator(idxStore, types.GetInstrumentKeyBySrcAndDst(SourceDenom, ""))
+	//	defer firstIt.Close()
 	//
-
-	//getAllPairsFrom(SourceDenom, idxStore)
+	//	for ; firstIt.Valid(); firstIt.Next() {
+	//		_, firstDenom := types.MustParseInstrumentKey(firstIt.Key())
 	//
-	//prefix = types.GetPriorityKeyBySource(SourceDenom)
-	//it = sdk.KVStorePrefixIterator(idxStore, prefix)
-	//defer it.Close()
-	//
-	//for ; it.Valid(); it.Next() {
-	//	// Parse key to find destination
-	//	_, dst := types.MustParsePriorityKey(it.Key())
-	//	if dst == DestinationDenom {
-	//		continue
-	//	}
-	//
-	//	fmt.Println(" --- Found src -> dst:", SourceDenom, dst)
-	//
-	//}
-	//
-	//return result
-
-	// Find the best direct or synthetic price for a given source/destination denom
-	//for _, firstInstrument := range k.instruments {
-	//	if firstInstrument.Source == SourceDenom {
-	//		if firstInstrument.Orders.Empty() {
+	//		//firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
+	//		firstPassiveOrder := k.getBestOrder(ctx, SourceDenom, firstDenom)
+	//		if firstPassiveOrder == nil {
 	//			continue
 	//		}
 	//
-	//		firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
-	//
 	//		// Check direct price
-	//		if firstInstrument.Destination == DestinationDenom {
+	//		if firstDenom == DestinationDenom {
 	//			// Direct price is better than current plan
 	//
 	//			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
 	//			planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-	//			if planPrice.LT(result.Price) {
-	//				result = types.ExecutionPlan{
+	//			if planPrice.LT(bestPlan.Price) {
+	//				bestPlan = types.ExecutionPlan{
 	//					Price:      planPrice,
 	//					FirstOrder: firstPassiveOrder,
 	//				}
@@ -199,41 +104,24 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	//
 	//		// Check synthetic price by going through two orders:
 	//		// (SourceDenom, X) -> (X, DestinationDenom)
-	//		for _, secondInstrument := range k.instruments {
-	//			if secondInstrument.Source != firstInstrument.Destination {
-	//				continue
-	//			}
+	//		secondPassiveOrder := k.getBestOrder(ctx, firstDenom, DestinationDenom)
+	//		if secondPassiveOrder == nil {
+	//			continue
+	//		}
 	//
-	//			if secondInstrument.Destination != DestinationDenom {
-	//				continue
-	//			}
+	//		planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
+	//		planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
 	//
-	//			if secondInstrument.Orders.Empty() {
-	//				continue
-	//			}
-	//
-	//			secondPassiveOrder := secondInstrument.Orders.LeftKey().(*types.Order)
-	//
-	//			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
-	//			planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-	//
-	//			if planPrice.LT(result.Price) {
-	//				result = types.ExecutionPlan{
-	//					Price:       planPrice,
-	//					FirstOrder:  firstPassiveOrder,
-	//					SecondOrder: secondPassiveOrder,
-	//				}
+	//		if planPrice.LT(bestPlan.Price) {
+	//			bestPlan = types.ExecutionPlan{
+	//				Price:       planPrice,
+	//				FirstOrder:  firstPassiveOrder,
+	//				SecondOrder: secondPassiveOrder,
 	//			}
 	//		}
 	//	}
-	//}
-
-}
-
-func getAllPairsFrom(src string, store sdk.KVStore) {
-	it := sdk.KVStorePrefixIterator(store, types.GetInstrumentKeyBySrcAndDst(src, ""))
-	defer it.Close()
-
+	//
+	//	return bestPlan
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
@@ -544,18 +432,6 @@ func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
 			k.setOrder(ctx, order)
 		}
 	}
-
-	//orders.Each(func(_ int, v interface{}) {
-	//	order := v.(*types.Order)
-	//	denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
-	//
-	//	order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
-	//	order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
-	//
-	//	if order.SourceRemaining.IsZero() {
-	//		k.deleteOrder(ctx, order)
-	//	}
-	//})
 }
 
 func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
@@ -573,6 +449,33 @@ func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
 	idxStore.Set(priorityKey, orderbz)
 }
 
+// Get instruments based on current order book. Does not include synthetic instruments.
+func (k Keeper) getInstruments(ctx sdk.Context) (instrs []string) {
+	idxStore := ctx.KVStore(k.keyIndices)
+
+	it := sdk.KVStorePrefixIterator(idxStore, types.GetPriorityKeyPrefix())
+	if !it.Valid() {
+		it.Close()
+		return // No instruments
+	}
+
+	for {
+		src, dst := types.MustParsePriorityKey(it.Key())
+		it.Close()
+
+		instrument := fmt.Sprintf("%v/%v", src, dst)
+		instrs = append(instrs, instrument)
+
+		nextKey := sdk.PrefixEndBytes(types.GetPriorityKeyBySrcAndDst(src, dst))
+		it = idxStore.Iterator(nextKey, nil)
+		if !it.Valid() {
+			break
+		}
+	}
+
+	return
+}
+
 func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
 	var (
 		store    = ctx.KVStore(k.key)
@@ -584,64 +487,6 @@ func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
 
 	priorityKey := types.GetPriorityKey(order.Source.Denom, order.Destination.Denom, order.Price(), order.ID)
 	idxStore.Delete(priorityKey)
-}
-
-func (k *Keeper) updateInstrument(ctx sdk.Context, src, dst string) {
-	bestPlan := types.ExecutionPlan{
-		Price: sdk.NewDec(math.MaxInt64),
-	}
-
-	idxStore := ctx.KVStore(k.keyIndices)
-
-	instrumentKey := types.GetInstrumentKeyBySrcAndDst(src, dst)
-	if !idxStore.Has(instrumentKey) {
-		idxStore.Set(instrumentKey, []byte{})
-	}
-
-	// Find the best direct or synthetic price for a given source/destination denom
-	firstIt := sdk.KVStorePrefixIterator(idxStore, types.GetInstrumentKeyBySrcAndDst(src, ""))
-	defer firstIt.Close()
-
-	for ; firstIt.Valid(); firstIt.Next() {
-		_, firstDenom := types.MustParseInstrumentKey(firstIt.Key())
-
-		firstPassiveOrder := k.getBestOrder(ctx, src, firstDenom)
-		if firstPassiveOrder == nil {
-			continue
-		}
-
-		// Check direct price
-		if firstDenom == dst {
-			// Direct price is better than current plan
-
-			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
-			planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-			if planPrice.LT(bestPlan.Price) {
-				bestPlan = types.ExecutionPlan{
-					Price:      planPrice,
-					FirstOrder: firstPassiveOrder,
-				}
-			}
-		}
-
-		// Check synthetic price by going through two orders:
-		// (SourceDenom, X) -> (X, DestinationDenom)
-		secondPassiveOrder := k.getBestOrder(ctx, firstDenom, dst)
-		if secondPassiveOrder == nil {
-			continue
-		}
-
-		planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price().Mul(secondPassiveOrder.Price()))
-		planPrice = planPrice.Add(sdk.NewDecWithPrec(1, sdk.Precision)) // Add floating point epsilon
-
-		if planPrice.LT(bestPlan.Price) {
-			bestPlan = types.ExecutionPlan{
-				Price:       planPrice,
-				FirstOrder:  firstPassiveOrder,
-				SecondOrder: secondPassiveOrder,
-			}
-		}
-	}
 }
 
 func (k Keeper) getBestOrder(ctx sdk.Context, src, dst string) *types.Order {

@@ -5,8 +5,10 @@
 package keeper
 
 import (
+	"encoding/json"
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/util"
 	"sort"
 	"time"
 
@@ -18,14 +20,14 @@ import (
 )
 
 func NewQuerier(k *Keeper) sdk.Querier {
-	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryInstruments:
-			return queryInstruments(k)
+			return queryInstruments(ctx, k)
 		case types.QueryInstrument:
-			return queryInstrument(k, path[1:], req)
+			return queryInstrument(ctx, k, path[1:], req)
 		case types.QueryByAccount:
-			return queryByAccount(k, path[1:], req)
+			return queryByAccount(ctx, k, path[1:], req)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unrecognized market query endpoint")
 		}
@@ -79,7 +81,7 @@ func (q QueryOrderResponse) String() string {
 	return fmt.Sprintf(" - %v %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Created, q.Owner.String())
 }
 
-type OrderResponses []types.Order
+type OrderResponses []*types.Order
 
 func (o OrderResponses) String() string {
 	panic("implement me")
@@ -99,69 +101,67 @@ func (o OrderResponses) Swap(i, j int) {
 
 var _ sort.Interface = OrderResponses{}
 
-func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
-	panic("Fix")
-	//if len(path) != 1 {
-	//	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
-	//}
-	//
-	//account, err := sdk.AccAddressFromBech32(path[0])
-	//if err != nil {
-	//	return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
-	//}
-	//
+func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
+	if len(path) != 1 {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
+	}
+
+	account, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
+	}
+
 	//o := k.accountOrders.GetAllOrders(account)
+	orders := k.GetOrdersByOwner(ctx, account)
 	//orders := make(OrderResponses, 0)
-	//
-	//it := o.Iterator()
-	//for it.Next() {
-	//	order := it.Value().(*types.Order)
-	//	orders = append(orders, *order)
-	//}
-	//
+
+	// TODO Determine suitable ordering or leave undefined
 	//sort.Sort(orders)
-	//
-	//resp := QueryByAccountResponse{orders}
-	//return json.Marshal(resp)
+
+	resp := QueryByAccountResponse{orders}
+	return json.Marshal(resp)
 }
 
-func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
-	panic("Fix")
-	//if len(path) != 2 {
-	//	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
-	//}
-	//
-	//source, destination := path[0], path[1]
-	//
-	//if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
-	//	return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
-	//}
-	//
-	//instrument := k.instruments.GetInstrument(source, destination)
-	//
-	//orders := make([]QueryOrderResponse, 0)
-	//if instrument != nil {
-	//	it := instrument.Orders.Iterator()
-	//	for it.Next() {
-	//		order := it.Key().(*types.Order)
-	//
-	//		orders = append(orders, QueryOrderResponse{
-	//			ID:              order.ID,
-	//			Created:         order.Created,
-	//			Owner:           order.Owner,
-	//			SourceRemaining: order.SourceRemaining.String(),
-	//			Price:           order.Price(),
-	//		})
-	//	}
-	//}
-	//
-	//resp := QueryInstrumentResponse{
-	//	Source:      source,
-	//	Destination: destination,
-	//	Orders:      orders,
-	//}
-	//
-	//return json.Marshal(resp)
+func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
+	// NOTE Provides a list of physical (ie notably not synthetic pairs) passive orders.
+	if len(path) != 2 {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
+	}
+
+	source, destination := path[0], path[1]
+
+	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
+	}
+
+	orders := make([]QueryOrderResponse, 0)
+
+	idxStore := ctx.KVStore(k.keyIndices)
+	key := types.GetPriorityKeyBySrcAndDst(source, destination)
+
+	it := sdk.KVStorePrefixIterator(idxStore, key)
+	defer it.Close()
+
+	for it.Valid() {
+		order := new(types.Order)
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
+
+		orders = append(orders, QueryOrderResponse{
+			ID:              order.ID,
+			Created:         order.Created,
+			Owner:           order.Owner,
+			SourceRemaining: order.SourceRemaining.String(),
+			Price:           order.Price(),
+		})
+	}
+
+	resp := QueryInstrumentResponse{
+		Source:      source,
+		Destination: destination,
+		Orders:      orders,
+	}
+
+	return json.Marshal(resp)
 }
 
 type QueryInstrumentsWrapperResponse struct {
@@ -183,11 +183,12 @@ type QueryInstrumentsResponse struct {
 	OrderCount  int    `json:"order_count" yaml:"order_count"`
 }
 
+//
 func (q QueryInstrumentsResponse) String() string {
 	return fmt.Sprintf("%v => %v (%v)", q.Source, q.Destination, q.OrderCount)
 }
 
-func queryInstruments(k *Keeper) ([]byte, error) {
+func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
 	panic("Fix")
 	//response := make([]QueryInstrumentsResponse, len(k.instruments))
 	//for i, v := range k.instruments {

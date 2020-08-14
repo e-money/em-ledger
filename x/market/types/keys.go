@@ -32,24 +32,27 @@ var (
 	globalOrderIDKey = []byte("globalOrderID")
 
 	// IAVL Store prefixes
-	keysPrefix       = []byte{0x01}
-	instrumentPrefix = []byte{0x02}
-	priorityPrefix   = []byte{0x03}
-	ownerPrefix      = []byte{0x04}
+	keysPrefix = []byte{0x01}
+	//instrumentPrefix = []byte{0x02}
+	priorityPrefix = []byte{0x03}
+	ownerPrefix    = []byte{0x04}
 )
+
+/*
+ - Priority-prefix: Orders sorted by SRC/DST/Price/orderID
+ - Owner-prefix : Order sorted by owner-account/ClientOrderId
+
+
+*/
 
 func GetOrderIDGeneratorKey() []byte {
 	return append(keysPrefix, globalOrderIDKey...)
 }
 
-func GetInstrumentsKey() []byte {
-	return instrumentPrefix
-}
-
-func GetInstrumentKeyBySrcAndDst(src, dst string) []byte {
-	instr := fmt.Sprintf("%v/%v", src, dst)
-	return append(instrumentPrefix, []byte(instr)...)
-}
+//func GetInstrumentKeyBySrcAndDst(src, dst string) []byte {
+//	instr := fmt.Sprintf("%v/%v", src, dst)
+//	return append(instrumentPrefix, []byte(instr)...)
+//}
 
 func GetPriorityKeyBySrcAndDst(src, dst string) []byte {
 	instr := fmt.Sprintf("%v/%v", src, dst)
@@ -59,6 +62,10 @@ func GetPriorityKeyBySrcAndDst(src, dst string) []byte {
 func GetPriorityKeyBySource(src string) []byte {
 	instr := fmt.Sprintf("%v/", src)
 	return append(priorityPrefix, []byte(instr)...)
+}
+
+func GetPriorityKeyPrefix() []byte {
+	return priorityPrefix
 }
 
 func GetPriorityKeyByInstrument(src, dst string) []byte {
@@ -71,28 +78,6 @@ func GetPriorityKey(src, dst string, price sdk.Dec, orderId uint64) []byte {
 	res = append(res, sdk.SortableDecBytes(price)...)
 	res = append(res, util.Uint64ToBytes(orderId)...)
 	return res
-}
-
-func MustParseInstrumentKey(key []byte) (source, destination string) {
-	src, dst, err := ParseInstrumentKey(key)
-	if err != nil {
-		panic(err)
-	}
-
-	return src, dst
-}
-
-func ParseInstrumentKey(key []byte) (source, destination string, err error) {
-	if len(key) == 0 {
-		return "", "", fmt.Errorf("empty key received")
-	}
-
-	if !bytes.HasPrefix(key, instrumentPrefix) {
-		return "", "", fmt.Errorf("invalid prefix: %v", hex.EncodeToString(key))
-	}
-
-	a := strings.Split(string(key[1:]), "/")
-	return a[0], a[1], nil
 }
 
 func MustParsePriorityKey(key []byte) (source, destination string) {

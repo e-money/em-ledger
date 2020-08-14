@@ -776,6 +776,40 @@ func TestPreventPhantomLiquidity(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestListInstruments(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc := createAccount(ctx, ak, "acc1", "5000eur,5000chf,5000usd,5000jpy")
+
+	gasmeter := sdk.NewGasMeter(math.MaxUint64)
+
+	instruments := k.getInstruments(ctx)
+	require.Empty(t, instruments)
+
+	// Create instruments between all denoms
+	for _, src := range acc.GetCoins() {
+		for _, dst := range acc.GetCoins() {
+			if src.Denom == dst.Denom {
+				continue
+			}
+
+			for i := 0; i < 3; i++ {
+				var (
+					s = fmt.Sprintf("50%v", src.Denom)
+					d = fmt.Sprintf("100%v", dst.Denom)
+				)
+
+				order := order(acc, s, d)
+				_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order)
+				require.NoError(t, err)
+			}
+		}
+	}
+
+	instruments = k.getInstruments(ctx)
+	require.Len(t, instruments, 12)
+}
+
 func printTotalBalance(accs ...authexported.Account) {
 	sum := sdk.NewCoins()
 
