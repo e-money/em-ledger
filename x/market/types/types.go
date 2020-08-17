@@ -18,8 +18,8 @@ import (
 type (
 	Instrument struct {
 		Source, Destination string
-		LastPrice           sdk.Dec
-		BestPlan            *ExecutionPlan
+		//LastPrice           sdk.Dec
+		//BestPlan            *ExecutionPlan
 	}
 
 	Order struct {

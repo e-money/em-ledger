@@ -153,6 +153,8 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 			SourceRemaining: order.SourceRemaining.String(),
 			Price:           order.Price(),
 		})
+
+		it.Next()
 	}
 
 	resp := QueryInstrumentResponse{
@@ -180,26 +182,25 @@ func (q QueryInstrumentsWrapperResponse) String() string {
 type QueryInstrumentsResponse struct {
 	Source      string `json:"source" yaml:"source"`
 	Destination string `json:"destination" yaml:"destination"`
-	OrderCount  int    `json:"order_count" yaml:"order_count"`
 }
 
 //
 func (q QueryInstrumentsResponse) String() string {
-	return fmt.Sprintf("%v => %v (%v)", q.Source, q.Destination, q.OrderCount)
+	return fmt.Sprintf("%v => %v", q.Source, q.Destination)
 }
 
 func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
-	panic("Fix")
-	//response := make([]QueryInstrumentsResponse, len(k.instruments))
-	//for i, v := range k.instruments {
-	//	response[i] = QueryInstrumentsResponse{
-	//		Source:      v.Source,
-	//		Destination: v.Destination,
-	//		OrderCount:  v.Orders.Size(),
-	//	}
-	//}
-	//
-	//// Wrap the instruments in an object in anticipation of later expansion
-	//instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
-	//return json.Marshal(instrumentsWrapper)
+	instruments := k.getInstruments(ctx)
+
+	response := make([]QueryInstrumentsResponse, len(instruments))
+	for i, v := range instruments {
+		response[i] = QueryInstrumentsResponse{
+			Source:      v.Source,
+			Destination: v.Destination,
+		}
+	}
+
+	// Wrap the instruments in an object in anticipation of later expansion
+	instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
+	return json.Marshal(instrumentsWrapper)
 }

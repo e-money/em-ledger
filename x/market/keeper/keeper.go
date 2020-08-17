@@ -450,7 +450,7 @@ func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
 }
 
 // Get instruments based on current order book. Does not include synthetic instruments.
-func (k Keeper) getInstruments(ctx sdk.Context) (instrs []string) {
+func (k Keeper) getInstruments(ctx sdk.Context) (instrs []types.Instrument) {
 	idxStore := ctx.KVStore(k.keyIndices)
 
 	it := sdk.KVStorePrefixIterator(idxStore, types.GetPriorityKeyPrefix())
@@ -463,12 +463,12 @@ func (k Keeper) getInstruments(ctx sdk.Context) (instrs []string) {
 		src, dst := types.MustParsePriorityKey(it.Key())
 		it.Close()
 
-		instrument := fmt.Sprintf("%v/%v", src, dst)
-		instrs = append(instrs, instrument)
+		instrs = append(instrs, types.Instrument{src, dst})
 
 		nextKey := sdk.PrefixEndBytes(types.GetPriorityKeyBySrcAndDst(src, dst))
 		it = idxStore.Iterator(nextKey, nil)
 		if !it.Valid() {
+			it.Close()
 			break
 		}
 	}
