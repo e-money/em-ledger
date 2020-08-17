@@ -3,7 +3,6 @@ module github.com/e-money/em-ledger
 go 1.12
 
 require (
-	github.com/Workiva/go-datastructures v1.0.52
 	github.com/coreos/go-etcd v2.0.0+incompatible // indirect
 	github.com/cosmos/cosmos-sdk v0.39.0
 	github.com/cpuguy83/go-md2man v1.0.10 // indirect

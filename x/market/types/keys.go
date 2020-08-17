@@ -33,7 +33,7 @@ var (
 
 	// IAVL Store prefixes
 	keysPrefix = []byte{0x01}
-	//instrumentPrefix = []byte{0x02}
+
 	priorityPrefix = []byte{0x03}
 	ownerPrefix    = []byte{0x04}
 )
@@ -41,18 +41,11 @@ var (
 /*
  - Priority-prefix: Orders sorted by SRC/DST/Price/orderID
  - Owner-prefix : Order sorted by owner-account/ClientOrderId
-
-
 */
 
 func GetOrderIDGeneratorKey() []byte {
 	return append(keysPrefix, globalOrderIDKey...)
 }
-
-//func GetInstrumentKeyBySrcAndDst(src, dst string) []byte {
-//	instr := fmt.Sprintf("%v/%v", src, dst)
-//	return append(instrumentPrefix, []byte(instr)...)
-//}
 
 func GetPriorityKeyBySrcAndDst(src, dst string) []byte {
 	instr := fmt.Sprintf("%v/%v", src, dst)

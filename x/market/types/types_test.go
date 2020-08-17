@@ -73,20 +73,6 @@ func TestInvalidOrder(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestComparator(t *testing.T) {
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), []byte("acc1"), time.Now(), "A")
-	order1.ID = 1
-
-	order2, _ := NewOrder(coin("100eur"), coin("100usd"), []byte("acc2"), time.Now(), "A")
-	order2.ID = 2
-
-	require.True(t, OrderPriorityComparator(&order1, &order2) > 0)
-	require.True(t, OrderPriorityComparator(&order2, &order1) < 0)
-
-	require.True(t, OrderPriorityComparator(&order1, &order1) == 0)
-	require.True(t, OrderPriorityComparator(&order2, &order2) == 0)
-}
-
 func coin(s string) sdk.Coin {
 	coin, err := sdk.ParseCoin(s)
 	if err != nil {

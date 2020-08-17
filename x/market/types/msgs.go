@@ -47,22 +47,18 @@ func (m MsgCancelReplaceOrder) Type() string {
 func (m MsgCancelReplaceOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
-		//return sdk.ErrInvalidAddress("missing owner address")
 	}
 
 	if !m.Destination.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "destination amount is invalid: %v", m.Destination.String())
-		//return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
 	}
 
 	if !m.Source.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "source amount is invalid: %v", m.Source.String())
-		//return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
 	}
 
 	if m.Source.Denom == m.Destination.Denom {
 		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", m.Source.Denom, m.Destination.Denom)
-		//return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
 	}
 
 	err := validateClientOrderID(m.OrigClientOrderId)
@@ -116,22 +112,18 @@ func (m MsgAddOrder) Type() string {
 func (m MsgAddOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
-		//return sdk.ErrInvalidAddress("missing owner address")
 	}
 
 	if !m.Destination.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "destination amount is invalid: %v", m.Destination.String())
-		//return sdk.ErrInvalidCoins("destination amount is invalid: " + m.Destination.String())
 	}
 
 	if !m.Source.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "source amount is invalid: %v", m.Source.String())
-		//return sdk.ErrInvalidCoins("source amount is invalid: " + m.Source.String())
 	}
 
 	if m.Source.Denom == m.Destination.Denom {
 		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", m.Source.Denom, m.Destination.Denom)
-		//return ErrInvalidInstrument(m.Source.Denom, m.Destination.Denom)
 	}
 
 	return validateClientOrderID(m.ClientOrderId)
@@ -148,7 +140,6 @@ func (m MsgAddOrder) GetSigners() []sdk.AccAddress {
 func validateClientOrderID(id string) error {
 	if len(id) > ClientOrderIDMaxLength {
 		return sdkerrors.Wrap(ErrInvalidClientOrderId, id)
-		//return ErrInvalidClientOrderId(id)
 	}
 
 	return nil

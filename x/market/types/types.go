@@ -89,53 +89,6 @@ func (o Order) MarshalJSON() ([]byte, error) {
 	return []byte(s), nil
 }
 
-//func (is Instruments) String() string {
-//	sb := strings.Builder{}
-//
-//	for _, instr := range is {
-//		sb.WriteString(fmt.Sprintf("%v/%v - %v\n", instr.Source, instr.Destination, instr.Orders.Size()))
-//	}
-//
-//	return sb.String()
-//}
-
-//func (is *Instruments) InsertOrder(order *Order) {
-//	for _, i := range *is {
-//		if i.Destination == order.Destination.Denom && i.Source == order.Source.Denom {
-//			i.Orders.Put(order, nil)
-//			return
-//		}
-//	}
-//
-//	i := Instrument{
-//		Source:      order.Source.Denom,
-//		Destination: order.Destination.Denom,
-//		Orders:      btree.NewWith(3, OrderPriorityComparator),
-//	}
-//
-//	*is = append(*is, i)
-//	i.Orders.Put(order, nil)
-//}
-
-//func (is *Instruments) GetInstrument(source, destination string) *Instrument {
-//	for _, i := range *is {
-//		if i.Source == source && i.Destination == destination {
-//			return &i
-//		}
-//	}
-//
-//	return nil
-//}
-
-//func (is *Instruments) RemoveInstrument(instr Instrument) {
-//	for index, v := range *is {
-//		if instr.Source == v.Source && instr.Destination == v.Destination {
-//			*is = append((*is)[:index], (*is)[index+1:]...)
-//			return
-//		}
-//	}
-//}
-
 // Manual handling of de-/serialization in order to include private fields
 func (o Order) MarshalAmino() ([]byte, error) {
 	w := new(bytes.Buffer)
@@ -182,30 +135,6 @@ func (o *Order) allFields() []interface{} {
 	}
 }
 
-// Should return a number:
-//    negative , if a < b
-//    zero     , if a == b
-//    positive , if a > b
-func OrderPriorityComparator(a, b interface{}) int {
-	aAsserted := a.(*Order)
-	bAsserted := b.(*Order)
-
-	// Price priority
-	switch {
-	case aAsserted.Price().LT(bAsserted.Price()):
-		return -1
-	case aAsserted.Price().GT(bAsserted.Price()):
-		return 1
-	}
-
-	// Time priority
-	return int(aAsserted.ID - bAsserted.ID)
-}
-
-//func (o Order) InvertedPrice() sdk.Dec {
-//	return o.invertedPrice
-//}
-
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
 func (o Order) IsFilled() bool {
 	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec()) || o.DestinationFilled.GTE(o.Destination.Amount)
@@ -214,17 +143,14 @@ func (o Order) IsFilled() bool {
 func (o Order) IsValid() error {
 	if o.Source.Amount.LTE(sdk.ZeroInt()) {
 		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
-		//return ErrInvalidPrice(o.Source, o.Destination)
 	}
 
 	if o.Destination.Amount.LTE(sdk.ZeroInt()) {
 		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
-		//return ErrInvalidPrice(o.Source, o.Destination)
 	}
 
 	if o.Source.Denom == o.Destination.Denom {
 		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", o.Source.Denom, o.Destination.Denom)
-		//return ErrInvalidInstrument(o.Source.Denom, o.Destination.Denom)
 	}
 
 	return nil
