@@ -95,6 +95,31 @@ func TestBasicTrade2(t *testing.T) {
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 
+func TestBasicTrade3(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "230000usd")
+	acc2 := createAccount(ctx, ak, "acc2", "890000eur")
+	acc3 := createAccount(ctx, ak, "acc3", "25chf")
+
+	totalSupply := snapshotAccounts(ctx, ak)
+
+	order1 := order(acc2, "888850eur", "22807162chf")
+	_, err := k.NewOrderSingle(ctx, order1)
+	require.NoError(t, err)
+
+	order2 := order(acc3, "12chf", "4usd")
+	_, err = k.NewOrderSingle(ctx, order2)
+	require.NoError(t, err)
+
+	order3 := order(acc1, "227156usd", "24971eur")
+
+	_, err = k.NewOrderSingle(ctx, order3)
+	require.NoError(t, err)
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
+}
+
 func TestInsufficientGas(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 

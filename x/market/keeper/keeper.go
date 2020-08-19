@@ -202,6 +202,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 
 			// Use the passive order's price in the market.
 			stepSourceFilled := stepDestinationFilled.Quo(passiveOrder.Price())
+			if stepSourceFilled.LT(sdk.NewDec(1)) {
+				stepSourceFilled = sdk.NewDec(1)
+			}
 
 			// Update the aggressive order during the plan's final step.
 			if passiveOrder.Destination.Denom == aggressiveOrder.Source.Denom {
