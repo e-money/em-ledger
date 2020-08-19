@@ -7,16 +7,16 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/util"
 	"sort"
+	"strings"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
-	"strings"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func NewQuerier(k *Keeper) sdk.Querier {

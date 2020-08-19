@@ -7,6 +7,7 @@ package keeper
 import (
 	"fmt"
 	"math/rand"
+	"runtime/debug"
 	"testing"
 	"time"
 
@@ -20,10 +21,24 @@ const (
 	maxPriceVariation = 20 // Create variations on price in the interval +-10% of the base price
 )
 
+//func TestFuzzingInfinite(t *testing.T) {
+//	for {
+//		TestFuzzing1(t)
+//	}
+//}
+
 func TestFuzzing1(t *testing.T) {
 	seed := time.Now().Unix()
 	fmt.Println("Using seed", seed)
 	r := rand.New(rand.NewSource(seed))
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("seed", seed, "caused a panic:", r)
+			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			t.Fail()
+		}
+	}()
 
 	ctx, k, ak, _, _ := createTestComponents(t)
 
