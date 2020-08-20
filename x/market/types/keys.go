@@ -34,14 +34,25 @@ var (
 	// IAVL Store prefixes
 	keysPrefix = []byte{0x01}
 
-	priorityPrefix = []byte{0x03}
-	ownerPrefix    = []byte{0x04}
+	marketDataPrefix = []byte{0x02}
+	priorityPrefix   = []byte{0x03}
+	ownerPrefix      = []byte{0x04}
 )
 
 /*
  - Priority-prefix: Orders sorted by SRC/DST/Price/orderID
  - Owner-prefix : Order sorted by owner-account/ClientOrderId
+ - marketData-Prefix : Last traded price sorted by SRC/DST
 */
+
+func GetMarketDataPrefix() []byte {
+	return marketDataPrefix
+}
+
+func GetMarketDataKey(src, dst string) []byte {
+	instr := fmt.Sprintf("%v/%v", src, dst)
+	return append(GetMarketDataPrefix(), []byte(instr)...)
+}
 
 func GetOrderIDGeneratorKey() []byte {
 	return append(keysPrefix, globalOrderIDKey...)

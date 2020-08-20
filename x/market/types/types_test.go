@@ -73,6 +73,45 @@ func TestInvalidOrder(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestMarketDataSerialization1(t *testing.T) {
+	md := MarketData{
+		Source:      "EUR",
+		Destination: "CHF",
+		LastPrice:   nil,
+		Timestamp:   nil,
+	}
+
+	bz, err := ModuleCdc.MarshalBinaryBare(&md)
+	require.NoError(t, err)
+
+	md2 := MarketData{}
+
+	err = ModuleCdc.UnmarshalBinaryBare(bz, &md2)
+	require.NoError(t, err)
+	require.Nil(t, md2.Timestamp)
+}
+
+func TestMarketDataSerialization2(t *testing.T) {
+	ts := time.Now()
+	md := MarketData{
+		Source:      "EUR",
+		Destination: "CHF",
+		LastPrice:   nil,
+		Timestamp:   &ts,
+	}
+
+	bz, err := ModuleCdc.MarshalBinaryBare(&md)
+	require.NoError(t, err)
+
+	md2 := MarketData{}
+
+	err = ModuleCdc.UnmarshalBinaryBare(bz, &md2)
+	require.NoError(t, err)
+
+	ts = ts.UTC()
+	require.Equal(t, &ts, md2.Timestamp)
+}
+
 func coin(s string) sdk.Coin {
 	coin, err := sdk.ParseCoin(s)
 	if err != nil {

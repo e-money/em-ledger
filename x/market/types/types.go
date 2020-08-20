@@ -44,6 +44,12 @@ type (
 		FirstOrder,
 		SecondOrder *Order
 	}
+
+	MarketData struct {
+		Source, Destination string
+		LastPrice           *sdk.Dec
+		Timestamp           *time.Time
+	}
 )
 
 func (o Order) MarshalJSON() ([]byte, error) {

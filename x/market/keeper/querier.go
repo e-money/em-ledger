@@ -180,8 +180,10 @@ func (q QueryInstrumentsWrapperResponse) String() string {
 }
 
 type QueryInstrumentsResponse struct {
-	Source      string `json:"source" yaml:"source"`
-	Destination string `json:"destination" yaml:"destination"`
+	Source      string     `json:"source" yaml:"source"`
+	Destination string     `json:"destination" yaml:"destination"`
+	LastPrice   *sdk.Dec   `json:"last_price,omitempty" yaml:"last_price,omitempty"`
+	LastTraded  *time.Time `json:"last_traded,omitempty" yaml:"last_traded,omitempty"`
 }
 
 //
@@ -197,6 +199,8 @@ func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
 		response[i] = QueryInstrumentsResponse{
 			Source:      v.Source,
 			Destination: v.Destination,
+			LastPrice:   v.LastPrice,
+			LastTraded:  v.Timestamp,
 		}
 	}
 

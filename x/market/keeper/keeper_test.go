@@ -48,10 +48,22 @@ func TestBasicTrade(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
 
+	// Ensure that the instrument was registered
+	instruments := k.getInstruments(ctx)
+	require.Len(t, instruments, 2)
+	require.Nil(t, instruments[0].LastPrice)
+
 	gasmeter = sdk.NewGasMeter(math.MaxUint64)
 	order2 := order(acc2, "60usd", "50eur")
 	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order2)
 	require.NoError(t, err)
+
+	// Ensure that the trade has been correctly registered in market data.
+	instruments = k.getInstruments(ctx)
+	require.Len(t, instruments, 2)
+	p := order1.Price()
+	require.Equal(t, instruments[0].LastPrice, &p)
+	require.Equal(t, *instruments[0].Timestamp, ctx.BlockTime())
 
 	// Ensure that gas usage is not higher due to the order being matched.
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
@@ -869,7 +881,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 
 	pk := params.NewKeeper(types.ModuleCdc, keyParams, tkeyParams)
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain", Time: time.Now()}, true, log.NewNopLogger())
 	accountKeeper := auth.NewAccountKeeper(types.ModuleCdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	accountKeeperWrapped := emauth.Wrap(accountKeeper)
 

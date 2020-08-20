@@ -9,6 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -171,6 +172,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	}
 
 	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
+	k.registerMarketData(ctx, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
+	k.registerMarketData(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
 
 	types.EmitNewOrderEvent(ctx, aggressiveOrder)
 
@@ -247,24 +250,30 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			}
 
 			if passiveOrder.IsFilled() {
-				types.EmitFilledEvent(ctx, *passiveOrder)
-				// Order has been filled. Remove it from queue.
+				types.EmitFilledEvent(ctx, *passiveOrder, passiveOrder.Price())
 				k.deleteOrder(ctx, passiveOrder)
 			} else {
-				types.EmitPartiallyFilledEvent(ctx, *passiveOrder)
+				types.EmitPartiallyFilledEvent(ctx, *passiveOrder, passiveOrder.Price())
 				k.setOrder(ctx, passiveOrder)
 			}
+
+			// Register trades in market data
+			k.setMarketData(ctx, passiveOrder.Source.Denom, passiveOrder.Destination.Denom, passiveOrder.Price())
+			k.setMarketData(ctx, passiveOrder.Destination.Denom, passiveOrder.Source.Denom, sdk.NewDec(1).Quo(passiveOrder.Price()))
 
 			stepDestinationFilled = stepSourceFilled
 		}
 
 		if aggressiveOrder.IsFilled() {
-			types.EmitFilledEvent(ctx, aggressiveOrder)
-			// Order has been filled.
+			types.EmitFilledEvent(ctx, aggressiveOrder, plan.Price)
 			break
+		} else {
+			types.EmitPartiallyFilledEvent(ctx, aggressiveOrder, plan.Price)
 		}
 
-		types.EmitPartiallyFilledEvent(ctx, aggressiveOrder)
+		// Register trades in market data
+		k.setMarketData(ctx, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom, plan.Price)
+		k.setMarketData(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom, sdk.NewDec(1).Quo(plan.Price))
 	}
 
 	// Order was not fully matched. Add to book unless restricted.
@@ -446,27 +455,22 @@ func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
 }
 
 // Get instruments based on current order book. Does not include synthetic instruments.
-func (k Keeper) getInstruments(ctx sdk.Context) (instrs []types.Instrument) {
+func (k Keeper) getInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 	idxStore := ctx.KVStore(k.keyIndices)
 
-	it := sdk.KVStorePrefixIterator(idxStore, types.GetPriorityKeyPrefix())
-	if !it.Valid() {
-		it.Close()
-		return // No instruments
-	}
+	it := idxStore.Iterator(types.GetMarketDataPrefix(), sdk.PrefixEndBytes(types.GetMarketDataPrefix()))
+	defer it.Close()
 
-	for {
-		src, dst := types.MustParsePriorityKey(it.Key())
-		it.Close()
+	for ; it.Valid(); it.Next() {
+		md := types.MarketData{}
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), &md)
 
-		instrs = append(instrs, types.Instrument{src, dst})
-
-		nextKey := sdk.PrefixEndBytes(types.GetPriorityKeyBySrcAndDst(src, dst))
-		it = idxStore.Iterator(nextKey, nil)
-		if !it.Valid() {
-			it.Close()
-			break
+		// Amino appears to serialize nil *time.Time entries as Unix epoch. Convert to nil.
+		if md.Timestamp != nil && md.Timestamp.Equal(time.Unix(0, 0)) {
+			md.Timestamp = nil
 		}
+
+		instrs = append(instrs, md)
 	}
 
 	return
@@ -575,4 +579,34 @@ func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
 	store.Set(types.GetOrderIDGeneratorKey(), bz)
 
 	return orderID
+}
+
+func (k Keeper) registerMarketData(ctx sdk.Context, src, dst string) {
+	idxStore := ctx.KVStore(k.keyIndices)
+
+	key := types.GetMarketDataKey(src, dst)
+
+	if idxStore.Has(key) {
+		return
+	}
+
+	md := types.MarketData{
+		Source:      src,
+		Destination: dst,
+	}
+
+	bz := k.cdc.MustMarshalBinaryBare(md)
+	idxStore.Set(key, bz)
+}
+
+// Register succesful trade execution
+func (k Keeper) setMarketData(ctx sdk.Context, src, dst string, price sdk.Dec) {
+	idxStore := ctx.KVStore(k.keyIndices)
+	timestamp := ctx.BlockTime()
+
+	md := types.MarketData{src, dst, &price, &timestamp}
+	key := types.GetMarketDataKey(src, dst)
+
+	bz := k.cdc.MustMarshalBinaryBare(md)
+	idxStore.Set(key, bz)
 }
