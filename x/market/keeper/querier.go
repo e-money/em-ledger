@@ -66,8 +66,7 @@ func (q QueryByAccountResponse) String() string {
 }
 
 type QueryOrderResponse struct {
-	ID      uint64    `json:"id" yaml:"id"`
-	Created time.Time `json:"created" yaml:"created"`
+	ID uint64 `json:"id" yaml:"id"`
 
 	Owner           sdk.AccAddress `json:"owner" yaml:"owner"`
 	SourceRemaining string         `json:"source_remaining" yaml:"source_remaining"`
@@ -78,7 +77,7 @@ type QueryOrderResponse struct {
 }
 
 func (q QueryOrderResponse) String() string {
-	return fmt.Sprintf(" - %v %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Created, q.Owner.String())
+	return fmt.Sprintf(" - %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Owner.String())
 }
 
 type OrderResponses []*types.Order
@@ -148,7 +147,6 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 
 		orders = append(orders, QueryOrderResponse{
 			ID:              order.ID,
-			Created:         order.Created,
 			Owner:           order.Owner,
 			SourceRemaining: order.SourceRemaining.String(),
 			Price:           order.Price(),

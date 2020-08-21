@@ -19,4 +19,8 @@ var (
 	ErrInvalidPrice                            = sdkerrors.Register(ModuleName, 8, "")
 	ErrNoSourceRemaining                       = sdkerrors.Register(ModuleName, 9, "")
 	ErrUnknownAsset                            = sdkerrors.Register(ModuleName, 10, "")
+	ErrUnknownOrderType                        = sdkerrors.Register(ModuleName, 11, "Unknown order type")
+	ErrUnknownTimeInForce                      = sdkerrors.Register(ModuleName, 12, "")
+	ErrNoMarketDataAvailable                   = sdkerrors.Register(ModuleName, 13, "No market data available for instrument")
+	ErrInvalidSlippage                         = sdkerrors.Register(ModuleName, 14, "Invalid slippage")
 )

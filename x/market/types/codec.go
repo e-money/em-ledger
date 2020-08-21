@@ -13,7 +13,7 @@ import (
 
 // Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgAddOrder{}, "e-money/MsgAddOrder", nil)
+	cdc.RegisterConcrete(MsgAddLimitOrder{}, "e-money/MsgAddLimitOrder", nil)
 	cdc.RegisterConcrete(MsgCancelReplaceOrder{}, "e-money/MsgCancelReplaceOrder", nil)
 	cdc.RegisterConcrete(MsgCancelOrder{}, "e-money/MsgCancelOrder", nil)
 }

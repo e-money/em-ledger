@@ -17,8 +17,11 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case types.MsgAddOrder:
-			return handleMsgAddOrder(ctx, k, msg)
+		case types.MsgAddLimitOrder:
+			return handleMsgAddLimitOrder(ctx, k, msg)
+
+		case types.MsgAddMarketOrder:
+			return handleMsgAddMarketOrder(ctx, k, msg)
 
 		case types.MsgCancelOrder:
 			return handleMsgCancelOrder(ctx, k, msg)
@@ -32,26 +35,28 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgAddOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddOrder) (*sdk.Result, error) {
-	order, err := types.NewOrder(msg.Source, msg.Destination, msg.Owner, ctx.BlockTime(), msg.ClientOrderId)
+func handleMsgAddMarketOrder(ctx sdk.Context, k *keeper.Keeper, msg types.MsgAddMarketOrder) (*sdk.Result, error) {
+	return k.NewMarketOrderWithSlippage(ctx, msg.Source, msg.Destination, msg.MaxSlippage, msg.Owner, msg.TimeInForce, msg.ClientOrderId)
+}
+
+func handleMsgAddLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddLimitOrder) (*sdk.Result, error) {
+	order, err := types.NewOrder(types.Order_Limit, msg.TimeInForce, msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO Emit events.
 	return k.NewOrderSingle(ctx, order)
 }
 
 func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelOrder) (*sdk.Result, error) {
-	// TODO Emit events.
 	return k.CancelOrder(ctx, msg.Owner, msg.ClientOrderId)
 }
 
 func handleMsgCancelReplaceOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceOrder) (*sdk.Result, error) {
-	// TODO Emit events.
-	order, err := types.NewOrder(msg.Source, msg.Destination, msg.Owner, ctx.BlockTime(), msg.NewClientOrderId)
+	order, err := types.NewOrder(0, 0, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err
 	}
+
 	return k.CancelReplaceOrder(ctx, order, msg.OrigClientOrderId)
 }

@@ -139,7 +139,7 @@ var _ = Describe("Market", func() {
 			}
 
 			clientOrderId := "ShouldNotBePresent"
-			addOrder := market.MsgAddOrder{
+			addOrder := market.MsgAddLimitOrder{
 				Owner:         addr3,
 				Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
 				Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),

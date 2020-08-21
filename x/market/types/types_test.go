@@ -12,13 +12,14 @@ import (
 )
 
 func TestSerialization(t *testing.T) {
-	now := time.Now().UTC()
 	// Verify that non-public fields survive de-/serialization
-	order1, _ := NewOrder(coin("100eur"), coin("120usd"), sdk.AccAddress([]byte("acc1")), now, "A")
+	order1, _ := NewOrder(Order_Limit, TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), []byte("acc1"), "A")
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
 	order1.SourceFilled = sdk.NewInt(10)
 	order1.DestinationFilled = sdk.NewInt(50)
+	order1.TimeInForce = TimeInForce_FillOrKill
+	order1.Type = Order_Market
 
 	bz, err := ModuleCdc.MarshalBinaryBare(order1)
 	require.NoError(t, err)
@@ -35,10 +36,8 @@ func TestSerialization(t *testing.T) {
 	require.True(t, order2.SourceRemaining.Int64() > 0)
 	require.True(t, order2.DestinationFilled.Int64() > 0)
 	require.True(t, order2.SourceFilled.Int64() > 0)
-	require.True(t, order2.price.GT(sdk.ZeroDec()))
 
 	require.Equal(t, uint64(3123), order2.ID)
-	require.Equal(t, now, order2.Created)
 	require.Equal(t, order1.ID, order2.ID)
 	require.Equal(t, order1.Source, order2.Source)
 	require.Equal(t, order1.Destination, order2.Destination)
@@ -47,20 +46,22 @@ func TestSerialization(t *testing.T) {
 	require.Equal(t, order1.SourceFilled, order2.SourceFilled)
 	require.Equal(t, sdk.NewInt(50), order2.DestinationFilled)
 	require.Equal(t, order1.DestinationFilled, order2.DestinationFilled)
-	require.Equal(t, order1.price, order2.price)
+
+	require.Equal(t, order1.Type, order2.Type)
+	require.Equal(t, order1.TimeInForce, order2.TimeInForce)
 }
 
 func TestInvalidOrder(t *testing.T) {
 	// 0 amount source
-	_, err := NewOrder(coin("0eur"), coin("120usd"), []byte("acc"), time.Now(), "A")
+	_, err := NewOrder(Order_Market, TimeInForce_GoodTillCancel, coin("0eur"), coin("120usd"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	// 0 amount destination
-	_, err = NewOrder(coin("120eur"), coin("0usd"), []byte("acc"), time.Now(), "A")
+	_, err = NewOrder(Order_Market, TimeInForce_GoodTillCancel, coin("120eur"), coin("0usd"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	// Same denomination
-	_, err = NewOrder(coin("1000eur"), coin("850eur"), []byte("acc"), time.Now(), "A")
+	_, err = NewOrder(Order_Market, TimeInForce_GoodTillCancel, coin("1000eur"), coin("850eur"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	c := sdk.Coin{
@@ -69,7 +70,7 @@ func TestInvalidOrder(t *testing.T) {
 	}
 
 	// Negative source
-	_, err = NewOrder(c, coin("120usd"), []byte("acc"), time.Now(), "B")
+	_, err = NewOrder(Order_Market, TimeInForce_GoodTillCancel, c, coin("120usd"), []byte("acc"), "B")
 	require.Error(t, err)
 }
 
@@ -88,7 +89,10 @@ func TestMarketDataSerialization1(t *testing.T) {
 
 	err = ModuleCdc.UnmarshalBinaryBare(bz, &md2)
 	require.NoError(t, err)
-	require.Nil(t, md2.Timestamp)
+
+	// Amino serialization converts nil time.Time pointers to Unix epoch.
+	expected := time.Unix(0, 0).UTC()
+	require.Equal(t, &expected, md2.Timestamp)
 }
 
 func TestMarketDataSerialization2(t *testing.T) {

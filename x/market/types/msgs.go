@@ -12,16 +12,27 @@ import (
 const ClientOrderIDMaxLength = 32
 
 var (
-	_ sdk.Msg = MsgAddOrder{}
+	_ sdk.Msg = MsgAddLimitOrder{}
+	_ sdk.Msg = MsgAddMarketOrder{}
 	_ sdk.Msg = MsgCancelOrder{}
 	_ sdk.Msg = MsgCancelReplaceOrder{}
 )
 
 type (
-	MsgAddOrder struct {
+	MsgAddLimitOrder struct {
 		Owner               sdk.AccAddress
+		TimeInForce         int
 		Source, Destination sdk.Coin
 		ClientOrderId       string
+	}
+
+	MsgAddMarketOrder struct {
+		Owner         sdk.AccAddress
+		TimeInForce   int
+		Source        string
+		Destination   sdk.Coin
+		ClientOrderId string
+		MaxSlippage   sdk.Dec
 	}
 
 	MsgCancelOrder struct {
@@ -33,8 +44,51 @@ type (
 		Owner                               sdk.AccAddress
 		Source, Destination                 sdk.Coin
 		OrigClientOrderId, NewClientOrderId string
+		MaxSlippage                         sdk.Dec
 	}
 )
+
+func (m MsgAddMarketOrder) Route() string {
+	return RouterKey
+}
+
+func (m MsgAddMarketOrder) Type() string {
+	return "addlimitorder"
+}
+
+func (m MsgAddMarketOrder) ValidateBasic() error {
+	if m.MaxSlippage.LT(sdk.ZeroDec()) {
+		return sdkerrors.Wrapf(ErrInvalidSlippage, "Cannot be negative")
+	}
+
+	if m.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+	}
+
+	if !m.Destination.IsValid() {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "destination amount is invalid: %v", m.Destination.String())
+	}
+
+	err := sdk.ValidateDenom(m.Source)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "source denomination is invalid: %v", m.Source)
+	}
+
+	if m.Source == m.Destination.Denom {
+		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", m.Source, m.Destination.Denom)
+	}
+
+	return validateClientOrderID(m.ClientOrderId)
+
+}
+
+func (m MsgAddMarketOrder) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+}
+
+func (m MsgAddMarketOrder) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Owner}
+}
 
 func (m MsgCancelReplaceOrder) Route() string {
 	return RouterKey
@@ -101,15 +155,15 @@ func (m MsgCancelOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
 }
 
-func (m MsgAddOrder) Route() string {
+func (m MsgAddLimitOrder) Route() string {
 	return RouterKey
 }
 
-func (m MsgAddOrder) Type() string {
-	return "addorder"
+func (m MsgAddLimitOrder) Type() string {
+	return "addlimitorder"
 }
 
-func (m MsgAddOrder) ValidateBasic() error {
+func (m MsgAddLimitOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
 	}
@@ -129,11 +183,11 @@ func (m MsgAddOrder) ValidateBasic() error {
 	return validateClientOrderID(m.ClientOrderId)
 }
 
-func (m MsgAddOrder) GetSignBytes() []byte {
+func (m MsgAddLimitOrder) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
-func (m MsgAddOrder) GetSigners() []sdk.AccAddress {
+func (m MsgAddLimitOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
 }
 

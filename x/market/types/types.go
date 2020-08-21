@@ -6,13 +6,25 @@ package types
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"strings"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+const (
+	_ = iota
+	Order_Limit
+	Order_Market
+)
+
+const (
+	_ = iota
+	TimeInForce_GoodTillCancel
+	TimeInForce_ImmediateOrCancel
+	TimeInForce_FillOrKill
 )
 
 type (
@@ -23,8 +35,10 @@ type (
 	}
 
 	Order struct {
-		ID      uint64    `json:"id" yaml:"id"`
-		Created time.Time `json:"created" yaml:"created"`
+		ID   uint64 `json:"id" yaml:"id"`
+		Type int    `json:"type" yaml:"type"`
+
+		TimeInForce int `json:"time_in_force" yaml:"time_in_force"`
 
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
 		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
@@ -34,8 +48,6 @@ type (
 		SourceFilled      sdk.Int  `json:"source_filled" yaml:"source_filled"`
 		Destination       sdk.Coin `json:"destination" yaml:"destination"`
 		DestinationFilled sdk.Int  `json:"destination_filled" yaml:"destination_filled"`
-
-		price sdk.Dec
 	}
 
 	ExecutionPlan struct {
@@ -53,15 +65,11 @@ type (
 )
 
 func (o Order) MarshalJSON() ([]byte, error) {
-	createdJson, err := json.Marshal(o.Created)
-	if err != nil {
-		return []byte{}, err
-	}
-
 	s := fmt.Sprintf(`
 {
   "id": %v,
-  "created": %v,
+  "type" : %v,
+  "time_in_force" : %v,
   "owner": "%v",
   "client_order_id": "%v",
   "price": "%v",
@@ -75,11 +83,12 @@ func (o Order) MarshalJSON() ([]byte, error) {
     "denom": "%v",
     "amount": "%v"
   },
-  "destination_filled": "%v"
+  "destination_filled": "%v",
 }
 `,
 		o.ID,
-		string(createdJson),
+		o.Type,
+		o.TimeInForce,
 		o.Owner.String(),
 		o.ClientOrderID,
 		o.Price().String(),
@@ -126,7 +135,9 @@ func (o *Order) UnmarshalAmino(bz []byte) error {
 func (o *Order) allFields() []interface{} {
 	return []interface{}{
 		&o.ID,
-		&o.Created,
+		&o.Type,
+
+		&o.TimeInForce,
 
 		&o.Owner,
 		&o.ClientOrderID,
@@ -136,9 +147,12 @@ func (o *Order) allFields() []interface{} {
 		&o.SourceFilled,
 		&o.Destination,
 		&o.DestinationFilled,
-
-		&o.price,
 	}
+}
+
+func (o *Order) SetSourceAmount(src sdk.Int) {
+	o.Source = sdk.NewCoin(o.Source.Denom, src)
+	o.SourceRemaining = src
 }
 
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
@@ -147,6 +161,18 @@ func (o Order) IsFilled() bool {
 }
 
 func (o Order) IsValid() error {
+	switch o.Type {
+	case Order_Limit, Order_Market:
+	default:
+		return sdkerrors.Wrapf(ErrUnknownOrderType, "Unknown order type: %v", o.Type)
+	}
+
+	switch o.TimeInForce {
+	case TimeInForce_GoodTillCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
+	default:
+		return sdkerrors.Wrapf(ErrUnknownTimeInForce, "Unknown 'time in force' specified : %v", o.TimeInForce)
+	}
+
 	if o.Source.Amount.LTE(sdk.ZeroInt()) {
 		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
 	}
@@ -163,11 +189,11 @@ func (o Order) IsValid() error {
 }
 
 func (o Order) Price() sdk.Dec {
-	return o.price
+	return o.Destination.Amount.ToDec().Quo(o.Source.Amount.ToDec())
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.price, o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner.String())
+	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner.String())
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
@@ -209,13 +235,14 @@ func (ep ExecutionPlan) String() string {
 	return buf.String()
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clientOrderId string) (Order, error) {
+func NewOrder(ordertype, timeInForce int, src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
 		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
 	}
 
 	o := Order{
-		Created: created,
+		Type:        ordertype,
+		TimeInForce: timeInForce,
 
 		Owner:         seller,
 		ClientOrderID: clientOrderId,
@@ -225,8 +252,6 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clien
 		SourceFilled:      sdk.ZeroInt(),
 		Destination:       dst,
 		DestinationFilled: sdk.ZeroInt(),
-
-		price: dst.Amount.ToDec().Quo(src.Amount.ToDec()),
 	}
 
 	if err := o.IsValid(); err != nil {

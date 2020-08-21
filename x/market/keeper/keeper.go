@@ -7,6 +7,7 @@ package keeper
 import (
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/market/types"
 	"math"
 	"sync"
 	"time"
@@ -17,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	emtypes "github.com/e-money/em-ledger/types"
-	"github.com/e-money/em-ledger/x/market/types"
 )
 
 const (
@@ -52,7 +52,6 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, auth
 		bk:         bankKeeper,
 		sk:         supplyKeeper,
 
-		//accountOrders: types.NewOrders(),
 		appstateInit: new(sync.Once),
 
 		authorityk: authorityKeeper,
@@ -118,6 +117,25 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	return bestPlan
 }
 
+func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce int, clientOrderId string) (*sdk.Result, error) {
+	// If the order allows for slippage, adjust the source amount accordingly.
+	md := k.GetInstrument(ctx, srcDenom, dst.Denom)
+	if md == nil || md.LastPrice == nil {
+		return nil, sdkerrors.Wrapf(types.ErrNoMarketDataAvailable, "%v/%v", srcDenom, dst.Denom)
+	}
+
+	source := dst.Amount.ToDec().Quo(*md.LastPrice)
+	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
+
+	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
+	order, err := types.NewOrder(types.Order_Market, timeInForce, slippageSource, dst, owner, clientOrderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return k.NewOrderSingle(ctx, order)
+}
+
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
@@ -134,7 +152,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	sourceAccount := k.ak.GetAccount(ctx, aggressiveOrder.Owner)
 	if sourceAccount == nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", aggressiveOrder.Owner.String())
-		//return sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", aggressiveOrder.Owner.String())).Result()
 	}
 
 	// Verify account balance
@@ -151,7 +168,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	accountOrders := k.GetOrdersByOwner(ctx, aggressiveOrder.Owner)
 
 	// Ensure that the market is not showing "phantom liquidity" by rejecting multiple orders in an instrument based on the same balance.
-	//totalSourceDemand := accountOrders.GetAccountSourceDemand(aggressiveOrder.Owner, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
 	totalSourceDemand := getOrdersSourceDemand(accountOrders, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
 	totalSourceDemand = totalSourceDemand.Add(aggressiveOrder.Source)
 	if _, anyNegative := sourceAccount.SpendableCoins(ctx.BlockTime()).SafeSub(sdk.NewCoins(totalSourceDemand)); anyNegative {
@@ -160,8 +176,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	}
 
 	// Verify uniqueness of client order id among active orders
-
-	//if k.accountOrders.ContainsClientOrderId(aggressiveOrder.Owner, aggressiveOrder.ClientOrderID) {
 	if containsClientId(accountOrders, aggressiveOrder.ClientOrderID) {
 		return nil, sdkerrors.Wrap(types.ErrNonUniqueClientOrderId, aggressiveOrder.ClientOrderID)
 	}
@@ -288,6 +302,13 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			addToBook = denom.IsAnyAllowed(aggressiveOrder.Owner)
 		}
 
+		switch aggressiveOrder.TimeInForce {
+		case types.TimeInForce_ImmediateOrCancel:
+			addToBook = false
+		case types.TimeInForce_FillOrKill:
+			panic("Order not filled. Roll back.")
+		}
+
 		if addToBook {
 			op := &aggressiveOrder
 			k.setOrder(ctx, op)
@@ -342,7 +363,6 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner.String(), origClientOrderId)
-	//origOrder := k.accountOrders.GetOrder(newOrder.Owner, origClientOrderId)
 
 	if origOrder == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
@@ -361,22 +381,19 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	k.deleteOrder(ctx, origOrder)
 	types.EmitCancelEvent(ctx, *origOrder)
 
-	//resCancel, err := k.CancelOrder(ctx, newOrder.Owner, origClientOrderId)
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	// Adjust remaining according to how much of the replaced order was filled:
 	newOrder.SourceFilled = origOrder.SourceFilled
 	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
 	newOrder.DestinationFilled = origOrder.DestinationFilled
+
+	newOrder.TimeInForce = origOrder.TimeInForce
+	newOrder.Type = origOrder.Type
 
 	resAdd, err := k.NewOrderSingle(ctx, newOrder)
 	if err != nil {
 		return nil, err
 	}
 
-	//evts := append(ctx.EventManager().Events(), resCancel.Events...)
 	evts := append(ctx.EventManager().Events(), resAdd.Events...)
 	return &sdk.Result{Events: evts}, nil
 }
@@ -452,6 +469,20 @@ func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
 
 	priorityKey := types.GetPriorityKey(order.Source.Denom, order.Destination.Denom, order.Price(), order.ID)
 	idxStore.Set(priorityKey, orderbz)
+}
+
+func (k Keeper) GetInstrument(ctx sdk.Context, src, dst string) *types.MarketData {
+	idxStore := ctx.KVStore(k.keyIndices)
+
+	key := types.GetMarketDataKey(src, dst)
+	bz := idxStore.Get(key)
+	if bz == nil {
+		return nil
+	}
+
+	md := new(types.MarketData)
+	k.cdc.MustUnmarshalBinaryBare(bz, md)
+	return md
 }
 
 // Get instruments based on current order book. Does not include synthetic instruments.

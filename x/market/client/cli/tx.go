@@ -59,7 +59,7 @@ func AddOrderCmd(cdc *codec.Codec) *cobra.Command {
 
 			clientOrderID := args[2]
 
-			msg := types.MsgAddOrder{
+			msg := types.MsgAddLimitOrder{
 				Owner:         cliCtx.GetFromAddress(),
 				Source:        src,
 				Destination:   dst,

@@ -8,13 +8,10 @@ import (
 	"fmt"
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	"github.com/e-money/em-ledger/x/market/types"
 	"math"
 	"testing"
 	"time"
-
-	emauth "github.com/e-money/em-ledger/hooks/auth"
-	emtypes "github.com/e-money/em-ledger/types"
-	"github.com/e-money/em-ledger/x/market/types"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +19,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	emauth "github.com/e-money/em-ledger/hooks/auth"
+	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/stretchr/testify/require"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 
@@ -130,6 +129,99 @@ func TestBasicTrade3(t *testing.T) {
 	require.NoError(t, err)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
+}
+
+func TestMarketOrderSlippage1(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "500gbp")
+	acc2 := createAccount(ctx, ak, "acc2", "500eur")
+
+	var o types.Order
+	var err error
+
+	// Establish market price by executing a 1:1 trade
+	o = order(acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc1, "1gbp", "1eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Sell eur at various prices
+	o = order(acc2, "50eur", "50gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc2, "50eur", "75gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc2, "50eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Make a market order that allows slippage
+
+	slippage := sdk.NewDecWithPrec(50, 2)
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(200)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		cid(),
+	)
+	require.NoError(t, err)
+
+	// Check that the balance matches the first two orders being executed while the third did not fall within the slippage
+	bal1 := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
+	require.Equal(t, coins("101eur,374gbp"), bal1)
+
+	bal2 := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
+	require.Equal(t, coins("399eur,126gbp"), bal2)
+
+	// Ensure that the order can not exceed account balance
+	slippage = sdk.NewDecWithPrec(500, 2)
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(200)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		cid(),
+	)
+	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
+}
+
+func TestImmediateOrCancel(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "20gbp")
+	acc2 := createAccount(ctx, ak, "acc2", "20eur")
+
+	var o types.Order
+	var err error
+
+	o = order(acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc1, "2gbp", "2eur")
+	o.TimeInForce = types.TimeInForce_ImmediateOrCancel
+	cid := o.ClientOrderID
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Verify that order is not in book
+	order := k.GetOrderByOwnerAndClientOrderId(ctx, acc1.GetAddress().String(), cid)
+	require.Nil(t, order)
+
+	bal1 := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
+	require.Equal(t, coins("19gbp,1eur"), bal1)
 }
 
 func TestInsufficientGas(t *testing.T) {
@@ -278,11 +370,11 @@ func TestDeleteOrder(t *testing.T) {
 
 	cid := cid()
 
-	order1, _ := types.NewOrder(coin("100eur"), coin("120usd"), acc1.GetAddress(), time.Now(), cid)
+	order1, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), acc1.GetAddress(), cid)
 	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
-	order2, _ := types.NewOrder(coin("100eur"), coin("77chf"), acc1.GetAddress(), time.Now(), cid)
+	order2, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("100eur"), coin("77chf"), acc1.GetAddress(), cid)
 	_, err = k.NewOrderSingle(ctx, order2)
 	require.Error(t, err) // Verify that client order ids cannot be duplicated.
 
@@ -300,13 +392,13 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	acc2 := createAccount(ctx, ak, "acc2", "120usd")
 
 	for i := 0; i < 5; i++ {
-		order, _ := types.NewOrder(coin("5eur"), coin("12usd"), acc1.GetAddress(), time.Now(), cid())
+		order, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("5eur"), coin("12usd"), acc1.GetAddress(), cid())
 		_, err := k.NewOrderSingle(ctx, order)
 		require.NoError(t, err)
 	}
 
 	for i := 0; i < 5; i++ {
-		order, _ := types.NewOrder(coin("7usd"), coin("3chf"), acc2.GetAddress(), time.Now(), cid())
+		order, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("7usd"), coin("3chf"), acc2.GetAddress(), cid())
 		res, err := k.NewOrderSingle(ctx, order)
 		require.True(t, err == nil, res.Log)
 	}
@@ -315,7 +407,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	require.Len(t, allOrders1, 5)
 
 	{
-		order, _ := types.NewOrder(coin("12usd"), coin("5eur"), acc2.GetAddress(), time.Now(), cid())
+		order, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("12usd"), coin("5eur"), acc2.GetAddress(), cid())
 		res, err := k.NewOrderSingle(ctx, order)
 		require.True(t, err == nil, res.Log)
 	}
@@ -361,13 +453,13 @@ func TestCancelReplaceOrder(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, ak)
 
 	order1cid := cid()
-	order1, _ := types.NewOrder(coin("500eur"), coin("1200usd"), acc1.GetAddress(), time.Now(), order1cid)
+	order1, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
 	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	order2cid := cid()
-	order2, _ := types.NewOrder(coin("5000eur"), coin("17000usd"), acc1.GetAddress(), time.Now(), order2cid)
+	order2, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
 	res, err := k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
 	require.True(t, err == nil, res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
@@ -381,17 +473,15 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
 	}
 
-	order3, _ := types.NewOrder(coin("500chf"), coin("1700usd"), acc1.GetAddress(), time.Now(), cid())
+	order3, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
 	// Wrong client order id for previous order submitted.
 	_, err = k.CancelReplaceOrder(ctx, order3, order1cid)
 	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
-	//require.Equal(t, types.CodeClientOrderIdNotFound, res.Code)
 
 	// Changing instrument of order
 	gasMeter = sdk.NewGasMeter(math.MaxUint64)
 	_, err = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
 	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
-	//require.Equal(t, types.CodeOrderInstrumentChanged, res.Code)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	o := order(acc2, "2600usd", "300eur")
@@ -413,7 +503,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
 	order4cid := cid()
-	order4, _ := types.NewOrder(coin("10000eur"), coin("35050usd"), acc1.GetAddress(), time.Now(), order4cid)
+	order4, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
 	res, err = k.CancelReplaceOrder(ctx, order4, order2cid)
 	require.True(t, err == nil, res.Log)
 
@@ -434,7 +524,6 @@ func TestCancelReplaceOrder(t *testing.T) {
 	order6 := order(acc1, "8000eur", "30000usd")
 	_, err = k.CancelReplaceOrder(ctx, order6, order4cid)
 	require.True(t, types.ErrNoSourceRemaining.Is(err))
-	//require.Equal(t, types.CodeNoSourceRemaining, res.Code)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
@@ -444,14 +533,14 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	acc := createAccount(ctx, ak, "acc1", "15000eur")
 	acc2 := createAccount(ctx, ak, "acc2", "11000chf,100000eur")
 
-	order, _ := types.NewOrder(coin("10000eur"), coin("1000usd"), acc.GetAddress(), time.Now(), cid())
+	order, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
 	_, err := k.NewOrderSingle(ctx, order)
 	require.NoError(t, err)
 
 	{
 		// Partially fill the order above
 		acc2 := createAccount(ctx, ak, "acc2", "900000usd")
-		order2, _ := types.NewOrder(coin("400usd"), coin("4000eur"), acc2.GetAddress(), time.Now(), cid())
+		order2, _ := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
 		_, err = k.NewOrderSingle(ctx, order2)
 		require.NoError(t, err)
 	}
@@ -497,8 +586,6 @@ func TestUnknownAsset(t *testing.T) {
 	o := order(acc1, "1000eur", "1200nok")
 	_, err := k1.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
 	require.True(t, types.ErrUnknownAsset.Is(err))
-	//require.Equal(t, types.Codespace, res.Codespace)
-	//require.Equal(t, types.CodeUnknownAsset, res.Code)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 }
 
@@ -549,11 +636,13 @@ func TestInvalidInstrument(t *testing.T) {
 	// Ensure that an order cannot contain the same denomination in source and destination
 	o := types.Order{
 		ID:                124,
+		Type:              types.Order_Limit,
 		Source:            coin("125eur"),
 		Destination:       coin("250eur"),
 		DestinationFilled: sdk.ZeroInt(),
 		Owner:             acc1.GetAddress(),
 		ClientOrderID:     "abcddeg",
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
 	}
 
 	_, err := k.NewOrderSingle(ctx, o)
@@ -922,7 +1011,16 @@ func coins(s string) sdk.Coins {
 }
 
 func order(account authexported.Account, src, dst string) types.Order {
-	o, err := types.NewOrder(coin(src), coin(dst), account.GetAddress(), time.Now(), cid())
+	o, err := types.NewOrder(types.Order_Limit, types.TimeInForce_GoodTillCancel, coin(src), coin(dst), account.GetAddress(), cid())
+	if err != nil {
+		panic(err)
+	}
+
+	return o
+}
+
+func orderMarket(account authexported.Account, src, dst string) types.Order {
+	o, err := types.NewOrder(types.Order_Market, types.TimeInForce_GoodTillCancel, coin(src), coin(dst), account.GetAddress(), cid())
 	if err != nil {
 		panic(err)
 	}
