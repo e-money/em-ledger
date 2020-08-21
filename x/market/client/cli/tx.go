@@ -13,10 +13,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
 
 	"github.com/e-money/em-ledger/x/market/types"
+)
+
+const (
+	flag_TimeInForce = "time-in-force"
+
+	flag_TimeInForceDescription = "Select the order's time-in-force value (ImmediateOrCancel|GoodTilCancelled|FillOrKill)"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -44,8 +51,6 @@ func AddLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "Create a limit order and send it to the market",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-
-			// TODO Add Time_In_Force support
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -62,12 +67,14 @@ func AddLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
 
 			clientOrderID := args[2]
 
-			// TODO Default value - Make overridable in flag
-			timeInForce := types.TimeInForce_GoodTilCancel
+			timeInForce, err := types.TimeInForceFromString(viper.GetString(flag_TimeInForce))
+			if err != nil {
+				return err
+			}
 
 			msg := types.MsgAddLimitOrder{
 				Owner:         cliCtx.GetFromAddress(),
-				TimeInForce:   timeInForce,
+				TimeInForce:   timeInForce.String(),
 				Source:        src,
 				Destination:   dst,
 				ClientOrderId: clientOrderID,
@@ -82,6 +89,7 @@ func AddLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_GoodTilCancel.String(), flag_TimeInForceDescription)
 	cmd = flags.PostCommands(cmd)[0]
 	return cmd
 }
@@ -116,11 +124,11 @@ Example:
 			clientOrderID := args[3]
 
 			// TODO Default value - Make overridable in flag
-			timeInForce := types.TimeInForce_ImmediateOrCancelString
+			timeInForce := types.TimeInForce_ImmediateOrCancel
 
 			msg := types.MsgAddMarketOrder{
 				Owner:         cliCtx.GetFromAddress(),
-				TimeInForce:   timeInForce,
+				TimeInForce:   timeInForce.String(),
 				Source:        srcDenom,
 				Destination:   dst,
 				ClientOrderId: clientOrderID,
@@ -136,6 +144,7 @@ Example:
 		},
 	}
 
+	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_ImmediateOrCancel.String(), flag_TimeInForceDescription)
 	cmd = flags.PostCommands(cmd)[0]
 	return cmd
 

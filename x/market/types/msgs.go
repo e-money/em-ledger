@@ -21,7 +21,7 @@ var (
 type (
 	MsgAddLimitOrder struct {
 		Owner               sdk.AccAddress
-		TimeInForce         int
+		TimeInForce         string
 		Source, Destination sdk.Coin
 		ClientOrderId       string
 	}

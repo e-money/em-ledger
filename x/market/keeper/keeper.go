@@ -117,7 +117,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	return bestPlan
 }
 
-func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce int, clientOrderId string) (*sdk.Result, error) {
+func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
 	// If the order allows for slippage, adjust the source amount accordingly.
 	md := k.GetInstrument(ctx, srcDenom, dst.Denom)
 	if md == nil || md.LastPrice == nil {

@@ -36,12 +36,21 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 }
 
 func handleMsgAddMarketOrder(ctx sdk.Context, k *keeper.Keeper, msg types.MsgAddMarketOrder) (*sdk.Result, error) {
-	timeInForce := types.ParseTimeInForceParam(msg.TimeInForce) // An illegal value will be caught during Order creation.
+	timeInForce, err := types.TimeInForceFromString(msg.TimeInForce)
+	if err != nil {
+		return nil, err
+	}
+
 	return k.NewMarketOrderWithSlippage(ctx, msg.Source, msg.Destination, msg.MaxSlippage, msg.Owner, timeInForce, msg.ClientOrderId)
 }
 
 func handleMsgAddLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddLimitOrder) (*sdk.Result, error) {
-	order, err := types.NewOrder(types.Order_Limit, msg.TimeInForce, msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
+	timeInForce, err := types.TimeInForceFromString(msg.TimeInForce)
+	if err != nil {
+		return nil, err
+	}
+
+	order, err := types.NewOrder(types.Order_Limit, timeInForce, msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
 	if err != nil {
 		return nil, err
 	}

@@ -21,19 +21,15 @@ const (
 )
 
 const (
-	_ = iota
+	_ TimeInForce = iota
 	TimeInForce_GoodTilCancel
 	TimeInForce_ImmediateOrCancel
 	TimeInForce_FillOrKill
 )
 
-const (
-	TimeInForce_GoodTilCancelString     = "GoodTilCancelled"
-	TimeInForce_ImmediateOrCancelString = "ImmediateOrCancel"
-	TimeInForce_FillOrKillString        = "FillOrKill"
-)
-
 type (
+	TimeInForce int
+
 	Instrument struct {
 		Source, Destination string
 		//LastPrice           sdk.Dec
@@ -44,7 +40,7 @@ type (
 		ID   uint64 `json:"id" yaml:"id"`
 		Type int    `json:"type" yaml:"type"`
 
-		TimeInForce int `json:"time_in_force" yaml:"time_in_force"`
+		TimeInForce TimeInForce `json:"time_in_force" yaml:"time_in_force"`
 
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
 		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
@@ -241,7 +237,7 @@ func (ep ExecutionPlan) String() string {
 	return buf.String()
 }
 
-func NewOrder(ordertype, timeInForce int, src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, error) {
+func NewOrder(ordertype int, timeInForce TimeInForce, src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
 		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
 	}
@@ -267,16 +263,30 @@ func NewOrder(ordertype, timeInForce int, src, dst sdk.Coin, seller sdk.AccAddre
 	return o, nil
 }
 
-// Convert from TimeInForce string representation to the internal enum type.
-func ParseTimeInForceParam(p string) int {
+// Convert from TimeInForce string representation to the internal enum type. Case insensitive.
+func TimeInForceFromString(p string) (TimeInForce, error) {
+	p = strings.ToLower(p)
+
 	switch p {
-	case TimeInForce_FillOrKillString:
-		return TimeInForce_FillOrKill
-	case TimeInForce_ImmediateOrCancelString:
-		return 0
-	case TimeInForce_GoodTilCancelString:
-		return 0
+	case "fillorkill":
+		return TimeInForce_FillOrKill, nil
+	case "immediateorcancel":
+		return TimeInForce_ImmediateOrCancel, nil
+	case "goodtilcancelled":
+		return TimeInForce_GoodTilCancel, nil
 	}
 
-	return 0
+	return 0, fmt.Errorf("unknown time-in-force value: %v", p)
+}
+
+func (tif TimeInForce) String() string {
+	switch tif {
+	case TimeInForce_ImmediateOrCancel:
+		return "ImmediateOrCancel"
+	case TimeInForce_GoodTilCancel:
+		return "GoodTilCancelled"
+	case TimeInForce_FillOrKill:
+		return "FillOrKill"
+	}
+	return "<unknown>"
 }

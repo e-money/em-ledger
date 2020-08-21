@@ -116,6 +116,17 @@ func TestMarketDataSerialization2(t *testing.T) {
 	require.Equal(t, &ts, md2.Timestamp)
 }
 
+func TestTimeInForce(t *testing.T) {
+	tif, err := TimeInForceFromString("FILLORKILL")
+	require.NoError(t, err)
+	require.Equal(t, TimeInForce_FillOrKill, tif)
+
+	_, err = TimeInForceFromString("filetOrKill")
+	require.Error(t, err)
+
+	require.Equal(t, "FillOrKill", TimeInForce_FillOrKill.String())
+}
+
 func coin(s string) sdk.Coin {
 	coin, err := sdk.ParseCoin(s)
 	if err != nil {
