@@ -23,7 +23,7 @@ const (
 	Order_Limit  = types.Order_Limit
 	Order_Market = types.Order_Market
 
-	TimeInForce_GoodTillCancel    = types.TimeInForce_GoodTillCancel
+	TimeInForce_GoodTillCancel    = types.TimeInForce_GoodTilCancel
 	TimeInForce_ImmediateOrCancel = types.TimeInForce_ImmediateOrCancel
 	TimeInForce_FillOrKill        = types.TimeInForce_FillOrKill
 )

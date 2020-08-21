@@ -48,7 +48,7 @@ var _ = Describe("Market", func() {
 			//Expect(err).ShouldNot(HaveOccurred())
 
 			for i := 0; i < 10; i++ {
-				output, success, err := emcli.MarketAddOrder(acc1, "120000eeur", fmt.Sprintf("%dechf", 90000-i*100), tmrand.Str(10))
+				output, success, err := emcli.MarketAddLimitOrder(acc1, "120000eeur", fmt.Sprintf("%dechf", 90000-i*100), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
 				Expect(success).To(BeTrue())
 			}
@@ -60,7 +60,7 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Crashing validator can catch up", func() {
-			_, success, err := emcli.MarketAddOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
+			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
@@ -70,13 +70,13 @@ var _ = Describe("Market", func() {
 
 			// Create and execute a couple of orders
 			for i := 0; i < 7; i++ {
-				_, success, err := emcli.MarketAddOrder(acc2, "90500echf", fmt.Sprintf("%deeur", 11000-i*400), tmrand.Str(10))
+				_, success, err := emcli.MarketAddLimitOrder(acc2, "90500echf", fmt.Sprintf("%deeur", 11000-i*400), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}
 
 			for i := 0; i < 15; i++ {
-				_, success, err := emcli.MarketAddOrder(acc3, "440000ejpy", fmt.Sprintf("%deeur", 100000-i*100), tmrand.Str(10))
+				_, success, err := emcli.MarketAddLimitOrder(acc3, "440000ejpy", fmt.Sprintf("%deeur", 100000-i*100), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}
@@ -95,7 +95,7 @@ var _ = Describe("Market", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			for i := 0; i < 10; i++ {
-				_, success, err := emcli.MarketAddOrder(acc3, "90000eeur", fmt.Sprintf("%dechf", 50000-i*100), tmrand.Str(10))
+				_, success, err := emcli.MarketAddLimitOrder(acc3, "90000eeur", fmt.Sprintf("%dechf", 50000-i*100), tmrand.Str(10))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(success).To(BeTrue())
 			}
@@ -124,7 +124,7 @@ var _ = Describe("Market", func() {
 			Expect(success).To(BeTrue())
 			Expect(err).ToNot(HaveOccurred())
 
-			s, success, err := emcli.MarketAddOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1", "--fees", "50eeur")
+			s, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1", "--fees", "50eeur")
 
 			// Create one transaction that includes a market order and a lot transfers, which will make the tx run out of gas.
 			jsonPath, err := ioutil.TempDir("", "")

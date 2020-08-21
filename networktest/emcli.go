@@ -181,8 +181,8 @@ func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, er
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) MarketAddOrder(key Key, source, destination, cid string, moreflags ...string) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "market", "add", source, destination, cid, "--from", key.name)
+func (cli Emcli) MarketAddLimitOrder(key Key, source, destination, cid string, moreflags ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "add-limit", source, destination, cid, "--from", key.name)
 	args = append(args, moreflags...)
 	return execCmdWithInput(args, KeyPwd)
 }

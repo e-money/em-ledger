@@ -22,9 +22,15 @@ const (
 
 const (
 	_ = iota
-	TimeInForce_GoodTillCancel
+	TimeInForce_GoodTilCancel
 	TimeInForce_ImmediateOrCancel
 	TimeInForce_FillOrKill
+)
+
+const (
+	TimeInForce_GoodTilCancelString     = "GoodTilCancelled"
+	TimeInForce_ImmediateOrCancelString = "ImmediateOrCancel"
+	TimeInForce_FillOrKillString        = "FillOrKill"
 )
 
 type (
@@ -168,7 +174,7 @@ func (o Order) IsValid() error {
 	}
 
 	switch o.TimeInForce {
-	case TimeInForce_GoodTillCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
+	case TimeInForce_GoodTilCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
 	default:
 		return sdkerrors.Wrapf(ErrUnknownTimeInForce, "Unknown 'time in force' specified : %v", o.TimeInForce)
 	}
@@ -259,4 +265,18 @@ func NewOrder(ordertype, timeInForce int, src, dst sdk.Coin, seller sdk.AccAddre
 	}
 
 	return o, nil
+}
+
+// Convert from TimeInForce string representation to the internal enum type.
+func ParseTimeInForceParam(p string) int {
+	switch p {
+	case TimeInForce_FillOrKillString:
+		return TimeInForce_FillOrKill
+	case TimeInForce_ImmediateOrCancelString:
+		return 0
+	case TimeInForce_GoodTilCancelString:
+		return 0
+	}
+
+	return 0
 }

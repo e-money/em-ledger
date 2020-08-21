@@ -28,7 +28,7 @@ type (
 
 	MsgAddMarketOrder struct {
 		Owner         sdk.AccAddress
-		TimeInForce   int
+		TimeInForce   string
 		Source        string
 		Destination   sdk.Coin
 		ClientOrderId string

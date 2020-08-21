@@ -30,19 +30,22 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	txCmd.AddCommand(
-		AddOrderCmd(cdc),
+		AddLimitOrderCmd(cdc),
+		AddMarketOrderCmd(cdc),
 		CancelOrderCmd(cdc),
 		CancelReplaceOrder(cdc),
 	)
 	return txCmd
 }
 
-func AddOrderCmd(cdc *codec.Codec) *cobra.Command {
+func AddLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add [source-amount] [destination-amount] [client-orderid]",
-		Short: "Create an order and send it to the market",
+		Use:   "add-limit [source-amount] [destination-amount] [client-orderid]",
+		Short: "Create a limit order and send it to the market",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+
+			// TODO Add Time_In_Force support
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -59,8 +62,12 @@ func AddOrderCmd(cdc *codec.Codec) *cobra.Command {
 
 			clientOrderID := args[2]
 
+			// TODO Default value - Make overridable in flag
+			timeInForce := types.TimeInForce_GoodTilCancel
+
 			msg := types.MsgAddLimitOrder{
 				Owner:         cliCtx.GetFromAddress(),
+				TimeInForce:   timeInForce,
 				Source:        src,
 				Destination:   dst,
 				ClientOrderId: clientOrderID,
@@ -77,6 +84,61 @@ func AddOrderCmd(cdc *codec.Codec) *cobra.Command {
 
 	cmd = flags.PostCommands(cmd)[0]
 	return cmd
+}
+
+func AddMarketOrderCmd(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add-market [source-denom] [destination-amount] [market-slippage] [client-orderid]",
+		Short: "Create a market order",
+		Long: `Create an order based on latest pricing information. 
+
+Example:
+ emcli tx market add-market eeur 300echf 0.05 order12345
+`,
+		Args: cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			srcDenom := args[0]
+
+			dst, err := sdk.ParseCoin(args[1])
+			if err != nil {
+				return
+			}
+
+			slippage, err := sdk.NewDecFromStr(args[2])
+			if err != nil {
+				return err
+			}
+
+			clientOrderID := args[3]
+
+			// TODO Default value - Make overridable in flag
+			timeInForce := types.TimeInForce_ImmediateOrCancelString
+
+			msg := types.MsgAddMarketOrder{
+				Owner:         cliCtx.GetFromAddress(),
+				TimeInForce:   timeInForce,
+				Source:        srcDenom,
+				Destination:   dst,
+				ClientOrderId: clientOrderID,
+				MaxSlippage:   slippage,
+			}
+
+			err = msg.ValidateBasic()
+			if err != nil {
+				return
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	cmd = flags.PostCommands(cmd)[0]
+	return cmd
+
 }
 
 func CancelOrderCmd(cdc *codec.Codec) *cobra.Command {
