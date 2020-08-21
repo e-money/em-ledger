@@ -11,16 +11,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// The denomination validation functions are buried deep inside the Coin struct, so use this approach to validate names.
-func ValidateDenom(denomination string) bool {
-	defer func() {
-		recover()
-	}()
-	// Function panics when encountering an invalid denomination
-	sdk.NewCoin(denomination, sdk.ZeroInt())
-	return true
-}
+func ValidateDenom(denom string) bool {
+	err := sdk.ValidateDenom(denom)
+	return err == nil
 
+}
 func ParseDenominations(denoms string) ([]string, error) {
 	res := make([]string, 0)
 	for _, denom := range strings.Split(denoms, ",") {
