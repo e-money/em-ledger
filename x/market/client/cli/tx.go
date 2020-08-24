@@ -123,8 +123,10 @@ Example:
 
 			clientOrderID := args[3]
 
-			// TODO Default value - Make overridable in flag
-			timeInForce := types.TimeInForce_ImmediateOrCancel
+			timeInForce, err := types.TimeInForceFromString(viper.GetString(flag_TimeInForce))
+			if err != nil {
+				return err
+			}
 
 			msg := types.MsgAddMarketOrder{
 				Owner:         cliCtx.GetFromAddress(),
