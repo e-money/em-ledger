@@ -197,6 +197,82 @@ func TestMarketOrderSlippage1(t *testing.T) {
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
+func TestFillOrKillMarketOrder1(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	var (
+		acc1 = createAccount(ctx, ak, "acc1", "500gbp")
+		acc2 = createAccount(ctx, ak, "acc2", "500eur")
+
+		o   types.Order
+		err error
+	)
+
+	// Establish market price by executing a 1:1 trade
+	o = order(acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc1, "1gbp", "1eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Create a market for eur
+	o = order(acc2, "100eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Create a fill or kill order that cannot be satisfied by the current market
+	result, err := k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(200)),
+		sdk.ZeroDec(),
+		acc1.GetAddress(),
+		types.TimeInForce_FillOrKill,
+		cid(),
+	)
+
+	require.NoError(t, err)
+	require.Len(t, result.Events, 1)
+	require.Equal(t, types.EventTypeCancel, result.Events[0].Type)
+
+	// Last order must fail completely due to not being fillable
+	acc1Bal := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
+	require.Equal(t, coins("1eur,499gbp"), acc1Bal)
+
+	acc2Bal := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
+	require.Equal(t, coins("499eur,1gbp"), acc2Bal)
+}
+
+func TestFillOrKillLimitOrder1(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "500gbp")
+	acc2 := createAccount(ctx, ak, "acc2", "500eur")
+
+	// Create a tiny market for eur
+	o := order(acc2, "100eur", "100gbp")
+	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	order2 := order(acc1, "200gbp", "200eur")
+	order2.TimeInForce = types.TimeInForce_FillOrKill
+	_, err = k.NewOrderSingle(ctx, order2)
+	require.NoError(t, err)
+
+	// Order must fail completely due to not being fillable
+	acc1Bal := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
+	require.Equal(t, coins("500gbp"), acc1Bal)
+
+	acc2Bal := ak.GetAccount(ctx, acc2.GetAddress()).GetCoins()
+	require.Equal(t, coins("500eur"), acc2Bal)
+
+	// Test that the order book looks as expected
+	require.Empty(t, k.GetOrdersByOwner(ctx, acc1.GetAddress()))
+	require.Len(t, k.GetOrdersByOwner(ctx, acc2.GetAddress()), 1)
+}
+
 func TestImmediateOrCancel(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 

@@ -141,6 +141,18 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
+	// Set this to true to roll back any state changes made by the aggressive order. Used for FillOrKill orders.
+	KillOrder := false
+	ctx, commitTrade := ctx.CacheContext()
+
+	defer func() {
+		if KillOrder {
+			return
+		}
+
+		commitTrade()
+	}()
+
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return nil, err
 	}
@@ -306,7 +318,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		case types.TimeInForce_ImmediateOrCancel:
 			addToBook = false
 		case types.TimeInForce_FillOrKill:
-			panic("Order not filled. Roll back.")
+			KillOrder = true
+			ctx = ctx.WithEventManager(sdk.NewEventManager())
+			types.EmitCancelEvent(ctx, aggressiveOrder)
 		}
 
 		if addToBook {
