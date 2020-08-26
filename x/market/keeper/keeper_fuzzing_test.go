@@ -21,6 +21,7 @@ const (
 	maxPriceVariation = 20 // Create variations on price in the interval +-10% of the base price
 )
 
+// go test -v -timeout 24h -run TestFuzzingInfinite ./x/market/keeper/
 //func TestFuzzingInfinite(t *testing.T) {
 //	for {
 //		TestFuzzing1(t)
@@ -111,7 +112,18 @@ func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller exporte
 			continue
 		}
 
-		res = append(res, order(seller, source.String(), destination.String()))
+		o := order(seller, source.String(), destination.String())
+
+		switch r.Intn(3) {
+		case 0:
+			o.TimeInForce = types.TimeInForce_FillOrKill
+		case 1:
+			o.TimeInForce = types.TimeInForce_GoodTilCancel
+		case 2:
+			o.TimeInForce = types.TimeInForce_ImmediateOrCancel
+		}
+
+		res = append(res, o)
 	}
 
 	return res
