@@ -2,7 +2,7 @@
 
 ## Overview
 
-The market module enable accounts to sell an amount of *source* tokens in exchange for an fixed amount of *destination* tokens, where the price is derived from the amount of *source* and *destination* tokens.
+The market module enable accounts to sell an amount of *source* tokens in exchange for an fixed amount of *destination* tokens, where the price is derived from either a specified amount of *source* and *destination* tokens or from market data on recent trades.
 
 This is a generalisation of the classic limit order for two-sided markets:
 
@@ -12,20 +12,6 @@ This is a generalisation of the classic limit order for two-sided markets:
 | Sell | Source Denom | Destination Denom | Destination Amount / Source Amount |
 
 As the *destination* amount is fixed, less than *source* amount of tokens will be paid if a better price exist in the market. Having the *destination* amount fixed is useful for payments where a fixed amount of foreign currency needs to be delivered.
-
-## Order Data
-
-An order consists of the following data:
-
-* Owner: a `AccAddress` which will be used for settlement and order modifications.
-* OrderId: a `uint64` assigned by the market module, monotonically increasing.
-* ClientOrderId: a `string` assigned by owner, which must not be a duplicate of an existing order.
-* Source: a `Coin` representing the desired amount of tokens to sell.
-* SourceFilled: `Int` that tracks the sold amount so far.
-* SourceRemaining: a `Int` that is adjusted with *SourceFilled* and if the owner account balance change.
-* Destination: a `Coin` representing the minimum amount of tokens to buy.
-* DestinationFilled: `Int` that tracks the bought amount so far.
-* Price: a `Dec` calculated as *Destination* / *Source*.
 
 ## Features
 
@@ -44,18 +30,43 @@ When the balance of the owner account changes, SourceRemaining is adjusted accor
 
 *Immediate settlement*. Matched orders are settled immediately with finality.
 
+
 ## Transaction Types
 
 The transaction types mirror those of the [FIX trading specification](https://www.fixtrading.org/online-specification/business-area-trade/) for single order handling.
 
-### NewOrderSingle
+Two order types are currently supported:
 
-Adds a new order to the order book. The ClientOrderId must be unique among existing orders for the same owner account.
+### Limit orders
 
-### CancelOrder
+A limit order specifies a fixed price for trading an instrument. 
 
-Cancels the remaining part of an existing order, referenced by it's ClientOrderId. In case the order has already been fully filled, an error will be returned. 
+### Market orders
 
-### CancelReplaceOrder
+The price of a a market order bases is based on the last traded price of its instrument. A slippage value can be included to specify the largest deviation the order may take from the market price.
+ 
+### Time in force
 
-Cancels the remaining part of an existing order, referenced by it's ClientOrderId. The filled part of the cancelled order is carried over into the new order.
+Each order can include a "time in force" value to control its behaviour. 
+ 
+ | Time in force | Behaviour |
+ |------|------|
+ | Good til cancel  | Attempt to match the order against the book. Add the remainder to the book, if the order is not filled,  | 
+ | Immediate or cancel | Match as much of the order as possible against the book. Do not add the remainder of the order to the book. | 
+ | Fill or kill | Attempt to match the entire order. If it does not succeed, do not execute any part of the order |
+
+
+## Order Data
+
+An order consists of the following data:
+
+* Owner: a `AccAddress` which will be used for settlement and order modifications.
+* OrderId: a `uint64` assigned by the market module, monotonically increasing.
+* TimeInForce: an enumeration that determines order matching behaviour.
+* ClientOrderId: a `string` assigned by owner, which must not be a duplicate of an existing order.
+* Source: a `Coin` representing the desired amount of tokens to sell.
+* SourceFilled: `Int` that tracks the sold amount so far.
+* SourceRemaining: a `Int` that is adjusted with *SourceFilled* and if the owner account balance change.
+* Destination: a `Coin` representing the minimum amount of tokens to buy.
+* DestinationFilled: `Int` that tracks the bought amount so far.
+* Price: a `Dec` calculated as *Destination* / *Source*.
