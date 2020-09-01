@@ -37,8 +37,7 @@ type (
 	}
 
 	Order struct {
-		ID   uint64 `json:"id" yaml:"id"`
-		Type int    `json:"type" yaml:"type"`
+		ID uint64 `json:"id" yaml:"id"`
 
 		TimeInForce TimeInForce `json:"time_in_force" yaml:"time_in_force"`
 
@@ -70,7 +69,6 @@ func (o Order) MarshalJSON() ([]byte, error) {
 	s := fmt.Sprintf(`
 {
   "id": %v,
-  "type" : %v,
   "time_in_force" : %v,
   "owner": "%v",
   "client_order_id": "%v",
@@ -89,7 +87,6 @@ func (o Order) MarshalJSON() ([]byte, error) {
 }
 `,
 		o.ID,
-		o.Type,
 		o.TimeInForce,
 		o.Owner.String(),
 		o.ClientOrderID,
@@ -137,7 +134,6 @@ func (o *Order) UnmarshalAmino(bz []byte) error {
 func (o *Order) allFields() []interface{} {
 	return []interface{}{
 		&o.ID,
-		&o.Type,
 
 		&o.TimeInForce,
 
@@ -163,12 +159,6 @@ func (o Order) IsFilled() bool {
 }
 
 func (o Order) IsValid() error {
-	switch o.Type {
-	case Order_Limit, Order_Market:
-	default:
-		return sdkerrors.Wrapf(ErrUnknownOrderType, "Unknown order type: %v", o.Type)
-	}
-
 	switch o.TimeInForce {
 	case TimeInForce_GoodTilCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
 	default:
@@ -237,13 +227,12 @@ func (ep ExecutionPlan) String() string {
 	return buf.String()
 }
 
-func NewOrder(ordertype int, timeInForce TimeInForce, src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, error) {
+func NewOrder(timeInForce TimeInForce, src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
 		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
 	}
 
 	o := Order{
-		Type:        ordertype,
 		TimeInForce: timeInForce,
 
 		Owner:         seller,

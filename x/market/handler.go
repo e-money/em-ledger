@@ -50,7 +50,7 @@ func handleMsgAddLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddLimitOrd
 		return nil, err
 	}
 
-	order, err := types.NewOrder(types.Order_Limit, timeInForce, msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
+	order, err := types.NewOrder(timeInForce, msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelOrder) 
 }
 
 func handleMsgCancelReplaceOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceOrder) (*sdk.Result, error) {
-	order, err := types.NewOrder(0, 0, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
+	order, err := types.NewOrder(0, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err
 	}

@@ -13,13 +13,12 @@ import (
 
 func TestSerialization(t *testing.T) {
 	// Verify that non-public fields survive de-/serialization
-	order1, _ := NewOrder(Order_Limit, TimeInForce_GoodTilCancel, coin("100eur"), coin("120usd"), []byte("acc1"), "A")
+	order1, _ := NewOrder(TimeInForce_GoodTilCancel, coin("100eur"), coin("120usd"), []byte("acc1"), "A")
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
 	order1.SourceFilled = sdk.NewInt(10)
 	order1.DestinationFilled = sdk.NewInt(50)
 	order1.TimeInForce = TimeInForce_FillOrKill
-	order1.Type = Order_Market
 
 	bz, err := ModuleCdc.MarshalBinaryBare(order1)
 	require.NoError(t, err)
@@ -47,21 +46,20 @@ func TestSerialization(t *testing.T) {
 	require.Equal(t, sdk.NewInt(50), order2.DestinationFilled)
 	require.Equal(t, order1.DestinationFilled, order2.DestinationFilled)
 
-	require.Equal(t, order1.Type, order2.Type)
 	require.Equal(t, order1.TimeInForce, order2.TimeInForce)
 }
 
 func TestInvalidOrder(t *testing.T) {
 	// 0 amount source
-	_, err := NewOrder(Order_Market, TimeInForce_GoodTilCancel, coin("0eur"), coin("120usd"), []byte("acc"), "A")
+	_, err := NewOrder(TimeInForce_GoodTilCancel, coin("0eur"), coin("120usd"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	// 0 amount destination
-	_, err = NewOrder(Order_Market, TimeInForce_GoodTilCancel, coin("120eur"), coin("0usd"), []byte("acc"), "A")
+	_, err = NewOrder(TimeInForce_GoodTilCancel, coin("120eur"), coin("0usd"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	// Same denomination
-	_, err = NewOrder(Order_Market, TimeInForce_GoodTilCancel, coin("1000eur"), coin("850eur"), []byte("acc"), "A")
+	_, err = NewOrder(TimeInForce_GoodTilCancel, coin("1000eur"), coin("850eur"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	c := sdk.Coin{
@@ -70,7 +68,7 @@ func TestInvalidOrder(t *testing.T) {
 	}
 
 	// Negative source
-	_, err = NewOrder(Order_Market, TimeInForce_GoodTilCancel, c, coin("120usd"), []byte("acc"), "B")
+	_, err = NewOrder(TimeInForce_GoodTilCancel, c, coin("120usd"), []byte("acc"), "B")
 	require.Error(t, err)
 }
 
