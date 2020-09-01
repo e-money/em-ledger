@@ -21,10 +21,6 @@ import (
 	"github.com/onsi/ginkgo/config"
 )
 
-func init() {
-
-}
-
 var (
 	testnet = func() nt.Testnet {
 		version.Name = "e-money" // Used by the keyring library.

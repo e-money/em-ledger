@@ -32,6 +32,7 @@ const (
 	ContainerCount = 4
 	WorkingDir     = "./build/"
 	EMD            = WorkingDir + "emd"
+	DefaultNode    = "tcp://localhost:26657"
 )
 
 var (
@@ -153,7 +154,7 @@ func (t Testnet) GetValidatorLogs(index int) (string, error) {
 func (t Testnet) NewEmcli() Emcli {
 	return Emcli{
 		chainid:  t.chainID,
-		node:     "tcp://localhost:26657",
+		node:     DefaultNode,
 		keystore: t.Keystore,
 	}
 }
