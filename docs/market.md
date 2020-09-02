@@ -51,7 +51,7 @@ Each order can include a "time in force" value to control its behaviour.
  
  | Time in force | Behaviour |
  |------|------|
- | Good til cancel  | Attempt to match the order against the book. Add the remainder to the book, if the order is not filled,  | 
+ | Good til cancel  | Attempt to match the order against the book. Add the remainder to the book, if the order is not filled.  | 
  | Immediate or cancel | Match as much of the order as possible against the book. Do not add the remainder of the order to the book. | 
  | Fill or kill | Attempt to match the entire order. If it does not succeed, do not execute any part of the order |
 
