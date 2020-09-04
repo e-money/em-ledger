@@ -30,31 +30,31 @@ When the balance of the owner account changes, SourceRemaining is adjusted accor
 
 *Immediate settlement*. Matched orders are settled immediately with finality.
 
-
 ## Transaction Types
 
 The transaction types mirror those of the [FIX trading specification](https://www.fixtrading.org/online-specification/business-area-trade/) for single order handling.
 
-Two order types are currently supported:
+The market module currently supports limit and market orders with multiple "time in force" values.
 
-### Limit orders
-
-A limit order specifies a fixed price for trading an instrument. 
-
-### Market orders
-
-The price of a a market order bases is based on the last traded price of its instrument. A slippage value can be included to specify the largest deviation the order may take from the market price.
- 
 ### Time in force
 
-Each order can include a "time in force" value to control its behaviour. 
+Each order includes a "time in force" value to control its behaviour. 
  
  | Time in force | Behaviour |
  |------|------|
- | Good til cancel  | Attempt to match the order against the book. Add the remainder to the book, if the order is not filled.  | 
- | Immediate or cancel | Match as much of the order as possible against the book. Do not add the remainder of the order to the book. | 
- | Fill or kill | Attempt to match the entire order. If it does not succeed, do not execute any part of the order |
+ | Good til cancel  | Aggresively match the order against the book. Add the remainder passively to the book, if the order is not filled.  | 
+ | Immediate or cancel | Aggresively match the order against the book. The remainder of the order is canceled. | 
+ | Fill or kill | Aggresively match the *entire* order against the book. If this does not succeed, cancel the entire order. |
 
+### Limit orders
+
+A limit order specifies the worst (limit) price to trade at calculated as: Price = Destination Amount / Source Amount.
+
+### Market orders
+
+A market order is internally treated as a limit order. Upon order receipt the price is determined using the last traded price of its instrument, with a slippage value applied to determine the worst (limit) price that the order will trade at.
+
+A market order will be rejected in case the instrument has not been traded yet. 
 
 ## Order Data
 
