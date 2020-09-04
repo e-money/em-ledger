@@ -15,28 +15,31 @@ import (
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
-// Keeper of the mint store
 type Keeper struct {
-	cdc              *codec.Codec
-	storeKey         sdk.StoreKey
-	supplyKeeper     types.SupplyKeeper
-	feeCollectorName string
+	cdc           *codec.Codec
+	storeKey      sdk.StoreKey
+	supplyKeeper  types.SupplyKeeper
+	stakingKeeper types.StakingKeeper
+
+	cointokenDestination,
+	stakingtokenDestination string
 }
 
-// NewKeeper creates a new mint Keeper instance
 func NewKeeper(
-	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, feeCollectorName string) Keeper {
+	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
 
-	// ensure mint module account is set
 	if addr := supplyKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the inflation module account has not been set")
 	}
 
 	return Keeper{
-		cdc:              cdc,
-		storeKey:         key,
-		supplyKeeper:     supplyKeeper,
-		feeCollectorName: feeCollectorName,
+		cdc:           cdc,
+		storeKey:      key,
+		supplyKeeper:  supplyKeeper,
+		stakingKeeper: stakingKeeper,
+
+		cointokenDestination:    coinTokenDestination,
+		stakingtokenDestination: stakingTokenDestination,
 	}
 }
 
@@ -78,6 +81,10 @@ func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
+func (k Keeper) GetStakingDenomination(ctx sdk.Context) string {
+	return k.stakingKeeper.GetParams(ctx).BondDenom
+}
+
 func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) (*sdk.Result, error) {
 	state := k.GetState(ctx)
 
@@ -113,6 +120,10 @@ func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) error {
 	return k.supplyKeeper.MintCoins(ctx, types.ModuleName, newCoins)
 }
 
-func (k Keeper) AddMintedCoins(ctx sdk.Context, fees sdk.Coins) error {
-	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
+func (k Keeper) DistributeMintedCoins(ctx sdk.Context, fees sdk.Coins) error {
+	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.cointokenDestination, fees)
+}
+
+func (k Keeper) DistributeStakingCoins(ctx sdk.Context, fees sdk.Coins) error {
+	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.stakingtokenDestination, fees)
 }

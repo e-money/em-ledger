@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 
 	"testing"
 	"time"
@@ -49,6 +50,43 @@ func TestModule1(t *testing.T) {
 		minted := total.AmountOf("eur").Sub(initialEurAmount.Amount)
 		require.True(t, minted.LT(sdk.NewInt(20).MulRaw(i)))
 	}
+}
+
+// Verify that the newly minted tokens are sent to the correct modules
+func TestModuleDestinations(t *testing.T) {
+	ctx, keeper, supplyKeeper := createTestComponents()
+
+	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("400000000eur,400000000chf,100000000ungm")))
+
+	currentTime := time.Now()
+	ctx = ctx.WithBlockTime(currentTime).WithBlockHeight(55)
+
+	BeginBlocker(ctx, keeper)
+
+	keeper.AddDenoms(ctx, []string{"eur", "chf", "ungm"})
+	keeper.SetInflation(ctx, sdk.NewDecWithPrec(1, 2), "eur")
+	keeper.SetInflation(ctx, sdk.NewDecWithPrec(1, 2), "chf")
+	keeper.SetInflation(ctx, sdk.NewDecWithPrec(10, 2), "ungm")
+
+	for i := int64(1); i <= 10; i++ {
+		currentTime = currentTime.Add(time.Minute)
+		ctx = ctx.WithBlockTime(currentTime).WithBlockHeight(60 + 5*i)
+		BeginBlocker(ctx, keeper)
+	}
+
+	// Stablecoin tokens should be in the buyback module's account
+	buybackacc := supplyKeeper.GetModuleAccount(ctx, "buyback")
+	require.Len(t, buybackacc.GetCoins(), 2)
+	require.False(t, buybackacc.GetCoins().AmountOf("chf").IsZero())
+	require.False(t, buybackacc.GetCoins().AmountOf("eur").IsZero())
+	require.True(t, buybackacc.GetCoins().AmountOf("ungm").IsZero())
+
+	// Staking token should be in the distribution account
+	distracc := supplyKeeper.GetModuleAccount(ctx, auth.FeeCollectorName)
+	require.Len(t, distracc.GetCoins(), 1)
+	require.True(t, distracc.GetCoins().AmountOf("chf").IsZero())
+	require.True(t, distracc.GetCoins().AmountOf("eur").IsZero())
+	require.False(t, distracc.GetCoins().AmountOf("ungm").IsZero())
 }
 
 func TestStartTimeInFuture(t *testing.T) {
@@ -96,6 +134,7 @@ func createTestComponents() (sdk.Context, keeper.Keeper, supply.Keeper) {
 		keyInflation = sdk.NewKVStoreKey(ModuleName)
 		authCapKey   = sdk.NewKVStoreKey("authCapKey")
 		keyParams    = sdk.NewKVStoreKey("params")
+		stakingKey   = sdk.NewKVStoreKey("staking")
 		supplyKey    = sdk.NewKVStoreKey("supply")
 		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
 
@@ -107,6 +146,7 @@ func createTestComponents() (sdk.Context, keeper.Keeper, supply.Keeper) {
 	ms.MountStoreWithDB(keyInflation, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(supplyKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	if err != nil {
@@ -121,13 +161,18 @@ func createTestComponents() (sdk.Context, keeper.Keeper, supply.Keeper) {
 	bankKeeper := bank.NewBaseKeeper(accountKeeper, pk.Subspace(bank.DefaultParamspace), blacklistedAddrs)
 
 	maccperms := map[string][]string{
-		ModuleName:            {supply.Minter},
-		auth.FeeCollectorName: nil,
+		ModuleName:                {supply.Minter},
+		auth.FeeCollectorName:     nil,
+		"buyback":                 {supply.Burner},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 	}
 
 	supplyKeeper := supply.NewKeeper(cdc, supplyKey, accountKeeper, bankKeeper, maccperms)
 
-	keeper := NewKeeper(cdc, keyInflation, supplyKeeper, auth.FeeCollectorName)
+	stakingKeeper := mockStakingKeeper{}
+
+	keeper := NewKeeper(cdc, keyInflation, supplyKeeper, stakingKeeper, "buyback", auth.FeeCollectorName)
 
 	lastAppliedTime := time.Now().Add(-2400 * time.Hour)
 
@@ -157,4 +202,10 @@ func coins(s string) sdk.Coins {
 		panic(err)
 	}
 	return coins
+}
+
+type mockStakingKeeper struct{}
+
+func (m mockStakingKeeper) GetParams(_ sdk.Context) staking.Params {
+	return staking.NewParams(5*time.Minute, 40, 50, 0, "ungm")
 }

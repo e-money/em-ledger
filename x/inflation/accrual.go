@@ -5,6 +5,7 @@
 package inflation
 
 import (
+	"github.com/e-money/em-ledger/util"
 	"time"
 
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
@@ -54,7 +55,16 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		panic(err)
 	}
 
-	err = k.AddMintedCoins(ctx, mintedCoins)
+	// Divide into two pools: Staking tokens and Stablecoin tokens
+	stakingDenom := k.GetStakingDenomination(ctx)
+	stakingTokens, coinTokens := util.SplitCoinsByDenom(mintedCoins, stakingDenom)
+
+	err = k.DistributeMintedCoins(ctx, coinTokens)
+	if err != nil {
+		panic(err)
+	}
+
+	err = k.DistributeStakingCoins(ctx, stakingTokens)
 	if err != nil {
 		panic(err)
 	}

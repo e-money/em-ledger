@@ -64,11 +64,17 @@ func newTestInput(t *testing.T) testInput {
 		types.ModuleName:          {supply.Minter},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+
+		// TODO Reference buyback module correctly when ready.
+		"buyback": {supply.Burner},
 	}
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, keySupply, accountKeeper, bankKeeper, maccPerms)
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(sdk.Coins{}))
 
-	inflationKeeper := NewKeeper(types.ModuleCdc, keyInflation, supplyKeeper, auth.FeeCollectorName)
+	stakingKeeper := staking.NewKeeper(types.ModuleCdc, keyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace))
+
+	// TODO
+	inflationKeeper := NewKeeper(types.ModuleCdc, keyInflation, supplyKeeper, stakingKeeper, "buyback", auth.FeeCollectorName)
 
 	// set module accounts
 	feeCollectorAcc := supply.NewEmptyModuleAccount(auth.FeeCollectorName)
