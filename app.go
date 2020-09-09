@@ -7,8 +7,6 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
-	"github.com/e-money/em-ledger/x/buyback"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,6 +17,7 @@ import (
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	emdistr "github.com/e-money/em-ledger/hooks/distribution"
 	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/buyback"
 	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
@@ -30,6 +29,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -78,6 +78,7 @@ var (
 		slashing.ModuleName:          {supply.Minter},
 		slashing.PenaltyAccount:      nil,
 		liquidityprovider.ModuleName: {supply.Minter, supply.Burner},
+		buyback.ModuleName:           {supply.Burner},
 	}
 )
 
@@ -98,6 +99,7 @@ type emoneyApp struct {
 	issuerKeeper    issuer.Keeper
 	authorityKeeper authority.Keeper
 	marketKeeper    *market.Keeper
+	buybackKeeper   buyback.Keeper
 
 	mm *module.Manager
 }
@@ -130,6 +132,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		authority.StoreKey,
 		market.StoreKey,
 		market.StoreKeyIdx,
+		buyback.StoreKey,
 	)
 
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
@@ -140,9 +143,10 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		stakingSubspace  = application.paramsKeeper.Subspace(staking.DefaultParamspace)
 		distrSubspace    = application.paramsKeeper.Subspace(distr.DefaultParamspace)
 		slashingSubspace = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+
+		accountBlacklist = application.ModuleAccountAddrs()
 	)
 
-	accountBlacklist := application.ModuleAccountAddrs()
 	application.accountKeeper = emauth.Wrap(auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount))
 
 	bankKeeper := bank.NewBaseKeeper(application.accountKeeper, bankSubspace, accountBlacklist)
@@ -160,6 +164,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper, application.supplyKeeper, application)
 	// TODO Change market.StoreKeyIdx store to store/mem/store.go from the Cosmos SDK when v0.40 is available
 	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], keys[market.StoreKeyIdx], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
+	application.buybackKeeper = buyback.NewKeeper(application.cdc, keys[buyback.StoreKey], application.marketKeeper, application.supplyKeeper, application.stakingKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
@@ -178,6 +183,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		issuer.NewAppModule(application.issuerKeeper),
 		authority.NewAppModule(application.authorityKeeper),
 		market.NewAppModule(application.marketKeeper),
+		buyback.NewAppModule(application.buybackKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
@@ -195,6 +201,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		issuer.ModuleName,
 		authority.ModuleName,
 		market.ModuleName,
+		buyback.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
@@ -245,6 +252,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	inflation.BeginBlocker(ctx, app.inflationKeeper)
 	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)
+	buyback.BeginBlocker(ctx, app.buybackKeeper)
 
 	return abci.ResponseBeginBlock{
 		Events: ctx.EventManager().ABCIEvents(),

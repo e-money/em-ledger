@@ -9,6 +9,10 @@ const (
 	ModuleName   = types.ModuleName
 	QuerierRoute = types.QuerierRoute
 	AccountName  = types.AccountName
+	StoreKey     = types.StoreKey
+
+	EventTypeBuybackBurn   = types.EventTypeBuybackBurn
+	AttributeKeyBurnAmount = types.AttributeKeyBurnAmount
 )
 
 type (

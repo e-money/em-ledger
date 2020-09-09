@@ -47,6 +47,16 @@ func TestBuyback1(t *testing.T) {
 	account = supplyKeeper.GetModuleAccount(ctx, ModuleName)
 	require.True(t, account.GetCoins().AmountOf(stakingDenom).IsZero())
 
+	require.Condition(t, func() bool {
+		for _, evt := range ctx.EventManager().Events() {
+			if evt.Type == EventTypeBuybackBurn {
+				return true
+			}
+		}
+
+		return false
+	}, "Burn event not found")
+
 	// Verify that an order was created in the market
 	orders := market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Len(t, orders, 1)
@@ -167,7 +177,7 @@ func TestGroupMarketData(t *testing.T) {
 
 	groupedOrders := groupMarketDataBySource(md, "ungm")
 
-	require.Len(t, md, 2)
+	require.Len(t, groupedOrders, 2)
 	require.Contains(t, groupedOrders, "eur")
 	require.Contains(t, groupedOrders, "chf")
 

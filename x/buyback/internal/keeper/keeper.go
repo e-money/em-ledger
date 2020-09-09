@@ -37,10 +37,8 @@ func (k Keeper) GetBuybackAccount(ctx sdk.Context) supply.ModuleAccountI {
 }
 
 func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
-	var (
-		account = k.GetBuybackAccount(ctx)
-		orders  = k.marketKeeper.GetOrdersByOwner(ctx, account.GetAddress())
-	)
+	account := k.GetBuybackAccount(ctx)
+	orders := k.marketKeeper.GetOrdersByOwner(ctx, account.GetAddress())
 
 	for _, order := range orders {
 		result, err := k.marketKeeper.CancelOrder(ctx, account.GetAddress(), order.ClientOrderID)
@@ -98,6 +96,13 @@ func (k Keeper) BurnStakingToken(ctx sdk.Context) error {
 	if stakingBalance.IsZero() {
 		return nil
 	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeBuybackBurn,
+			sdk.NewAttribute(types.AttributeKeyBurnAmount, stakingBalance.String()),
+		),
+	})
 
 	return k.supplyKeeper.BurnCoins(ctx, types.ModuleName, stakingBalance)
 }
