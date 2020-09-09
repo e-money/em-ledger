@@ -190,7 +190,7 @@ func (q QueryInstrumentsResponse) String() string {
 }
 
 func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
-	instruments := k.getInstruments(ctx)
+	instruments := k.GetInstruments(ctx)
 
 	response := make([]QueryInstrumentsResponse, len(instruments))
 	for i, v := range instruments {

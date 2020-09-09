@@ -66,7 +66,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 		Price: sdk.NewDec(math.MaxInt64),
 	}
 
-	instruments := k.getInstruments(ctx)
+	instruments := k.GetInstruments(ctx)
 
 	for _, firstInstrument := range instruments {
 		//_, firstDenom := types.MustParseInstrumentKey(firstIt.Key())
@@ -499,7 +499,7 @@ func (k Keeper) GetInstrument(ctx sdk.Context, src, dst string) *types.MarketDat
 }
 
 // Get instruments based on current order book. Does not include synthetic instruments.
-func (k Keeper) getInstruments(ctx sdk.Context) (instrs []types.MarketData) {
+func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 	idxStore := ctx.KVStore(k.keyIndices)
 
 	it := idxStore.Iterator(types.GetMarketDataPrefix(), sdk.PrefixEndBytes(types.GetMarketDataPrefix()))

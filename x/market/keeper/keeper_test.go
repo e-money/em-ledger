@@ -48,7 +48,7 @@ func TestBasicTrade(t *testing.T) {
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
 
 	// Ensure that the instrument was registered
-	instruments := k.getInstruments(ctx)
+	instruments := k.GetInstruments(ctx)
 	require.Len(t, instruments, 2)
 	require.Nil(t, instruments[0].LastPrice)
 
@@ -58,7 +58,7 @@ func TestBasicTrade(t *testing.T) {
 	require.NoError(t, err)
 
 	// Ensure that the trade has been correctly registered in market data.
-	instruments = k.getInstruments(ctx)
+	instruments = k.GetInstruments(ctx)
 	require.Len(t, instruments, 2)
 	p := order1.Price()
 	require.Equal(t, instruments[0].LastPrice, &p)
@@ -984,7 +984,7 @@ func TestListInstruments(t *testing.T) {
 
 	gasmeter := sdk.NewGasMeter(math.MaxUint64)
 
-	instruments := k.getInstruments(ctx)
+	instruments := k.GetInstruments(ctx)
 	require.Empty(t, instruments)
 
 	// Create instruments between all denoms
@@ -1007,7 +1007,7 @@ func TestListInstruments(t *testing.T) {
 		}
 	}
 
-	instruments = k.getInstruments(ctx)
+	instruments = k.GetInstruments(ctx)
 	require.Len(t, instruments, 12)
 }
 
