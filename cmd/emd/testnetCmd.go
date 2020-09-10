@@ -195,7 +195,7 @@ func initializeTestnet(
 }
 
 func createInflationGenesis() json.RawMessage {
-	state := inflation.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01")
+	state := inflation.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01", "ungm", "0.1")
 
 	gen := inflation.GenesisState{
 		InflationState: state,

@@ -41,10 +41,6 @@ var _ = Describe("Staking", func() {
 				// Allow for a few blocks
 				time.Sleep(5 * time.Second)
 
-				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rewardsJson.Get(QueryNgmRewards).Raw).To(BeEmpty())
-
 				slash, err := listener.AwaitSlash()
 				Expect(err).ToNot(HaveOccurred())
 
@@ -57,14 +53,9 @@ var _ = Describe("Staking", func() {
 				Expect(slash()).ToNot(BeNil())
 				Expect(payoutEvent()).To(BeTrue())
 
-				rewardsJson, err = emcli.QueryRewards(Validator0Key.GetAddress())
+				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rewardsJson.Get(QueryNgmRewards).Raw).ToNot(BeEmpty())
-
-				// Ensure that the jailed validator does not get any of the fine.
-				rewardsJson, err = emcli.QueryRewards(Validator2Key.GetAddress())
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rewardsJson.Get(QueryNgmRewards).Raw).To(BeEmpty())
 
 				validators, err := emcli.QueryValidators()
 				Expect(err).ToNot(HaveOccurred())
