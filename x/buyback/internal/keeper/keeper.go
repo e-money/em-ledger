@@ -12,6 +12,10 @@ import (
 	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
 )
 
+var (
+	updateInterval = time.Hour
+)
+
 type Keeper struct {
 	cdc      *codec.Codec
 	storeKey sdk.StoreKey
@@ -76,7 +80,7 @@ func (k Keeper) UpdateBuybackMarket(ctx sdk.Context) bool {
 		}
 	}
 
-	if blockTime.Sub(*lastUpdated) < time.Hour {
+	if blockTime.Sub(*lastUpdated) < updateInterval {
 		return false
 	}
 

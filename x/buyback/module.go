@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/e-money/em-ledger/x/buyback/client/cli"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -54,8 +55,8 @@ func (amb AppModuleBasic) GetTxCmd(*codec.Codec) *cobra.Command {
 	return nil
 }
 
-func (amb AppModuleBasic) GetQueryCmd(*codec.Codec) *cobra.Command {
-	return nil
+func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return cli.GetQueryCmd(cdc)
 }
 
 func (am AppModule) InitGenesis(sdk.Context, json.RawMessage) []abci.ValidatorUpdate {
@@ -81,7 +82,7 @@ func (am AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(am.keeper)
 }
 
 func (am AppModule) BeginBlock(sdk.Context, abci.RequestBeginBlock) {}

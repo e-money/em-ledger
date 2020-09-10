@@ -10,14 +10,16 @@ const (
 	QuerierRoute = types.QuerierRoute
 	AccountName  = types.AccountName
 	StoreKey     = types.StoreKey
+	QueryBalance = types.QueryBalance
 
 	EventTypeBuybackBurn   = types.EventTypeBuybackBurn
 	AttributeKeyBurnAmount = types.AttributeKeyBurnAmount
 )
 
 type (
-	Keeper        = keeper.Keeper
-	StakingKeeper = keeper.StakingKeeper
+	Keeper               = keeper.Keeper
+	StakingKeeper        = keeper.StakingKeeper
+	QueryBalanceResponse = keeper.QueryBalanceResponse
 )
 
 var (

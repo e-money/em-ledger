@@ -18,8 +18,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	var (
 		stakingDenom = k.GetStakingTokenDenom(ctx)
-		marketData   = k.GetMarketData(ctx)
-		pricingInfo  = groupMarketDataBySource(marketData, stakingDenom)
+		pricingInfo  = groupMarketDataBySource(k.GetMarketData(ctx), stakingDenom)
 		account      = k.GetBuybackAccount(ctx)
 	)
 

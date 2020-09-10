@@ -19,7 +19,7 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-var _ = Describe("Market", func() {
+var _ = Describe("Authority", func() {
 
 	var (
 		keystore  = testnet.Keystore

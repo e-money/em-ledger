@@ -9,6 +9,8 @@ const (
 
 	// Module account identifier
 	AccountName = ModuleName
+
+	QueryBalance = "balance"
 )
 
 var (

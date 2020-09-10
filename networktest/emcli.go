@@ -7,6 +7,7 @@ package networktest
 import (
 	"bytes"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"os/exec"
 	"strconv"
@@ -69,6 +70,11 @@ func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, pa
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) QueryBuybackBalance() ([]byte, error) {
+	args := cli.addQueryFlags("query", "buyback", "balance")
+	return execCmdAndCollectResponse(args)
+}
+
 func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
 	args := cli.addQueryFlags("query", "authority", "gas-prices")
 	return execCmdAndCollectResponse(args)
@@ -76,6 +82,11 @@ func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
 
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "tx", txhash)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryValidatorCommission(validator string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "distribution", "commission", validator)
 	return execCmdAndCollectResponse(args)
 }
 
@@ -111,6 +122,11 @@ func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error)
 	return
 }
 
+func (cli Emcli) QueryTotalSupply() ([]byte, error) {
+	args := cli.addQueryFlags("query", "supply", "total")
+	return execCmdAndCollectResponse(args)
+}
+
 func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "account", account)
 	return execCmdAndCollectResponse(args)
@@ -128,6 +144,11 @@ func (cli Emcli) QueryMarketInstrument(source, destination string) ([]byte, erro
 
 func (cli Emcli) QueryMarketByAccount(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "market", "account", account)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryDelegationsTo(validator string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "staking", "delegations-to", validator)
 	return execCmdAndCollectResponse(args)
 }
 
@@ -183,6 +204,12 @@ func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, er
 
 func (cli Emcli) MarketAddLimitOrder(key Key, source, destination, cid string, moreflags ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "market", "add-limit", source, destination, cid, "--from", key.name)
+	args = append(args, moreflags...)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid string, slippage sdk.Dec, moreflags ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "add-market", sourceDenom, destination, slippage.String(), cid, "--from", key.name)
 	args = append(args, moreflags...)
 	return execCmdWithInput(args, KeyPwd)
 }

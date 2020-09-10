@@ -66,6 +66,7 @@ var (
 		issuer.AppModuleBasic{},
 		authority.AppModule{},
 		market.AppModule{},
+		buyback.AppModule{},
 	)
 
 	// module account permissions
