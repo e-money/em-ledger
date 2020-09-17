@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	v039 "github.com/cosmos/cosmos-sdk/x/genutil/legacy/v0_39"
 	"io"
 	"time"
 
@@ -39,6 +40,8 @@ func MigrateGenesisCmd(cdc *codec.Codec, writer io.Writer) *cobra.Command {
 
 			// Let the standard libraries do their thing
 			newGenState := v038.Migrate(initialState)
+			newGenState = v039.Migrate(newGenState)
+
 			genDoc.AppState = cdc.MustMarshalJSON(newGenState)
 
 			genesisTime := cmd.Flag(flagGenesisTime).Value.String()
