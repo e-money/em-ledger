@@ -52,8 +52,8 @@ install:
 	go install $(BUILD_FLAGS) ./cmd/emcli
 
 build:
-	go build $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
-	go build $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/emcli
+	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+	go build -mod=readonly $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/emcli
 
 build-linux:
 	# Linux images for docker-compose

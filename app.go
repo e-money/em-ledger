@@ -130,6 +130,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		authority.StoreKey,
 		market.StoreKey,
 	)
+	application.keys = keys
 
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 
