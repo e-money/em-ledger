@@ -5,12 +5,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	"github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	app "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
+
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
@@ -18,8 +25,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/server"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var configureConsensus = func() {
@@ -54,7 +59,7 @@ func main() {
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
 
-	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), nil)
+	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), newAppExporter(ctx))
 
 	executor := cli.PrepareBaseCmd(rootCmd, "EMD", app.DefaultNodeHome)
 	err := executor.Execute()
@@ -74,5 +79,24 @@ func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtyp
 			baseapp.SetPruning(pruningOpts),
 			baseapp.SetHaltHeight(uint64(viper.GetInt(server.FlagHaltHeight))),
 		)
+	}
+}
+
+func newAppExporter(ctx *server.Context) server.AppExporter {
+	return func(logger log.Logger, db db.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
+	) (json.RawMessage, []types.GenesisValidator, error) {
+
+		if height != -1 {
+			a := app.NewApp(logger, db, ctx)
+			err := a.LoadHeight(height)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			return a.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+		}
+
+		a := app.NewApp(logger, db, ctx)
+		return a.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 }

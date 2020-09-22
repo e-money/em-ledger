@@ -89,6 +89,8 @@ type emoneyApp struct {
 	database     db.DB
 	currentBatch db.Batch
 
+	keys map[string]*sdk.KVStoreKey
+
 	accountKeeper   emauth.AccountKeeper
 	paramsKeeper    params.Keeper
 	supplyKeeper    supply.Keeper
@@ -135,6 +137,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		market.StoreKeyIdx,
 		buyback.StoreKey,
 	)
+	application.keys = keys
 
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
 
@@ -228,6 +231,11 @@ func createApplicationDatabase(serverCtx *server.Context) db.DB {
 	}
 
 	return emoneydb
+}
+
+// load a particular height
+func (app *emoneyApp) LoadHeight(height int64) error {
+	return app.LoadVersion(height, app.keys[appName])
 }
 
 func (app *emoneyApp) Logger(ctx sdk.Context) log.Logger {

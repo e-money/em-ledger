@@ -50,7 +50,6 @@ var _ = Describe("Staking", func() {
 
 				viper.Set(flags.FlagKeyringBackend, keys.BackendTest)
 				defer viper.Set(flags.FlagKeyringBackend, nil)
-
 				emcli := testnet.NewEmcli()
 
 				time.Sleep(2 * time.Second)
