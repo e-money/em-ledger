@@ -6,6 +6,7 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // generic sealed codec to be used throughout this module
@@ -21,5 +22,6 @@ func init() {
 	ModuleCdc = codec.New()
 	RegisterCodec(ModuleCdc)
 	codec.RegisterCrypto(ModuleCdc)
+	auth.RegisterCodec(ModuleCdc)
 	ModuleCdc.Seal()
 }

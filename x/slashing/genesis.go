@@ -46,5 +46,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, stakingKeeper types.StakingKeep
 // to a genesis file, which can be imported again
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
-	return types.GenesisState{}
+	return types.GenesisState{
+		Params:       keeper.GetParams(ctx),
+		SigningInfos: nil,
+		MissedBlocks: nil,
+	}
 }

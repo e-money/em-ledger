@@ -12,4 +12,5 @@ import (
 type AccountKeeper interface {
 	GetAccount(sdk.Context, sdk.AccAddress) exported.Account
 	SetAccount(sdk.Context, exported.Account)
+	IterateAccounts(ctx sdk.Context, process func(exported.Account) (stop bool))
 }

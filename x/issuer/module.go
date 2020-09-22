@@ -104,7 +104,9 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(defaultGenesisState())
+	issuers := am.keeper.GetIssuers(ctx)
+	gs := genesisState{issuers}
+	return ModuleCdc.MustMarshalJSON(gs)
 }
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
