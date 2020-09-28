@@ -64,6 +64,9 @@ func TestCreateAndMint(t *testing.T) {
 	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
 	assert.Equal(t, defaultMintable.Sub(toMint), lpAcc.Mintable)
+
+	allLPs := keeper.GetAllLiquidityProviderAccounts(ctx)
+	require.Len(t, allLPs, 1)
 }
 
 func TestMintTooMuch(t *testing.T) {
@@ -135,6 +138,9 @@ func TestMintWithoutLPAccount(t *testing.T) {
 	assert.IsType(t, &auth.BaseAccount{}, account)
 	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
 	assert.Equal(t, initialBalance, account.GetCoins())
+
+	allLPs := keeper.GetAllLiquidityProviderAccounts(ctx)
+	require.Empty(t, allLPs)
 }
 
 func TestCreateAndRevoke(t *testing.T) {

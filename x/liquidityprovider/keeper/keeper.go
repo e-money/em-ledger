@@ -6,6 +6,7 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -127,6 +128,20 @@ func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, liquidityProvider s
 	}
 
 	return account
+}
+
+func (k Keeper) GetAllLiquidityProviderAccounts(ctx sdk.Context) []types.LiquidityProviderAccount {
+	res := make([]types.LiquidityProviderAccount, 0)
+
+	k.authKeeper.IterateAccounts(ctx, func(acc exported.Account) (stop bool) {
+		if lpAcc, ok := acc.(*types.LiquidityProviderAccount); ok {
+			res = append(res, *lpAcc)
+		}
+
+		return false
+	})
+
+	return res
 }
 
 // Logger returns a module-specific logger.
