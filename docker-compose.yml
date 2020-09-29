@@ -9,6 +9,7 @@ services:
     environment:
       - ID=0
       - LOG=${LOG:-emd.log}
+#      - LOGLEVEL=*:info
     volumes:
       - ./build:/emoney:Z
     networks:
@@ -23,6 +24,7 @@ services:
     environment:
       - ID=1
       - LOG=${LOG:-emd.log}
+#      - LOGLEVEL=*:info
     volumes:
       - ./build:/emoney:Z
     networks:
@@ -35,6 +37,7 @@ services:
     environment:
       - ID=2
       - LOG=${LOG:-emd.log}
+#      - LOGLEVEL=*:info
     ports:
       - "26661-26662:26656-26657"
     volumes:
@@ -49,6 +52,7 @@ services:
     environment:
       - ID=3
       - LOG=${LOG:-emd.log}
+#      - LOGLEVEL=*:info
     ports:
       - "26663-26664:26656-26657"
     volumes:

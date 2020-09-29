@@ -28,7 +28,7 @@ with open('emoney2.export.json') as emoney2g, open('testnet.export.json') as tes
     mainnet["app_state"]["auth"]["accounts"].extend(testnet["app_state"]["auth"]["accounts"])
     mainnet["app_state"]["staking"] = testnet["app_state"]["staking"]
     mainnet["app_state"]["distribution"] = testnet["app_state"]["distribution"]
-    mainnet["validators"] = testnet["validators"]
+    del mainnet["validators"]
 
     # "supply" module state
     mergeSupply(mainnet["app_state"]["supply"], testnet["app_state"]["supply"])

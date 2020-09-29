@@ -1,0 +1,4581 @@
+{
+    "app_hash": "",
+    "app_state": {
+        "auth": {
+            "accounts": [
+                {
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "0",
+                        "address": "emoney1cs4323dyzu0wxfj4vc62m8q3xsczfavqx9x3zd",
+                        "coins": [
+                            {
+                                "amount": "120792145",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "304654521",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "153629155",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "452651043",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "302183299",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "60367965539402",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [
+                            {
+                                "amount": "4150000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "end_time": "1679745600",
+                        "original_vesting": [
+                            {
+                                "amount": "50000000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "21",
+                        "start_time": "1585137600"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "1",
+                        "address": "emoney147verqcxwdkgrn663x2qj66zyqc5mu479afw9n",
+                        "coins": [
+                            {
+                                "amount": "25000000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "2",
+                        "address": "emoney14r5rva8qk5ee6rvk5sdtmxea40uf74k7uh4yjv",
+                        "coins": [
+                            {
+                                "amount": "9123695400000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "10"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "3",
+                        "address": "emoney1sxx9mszve0gaedz5ld7qdkjkfv8z992avdth5f",
+                        "coins": [
+                            {
+                                "amount": "837622",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2111880",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1065325",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3139028",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2095488",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "12971027987",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "4",
+                        "address": "emoney1ptyzewnns2kn37ewtmv6ppsvhdnmeapvp7kyl6",
+                        "coins": [
+                            {
+                                "amount": "817929",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2061740",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1040342",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3065266",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2047595",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "921427745",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "14"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "5",
+                        "address": "emoney10nc3y5xp93txarcxcqdrsvh9ta297v7xkzs4yy",
+                        "coins": [
+                            {
+                                "amount": "821259",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2072478",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1044633",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3077739",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "955314",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "677695877",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "15"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "6",
+                        "address": "emoney18ka80t4g455lrueg8mk64jk47fscatm72zt4gj",
+                        "coins": [
+                            {
+                                "amount": "1000801",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2523631",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1272807",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3750227",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2503834",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1715567644",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "33"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "7",
+                        "address": "emoney1s3x3wy58ssrjf7097406alryeejfamhrtgd0q5",
+                        "coins": [
+                            {
+                                "amount": "708683",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1786763",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "901322",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2655815",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1772879",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "9568679729",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "10"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "8",
+                        "address": "emoney1waqn2psrhs4vz5gz9p77hv9cxw3xcccffyph02",
+                        "coins": [
+                            {
+                                "amount": "514423",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1297134",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "654583",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1928133",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1288166",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "166230891",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "24"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "9",
+                        "address": "emoney1d6q0xxdugldf85xhkjtw4q7tc5v46ff3ytezyu",
+                        "coins": [
+                            {
+                                "amount": "628553",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1584742",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "799411",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2355523",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1572422",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "11976709200",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "10",
+                        "address": "emoney1tmu0fayvksthpt4qety8dn55lc8pg4sphyapz5",
+                        "coins": [
+                            {
+                                "amount": "1093358",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2758090",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1390567",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "4097397",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2737402",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "11971685631",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "4"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "11",
+                        "address": "emoney1sz7rp920hgupfl0p6c7kwkaes8q8tx3luz3va4",
+                        "coins": [
+                            {
+                                "amount": "829435",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2090389",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1055820",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3107842",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2075045",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "7000275149",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "6"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "12",
+                        "address": "emoney1ygm45zwa7y6smay587rws60wptuauycmc0gf8r",
+                        "coins": [
+                            {
+                                "amount": "771524",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1946249",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "981571",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2891243",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1931721",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1021629889",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "19"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "13",
+                        "address": "emoney1tw0qj9nuqx8nhn9d0zup64navtc0c4hdh9kxst",
+                        "coins": [
+                            {
+                                "amount": "861394",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2163801",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1091961",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3216834",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2150643",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1585033311",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "17"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "14",
+                        "address": "emoney1q2kc675fw536jq74f6ekwae2pr5pksue22sn3a",
+                        "coins": [
+                            {
+                                "amount": "664876",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1677642",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "846524",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2491614",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1663314",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "12271471948",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "9"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "15",
+                        "address": "emoney1cv4leeaavx5lu5n7jgrdklt76rgx2xtdw5df95",
+                        "coins": [
+                            {
+                                "amount": "775308",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1955110",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "986207",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2904776",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1940844",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1119237389",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "19"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "16",
+                        "address": "emoney1hwvlth79tkzsk2vqnt7vkcncajtgzhm3wex6e3",
+                        "coins": [
+                            {
+                                "amount": "797769",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2009713",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1014093",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2992641",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1995133",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "5731107521",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "19"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "17",
+                        "address": "emoney159uhuzucvmtftdappd4smuks4v7s0dpmcednm2",
+                        "coins": [
+                            {
+                                "amount": "796750",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2009289",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1013547",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2986042",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1994157",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "3756939873",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "10"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "18",
+                        "address": "emoney1j40h49qch2kcx28pc892hmyl930skzzxlw75ax",
+                        "coins": [
+                            {
+                                "amount": "2061",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "5152",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "2620",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "7728",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "5152",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "9064403326",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "19",
+                        "address": "emoney1eq55wawvpv044z68tm456mdh8jgvlt32kftlzc",
+                        "coins": [
+                            {
+                                "amount": "813568",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2053998",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1035043",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3049177",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2036502",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "3093417300",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "9"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "20",
+                        "address": "emoney1cu84axdsggf2w3s4pgfg406p0ex9hp682gehrz",
+                        "coins": [
+                            {
+                                "amount": "640181",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1614729",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "814742",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2399419",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1603078",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "157806295",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "26"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "21",
+                        "address": "emoney1wtv0kp6ydt03edd8kyr5arr4f3yc52vpmty82j",
+                        "coins": [
+                            {
+                                "amount": "691829",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1746210",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "880903",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2592624",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1732677",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "967993876",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "17"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "22",
+                        "address": "emoney17wcggpjx007uc09s8y4hwrj8f228mlweu9p4qf",
+                        "coins": [
+                            {
+                                "amount": "679988",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1711980",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "863601",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2544662",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1698680",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "10468698260",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "7"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 10000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "23",
+                        "address": "emoney1293pqwtzu67zp8txuya4yts03ccw5kgfz83kmf",
+                        "coins": [
+                            {
+                                "amount": "1438450",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "3626682",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1829463",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "5390641",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "3598483",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "10272728616",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "49043927648",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "24",
+                        "address": "emoney1m5ymqqnem9tzdzul0xrpkw3d82kncyzdf7c76j",
+                        "coins": [
+                            {
+                                "amount": "1950231",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "4914199",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "2481527",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "7308580",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "4884351",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "6063601760",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "5"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "25",
+                        "address": "emoney1qjy6hpc65mp6yc7hf234y3sf0rtmumnt3dx44p",
+                        "coins": [
+                            {
+                                "amount": "857992",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2163203",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1091221",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3215361",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2146401",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "12071140533",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "26",
+                        "address": "emoney1z89utvygweg5l56fsk8ak7t6hh88fd0amftwj4",
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "27",
+                        "address": "emoney1q4k07zr7504f2tcdfpl4xmawlgq6yz4mzwhq7v",
+                        "coins": [
+                            {
+                                "amount": "462009",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1164862",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "587597",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1731392",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1155788",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "16911858856",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "6"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "28",
+                        "address": "emoney1kgddca7qj96z0qcxr2c45z73cfl0c75p57l33h",
+                        "coins": [
+                            {
+                                "amount": "1004336",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2534198",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1277490",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3763701",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2513476",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "2573170940",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "18"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "29",
+                        "address": "emoney1lyy7q6lt5gyt43sxms4tt9smcnrqy2j0nxt3wf",
+                        "coins": [
+                            {
+                                "amount": "666898",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1683570",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "848661",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2499408",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1670234",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "2309173753",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "30",
+                        "address": "emoney1qk3a2lpm5mskwnpsjm25qzs9urqhwclmuqkejs",
+                        "coins": [
+                            {
+                                "amount": "803787",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2026414",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1022246",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3016997",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2010802",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "8483465699",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "11"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "31",
+                        "address": "emoney17v5v5nwqs9677u92us0qdare549tj7gn7pv78d",
+                        "coins": [
+                            {
+                                "amount": "768126",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1936105",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "977067",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2878331",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1922890",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "754215782",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "17"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "32",
+                        "address": "emoney1zgv6tqess9q6y4cj28ldpjllrqlyzqqhq004k3",
+                        "coins": [
+                            {
+                                "amount": "374440",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "945559",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "476224",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1403230",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "936720",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "19968360078",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "33",
+                        "address": "emoney1edxhamqghv5naa6gjtar5jgxg6ly2rt4qfhf4x",
+                        "coins": [
+                            {
+                                "amount": "864668",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2178980",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1099741",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3239758",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2163866",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "3618894066",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "9"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "34",
+                        "address": "emoney1ualhu3fjgg77g485gmyswkq3w0dp7gysshv0cz",
+                        "coins": [
+                            {
+                                "amount": "786183",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1982131",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1000095",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2946560",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1967996",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1423770693",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "30"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "35",
+                        "address": "emoney1s34xgst5slleg22ey8gwnfd4yf977xrs3h5qej",
+                        "coins": [
+                            {
+                                "amount": "119246",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "301546",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "151661",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "446881",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "298313",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "2000622715",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "36",
+                        "address": "emoney1x95keq9l9y9p7hjdt6xd8wnknrpnjsqrv80f3l",
+                        "coins": [
+                            {
+                                "amount": "5000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "37",
+                        "address": "emoney1zygrkcsfhdznwquccwgzekrkqdth8f89w77cqn",
+                        "coins": [
+                            {
+                                "amount": "149855",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "377821",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "190590",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "561588",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "374886",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1491593",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "38",
+                        "address": "emoney164r0u2rdgglt77wjpzqf6w9k7y87lq469nhfgv",
+                        "coins": [
+                            {
+                                "amount": "158651",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "399999",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "201817",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "594550",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "396889",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "9113060",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "4"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "39",
+                        "address": "emoney1dzha28l2tlqu5kq7c86z0fgw30r6nqx5r88vm4",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "40",
+                        "address": "emoney1lcsjy2d5s33h0sddd8lpuqvwyz5ruz7jl2gpx2",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "41",
+                        "address": "emoney17egx76z2rdcwxhqdrrzsnuhpjpftsjxj2wc2sm",
+                        "coins": [
+                            {
+                                "amount": "64718",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "163417",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "82552",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "242533",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "161902",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "50357826",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "42",
+                        "address": "emoney1vzxkv3lxccnttr9rs0002s93sgw72h7gclvgqd",
+                        "coins": [
+                            {
+                                "amount": "34111",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "86148",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "43490",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "127918",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "85746",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "65225",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "43",
+                        "address": "emoney1hu693n3czjmrjzp47xanz5j8a450zdw3qew435",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "44",
+                        "address": "emoney1sh2y6w950lasm0g4kyc77wus8xgsr475ldtqyt",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "45",
+                        "address": "emoney17e6l8jexcle3un9r8fjwg3jg8rthr95p65uz6j",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "46",
+                        "address": "emoney164z7wwzv84h4hwn6rvjjkns6j4ht43jv26tt9e",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "47",
+                        "address": "emoney19wlk8gkfjckqr8d73dyp4n0f0k89q4h7fqtge0",
+                        "coins": [
+                            {
+                                "amount": "858",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2146",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1091",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3219",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2146",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "49173207",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "48",
+                        "address": "emoney1ul5t6wu8cefygkscsy55hd3jw2e7spmq942wsp",
+                        "coins": [
+                            {
+                                "amount": "74360",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "187481",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "94574",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "278668",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "186024",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "5151314",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "49",
+                        "address": "emoney1fm24xtekwuql5ezp926380adshsx5arkzhqnyz",
+                        "public_key": null,
+                        "sequence": "2"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "50",
+                        "address": "emoney1zca529sff7x4sm2t06x4a5stl7ug0xqx04gung",
+                        "coins": [
+                            {
+                                "amount": "589608",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1490977",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "749880",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2209578",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1474995",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "12069044287",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "51",
+                        "address": "emoney140g8fnnl46mlvfhygj3zvjqlku6x0fwuylucan",
+                        "coins": [
+                            {
+                                "amount": "569593",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1436080",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "724684",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2134571",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1424924",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "11970834913",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "52",
+                        "address": "emoney1uxcakn6sq80p5hpmkft4p9030hyznsuyprlntd",
+                        "coins": [
+                            {
+                                "amount": "377747",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "953854",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "480430",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1415624",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "944994",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "17968496847",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "53",
+                        "address": "emoney19gz4p5hf3u5fkj0gm6h2xmh29ulv6ejdpkv7cj",
+                        "coins": [
+                            {
+                                "amount": "2500000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "54",
+                        "address": "emoney1ghkm2jpjvlms2jp8ttl3ucxvyfjnm0szgvvz85",
+                        "coins": [
+                            {
+                                "amount": "597",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1508",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "760",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2240",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1494",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "19979503085",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "55",
+                        "address": "emoney189e8s3ng6qeug5gknqvr5m86y8xc0d24exg65t",
+                        "coins": [
+                            {
+                                "amount": "562627",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1418484",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "715974",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2108668",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1408167",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "5272194743",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "14"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "56",
+                        "address": "emoney1z4nc3htz887eemfqmta5a5q8g2glf9qsrrpedu",
+                        "coins": [
+                            {
+                                "amount": "577924",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1457159",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "735218",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2166029",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1456566",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "4151798461",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "15"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 20000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "57",
+                        "address": "emoney1kx4ptpctvqsyaeqnlsh8uefc5ewwam9h894r98",
+                        "coins": [
+                            {
+                                "amount": "830718",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2097565",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1059668",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3113146",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2078295",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "37059742124",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "98087855297",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "58",
+                        "address": "emoney1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8gu7g7z",
+                        "coins": [
+                            {
+                                "amount": "180",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "190",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "193",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "183",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "185",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "233",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "name": "distribution",
+                        "permissions": null,
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "59",
+                        "address": "emoney1fl48vsnmsdzcv85q5d2q4z5ajdha8yu36cnmw2",
+                        "coins": [
+                            {
+                                "amount": "5020540389840",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "name": "bonded_tokens_pool",
+                        "permissions": [
+                            "burner",
+                            "staking"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "60",
+                        "address": "emoney1tygms3xhhs3yv487phx3dw4a95jn7t7lwc02c7",
+                        "coins": [
+                            {
+                                "amount": "119891995400",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "name": "not_bonded_tokens_pool",
+                        "permissions": [
+                            "burner",
+                            "staking"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "61",
+                        "address": "emoney17xpfvakm2amg962yls6f84z3kell8c5ll6e5uq",
+                        "name": "fee_collector",
+                        "permissions": null,
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "62",
+                        "address": "emoney1ygnj9y2pulvgpy6gs2252s2qgcyawurl6zhn7z",
+                        "coins": [
+                            {
+                                "amount": "99800000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "3"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "63",
+                        "address": "emoney1xxh3p9vvg3xpnd4uw8yzkp7rpnfyvc0h43kcq8",
+                        "name": "slashing",
+                        "permissions": [
+                            "minter"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "64",
+                        "address": "emoney1nfdxfrm889lx3s6c2fqry00yunqw0g0xp0fdkt",
+                        "name": "slashing_penalties",
+                        "permissions": null,
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 60000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "65",
+                        "address": "emoney1v5hrqlv8dqgzvy0pwzqzg0gxy899rm4ky50x5g",
+                        "coins": [
+                            {
+                                "amount": "2406838",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "6847451",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "3431854",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "10122175",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "6750842",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "528226139",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "294263565891",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "13",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "66",
+                        "address": "emoney1j56qugahdwlla3sk4mgaclqtquzl3ycfekuls5",
+                        "coins": [
+                            {
+                                "amount": "1",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "2",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "4616282",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "67",
+                        "address": "emoney1adpw4sj0p4ux698rt50k9cmd7g5cewvyg97t8p",
+                        "coins": [
+                            {
+                                "amount": "671179",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1691709",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "853722",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2515465",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1679683",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "5069524123",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "5"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "68",
+                        "address": "emoney1uae5c48qjdc9psfzkwvre0shm9z8wlsfnse2nz",
+                        "coins": [
+                            {
+                                "amount": "22493270980",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "169"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "69",
+                        "address": "emoney1s0aw0ys063r8rlr8v5n599x03x8rnl4cmaqm2q",
+                        "coins": [
+                            {
+                                "amount": "413851",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1043416",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "526346",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1550919",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1035310",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "11973164901",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 15000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "70",
+                        "address": "emoney13gjhk3pmmusvdrsgqwdc74fcafdmvex0sdhqs0",
+                        "coins": [
+                            {
+                                "amount": "450692",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1137258",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "573231",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1688996",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1127482",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "9768187",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "73565891472",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "6",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 12000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "71",
+                        "address": "emoney1qjk97vct5gs995xmf9pk0zxt9ptpdyzp3pglyp",
+                        "coins": [
+                            {
+                                "amount": "862464",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "2174014",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "1096984",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3232130",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "2158946",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "955960652",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "58852713178",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "7",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 200000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "72",
+                        "address": "emoney12xh45dck7d9q2hs97x4qfq3e7p20y8ffkqamcy",
+                        "coins": [
+                            {
+                                "amount": "6096471",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "15378872",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "7753689",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "22846730",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "15263522",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "17779883",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "980878552971",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "5",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 10000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "73",
+                        "address": "emoney1kjhdx3nkh6krdhryvjzkq33xwh6wsyy7ghnylq",
+                        "coins": [
+                            {
+                                "amount": "299473",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "443397",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "105885",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1122045",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "748942",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "121426",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "49043927648",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "12",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 10000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "74",
+                        "address": "emoney1jqpl37rn8xv63apsw47u05evp9g9p34gepka68",
+                        "coins": [
+                            {
+                                "amount": "271338",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "684108",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "345096",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "1016851",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "678795",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "900335318",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "49043927648",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "2",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 10000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "75",
+                        "address": "emoney1ug6gutaanays5x2yglxwdth205n4auu6ejgxx9",
+                        "coins": [
+                            {
+                                "amount": "264228",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "668998",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "336337",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "990270",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "661106",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "4529035",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1648206000",
+                        "original_vesting": [
+                            {
+                                "amount": "49043927648",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "8",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 20000000000",
+                    "_comment_2": "Private Sale Delivery: ungm 178087855297",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "76",
+                        "address": "emoney10xv3mmp66rf95w0js8mc7ckm6dlwgcsm2yr7cx",
+                        "coins": [
+                            {
+                                "amount": "566428",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1429145",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "720399",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2122709",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1417006",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1001397036",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "178087855297",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_1": "Seed Round Migration: ungm 20000000000",
+                    "_comment_2": "Private Sale Delivery: ungm 178087855297",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "77",
+                        "address": "emoney1h0kgdylpm92khtz0tujl9dcf88c4rhf2k9d4mx",
+                        "coins": [
+                            {
+                                "amount": "566428",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "1429145",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "720399",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "2122709",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "1417006",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "1001396777",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "178087855297",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "1",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "78",
+                        "address": "emoney1s73cel9vxllx700eaeuqr70663w5f0twzcks3l",
+                        "coins": [
+                            {
+                                "amount": "98800000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "6"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "79",
+                        "address": "emoney1fmxdf0qk5rr5flnew3ae7qa44glj2u2yh4kr0u",
+                        "name": "liquidityprovider",
+                        "permissions": [
+                            "minter",
+                            "burner"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "80",
+                        "address": "emoney1d4e35hk3gk4k6t5gh02dcm923z8ck86qf2dnuj",
+                        "name": "inflation",
+                        "permissions": [
+                            "minter"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "81",
+                        "address": "emoney1n6kqrlmdhenstppxuaemczplnex0cyk9ddm3yd",
+                        "coins": [
+                            {
+                                "amount": "39994854250",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "99989426500",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "50855467002",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "149989542500",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "99989587500",
+                                "denom": "esek"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "10"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "82",
+                        "address": "emoney1z06es953qgwnfs67g7282utdlzganwjlu5f7se",
+                        "coins": [
+                            {
+                                "amount": "4960412",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "6057911",
+                                "denom": "edkk"
+                            },
+                            {
+                                "amount": "4762706",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "595",
+                                "denom": "enok"
+                            },
+                            {
+                                "amount": "10000408",
+                                "denom": "esek"
+                            },
+                            {
+                                "amount": "2975369",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "12"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "83",
+                        "address": "emoney1yw2xd42y79t650n55ddp6pjdp9sd97syz03ql9",
+                        "coins": [
+                            {
+                                "amount": "9085017",
+                                "denom": "enok"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "5"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "84",
+                        "address": "emoney10em8huquc2uh7kcpdlmljvkxr8vvgw8l5hs8xa",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 84000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "85",
+                        "address": "emoney10zt8j3l2p9dy24kdn8ctlupz9c0l0gtw5y78f3",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "84000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 76870000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "86",
+                        "address": "emoney1380du0lpjc78dc32cdap9wenhraytu6fqm3tnr",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "76870000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "87",
+                        "address": "emoney144mp8g9upcglyf0nh3sn9lc5tt7rfxrme7faqq",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "88",
+                        "address": "emoney14kckr7stz4968wcg7ud2m2p74ywj3eg6gmltft",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 60000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "89",
+                        "address": "emoney15k95am535xyesprk8vyaa0kc796jlptcuth2ua",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "60000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 76000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "90",
+                        "address": "emoney15ra0gxslkve2ynh99th7w3wuxjvg4cl7dts4jf",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "76000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "91",
+                        "address": "emoney16c66tzem5w8t7vt2tzqp7jpv6n27202p94jsd2",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "92",
+                        "address": "emoney16dkp6yx3tgdlevvtf0l007ah9jds3mmhkma0mk",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 60000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "93",
+                        "address": "emoney16h87t3zp0a473j56lxuwca4s3myfcgk8m6uemy",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "60000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 40000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "94",
+                        "address": "emoney175xwtd2alqvh5ag2dsxv7fcpr9weuhdlvp2xf9",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "40000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "95",
+                        "address": "emoney18w4cmx4ct6gj3s4rzg8r0fc4ca805xmgxfevgw",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 4000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "96",
+                        "address": "emoney1e6p3plpcfzr23qdj43xew0stthaa45tgjzsf6m",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "4000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "97",
+                        "address": "emoney1efsc7rvu6uh6rq8u87tl70w7nm80m9e66y4v0n",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 100000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "98",
+                        "address": "emoney1f6assdd863qef3hqh6g7zhhyunrlrs4l24x5mm",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "100000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "99",
+                        "address": "emoney1fjhl4w2cnfprqg97r4y03ejswx7f2f0uw6y05s",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 4000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "100",
+                        "address": "emoney1g0vl8ewklwwex8rc7xj4w88z5d2v33awmlcc2l",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "4000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "101",
+                        "address": "emoney1g5ax3j0rsuxqhax26wl7zg8c3353qj83hxjk3n",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "102",
+                        "address": "emoney1g6p8epv3j27ddhmfqcpapzjg8gg4gy2xeyqhzz",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "103",
+                        "address": "emoney1g890ypf5sxq4a565awwaj3drg9xhje4an3q640",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "104",
+                        "address": "emoney1hcn7c2jlhuk3hnx6wjahnxdkqtwgejegumczra",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "105",
+                        "address": "emoney1hqex3pzcfa4mfkgchmxma54snujfmsf7uncg5k",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 57000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "106",
+                        "address": "emoney1jj5yrkgrzu2k22y9jgqkf9h5slk0ej9sdmkgjc",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "57000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "107",
+                        "address": "emoney1jrs3x37ejq805x9w7y8mjmfgms49824cspfypz",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 110000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "108",
+                        "address": "emoney1m30r4te0ngs6ue4v72tww05l0mg3ee2ddf3wcn",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "110000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "109",
+                        "address": "emoney1nf9hs4pmwpkxjpme6eacd36zd88d0djsalwg64",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "110",
+                        "address": "emoney1nn242rwg34naucr5xp9myfnfmzdnx8nqw6d4te",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 20000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "111",
+                        "address": "emoney1nnww66xa6cgy2crmk3lyqevtwnj7kj23ml97rs",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "20000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "112",
+                        "address": "emoney1p3z960y8mhlf68sc0g5nvvknk02tukvj0ufthp",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 160000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "113",
+                        "address": "emoney1pm4ff07unresvpwump854qz7p75tpyj0whj74j",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "160000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 600000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "114",
+                        "address": "emoney1pmux2uc00wakgk64j40rxhxzqygjpwhw5w057z",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "600000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "115",
+                        "address": "emoney1q3809u5u3nljz90n0g60zq4cfe4yfp3d8t5jhs",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 40000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "116",
+                        "address": "emoney1rk58me4tuxjyjkxk4narq4qn5dq92232kevftp",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "40000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 80000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "117",
+                        "address": "emoney1rpa4pl09zs4ql7qq0zpxrqrsf797tzy2jx06zg",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "80000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "118",
+                        "address": "emoney1rw5urmp4fej0h3sc8phxyeqdzk7x3hs3gk3d3g",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "119",
+                        "address": "emoney1s9ufe8q6xaz03rmdkut3srygt2pu8s86clghvz",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 198934000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "120",
+                        "address": "emoney1sh2chjr4y2xy0pkmn2422vet8hl6hhgrnc8wlu",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "198934000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 400000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "121",
+                        "address": "emoney1swc626fv5hlta6h63edpe5efgrv6ghc0g64vyj",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "400000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 38000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "122",
+                        "address": "emoney1tkct0xkgfd903chrru3tjrx86zpwn6yx45fl89",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "38000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 20000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "123",
+                        "address": "emoney1tv2edevd60qj0rc0zzmut26l868xdd9mvpdp8u",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "20000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 200000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "124",
+                        "address": "emoney1tvu50mh78585dz0thdxatr97qn7pr69zamrw45",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "200000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 6000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "125",
+                        "address": "emoney1u49n9slzunxhyle88ecv4d5yndyrwl63qgax9a",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "6000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 40000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "126",
+                        "address": "emoney1uadum8l2aemxfdytqqgalrxe2nlk764vxquac9",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "40000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 30400000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "127",
+                        "address": "emoney1udcvcn3mlf5u5upms3f58j5z7pgqh5n22zd7pv",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "30400000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 200000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "128",
+                        "address": "emoney1v3x9nwpdm3h93qq5wq600g36hh2lmgef9y6l2d",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "200000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 20000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "129",
+                        "address": "emoney1vhq5afw7rrh6j84p9wlns9363whdxf9svha988",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "20000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 60000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "130",
+                        "address": "emoney1vl5qu9kw8fjm40yvqv6qvdh937r2ctz6k28h79",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "60000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 60000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "131",
+                        "address": "emoney1w4hflgzmxk0wjdy5pvw4e0ncxe76r4ckjd6mt3",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "60000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 40000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "132",
+                        "address": "emoney1wmc068e5peugdsvatajcl8pvt0wszgfsyr42t8",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "40000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 14000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "133",
+                        "address": "emoney1x26r6xrl708vmzghtgewg5v0jwjwdks3uvy5xs",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "14000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 34200000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "134",
+                        "address": "emoney1x4jdrn97uah6rs0cvywdgyr2r3z6839ugeyu0x",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "34200000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 19000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "135",
+                        "address": "emoney1yjs2njh5yv0x7etxn53fmxvyl757dj9wpflrvn",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "19000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "_comment_2": "Private Sale Delivery: ungm 40000000000",
+                    "type": "cosmos-sdk/ContinuousVestingAccount",
+                    "value": {
+                        "account_number": "136",
+                        "address": "emoney1zwp97t7kx6sgk5yz6ad9ajqyndd8lv0mpeu432",
+                        "coins": [],
+                        "delegated_free": [],
+                        "delegated_vesting": [],
+                        "end_time": "1632434400",
+                        "original_vesting": [
+                            {
+                                "amount": "40000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0",
+                        "start_time": "1616670000"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "10",
+                        "address": "emoney1qx39c8sujpt7r4958dw42nu7wp8vjq5nxtqy3h",
+                        "coins": [
+                            {
+                                "amount": "10000000000",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "10000000000",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3500000000000",
+                                "denom": "ejpy"
+                            },
+                            {
+                                "amount": "99000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "4",
+                        "address": "emoney18lmfeztpsff47frhsldzndlh8q55ryqd2dck64",
+                        "coins": [
+                            {
+                                "amount": "40000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": {
+                            "type": "tendermint/PubKeySecp256k1",
+                            "value": "Aq0p61wI9ktdZhkX96EepEKDk88BV5TgjLl1/QEZEhxk"
+                        },
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "1",
+                        "address": "emoney1fl48vsnmsdzcv85q5d2q4z5ajdha8yu36cnmw2",
+                        "coins": [
+                            {
+                                "amount": "240000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "name": "bonded_tokens_pool",
+                        "permissions": [
+                            "burner",
+                            "staking"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "3",
+                        "address": "emoney1268ggkd90wurdgs9yd2gtpyp0c4yqavt3s06qz",
+                        "coins": [
+                            {
+                                "amount": "40000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": {
+                            "type": "tendermint/PubKeySecp256k1",
+                            "value": "Aw1u/WuBg+35tL51SBIKZhtA5OXKljvjFfDhZyPsOazm"
+                        },
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "2",
+                        "address": "emoney1tygms3xhhs3yv487phx3dw4a95jn7t7lwc02c7",
+                        "coins": [],
+                        "name": "not_bonded_tokens_pool",
+                        "permissions": [
+                            "burner",
+                            "staking"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "11",
+                        "address": "emoney1v27gllghn6phwfur63x02ftgydemgc456qxv78",
+                        "coins": [
+                            {
+                                "amount": "10000000000",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "10000000000",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3500000000000",
+                                "denom": "ejpy"
+                            },
+                            {
+                                "amount": "99000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "12",
+                        "address": "emoney1vuem09rz6e42fpsvsg8fx6d8a98d2vyx30lnal",
+                        "coins": [
+                            {
+                                "amount": "1145116",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "114511",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "200395309",
+                                "denom": "ejpy"
+                            }
+                        ],
+                        "name": "buyback",
+                        "permissions": [
+                            "burner"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "13",
+                        "address": "emoney1d4e35hk3gk4k6t5gh02dcm923z8ck86qf2dnuj",
+                        "coins": [],
+                        "name": "inflation",
+                        "permissions": [
+                            "minter"
+                        ],
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "8",
+                        "address": "emoney1wg60c9dly7qhtc3fmx8lsayfcpw30c8wu9mhcu",
+                        "coins": [
+                            {
+                                "amount": "10000000000",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "10000000000",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3500000000000",
+                                "denom": "ejpy"
+                            },
+                            {
+                                "amount": "99000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "5",
+                        "address": "emoney1speg0e27qef37a5a7fyyaq2qk0944zhfc3ctwj",
+                        "coins": [
+                            {
+                                "amount": "40000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": {
+                            "type": "tendermint/PubKeySecp256k1",
+                            "value": "AsEBFVHtY9sFVvjVw+ZlDLPUkxv61MHQ1dVWonimPVkg"
+                        },
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "6",
+                        "address": "emoney13arcezwkcg4a6m96e49m4ur2g3y3lwx2wahjgw",
+                        "coins": [
+                            {
+                                "amount": "40000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": {
+                            "type": "tendermint/PubKeySecp256k1",
+                            "value": "A2xiTsuu9KAMKx79fdnwrpYnTJfwdLrrTK4Jy1+5N3FK"
+                        },
+                        "sequence": "1"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "0",
+                        "address": "emoney1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8gu7g7z",
+                        "coins": [
+                            {
+                                "amount": "11336658",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "name": "distribution",
+                        "permissions": null,
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "7",
+                        "address": "emoney1h6x69r964px562hpkr6dewyh8jlqeyrusfn5ya",
+                        "coins": [
+                            {
+                                "amount": "10000000000",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "10000000000",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3500000000000",
+                                "denom": "ejpy"
+                            },
+                            {
+                                "amount": "99000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/Account",
+                    "value": {
+                        "account_number": "9",
+                        "address": "emoney1m802yfwmudgk84qy4j50zd2zg05wy0ry6he3w6",
+                        "coins": [
+                            {
+                                "amount": "10000000000",
+                                "denom": "echf"
+                            },
+                            {
+                                "amount": "10000000000",
+                                "denom": "eeur"
+                            },
+                            {
+                                "amount": "3500000000000",
+                                "denom": "ejpy"
+                            },
+                            {
+                                "amount": "99000000000",
+                                "denom": "ungm"
+                            }
+                        ],
+                        "public_key": null,
+                        "sequence": "0"
+                    }
+                },
+                {
+                    "type": "cosmos-sdk/ModuleAccount",
+                    "value": {
+                        "account_number": "14",
+                        "address": "emoney17xpfvakm2amg962yls6f84z3kell8c5ll6e5uq",
+                        "coins": [],
+                        "name": "fee_collector",
+                        "permissions": null,
+                        "public_key": "",
+                        "sequence": "0"
+                    }
+                }
+            ],
+            "params": {
+                "max_memo_characters": "256",
+                "sig_verify_cost_ed25519": "590",
+                "sig_verify_cost_secp256k1": "1000",
+                "tx_sig_limit": "7",
+                "tx_size_cost_per_byte": "10"
+            }
+        },
+        "authority": {
+            "key": "emoney1ygnj9y2pulvgpy6gs2252s2qgcyawurl6zhn7z",
+            "min_gas_prices": [
+                {
+                    "amount": "0.530000000000000000",
+                    "denom": "echf"
+                },
+                {
+                    "amount": "3.700000000000000000",
+                    "denom": "edkk"
+                },
+                {
+                    "amount": "0.500000000000000000",
+                    "denom": "eeur"
+                },
+                {
+                    "amount": "6.100000000000000000",
+                    "denom": "enok"
+                },
+                {
+                    "amount": "5.500000000000000000",
+                    "denom": "esek"
+                },
+                {
+                    "amount": "1.000000000000000000",
+                    "denom": "ungm"
+                }
+            ],
+            "restricted_denoms": []
+        },
+        "bank": {
+            "send_enabled": true
+        },
+        "distribution": {
+            "delegator_starting_infos": [
+                {
+                    "delegator_address": "emoney18lmfeztpsff47frhsldzndlh8q55ryqd2dck64",
+                    "starting_info": {
+                        "creation_height": "0",
+                        "previous_period": "1",
+                        "stake": "60000.000000000000000000"
+                    },
+                    "validator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc"
+                },
+                {
+                    "delegator_address": "emoney1268ggkd90wurdgs9yd2gtpyp0c4yqavt3s06qz",
+                    "starting_info": {
+                        "creation_height": "0",
+                        "previous_period": "1",
+                        "stake": "60000.000000000000000000"
+                    },
+                    "validator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70"
+                },
+                {
+                    "delegator_address": "emoney1speg0e27qef37a5a7fyyaq2qk0944zhfc3ctwj",
+                    "starting_info": {
+                        "creation_height": "0",
+                        "previous_period": "1",
+                        "stake": "60000.000000000000000000"
+                    },
+                    "validator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl"
+                },
+                {
+                    "delegator_address": "emoney13arcezwkcg4a6m96e49m4ur2g3y3lwx2wahjgw",
+                    "starting_info": {
+                        "creation_height": "0",
+                        "previous_period": "1",
+                        "stake": "60000.000000000000000000"
+                    },
+                    "validator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr"
+                }
+            ],
+            "delegator_withdraw_infos": [],
+            "fee_pool": {
+                "community_pool": [
+                    {
+                        "amount": "226733.160000000000000000",
+                        "denom": "ungm"
+                    }
+                ]
+            },
+            "outstanding_rewards": [
+                {
+                    "outstanding_rewards": [
+                        {
+                            "amount": "2636664.385000000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc"
+                },
+                {
+                    "outstanding_rewards": [
+                        {
+                            "amount": "2635772.985000000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70"
+                },
+                {
+                    "outstanding_rewards": [
+                        {
+                            "amount": "2635772.985000000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl"
+                },
+                {
+                    "outstanding_rewards": [
+                        {
+                            "amount": "3201714.485000000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr"
+                }
+            ],
+            "params": {
+                "base_proposer_reward": "0.010000000000000000",
+                "bonus_proposer_reward": "0.040000000000000000",
+                "community_tax": "0.020000000000000000",
+                "withdraw_addr_enabled": true
+            },
+            "previous_proposer": "",
+            "validator_accumulated_commissions": [
+                {
+                    "accumulated": [
+                        {
+                            "amount": "395499.657750000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc"
+                },
+                {
+                    "accumulated": [
+                        {
+                            "amount": "395365.947750000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70"
+                },
+                {
+                    "accumulated": [
+                        {
+                            "amount": "395365.947750000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl"
+                },
+                {
+                    "accumulated": [
+                        {
+                            "amount": "480257.172750000000000000",
+                            "denom": "ungm"
+                        }
+                    ],
+                    "validator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr"
+                }
+            ],
+            "validator_current_rewards": [
+                {
+                    "rewards": {
+                        "period": "2",
+                        "rewards": [
+                            {
+                                "amount": "2241164.727250000000000000",
+                                "denom": "ungm"
+                            }
+                        ]
+                    },
+                    "validator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc"
+                },
+                {
+                    "rewards": {
+                        "period": "2",
+                        "rewards": [
+                            {
+                                "amount": "2240407.037250000000000000",
+                                "denom": "ungm"
+                            }
+                        ]
+                    },
+                    "validator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70"
+                },
+                {
+                    "rewards": {
+                        "period": "2",
+                        "rewards": [
+                            {
+                                "amount": "2240407.037250000000000000",
+                                "denom": "ungm"
+                            }
+                        ]
+                    },
+                    "validator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl"
+                },
+                {
+                    "rewards": {
+                        "period": "2",
+                        "rewards": [
+                            {
+                                "amount": "2721457.312250000000000000",
+                                "denom": "ungm"
+                            }
+                        ]
+                    },
+                    "validator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr"
+                }
+            ],
+            "validator_historical_rewards": [
+                {
+                    "period": "1",
+                    "rewards": {
+                        "cumulative_reward_ratio": null,
+                        "reference_count": 2
+                    },
+                    "validator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc"
+                },
+                {
+                    "period": "1",
+                    "rewards": {
+                        "cumulative_reward_ratio": null,
+                        "reference_count": 2
+                    },
+                    "validator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70"
+                },
+                {
+                    "period": "1",
+                    "rewards": {
+                        "cumulative_reward_ratio": null,
+                        "reference_count": 2
+                    },
+                    "validator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl"
+                },
+                {
+                    "period": "1",
+                    "rewards": {
+                        "cumulative_reward_ratio": null,
+                        "reference_count": 2
+                    },
+                    "validator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr"
+                }
+            ],
+            "validator_slash_events": []
+        },
+        "genutil": {
+            "gentxs": []
+        },
+        "inflation": {
+            "assets": {
+                "assets": [
+                    {
+                        "accum": "3258520272783007.660000000000000000",
+                        "denom": "echf",
+                        "inflation": "0.010000000000000000"
+                    },
+                    {
+                        "accum": "28722288046873632.500000000000000000",
+                        "denom": "edkk",
+                        "inflation": "0.010000000000000000"
+                    },
+                    {
+                        "accum": "6755689333442738.040000000000000000",
+                        "denom": "eeur",
+                        "inflation": "0.010000000000000000"
+                    },
+                    {
+                        "accum": "12823247516847109.140000000000000000",
+                        "denom": "enok",
+                        "inflation": "0.010000000000000000"
+                    },
+                    {
+                        "accum": "13291725101370804.690000000000000000",
+                        "denom": "esek",
+                        "inflation": "0.010000000000000000"
+                    }
+                ],
+                "last_applied": "2020-09-24T09:04:27.803937537Z",
+                "last_applied_height": "515137"
+            }
+        },
+        "issuer": {
+            "issuers": [
+                {
+                    "address": "emoney1cs4323dyzu0wxfj4vc62m8q3xsczfavqx9x3zd",
+                    "denoms": [
+                        "echf",
+                        "edkk",
+                        "eeur",
+                        "enok",
+                        "esek"
+                    ]
+                }
+            ]
+        },
+        "liquidityprovider": {
+            "accounts": [
+                {
+                    "Account": {
+                        "type": "cosmos-sdk/Account",
+                        "value": {
+                            "account_number": "78",
+                            "address": "emoney1s73cel9vxllx700eaeuqr70663w5f0twzcks3l",
+                            "coins": [
+                                {
+                                    "amount": "98800000",
+                                    "denom": "ungm"
+                                }
+                            ],
+                            "public_key": {
+                                "type": "tendermint/PubKeySecp256k1",
+                                "value": "A+fi3hhzZjrM7+TPetNPW+0FGOrT2Q87nQS+XSs9rY4g"
+                            },
+                            "sequence": "6"
+                        }
+                    },
+                    "mintable": []
+                }
+            ]
+        },
+        "market": null,
+        "slashing": {
+            "missed_blocks": {},
+            "params": {
+                "downtime_jail_duration": "3600000000000",
+                "max_evidence_age": "1800000000000",
+                "min_signed_per_window": "0.100000000000000000",
+                "signed_blocks_window_duration": "3600000000000",
+                "slash_fraction_double_sign": "0.050000000000000000",
+                "slash_fraction_downtime": "0.000100000000000000"
+            },
+            "signing_infos": {}
+        },
+        "staking": {
+            "delegations": [
+                {
+                    "delegator_address": "emoney18lmfeztpsff47frhsldzndlh8q55ryqd2dck64",
+                    "shares": "60000.000000000000000000",
+                    "validator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc"
+                },
+                {
+                    "delegator_address": "emoney1268ggkd90wurdgs9yd2gtpyp0c4yqavt3s06qz",
+                    "shares": "60000.000000000000000000",
+                    "validator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70"
+                },
+                {
+                    "delegator_address": "emoney1speg0e27qef37a5a7fyyaq2qk0944zhfc3ctwj",
+                    "shares": "60000.000000000000000000",
+                    "validator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl"
+                },
+                {
+                    "delegator_address": "emoney13arcezwkcg4a6m96e49m4ur2g3y3lwx2wahjgw",
+                    "shares": "60000.000000000000000000",
+                    "validator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr"
+                }
+            ],
+            "exported": true,
+            "last_total_power": "240000",
+            "last_validator_powers": [
+                {
+                    "Address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc",
+                    "Power": "60000"
+                },
+                {
+                    "Address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70",
+                    "Power": "60000"
+                },
+                {
+                    "Address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl",
+                    "Power": "60000"
+                },
+                {
+                    "Address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr",
+                    "Power": "60000"
+                }
+            ],
+            "params": {
+                "bond_denom": "ungm",
+                "historical_entries": 0,
+                "max_entries": 7,
+                "max_validators": 100,
+                "unbonding_time": "1814400000000000"
+            },
+            "redelegations": null,
+            "unbonding_delegations": null,
+            "validators": [
+                {
+                    "commission": {
+                        "commission_rates": {
+                            "max_change_rate": "1.000000000000000000",
+                            "max_rate": "1.000000000000000000",
+                            "rate": "0.150000000000000000"
+                        },
+                        "update_time": "2020-09-29T13:39:17Z"
+                    },
+                    "consensus_pubkey": "emoneyvalconspub1zcjduepqen5hwe4700ks3clf8s50ayyhus8naucemquv04cm93skxpryalus6ggj2e",
+                    "delegator_shares": "60000.000000000000000000",
+                    "description": {
+                        "details": "",
+                        "identity": "",
+                        "moniker": "Validator-1",
+                        "security_contact": "",
+                        "website": ""
+                    },
+                    "jailed": false,
+                    "min_self_delegation": "1",
+                    "operator_address": "emoneyvaloper18lmfeztpsff47frhsldzndlh8q55ryqddd7zyc",
+                    "status": 2,
+                    "tokens": "60000",
+                    "unbonding_height": "0",
+                    "unbonding_time": "1970-01-01T00:00:00Z"
+                },
+                {
+                    "commission": {
+                        "commission_rates": {
+                            "max_change_rate": "1.000000000000000000",
+                            "max_rate": "1.000000000000000000",
+                            "rate": "0.150000000000000000"
+                        },
+                        "update_time": "2020-09-29T13:39:17Z"
+                    },
+                    "consensus_pubkey": "emoneyvalconspub1zcjduepq85lfysxezpnqkz646qsmwzdeda8ls83t0ky9wledyu0ye5qz24hqpd829e",
+                    "delegator_shares": "60000.000000000000000000",
+                    "description": {
+                        "details": "",
+                        "identity": "",
+                        "moniker": "Validator-0",
+                        "security_contact": "",
+                        "website": ""
+                    },
+                    "jailed": false,
+                    "min_self_delegation": "1",
+                    "operator_address": "emoneyvaloper1268ggkd90wurdgs9yd2gtpyp0c4yqavtksfw70",
+                    "status": 2,
+                    "tokens": "60000",
+                    "unbonding_height": "0",
+                    "unbonding_time": "1970-01-01T00:00:00Z"
+                },
+                {
+                    "commission": {
+                        "commission_rates": {
+                            "max_change_rate": "1.000000000000000000",
+                            "max_rate": "1.000000000000000000",
+                            "rate": "0.150000000000000000"
+                        },
+                        "update_time": "2020-09-29T13:39:17Z"
+                    },
+                    "consensus_pubkey": "emoneyvalconspub1zcjduepq3crfanp3zgjwde88u4a8jyzm755tck2pz4da4tw32wvuw0r25c5svrur23",
+                    "delegator_shares": "60000.000000000000000000",
+                    "description": {
+                        "details": "",
+                        "identity": "",
+                        "moniker": "Validator-2",
+                        "security_contact": "",
+                        "website": ""
+                    },
+                    "jailed": false,
+                    "min_self_delegation": "1",
+                    "operator_address": "emoneyvaloper1speg0e27qef37a5a7fyyaq2qk0944zhfl37lsl",
+                    "status": 2,
+                    "tokens": "60000",
+                    "unbonding_height": "0",
+                    "unbonding_time": "1970-01-01T00:00:00Z"
+                },
+                {
+                    "commission": {
+                        "commission_rates": {
+                            "max_change_rate": "1.000000000000000000",
+                            "max_rate": "1.000000000000000000",
+                            "rate": "0.150000000000000000"
+                        },
+                        "update_time": "2020-09-29T13:39:17Z"
+                    },
+                    "consensus_pubkey": "emoneyvalconspub1zcjduepq2fmu94tulx3s852q995tpz84w9y442v70p2um90u42eq6t0fxqfqmasnva",
+                    "delegator_shares": "60000.000000000000000000",
+                    "description": {
+                        "details": "",
+                        "identity": "",
+                        "moniker": "Validator-3",
+                        "security_contact": "",
+                        "website": ""
+                    },
+                    "jailed": false,
+                    "min_self_delegation": "1",
+                    "operator_address": "emoneyvaloper13arcezwkcg4a6m96e49m4ur2g3y3lwx2fa3xkr",
+                    "status": 2,
+                    "tokens": "60000",
+                    "unbonding_height": "0",
+                    "unbonding_time": "1970-01-01T00:00:00Z"
+                }
+            ]
+        },
+        "supply": {
+            "supply": [
+                {
+                    "denom": "echf",
+                    "amount": "495011736658"
+                },
+                {
+                    "denom": "edkk",
+                    "amount": "495011736658"
+                },
+                {
+                    "denom": "eeur",
+                    "amount": "495011736658"
+                },
+                {
+                    "denom": "enok",
+                    "amount": "495011736658"
+                },
+                {
+                    "denom": "esek",
+                    "amount": "495011736658"
+                },
+                {
+                    "denom": "ungm",
+                    "amount": "495011736658"
+                },
+                {
+                    "denom": "ejpy",
+                    "amount": "495011736658"
+                }
+            ]
+        }
+    },
+    "chain_id": "emoney-2",
+    "consensus_params": {
+        "block": {
+            "max_bytes": "16777216",
+            "max_gas": "-1",
+            "time_iota_ms": "1"
+        },
+        "evidence": {
+            "max_age_duration": "7200000000000",
+            "max_age_num_blocks": "100000"
+        },
+        "validator": {
+            "pub_key_types": [
+                "ed25519"
+            ]
+        }
+    },
+    "genesis_time": "2021-03-25T12:00:00Z"
+}

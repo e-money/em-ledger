@@ -10,6 +10,7 @@
 BINARY=/emoney/${BINARY:-emd-linux}
 ID=${ID:-0}
 LOG=${LOG:-emd.log}
+LOGLEVEL=${LOGLEVEL:-emz:info,x/inflation:info,x/liquidityprovider:info,main:info,state:info,*:error}
 
 ##
 ## Assert linux binary
@@ -30,9 +31,9 @@ fi
 export EMDHOME="/emoney/node${ID}"
 
 if [ -d "`dirname ${EMDHOME}/${LOG}`" ]; then
-  "$BINARY" --home "$EMDHOME" "$@" | tee "${EMDHOME}/${LOG}"
+  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} | tee "${EMDHOME}/${LOG}"
 else
-  "$BINARY" --home "$EMDHOME" "$@"
+  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL}
 fi
 
 chmod 777 -R /emoney
