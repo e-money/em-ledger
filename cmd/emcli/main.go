@@ -154,6 +154,9 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 		authcmd.QueryTxsByEventsCmd(cdc),
 	)
 
+	// Make sure account querying supports vesting accounts.
+	authtypes.ModuleCdc = cdc
+
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
 	return queryCmd
 }
