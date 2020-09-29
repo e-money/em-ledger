@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -57,6 +58,7 @@ func main() {
 
 	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(MigrateGenesisCmd(cdc, os.Stdout))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
 
 	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), newAppExporter(ctx))

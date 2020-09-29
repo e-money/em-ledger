@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -16,7 +17,7 @@ func init() {
 	previousConfig := configureConsensus
 	configureConsensus = func() {
 		previousConfig()
-		fmt.Println(" --- Overriding consensus parameters for tests!")
+		fmt.Fprintln(os.Stderr, " --- Overriding consensus parameters for tests!")
 
 		configChanges := map[string]string{
 			"consensus.create_empty_blocks_interval": "4s",
@@ -24,7 +25,7 @@ func init() {
 		}
 
 		for k, v := range configChanges {
-			fmt.Println(" --- Overriding:", k, v)
+			fmt.Fprintln(os.Stderr, " --- Overriding:", k, v)
 			viper.Set(k, v)
 		}
 	}
