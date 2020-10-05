@@ -25,11 +25,10 @@ func (k Keeper) getValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress
 
 // Stored by *validator* address (not operator address)
 func (k Keeper) IterateValidatorSigningInfos(
-	handler func(address sdk.ConsAddress, info types.ValidatorSigningInfo) (stop bool)) {
+	ctx sdk.Context, handler func(address sdk.ConsAddress, info types.ValidatorSigningInfo) (stop bool)) {
 
-	//store := ctx.KVStore(k.storeKey)
-	//iter := sdk.KVStorePrefixIterator(store, types.ValidatorSigningInfoKey)
-	iter := k.database.Iterator(types.ValidatorSigningInfoKey, sdk.PrefixEndBytes(types.ValidatorSigningInfoKey))
+	store := ctx.KVStore(k.storeKey)
+	iter := sdk.KVStorePrefixIterator(store, types.ValidatorSigningInfoKey)
 
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
