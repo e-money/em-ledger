@@ -46,9 +46,17 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, stakingKeeper types.StakingKeep
 // to a genesis file, which can be imported again
 // with InitGenesis
 func ExportGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
+	signingInfos := make(map[string]types.ValidatorSigningInfo)
+
+	keeper.IterateValidatorSigningInfos(ctx, func(address sdk.ConsAddress, info types.ValidatorSigningInfo) (stop bool) {
+		bechAddr := address.String()
+		signingInfos[bechAddr] = info
+		return false
+	})
+
 	return types.GenesisState{
 		Params:       keeper.GetParams(ctx),
-		SigningInfos: nil,
+		SigningInfos: signingInfos,
 		MissedBlocks: nil,
 	}
 }
