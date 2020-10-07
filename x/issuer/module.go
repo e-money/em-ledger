@@ -6,7 +6,6 @@ package issuer
 
 import (
 	"encoding/json"
-
 	"github.com/e-money/em-ledger/x/issuer/client/cli"
 	"github.com/e-money/em-ledger/x/issuer/keeper"
 	"github.com/e-money/em-ledger/x/issuer/types"
@@ -27,8 +26,6 @@ var (
 )
 
 type AppModuleBasic struct{}
-
-var _ module.AppModuleBasic = AppModuleBasic{}
 
 func (AppModuleBasic) Name() string {
 	return ModuleName

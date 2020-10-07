@@ -26,6 +26,7 @@ import (
 	lpcli "github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
 	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
 	marketcli "github.com/e-money/em-ledger/x/market/client/cli"
+	queries "github.com/e-money/em-ledger/x/queries/client/cli"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -150,6 +151,7 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 
 	queryCmd.AddCommand(
 		authcmd.GetAccountCmd(cdc),
+		queries.GetQuerySpendableBalance(cdc),
 		authcmd.QueryTxCmd(cdc),
 		authcmd.QueryTxsByEventsCmd(cdc),
 	)
@@ -158,6 +160,11 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 	authtypes.ModuleCdc = cdc
 
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
+
+	// Extend some of the standard SDK queries
+	cmd, _, _ := queryCmd.Find([]string{"supply"})
+	cmd.AddCommand(queries.GetQueryCirculatingSupplyCmd(cdc))
+
 	return queryCmd
 }
 

@@ -7,6 +7,7 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/e-money/em-ledger/x/queries"
 	"os"
 	"path/filepath"
 	"time"
@@ -67,6 +68,7 @@ var (
 		authority.AppModule{},
 		market.AppModule{},
 		buyback.AppModule{},
+		queries.AppModule{},
 	)
 
 	// module account permissions
@@ -188,6 +190,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		authority.NewAppModule(application.authorityKeeper),
 		market.NewAppModule(application.marketKeeper),
 		buyback.NewAppModule(application.buybackKeeper),
+		queries.NewAppModule(application.accountKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
