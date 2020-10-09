@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
+	"github.com/e-money/em-ledger/x/queries/client/rest"
 	"github.com/e-money/em-ledger/x/queries/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -47,8 +48,8 @@ func (amb AppModuleBasic) DefaultGenesis() json.RawMessage { return nil }
 
 func (amb AppModuleBasic) ValidateGenesis(_ json.RawMessage) error { return nil }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(cdc context.CLIContext, router *mux.Router) {
-	// TODO
+func (amb AppModuleBasic) RegisterRESTRoutes(cliCtx context.CLIContext, router *mux.Router) {
+	rest.RegisterRoutes(cliCtx, router)
 }
 
 func (amb AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command { return nil }
