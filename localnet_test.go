@@ -46,6 +46,10 @@ var _ = Describe("Local Testnet", func() {
 			fmt.Printf("./build/emcli tx market add-limit 50000eeur 45000echf orderid1 --from %v --node %v --chain-id %v --home %v --yes --keyring-backend test\n\n", acc1.GetAddress(), node, chainid, keystore)
 
 			fmt.Printf("./build/emcli q market instrument eeur echf --node %v\n\n", node)
+
+			fmt.Println(" -- Run this command for a pre-configured local environment:")
+			fmt.Printf("EM_NODE=%v EM_HOME=%v EM_KEYRING_BACKEND=test EM_CHAIN_ID=%v sh\n", node, keystore, chainid)
+
 		})
 	})
 })

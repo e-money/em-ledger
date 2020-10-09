@@ -75,7 +75,7 @@ func main() {
 
 	makeBroadcastBlocked(rootCmd)
 
-	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
+	executor := cli.PrepareMainCmd(rootCmd, "EM", app.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
