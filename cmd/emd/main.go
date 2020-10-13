@@ -80,6 +80,7 @@ func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtyp
 		return app.NewApp(logger, db, ctx,
 			baseapp.SetPruning(pruningOpts),
 			baseapp.SetHaltHeight(uint64(viper.GetInt(server.FlagHaltHeight))),
+			baseapp.SetHaltTime(uint64(viper.GetInt(server.FlagHaltTime))),
 		)
 	}
 }
