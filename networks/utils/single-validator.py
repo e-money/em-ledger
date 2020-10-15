@@ -7,8 +7,10 @@ import sys
 inputfile = "genesis-modified.json"
 
 # The validator that replaces the entire set of the inputfile
-validator = "emoneyvaloper1x54upxhjrlqxfujmp9p27ezr2gufs34478glx5"
-consensus_pubkey = "emoneyvalconspub1zcjduepqw089yduq3ccrevvxlsncwgus8xckc4h8pswnz088aszackq2w5dqv4qg7r"
+validator = "emoneyvaloper1fj76mrfpcwm7yqlmfqkqlx9kgvjns97cnffp3u"
+consensus_pubkey = "emoneyvalconspub1zcjduepq4jkprfqcfx3txy34lqp3wsanseyzcxtxvh4lhrgmnwqlshfr75rqmdp64x"
+
+removeUnusedValidators = True
 
 with open(inputfile) as f:
     genesis = json.load(f)
@@ -83,29 +85,21 @@ with open(inputfile) as f:
         v["delegator_shares"] = "1"
 
 
-    # TODO Adding up delegator_shares in this manner probably doesn't make sense.
     for v in staking["validators"]:
         if v["operator_address"] == validator:
             v["tokens"] = str(totalTokens)
             v["delegator_shares"] = str(delegator_shares)
 
+    # Strip the remaining validators entirely.
+    if removeUnusedValidators:
+        staking["validators"] = [v for v in staking["validators"] if v["operator_address"] == validator]
+        staking["last_validator_powers"] = [v for v in staking["last_validator_powers"] if v["Address"] == validator]
+
+        distr["outstanding_rewards"] = [v for v in distr["outstanding_rewards"] if v["validator_address"] == validator]
+        distr["validator_accumulated_commissions"] = [v for v in distr["validator_accumulated_commissions"] if v["validator_address"] == validator]
+        distr["validator_current_rewards"] = [v for v in distr["validator_current_rewards"] if v["validator_address"] == validator]
+        distr["validator_historical_rewards"] = [v for v in distr["validator_historical_rewards"] if v["validator_address"] == validator]
+
+
+
     print(json.dumps(genesis))
-
-
-    # print(json.dumps(staking["validators"], indent=4))
-
-
-    # print(json.dumps(genesis, indent=4))
-
-
-
-
-
-#  [X] Ret i [distribution][delegator_starting_infos]
-#  [X] Ret til samme validator i alle [staking][delegations]
-#  [X] Sæt "Power" til 0 for alle andre end "hovedpersonen" i [staking][last_validator_powers]
-#  [X] Sæt "Power" til [staking][last_total_power] for "hovedpersonen" i [staking][last_validator_powers]
-#  [X] Sæt [staking][redelegations][validator_dst_address] til "hovedpersonen".
-#  [X] Sæt alle [staking][validators][power] til 0
-#  [X] Sæt "hovedpersonens" power til summen af de powers der er fjernet
-#  [ ] Slet "validators" i roden af genesis
