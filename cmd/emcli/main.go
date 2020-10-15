@@ -69,6 +69,7 @@ func main() {
 	)
 
 	viper.SetDefault(flags.FlagBroadcastMode, "block")
+	viper.SetDefault(flags.FlagKeyringBackend, ckeys.BackendFile)
 	// TODO Appears to be necessary after the upgrade from cosmos-sdk v0.37.3 -> v0.37.8
 	// TODO This also upgraded viper v1.5.0 -> v1.6.1 which may be the cause of change in behaviour
 	// TODO The createVerifier() funcion in cosmos-sdk@v0.37.8/client/context/context.go seems to be the issue
@@ -88,7 +89,7 @@ func init() {
 	registerTypesInAuthModule()
 }
 
-// Change some of the default values for emcli flags:
+// Change some of the default values for emcli usage flags:
 //  - Switch the default value of --broadcast-mode to "block"
 //  - Switch the default value of --keyring-backend to "file"
 func overrideDefaults(cmd *cobra.Command) {
