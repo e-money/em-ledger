@@ -32,6 +32,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
+	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
@@ -73,7 +74,7 @@ func main() {
 	// TODO The createVerifier() funcion in cosmos-sdk@v0.37.8/client/context/context.go seems to be the issue
 	viper.SetDefault(flags.FlagTrustNode, "false")
 
-	makeBroadcastBlocked(rootCmd)
+	overrideDefaults(rootCmd)
 
 	executor := cli.PrepareMainCmd(rootCmd, "EM", app.DefaultCLIHome)
 	err := executor.Execute()
@@ -87,14 +88,20 @@ func init() {
 	registerTypesInAuthModule()
 }
 
-// Switch the default value of --broadcast-mode to "block"
-func makeBroadcastBlocked(cmd *cobra.Command) {
+// Change some of the default values for emcli flags:
+//  - Switch the default value of --broadcast-mode to "block"
+//  - Switch the default value of --keyring-backend to "file"
+func overrideDefaults(cmd *cobra.Command) {
 	if flag := cmd.Flag(flags.FlagBroadcastMode); flag != nil {
 		flag.DefValue = flags.BroadcastBlock
 	}
 
+	if flag := cmd.Flag(flags.FlagKeyringBackend); flag != nil {
+		flag.DefValue = ckeys.BackendFile
+	}
+
 	for _, child := range cmd.Commands() {
-		makeBroadcastBlocked(child)
+		overrideDefaults(child)
 	}
 }
 
