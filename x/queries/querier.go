@@ -2,6 +2,9 @@ package queries
 
 import (
 	"encoding/json"
+
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/e-money/em-ledger/x/queries/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,6 +30,13 @@ func queryCirculatingSupply(ctx sdk.Context, accK AccountKeeper) (res []byte, er
 	var total sdk.Coins
 
 	accK.IterateAccounts(ctx, func(account exported.Account) bool {
+		if ma, ok := account.(*supply.ModuleAccount); ok {
+			switch ma.Name {
+			case staking.NotBondedPoolName, staking.BondedPoolName:
+				return false
+			}
+		}
+
 		coins := account.SpendableCoins(ctx.BlockTime())
 		total = total.Add(coins...)
 		return false
