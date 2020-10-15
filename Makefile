@@ -79,6 +79,12 @@ bdd-test:
 local-testnet:
 	go test -mod=readonly -v --tags="bdd" bdd_test.go localnet_test.go
 
+local-testnet-reset:
+	./build/emd unsafe-reset-all --home build/node0/
+	./build/emd unsafe-reset-all --home build/node1/
+	./build/emd unsafe-reset-all --home build/node2/
+	./build/emd unsafe-reset-all --home build/node3/
+
 clean:
 	rm -rf ./build ./data ./config
 
