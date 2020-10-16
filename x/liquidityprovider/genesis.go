@@ -6,11 +6,15 @@ package liquidityprovider
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 )
 
+type GenesisAcc struct {
+	Account  sdk.AccAddress `json:"address" yaml:"address"`
+	Mintable sdk.Coins      `json:"mintable" yaml:"mintable"`
+}
+
 type genesisState struct {
-	Accounts []types.LiquidityProviderAccount `json:"accounts" yaml:"accounts"`
+	Accounts []GenesisAcc `json:"accounts" yaml:"accounts"`
 }
 
 func defaultGenesisState() genesisState {
@@ -19,6 +23,6 @@ func defaultGenesisState() genesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, gs genesisState) {
 	for _, lp := range gs.Accounts {
-		keeper.CreateLiquidityProvider(ctx, lp.GetAddress(), lp.Mintable)
+		keeper.CreateLiquidityProvider(ctx, lp.Account, lp.Mintable)
 	}
 }
