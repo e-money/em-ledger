@@ -130,8 +130,14 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) (_ []abci
 // module export genesis
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	allLPs := am.keeper.GetAllLiquidityProviderAccounts(ctx)
-	gs := genesisState{allLPs}
-	return ModuleCdc.MustMarshalJSON(gs)
+
+	genAccs := make([]GenesisAcc, len(allLPs))
+	for i, lp := range allLPs {
+		genAccs[i] = GenesisAcc{lp.GetAddress(), lp.Mintable}
+	}
+
+	gs := genesisState{genAccs}
+	return ModuleCdc.MustMarshalJSON(&gs)
 }
 
 // module begin-block
