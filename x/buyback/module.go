@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/e-money/em-ledger/x/buyback/client/cli"
+	"github.com/e-money/em-ledger/x/buyback/client/rest"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -49,7 +50,9 @@ func (amb AppModuleBasic) ValidateGenesis(json.RawMessage) error {
 	return nil
 }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(context.CLIContext, *mux.Router) {}
+func (amb AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+	rest.RegisterQueryRoutes(ctx, r)
+}
 
 func (amb AppModuleBasic) GetTxCmd(*codec.Codec) *cobra.Command {
 	return nil
