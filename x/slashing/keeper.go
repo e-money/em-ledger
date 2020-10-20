@@ -161,21 +161,26 @@ func (k Keeper) HandleDoubleSign(ctx sdk.Context, batch db.Batch, addr crypto.Ad
 	k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 }
 
-func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr crypto.Address, power int64, signed bool, blockCount int64) {
+func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr crypto.Address, power int64, signed bool, blockCount int64, slashable bool) {
 	logger := k.Logger(ctx)
 	height := ctx.BlockHeight()
 	consAddr := sdk.ConsAddress(addr)
 
 	missedBlocks := k.getMissingBlocksForValidator(consAddr)
-	missedBlocks = truncateByWindow(ctx.BlockTime(), missedBlocks, k.SignedBlocksWindowDuration(ctx))
+	_, missedBlocks = truncateByWindow(ctx.BlockTime(), missedBlocks, k.SignedBlocksWindowDuration(ctx))
 
 	if !signed {
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
 	}
 
 	k.setMissingBlocksForValidator(batch, consAddr, missedBlocks)
-	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 
+	// Validator is only slashable if the signed block window is full (was truncated)
+	if !slashable {
+		return
+	}
+
+	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
 
 	// TODO Only do this if missing is true?
