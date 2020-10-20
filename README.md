@@ -23,7 +23,8 @@ See [https://github.com/e-money/testnets](https://github.com/e-money/testnets) f
 ## Integration Guide
 
 Tokens: [docs/tokens.md](docs/tokens.md)  
-Market Module: [docs/market.md](docs/market.md)
+Market Module: [docs/market.md](docs/market.md)  
+Working with multisig accounts: [docs/market.md](docs/multisig.md)
 
 ## Stay Updated
 
