@@ -204,11 +204,11 @@ func (t *Testnet) updateGenesis() {
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 
-	window := time.Duration(10 * time.Second).Milliseconds()
+	window := (10 * time.Second).Nanoseconds()
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
 
 	// Reduce jail time to be able to test unjailing
-	unjail := time.Duration(5 * time.Second).Milliseconds()
+	unjail := (5 * time.Second).Nanoseconds()
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", fmt.Sprint(unjail))
 
 	// Start inflation before testnet start in order to have some rewards for NGM stakers.
