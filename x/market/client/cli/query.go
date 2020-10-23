@@ -11,9 +11,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/keeper"
 	"github.com/tidwall/gjson"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -52,8 +54,10 @@ func GetByAccountCmd(cdc *codec.Codec) *cobra.Command {
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				// Named key specified
-				cliCtx = context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
-				addr = cliCtx.GetFromAddress()
+				addr, _, err = context.GetFromFields(os.Stdin, args[0], viper.GetBool(flags.FlagGenerateOnly))
+				if err != nil {
+					return err
+				}
 			}
 
 			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QueryByAccount, addr))
