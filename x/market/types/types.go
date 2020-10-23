@@ -148,11 +148,6 @@ func (o *Order) allFields() []interface{} {
 	}
 }
 
-func (o *Order) SetSourceAmount(src sdk.Int) {
-	o.Source = sdk.NewCoin(o.Source.Denom, src)
-	o.SourceRemaining = src
-}
-
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
 func (o Order) IsFilled() bool {
 	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec()) || o.DestinationFilled.GTE(o.Destination.Amount)
