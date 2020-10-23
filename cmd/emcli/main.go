@@ -52,13 +52,17 @@ func main() {
 	}
 	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "Chain ID of tendermint node")
 
+	keysRootCmd := keys.Commands()
+	// Configured erroneously in v0.39.1. Seems to be fixed in future releases. (https://github.com/cosmos/cosmos-sdk/blob/v0.39.1/client/keys/root.go#L36)
+	viper.BindPFlag(flags.FlagKeyringBackend, keysRootCmd.PersistentFlags().Lookup(flags.FlagKeyringBackend))
+
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
 		queryCmds(cdc),
 		client.ConfigCmd(app.DefaultCLIHome),
 		txCmds(cdc),
 		lcd.ServeCommand(cdc, registerLCDRoutes),
-		keys.Commands(),
+		keysRootCmd,
 
 		version.Cmd,
 	)
