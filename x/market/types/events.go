@@ -20,6 +20,7 @@ const (
 	AttributeKeyClientOrderID     = "client_order_id"
 	AttributeKeyOrderID           = "order_id"
 	AttributeKeyOwner             = "owner"
+	AttributeKeyPrice             = "price"
 	AttributeKeySource            = "source"
 	AttributeKeySourceRemaining   = "source_remaining"
 	AttributeKeySourceFilled      = "source_filled"
@@ -51,19 +52,20 @@ func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 	)
 }
 
-func EmitPartiallyFilledEvent(ctx sdk.Context, order Order) {
-	emitFilledEvent(ctx, order, EventTypePartiallyFilled)
+func EmitPartiallyFilledEvent(ctx sdk.Context, order Order, price sdk.Dec) {
+	emitFilledEvent(ctx, order, EventTypePartiallyFilled, price)
 }
 
-func EmitFilledEvent(ctx sdk.Context, order Order) {
-	emitFilledEvent(ctx, order, EventTypeFilled)
+func EmitFilledEvent(ctx sdk.Context, order Order, price sdk.Dec) {
+	emitFilledEvent(ctx, order, EventTypeFilled, price)
 }
 
-func emitFilledEvent(ctx sdk.Context, order Order, eventtype string) {
+func emitFilledEvent(ctx sdk.Context, order Order, eventtype string, price sdk.Dec) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(eventtype,
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyPrice, price.String()),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),

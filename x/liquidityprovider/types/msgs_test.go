@@ -1,15 +1,16 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package types
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
-)
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 func TestValidation(t *testing.T) {
 	coin1 := sdk.Coin{

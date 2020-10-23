@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -8,14 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/tendermint/tendermint/types"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	app "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
 
@@ -57,7 +57,8 @@ func main() {
 	}
 
 	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
-	rootCmd.AddCommand(addGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(MigrateGenesisCmd(cdc, os.Stdout))
 	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
 
 	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), newAppExporter(ctx))
@@ -71,8 +72,13 @@ func main() {
 
 func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtypes.Application {
 	return func(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
+		pruningOpts, err := server.GetPruningOptionsFromFlags()
+		if err != nil {
+			panic(err)
+		}
+
 		return app.NewApp(logger, db, ctx,
-			baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
+			baseapp.SetPruning(pruningOpts),
 			baseapp.SetHaltHeight(uint64(viper.GetInt(server.FlagHaltHeight))),
 			baseapp.SetHaltTime(uint64(viper.GetInt(server.FlagHaltTime))),
 		)

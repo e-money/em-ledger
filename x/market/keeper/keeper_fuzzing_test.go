@@ -7,6 +7,7 @@ package keeper
 import (
 	"fmt"
 	"math/rand"
+	"runtime/debug"
 	"testing"
 	"time"
 
@@ -20,10 +21,25 @@ const (
 	maxPriceVariation = 20 // Create variations on price in the interval +-10% of the base price
 )
 
+// go test -v -timeout 24h -run TestFuzzingInfinite ./x/market/keeper/
+//func TestFuzzingInfinite(t *testing.T) {
+//	for {
+//		TestFuzzing1(t)
+//	}
+//}
+
 func TestFuzzing1(t *testing.T) {
 	seed := time.Now().Unix()
 	fmt.Println("Using seed", seed)
 	r := rand.New(rand.NewSource(seed))
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("seed", seed, "caused a panic:", r)
+			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			t.Fail()
+		}
+	}()
 
 	ctx, k, ak, _, _ := createTestComponents(t)
 
@@ -70,12 +86,12 @@ func TestFuzzing1(t *testing.T) {
 	})
 
 	for _, order := range allOrders {
-		res := k.NewOrderSingle(ctx, order)
+		_, err := k.NewOrderSingle(ctx, order)
 		if order.IsFilled() {
 			fmt.Println("Order is filled on creation. Ignoring.", order)
 			continue
 		}
-		require.True(t, res.IsOK())
+		require.NoError(t, err)
 	}
 
 	//dumpEvents(ctx.EventManager().Events())
@@ -96,7 +112,18 @@ func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller exporte
 			continue
 		}
 
-		res = append(res, order(seller, source.String(), destination.String()))
+		o := order(seller, source.String(), destination.String())
+
+		switch r.Intn(3) {
+		case 0:
+			o.TimeInForce = types.TimeInForce_FillOrKill
+		case 1:
+			o.TimeInForce = types.TimeInForce_GoodTilCancel
+		case 2:
+			o.TimeInForce = types.TimeInForce_ImmediateOrCancel
+		}
+
+		res = append(res, o)
 	}
 
 	return res

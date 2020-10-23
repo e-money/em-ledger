@@ -8,42 +8,65 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func NewQuerier(k *Keeper) sdk.Querier {
-	return func(_ sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryInstruments:
-			return queryInstruments(k)
+			return queryInstruments(ctx, k)
 		case types.QueryInstrument:
-			return queryInstrument(k, path[1:], req)
+			return queryInstrument(ctx, k, path[1:], req)
 		case types.QueryByAccount:
-			return queryByAccount(k, path[1:], req)
+			return queryByAccount(ctx, k, path[1:], req)
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown market query endpoint")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unrecognized market query endpoint")
 		}
 	}
 }
 
-type queryInstrumentResponse struct {
+type QueryInstrumentResponse struct {
 	Source      string               `json:"source" yaml:"source"`
 	Destination string               `json:"destination" yaml:"destination"`
-	Orders      []queryOrderResponse `json:"orders" yaml:"orders"`
+	Orders      []QueryOrderResponse `json:"orders" yaml:"orders"`
 }
 
-type queryByAccountResponse struct {
-	Orders orderResponses `json:"orders" yaml:"orders"`
+func (q QueryInstrumentResponse) String() string {
+	sb := new(strings.Builder)
+
+	sb.WriteString(fmt.Sprintf("%v => %v\n", q.Source, q.Destination))
+
+	for _, order := range q.Orders {
+		sb.WriteString(order.String())
+	}
+
+	return sb.String()
 }
 
-type queryOrderResponse struct {
-	ID      uint64    `json:"id" yaml:"id"`
-	Created time.Time `json:"created" yaml:"created"`
+type QueryByAccountResponse struct {
+	Orders OrderResponses `json:"orders" yaml:"orders"`
+}
+
+func (q QueryByAccountResponse) String() string {
+	sb := new(strings.Builder)
+	for _, order := range q.Orders {
+		sb.WriteString(order.String())
+	}
+
+	return sb.String()
+}
+
+type QueryOrderResponse struct {
+	ID uint64 `json:"id" yaml:"id"`
 
 	Owner           sdk.AccAddress `json:"owner" yaml:"owner"`
 	SourceRemaining string         `json:"source_remaining" yaml:"source_remaining"`
@@ -53,119 +76,133 @@ type queryOrderResponse struct {
 	Price sdk.Dec `json:"price" yaml:"price"`
 }
 
-type orderResponses []types.Order
+func (q QueryOrderResponse) String() string {
+	return fmt.Sprintf(" - %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Owner.String())
+}
 
-func (o orderResponses) Len() int {
+type OrderResponses []*types.Order
+
+func (o OrderResponses) String() string {
+	panic("implement me")
+}
+
+func (o OrderResponses) Len() int {
 	return len(o)
 }
 
-func (o orderResponses) Less(i, j int) bool {
+func (o OrderResponses) Less(i, j int) bool {
 	return o[i].ID < o[j].ID
 }
 
-func (o orderResponses) Swap(i, j int) {
+func (o OrderResponses) Swap(i, j int) {
 	o[i], o[j] = o[j], o[i]
 }
 
-var _ sort.Interface = orderResponses{}
+var _ sort.Interface = OrderResponses{}
 
-func queryByAccount(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
 	if len(path) != 1 {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("%s is not a valid query request path", req.Path))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
 	}
 
 	account, err := sdk.AccAddressFromBech32(path[0])
 	if err != nil {
-		return nil, sdk.ErrInvalidAddress(fmt.Sprint("Address could not be parsed", path[0], err))
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
 	}
 
-	o := k.accountOrders.GetAllOrders(account)
-	orders := make(orderResponses, 0)
+	//o := k.accountOrders.GetAllOrders(account)
+	orders := k.GetOrdersByOwner(ctx, account)
+	//orders := make(OrderResponses, 0)
 
-	it := o.Iterator()
-	for it.Next() {
-		order := it.Value().(*types.Order)
-		orders = append(orders, *order)
-	}
+	// TODO Determine suitable ordering or leave undefined
+	//sort.Sort(orders)
 
-	sort.Sort(orders)
-
-	resp := queryByAccountResponse{orders}
-	bz, err := json.Marshal(resp)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
-	}
-
-	return bz, nil
+	resp := QueryByAccountResponse{orders}
+	return json.Marshal(resp)
 }
 
-func queryInstrument(k *Keeper, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQuery) ([]byte, error) {
+	// NOTE Provides a list of physical (ie notably not synthetic pairs) passive orders.
 	if len(path) != 2 {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("%s is not a valid query request path", req.Path))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "%s is not a valid query request path", req.Path)
 	}
 
 	source, destination := path[0], path[1]
 
 	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
-		return nil, sdk.ErrInvalidCoins(fmt.Sprintf("Invalid denoms: %v %v", source, destination))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
 	}
 
-	instrument := k.instruments.GetInstrument(source, destination)
+	orders := make([]QueryOrderResponse, 0)
 
-	orders := make([]queryOrderResponse, 0)
-	if instrument != nil {
-		it := instrument.Orders.Iterator()
-		for it.Next() {
-			order := it.Key().(*types.Order)
-			orders = append(orders, queryOrderResponse{
-				ID:              order.ID,
-				Created:         order.Created,
-				Owner:           order.Owner,
-				SourceRemaining: order.SourceRemaining.String(),
-				Price:           order.Price(),
-			})
-		}
+	idxStore := ctx.KVStore(k.keyIndices)
+	key := types.GetPriorityKeyBySrcAndDst(source, destination)
+
+	it := sdk.KVStorePrefixIterator(idxStore, key)
+	defer it.Close()
+
+	for it.Valid() {
+		order := new(types.Order)
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
+
+		orders = append(orders, QueryOrderResponse{
+			ID:              order.ID,
+			Owner:           order.Owner,
+			SourceRemaining: order.SourceRemaining.String(),
+			Price:           order.Price(),
+		})
+
+		it.Next()
 	}
 
-	resp := queryInstrumentResponse{
+	resp := QueryInstrumentResponse{
 		Source:      source,
 		Destination: destination,
 		Orders:      orders,
 	}
 
-	bz, err := json.Marshal(resp)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
+	return json.Marshal(resp)
+}
+
+type QueryInstrumentsWrapperResponse struct {
+	Instruments []QueryInstrumentsResponse `json:"instruments" yaml:"instruments"`
+}
+
+func (q QueryInstrumentsWrapperResponse) String() string {
+	sb := new(strings.Builder)
+	for _, instrument := range q.Instruments {
+		sb.WriteString(instrument.String())
 	}
 
-	return bz, nil
+	return sb.String()
 }
 
-type queryInstrumentsResponse struct {
-	Source      string `json:"source" yaml:"source"`
-	Destination string `json:"destination" yaml:"destination"`
-	OrderCount  int    `json:"order_count" yaml:"order_count"`
+type QueryInstrumentsResponse struct {
+	Source      string     `json:"source" yaml:"source"`
+	Destination string     `json:"destination" yaml:"destination"`
+	LastPrice   *sdk.Dec   `json:"last_price,omitempty" yaml:"last_price,omitempty"`
+	LastTraded  *time.Time `json:"last_traded,omitempty" yaml:"last_traded,omitempty"`
 }
 
-func queryInstruments(k *Keeper) ([]byte, sdk.Error) {
-	response := make([]queryInstrumentsResponse, len(k.instruments))
-	for i, v := range k.instruments {
-		response[i] = queryInstrumentsResponse{
+//
+func (q QueryInstrumentsResponse) String() string {
+	return fmt.Sprintf("%v => %v", q.Source, q.Destination)
+}
+
+func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
+	instruments := k.GetInstruments(ctx)
+
+	response := make([]QueryInstrumentsResponse, len(instruments))
+	for i, v := range instruments {
+		response[i] = QueryInstrumentsResponse{
 			Source:      v.Source,
 			Destination: v.Destination,
-			OrderCount:  v.Orders.Size(),
+			LastPrice:   v.LastPrice,
+			LastTraded:  v.Timestamp,
 		}
 	}
 
 	// Wrap the instruments in an object in anticipation of later expansion
-	var instrumentsWrapper = struct {
-		Instruments []queryInstrumentsResponse `json:"instruments" yaml:"instruments"`
-	}{response}
-
-	bz, err := json.Marshal(instrumentsWrapper)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
-	}
-
-	return bz, nil
+	instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
+	return json.Marshal(instrumentsWrapper)
 }

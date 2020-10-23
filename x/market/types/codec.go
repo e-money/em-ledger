@@ -7,12 +7,14 @@ package types
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 )
 
 // Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgAddOrder{}, "e-money/MsgAddOrder", nil)
+	cdc.RegisterConcrete(MsgAddLimitOrder{}, "e-money/MsgAddLimitOrder", nil)
+	cdc.RegisterConcrete(MsgAddMarketOrder{}, "e-money/MsgAddMarketOrder", nil)
 	cdc.RegisterConcrete(MsgCancelReplaceOrder{}, "e-money/MsgCancelReplaceOrder", nil)
 	cdc.RegisterConcrete(MsgCancelOrder{}, "e-money/MsgCancelOrder", nil)
 }
@@ -26,6 +28,7 @@ func init() {
 	codec.RegisterCrypto(ModuleCdc)
 	auth.RegisterCodec(ModuleCdc)
 	supply.RegisterCodec(ModuleCdc)
+	vesting.RegisterCodec(ModuleCdc)
 
 	ModuleCdc.Seal()
 }

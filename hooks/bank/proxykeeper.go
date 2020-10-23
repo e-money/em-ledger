@@ -6,6 +6,7 @@ package bank
 
 import (
 	"github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 )
 
@@ -20,13 +21,13 @@ func Wrap(bk bank.Keeper, rk RestrictedKeeper) ProxyKeeper {
 	return ProxyKeeper{bk, rk}
 }
 
-func (pk ProxyKeeper) InputOutputCoins(ctx types.Context, inputs []bank.Input, outputs []bank.Output) types.Error {
+func (pk ProxyKeeper) InputOutputCoins(ctx types.Context, inputs []bank.Input, outputs []bank.Output) error {
 	restrictedDenoms := pk.rk.GetRestrictedDenoms(ctx)
 	// Multisend does not support restricted denominations.
 	for _, input := range inputs {
 		for _, coin := range input.Coins {
 			if _, found := restrictedDenoms.Find(coin.Denom); found {
-				return ErrRestrictedDenominationUsed(coin.Denom)
+				return sdkerrors.Wrap(ErrRestrictedDenomination, coin.Denom)
 			}
 		}
 	}
@@ -34,12 +35,12 @@ func (pk ProxyKeeper) InputOutputCoins(ctx types.Context, inputs []bank.Input, o
 	return pk.bk.InputOutputCoins(ctx, inputs, outputs)
 }
 
-func (pk ProxyKeeper) SendCoins(ctx types.Context, fromAddr types.AccAddress, toAddr types.AccAddress, amt types.Coins) types.Error {
+func (pk ProxyKeeper) SendCoins(ctx types.Context, fromAddr types.AccAddress, toAddr types.AccAddress, amt types.Coins) error {
 	restrictedDenoms := pk.rk.GetRestrictedDenoms(ctx)
 	for _, c := range amt {
 		if denom, found := restrictedDenoms.Find(c.Denom); found {
 			if !denom.IsAnyAllowed(fromAddr, toAddr) {
-				return ErrRestrictedDenominationUsed(c.Denom)
+				return sdkerrors.Wrap(ErrRestrictedDenomination, c.Denom)
 			}
 		}
 	}
@@ -55,19 +56,19 @@ func (pk ProxyKeeper) HasCoins(ctx types.Context, addr types.AccAddress, amt typ
 	return pk.bk.HasCoins(ctx, addr, amt)
 }
 
-func (pk ProxyKeeper) Codespace() types.CodespaceType {
-	return pk.bk.Codespace()
-}
+//func (pk ProxyKeeper) Codespace() types.CodespaceType {
+//	return pk.bk.Codespace()
+//}
 
-func (pk ProxyKeeper) SubtractCoins(ctx types.Context, addr types.AccAddress, amt types.Coins) (types.Coins, types.Error) {
+func (pk ProxyKeeper) SubtractCoins(ctx types.Context, addr types.AccAddress, amt types.Coins) (types.Coins, error) {
 	return pk.bk.SubtractCoins(ctx, addr, amt)
 }
 
-func (pk ProxyKeeper) AddCoins(ctx types.Context, addr types.AccAddress, amt types.Coins) (types.Coins, types.Error) {
+func (pk ProxyKeeper) AddCoins(ctx types.Context, addr types.AccAddress, amt types.Coins) (types.Coins, error) {
 	return pk.bk.AddCoins(ctx, addr, amt)
 }
 
-func (pk ProxyKeeper) SetCoins(ctx types.Context, addr types.AccAddress, amt types.Coins) types.Error {
+func (pk ProxyKeeper) SetCoins(ctx types.Context, addr types.AccAddress, amt types.Coins) error {
 	return pk.bk.SetCoins(ctx, addr, amt)
 }
 
@@ -83,10 +84,10 @@ func (pk ProxyKeeper) BlacklistedAddr(addr types.AccAddress) bool {
 	return pk.bk.BlacklistedAddr(addr)
 }
 
-func (pk ProxyKeeper) DelegateCoins(ctx types.Context, delegatorAddr, moduleAccAddr types.AccAddress, amt types.Coins) types.Error {
+func (pk ProxyKeeper) DelegateCoins(ctx types.Context, delegatorAddr, moduleAccAddr types.AccAddress, amt types.Coins) error {
 	return pk.bk.DelegateCoins(ctx, delegatorAddr, moduleAccAddr, amt)
 }
 
-func (pk ProxyKeeper) UndelegateCoins(ctx types.Context, moduleAccAddr, delegatorAddr types.AccAddress, amt types.Coins) types.Error {
+func (pk ProxyKeeper) UndelegateCoins(ctx types.Context, moduleAccAddr, delegatorAddr types.AccAddress, amt types.Coins) error {
 	return pk.bk.UndelegateCoins(ctx, moduleAccAddr, delegatorAddr, amt)
 }

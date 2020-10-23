@@ -12,6 +12,12 @@ cd em-ledger
 make build
 ```
 
+## Getting Started
+
+To better understand em-ledger, start with a [quick tour](docs/emcli.md) of the `emcli` command line interface.
+
+_Please notice that it is highly recommended to use a [Ledger Device](docs/ledger.md) to securely manage keys._
+
 ## Production Network
 
 See [https://github.com/e-money/launch](https://github.com/e-money/launch) for instructions on how to join our production network.
@@ -23,7 +29,7 @@ See [https://github.com/e-money/testnets](https://github.com/e-money/testnets) f
 ## Integration Guide
 
 Tokens: [docs/tokens.md](docs/tokens.md)  
-Market Module: [docs/market.md](docs/market.md)
+Market Module: [docs/market.md](docs/market.md)  
 
 ## Stay Updated
 

@@ -1,13 +1,15 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package cli
 
 import (
+	"bufio"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -27,7 +29,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	issuanceTxCmd.AddCommand(
-		client.PostCommands(
+		flags.PostCommands(
 			getCmdIncreaseMintableAmount(cdc),
 			getCmdDecreaseMintableAmount(cdc),
 			getCmdSetInflation(cdc),
@@ -45,7 +47,8 @@ func getCmdSetInflation(cdc *codec.Codec) *cobra.Command {
 		Short:   "Set the inflation rate for a denomination",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			denom := args[1]
@@ -75,7 +78,8 @@ func getCmdIncreaseMintableAmount(cdc *codec.Codec) *cobra.Command {
 		Short: "Increase the amount mintable for a liquidity provider.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			lpAcc, err := sdk.AccAddressFromBech32(args[1])
@@ -105,7 +109,8 @@ func getCmdDecreaseMintableAmount(cdc *codec.Codec) *cobra.Command {
 		Short: "Decrease the amount mintable for a liquidity provider. Result cannot be negative",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			lpAcc, err := sdk.AccAddressFromBech32(args[1])
@@ -135,7 +140,8 @@ func getCmdRevokeLiquidityProvider(cdc *codec.Codec) *cobra.Command {
 		Short: "Revoke liquidity provider status for an account",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			lpAcc, err := sdk.AccAddressFromBech32(args[1])

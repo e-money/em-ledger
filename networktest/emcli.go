@@ -1,16 +1,19 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package networktest
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/tidwall/gjson"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -35,6 +38,11 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 	return execCmdAndCollectResponse(cli.addQueryFlags("q", "inflation"))
 }
 
+func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "send", from.name, to.GetAddress(), amount)
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
 	return execCmdWithInput(args, KeyPwd)
@@ -45,10 +53,26 @@ func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, er
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) CustomCommand(params ...string) (string, error) {
+	args := cli.addTransactionFlags(params...)
+	return execCmdCollectOutput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthoritySetMinGasPricesMulti(from, minGasPrices string, params ...string) (string, error) {
+	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", from, minGasPrices)
+	args = append(args, params...)
+	return execCmdCollectOutput(args, KeyPwd)
+}
+
 func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, params ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", authority.name, minGasPrices)
 	args = append(args, params...)
 	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) QueryBuybackBalance() ([]byte, error) {
+	args := cli.addQueryFlags("query", "buyback", "balance")
+	return execCmdAndCollectResponse(args)
 }
 
 func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
@@ -58,6 +82,11 @@ func (cli Emcli) QueryMinGasPrices() ([]byte, error) {
 
 func (cli Emcli) QueryTransaction(txhash string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "tx", txhash)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryValidatorCommission(validator string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "distribution", "commission", validator)
 	return execCmdAndCollectResponse(args)
 }
 
@@ -93,6 +122,11 @@ func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error)
 	return
 }
 
+func (cli Emcli) QueryTotalSupply() ([]byte, error) {
+	args := cli.addQueryFlags("query", "supply", "total")
+	return execCmdAndCollectResponse(args)
+}
+
 func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "account", account)
 	return execCmdAndCollectResponse(args)
@@ -105,6 +139,16 @@ func (cli Emcli) QueryMarketInstruments() ([]byte, error) {
 
 func (cli Emcli) QueryMarketInstrument(source, destination string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "market", "instrument", source, destination)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryMarketByAccount(account string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "market", "account", account)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryDelegationsTo(validator string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "staking", "delegations-to", validator)
 	return execCmdAndCollectResponse(args)
 }
 
@@ -121,6 +165,11 @@ func (cli Emcli) QueryValidators() (gjson.Result, error) {
 func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "staking", "delegations", account)
 	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) SignTranscation(txPath, fromAddress, multisigAddress string) (string, error) {
+	args := cli.addTransactionFlags("tx", "sign", txPath, "--from", fromAddress, "--multisig", multisigAddress)
+	return execCmdCollectOutput(args, KeyPwd)
 }
 
 func (cli Emcli) IssuerIncreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
@@ -153,8 +202,15 @@ func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, er
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) MarketAddOrder(key Key, source, destination, cid string) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "market", "add", source, destination, cid, "--from", key.name)
+func (cli Emcli) MarketAddLimitOrder(key Key, source, destination, cid string, moreflags ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "add-limit", source, destination, cid, "--from", key.name)
+	args = append(args, moreflags...)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid string, slippage sdk.Dec, moreflags ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "add-market", sourceDenom, destination, slippage.String(), cid, "--from", key.name)
+	args = append(args, moreflags...)
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -163,8 +219,8 @@ func (cli Emcli) MarketCancelOrder(key Key, cid string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) UnjailValidator(key Key) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "slashing", "unjail", "--from", key.name)
+func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "slashing", "unjail", "--from", key)
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -172,13 +228,39 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	json := gjson.ParseBytes(bz)
 
 	txhashjson := json.Get("txhash")
-	successjson := gjson.ParseBytes(bz).Get("logs.0.success")
+	logs := json.Get("logs")
 
-	if !txhashjson.Exists() || !successjson.Exists() {
-		return "", false, fmt.Errorf("could not find status fields in response %v", string(bz))
+	if !txhashjson.Exists() || !logs.Exists() {
+		return "", false, fmt.Errorf("tx appears to have failed %v", string(bz))
 	}
 
-	return txhashjson.Str, successjson.Bool(), nil
+	return txhashjson.Str, true, nil
+}
+
+func execCmdCollectOutput(arguments []string, input string) (string, error) {
+	cmd := exec.Command(EMCLI, arguments...)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+
+	_, err = io.WriteString(stdin, input+"\n")
+	if err != nil {
+		return "", err
+	}
+
+	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	//bz, err := cmd.CombinedOutput()
+	var b bytes.Buffer
+	cmd.Stderr = &b
+
+	bz, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return string(bz), nil
 }
 
 func execCmdWithInput(arguments []string, input string) (string, bool, error) {
@@ -196,7 +278,7 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 
 	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
-	//fmt.Println(" *** Output", string(bz))
+	//fmt.Println(" *** CombinedOutput", string(bz))
 	if err != nil {
 		return "", false, err
 	}
@@ -218,6 +300,7 @@ func (cli Emcli) addQueryFlags(arguments ...string) []string {
 func (cli Emcli) addTransactionFlags(arguments ...string) []string {
 	arguments = append(arguments,
 		"--home", cli.keystore.path,
+		"--keyring-backend", "test",
 		"--yes",
 	)
 

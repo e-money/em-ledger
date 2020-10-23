@@ -1,18 +1,20 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package cli
 
 import (
+	"bufio"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -25,12 +27,12 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		DisableFlagParsing: false,
 	}
 
-	lpCmds.AddCommand(client.PostCommands(
+	lpCmds.AddCommand(flags.PostCommands(
 		getCmdMint(cdc),
 		getCmdBurn(cdc),
 	)...)
 
-	lpCmds = client.PostCommands(lpCmds)[0]
+	lpCmds = flags.PostCommands(lpCmds)[0]
 	return lpCmds
 }
 
@@ -40,8 +42,9 @@ func getCmdBurn(cdc *codec.Codec) *cobra.Command {
 		Short: "Destroys the given amount of tokens",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			amount, err := sdk.ParseCoins(args[1])
 			if err != nil {
@@ -64,8 +67,9 @@ func getCmdMint(cdc *codec.Codec) *cobra.Command {
 		Short: "Creates new tokens from the liquidity provider's mintable amount",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			amount, err := sdk.ParseCoins(args[1])
 			if err != nil {

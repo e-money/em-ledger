@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -32,7 +32,10 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 		}
 	}
 
-	previousProposer := db.Get(previousProposerKey)
+	previousProposer, err := db.Get(previousProposerKey)
+	if err != nil {
+		panic(err)
+	}
 
 	// TODO this is Tendermint-dependent
 	// ref https://github.com/cosmos/cosmos-sdk/issues/3095
@@ -46,6 +49,6 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 		}
 	}
 
-	previousProposer = sdk.ConsAddress(req.Header.ProposerAddress)
+	previousProposer = req.Header.ProposerAddress
 	batch.Set(previousProposerKey, previousProposer)
 }

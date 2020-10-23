@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -10,21 +10,27 @@ import (
 	"testing"
 	"time"
 
-	nt "github.com/e-money/em-ledger/networktest"
+	"github.com/cosmos/cosmos-sdk/version"
+
 	apptypes "github.com/e-money/em-ledger/types"
 
+	nt "github.com/e-money/em-ledger/networktest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/onsi/ginkgo/config"
 )
 
-func init() {
-	apptypes.ConfigureSDK()
-}
-
 var (
-	testnet = nt.NewTestnet()
+	testnet = func() nt.Testnet {
+		version.Name = "e-money" // Used by the keyring library.
+		version.ClientName = "emcli"
+		version.ServerName = "emd"
+
+		apptypes.ConfigureSDK()
+		return nt.NewTestnet()
+	}()
+
 	// If set to false, the tests will not clean up the docker containers that are started during the tests.
 	tearDownAfterTests = true
 )

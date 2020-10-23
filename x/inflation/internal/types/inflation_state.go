@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -9,14 +9,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 )
 
 // Parameter store keys
 var (
-	KeyMintDenom = []byte("MintDenom")
-	KeyParams    = []byte("MintParameters")
+	KeyLastAppliedTime   = []byte("LastAppliedTime")
+	KeyLastAppliedHeight = []byte("LastAppliedHeight")
+	KeyInflationAssets   = []byte("InflationAssets")
 )
 
 type InflationAsset struct {
@@ -33,8 +36,16 @@ type InflationState struct {
 	InflationAssets   InflationAssets `json:"assets" yaml:"assets"`
 }
 
+func (is InflationState) ParamSetPairs() subspace.ParamSetPairs {
+	return params.ParamSetPairs{
+		params.NewParamSetPair(KeyLastAppliedTime, &is.LastAppliedTime, nil),
+		params.NewParamSetPair(KeyLastAppliedHeight, &is.LastAppliedHeight, nil),
+		params.NewParamSetPair(KeyInflationAssets, &is.InflationAssets, nil),
+	}
+}
+
 func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterType(KeyParams, InflationState{})
+	return params.NewKeyTable().RegisterParamSet(&InflationState{})
 }
 
 func NewInflationState(assets ...string) InflationState {

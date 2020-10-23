@@ -6,35 +6,44 @@ package keeper
 
 import (
 	"encoding/json"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"strings"
 )
 
 func NewQuerier(k Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryGasPrices:
 			return queryGasPrices(ctx, k)
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown authority query endpoint")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown authority query endpoint")
 		}
 	}
 
 }
 
-type queryGasPricesResponse struct {
+type QueryGasPricesResponse struct {
 	MinGasPrices []sdk.DecCoin `json:"min_gas_prices" yaml:"min_gas_prices"`
 }
 
-func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
-	gasPrices := k.GetGasPrices(ctx)
-
-	response := queryGasPricesResponse{gasPrices}
-	bz, err := json.Marshal(response)
-	if err != nil {
-		return []byte{}, sdk.ErrInternal(err.Error())
+func (q QueryGasPricesResponse) String() string {
+	sb := new(strings.Builder)
+	sb.WriteString("Minimum gas prices\n")
+	for _, gp := range q.MinGasPrices {
+		sb.WriteString(fmt.Sprintf(" - %v : %v\n", gp.Denom, gp.Amount.String()))
 	}
 
-	return bz, nil
+	return sb.String()
+}
+
+func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, error) {
+	gasPrices := k.GetGasPrices(ctx)
+
+	response := QueryGasPricesResponse{gasPrices}
+
+	return json.Marshal(response)
 }

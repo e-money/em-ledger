@@ -48,8 +48,8 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 install:
-	go install $(BUILD_FLAGS) ./cmd/emd
-	go install $(BUILD_FLAGS) ./cmd/emcli
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emcli
 
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
@@ -57,7 +57,8 @@ build:
 
 build-linux:
 	# Linux images for docker-compose
-	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
+	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux CGO_ENABLED=0 GOARCH=amd64 $(MAKE) build
 
 build-all: build-linux
 	$(MAKE) build
@@ -70,10 +71,19 @@ run-single-node: clean
 	go run cmd/daemon/*.go start
 
 test:
-	go test ./...
+	go test -mod=readonly ./...
 
 bdd-test:
-	go test -v -p 1 --tags="bdd" bdd_test.go staking_test.go authority_test.go capacity_test.go market_test.go
+	go test -mod=readonly -v -p 1 --tags="bdd" bdd_test.go staking_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go buyback_test.go
+
+local-testnet:
+	go test -mod=readonly -v --tags="bdd" bdd_test.go localnet_test.go
+
+local-testnet-reset:
+	./build/emd unsafe-reset-all --home build/node0/
+	./build/emd unsafe-reset-all --home build/node1/
+	./build/emd unsafe-reset-all --home build/node2/
+	./build/emd unsafe-reset-all --home build/node3/
 
 clean:
 	rm -rf ./build ./data ./config

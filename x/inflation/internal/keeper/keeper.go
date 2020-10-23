@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -6,6 +6,8 @@ package keeper
 
 import (
 	"fmt"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,28 +15,31 @@ import (
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 )
 
-// Keeper of the mint store
 type Keeper struct {
-	cdc              *codec.Codec
-	storeKey         sdk.StoreKey
-	supplyKeeper     types.SupplyKeeper
-	feeCollectorName string
+	cdc           *codec.Codec
+	storeKey      sdk.StoreKey
+	supplyKeeper  types.SupplyKeeper
+	stakingKeeper types.StakingKeeper
+
+	cointokenDestination,
+	stakingtokenDestination string
 }
 
-// NewKeeper creates a new mint Keeper instance
 func NewKeeper(
-	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, feeCollectorName string) Keeper {
+	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
 
-	// ensure mint module account is set
 	if addr := supplyKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the inflation module account has not been set")
 	}
 
 	return Keeper{
-		cdc:              cdc,
-		storeKey:         key,
-		supplyKeeper:     supplyKeeper,
-		feeCollectorName: feeCollectorName,
+		cdc:           cdc,
+		storeKey:      key,
+		supplyKeeper:  supplyKeeper,
+		stakingKeeper: stakingKeeper,
+
+		cointokenDestination:    coinTokenDestination,
+		stakingtokenDestination: stakingTokenDestination,
 	}
 }
 
@@ -63,21 +68,24 @@ func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store.Set(types.MinterKey, b)
 }
 
-func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string) sdk.Result {
+func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string) (*sdk.Result, error) {
 	state := k.GetState(ctx)
 	asset := state.FindByDenom(denom)
 	if asset == nil {
-		errMsg := fmt.Sprintf("Unrecognized asset denomination: %v", denom)
-		return sdk.ErrUnknownRequest(errMsg).Result()
+		return nil, sdkerrors.Wrapf(types.ErrUnknownRequest, "Unrecognized asset denomination: %v", denom)
 	}
 
 	asset.Inflation = newInflation
 	k.SetState(ctx, state)
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) sdk.Result {
+func (k Keeper) GetStakingDenomination(ctx sdk.Context) string {
+	return k.stakingKeeper.GetParams(ctx).BondDenom
+}
+
+func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) (*sdk.Result, error) {
 	state := k.GetState(ctx)
 
 	for _, denom := range denoms {
@@ -95,7 +103,7 @@ func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) sdk.Result {
 	}
 
 	k.SetState(ctx, state)
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {
@@ -104,7 +112,7 @@ func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {
 
 // MintCoins implements an alias call to the underlying supply keeper's
 // MintCoins to be used in BeginBlocker.
-func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) sdk.Error {
+func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) error {
 	if newCoins.Empty() {
 		// skip as no coins need to be minted
 		return nil
@@ -112,6 +120,10 @@ func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) sdk.Error {
 	return k.supplyKeeper.MintCoins(ctx, types.ModuleName, newCoins)
 }
 
-func (k Keeper) AddMintedCoins(ctx sdk.Context, fees sdk.Coins) sdk.Error {
-	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
+func (k Keeper) DistributeMintedCoins(ctx sdk.Context, fees sdk.Coins) error {
+	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.cointokenDestination, fees)
+}
+
+func (k Keeper) DistributeStakingCoins(ctx sdk.Context, fees sdk.Coins) error {
+	return k.supplyKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.stakingtokenDestination, fees)
 }

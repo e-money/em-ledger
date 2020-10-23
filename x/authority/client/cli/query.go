@@ -5,9 +5,11 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+
+	"github.com/e-money/em-ledger/x/authority/keeper"
+	"github.com/e-money/em-ledger/x/authority/types"
 
 	"github.com/spf13/cobra"
 
@@ -15,8 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
-
-	"github.com/e-money/em-ledger/x/authority/types"
 )
 
 func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
@@ -48,21 +48,13 @@ func GetGasPricesCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out string
-			if cliCtx.Indent {
-				var buf bytes.Buffer
-				err = json.Indent(&buf, bz, "", "  ")
-				out = buf.String()
-			} else {
-				out = string(bz)
-			}
-
+			resp := new(keeper.QueryGasPricesResponse)
+			err = json.Unmarshal(bz, resp)
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Println(out)
-			return err
+			return cliCtx.PrintOutput(resp)
 		},
 	}
 

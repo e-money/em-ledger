@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -8,7 +8,6 @@ package networktest
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,21 +17,22 @@ import (
 	"strings"
 	"time"
 
-	cmn "github.com/tendermint/tendermint/libs/common"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/sjson"
 )
 
 // Handles running a testnet using docker-compose.
 type Testnet struct {
-	ctx      context.Context
 	Keystore *KeyStore
 	chainID  string
+	genesis  []byte // Holds the unaltered genesis file that is re-created on every restart.
 }
 
 const (
 	ContainerCount = 4
 	WorkingDir     = "./build/"
 	EMD            = WorkingDir + "emd"
+	DefaultNode    = "tcp://localhost:26657"
 )
 
 var (
@@ -59,49 +59,57 @@ func locateExecutable(name string) (path string) {
 	return
 }
 
-func NewTestnetWithContext(ctx context.Context) Testnet {
+func NewTestnet() Testnet {
 	ks, err := NewKeystore()
 	if err != nil {
 		panic(err)
 	}
 
-	chainID := fmt.Sprintf("localnet-%s", cmn.RandStr(6))
+	chainID := fmt.Sprintf("localnet-%s", tmrand.Str(6))
 
 	return Testnet{
-		ctx:      ctx,
 		Keystore: ks,
 		chainID:  chainID,
 	}
 }
 
-func NewTestnet() Testnet {
-	return NewTestnetWithContext(nil)
-}
-
-func (t Testnet) Setup() error {
+func (t *Testnet) Setup() error {
 	err := compileBinaries()
 	if err != nil {
 		return err
 	}
 
-	t.makeTestnet()
+	err = t.makeTestnet()
+	if err != nil {
+		return err
+	}
+
 	t.updateGenesis()
 
 	return nil
 }
 
-func (t Testnet) Start() (func() bool, error) {
-	if t.ctx != nil {
-		go func() {
-			<-t.ctx.Done()
-			t.Teardown()
-		}()
-	}
-
-	return dockerComposeUp()
+func writeGenesisFiles(newGenesisFile []byte) error {
+	return filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
+		if fileinfo.Name() == "genesis.json" {
+			err := ioutil.WriteFile(path, newGenesisFile, 0644)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (t Testnet) Restart() (func() bool, error) {
+	return t.restart(nil)
+}
+
+func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (func() bool, error) {
+	return t.restart(genesisModifier)
+}
+
+func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
 	err := dockerComposeDown()
 	if err != nil {
 		return nil, err
@@ -114,7 +122,15 @@ func (t Testnet) Restart() (func() bool, error) {
 		}
 	}
 
-	t.updateGenesis()
+	if genesismodifier != nil {
+		modifiedGenesis := make([]byte, len(t.genesis))
+		copy(modifiedGenesis, t.genesis)
+		modifiedGenesis = genesismodifier(modifiedGenesis)
+		writeGenesisFiles(modifiedGenesis)
+	} else {
+		// Restore the default genesis files
+		writeGenesisFiles(t.genesis)
+	}
 
 	return dockerComposeUp()
 }
@@ -138,7 +154,7 @@ func (t Testnet) GetValidatorLogs(index int) (string, error) {
 func (t Testnet) NewEmcli() Emcli {
 	return Emcli{
 		chainid:  t.chainID,
-		node:     "tcp://localhost:26657",
+		node:     DefaultNode,
 		keystore: t.Keystore,
 	}
 }
@@ -163,20 +179,24 @@ func (t Testnet) makeTestnet() error {
 	return nil
 }
 
-func (t Testnet) updateGenesis() {
-	genesisPaths := make([]string, 0)
+func (t *Testnet) updateGenesis() {
+	var genesisPath string
 	filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
+		if genesisPath != "" {
+			return filepath.SkipDir
+		}
+
 		if fileinfo.Name() == "genesis.json" {
-			genesisPaths = append(genesisPaths, path)
+			genesisPath = path
 		}
 		return nil
 	})
 
-	if len(genesisPaths) == 0 {
+	if genesisPath == "" {
 		panic("Unable to locate genesis.json for testnet.")
 	}
 
-	bz, err := ioutil.ReadFile(genesisPaths[0])
+	bz, err := ioutil.ReadFile(genesisPath)
 	if err != nil {
 		panic(err)
 	}
@@ -184,11 +204,11 @@ func (t Testnet) updateGenesis() {
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 
-	window := time.Duration(10 * time.Second).Milliseconds()
+	window := (10 * time.Second).Nanoseconds()
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
 
 	// Reduce jail time to be able to test unjailing
-	unjail := time.Duration(5 * time.Second).Milliseconds()
+	unjail := (5 * time.Second).Nanoseconds()
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", fmt.Sprint(unjail))
 
 	// Start inflation before testnet start in order to have some rewards for NGM stakers.
@@ -199,12 +219,9 @@ func (t Testnet) updateGenesis() {
 	genesisTime := time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339)
 	bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime)
 
-	for _, path := range genesisPaths {
-		err = ioutil.WriteFile(path, bz, 0644)
-		if err != nil {
-			panic(err)
-		}
-	}
+	t.genesis = bz
+
+	writeGenesisFiles(bz)
 }
 
 func compileBinaries() error {

@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -8,6 +8,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/spf13/viper"
 )
 
@@ -15,7 +17,7 @@ func init() {
 	previousConfig := configureConsensus
 	configureConsensus = func() {
 		previousConfig()
-		fmt.Println(" --- Overriding consensus parameters for tests!")
+		fmt.Fprintln(os.Stderr, " --- Overriding consensus parameters for tests!")
 
 		configChanges := map[string]string{
 			"consensus.create_empty_blocks_interval": "4s",
@@ -23,7 +25,7 @@ func init() {
 		}
 
 		for k, v := range configChanges {
-			fmt.Println(" --- Overriding:", k, v)
+			fmt.Fprintln(os.Stderr, " --- Overriding:", k, v)
 			viper.Set(k, v)
 		}
 	}

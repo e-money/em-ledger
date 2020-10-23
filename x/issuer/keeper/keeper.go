@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -7,6 +7,8 @@ package keeper
 import (
 	"fmt"
 	"sort"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/e-money/em-ledger/x/issuer/types"
 	lp "github.com/e-money/em-ledger/x/liquidityprovider"
@@ -33,17 +35,17 @@ func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) K
 	}
 }
 
-func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) sdk.Result {
+func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer)
 	if err != nil {
-		return types.ErrNotAnIssuer(issuer).Result()
+		return nil, err
 	}
 
 	for _, coin := range mintableIncrease {
 		if !anyContained(i.Denoms, coin.Denom) {
-			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
+			return nil, sdkerrors.Wrapf(types.ErrDoesNotControlDenomination, "%v", coin.Denom)
 		}
 	}
 
@@ -51,8 +53,8 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	if lpAcc == nil {
 		logger.Info("Creating liquidity provider", "account", liquidityProvider, "increase", mintableIncrease)
 		// Account was not previously a liquidity provider. Create it
-		if res := k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease); !res.IsOK() {
-			return res
+		if res, err := k.lpKeeper.CreateLiquidityProvider(ctx, liquidityProvider, mintableIncrease); err == nil {
+			return res, nil
 		}
 	} else {
 		logger.Info("Increasing liquidity provider mintable amount", "account", liquidityProvider, "increase", mintableIncrease)
@@ -60,50 +62,50 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) sdk.Result {
+func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer)
 	if err != nil {
-		return types.ErrNotAnIssuer(issuer).Result()
+		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuer.String())
 	}
 
 	for _, coin := range mintableDecrease {
 		if !anyContained(i.Denoms, coin.Denom) {
-			return types.ErrDoesNotControlDenomination(coin.Denom).Result()
+			return nil, sdkerrors.Wrapf(types.ErrDoesNotControlDenomination, "%v", coin.Denom)
 		}
 	}
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+		return nil, sdkerrors.Wrapf(types.ErrNotLiquidityProvider, "%v", liquidityProvider.String())
 	}
 
 	_, anyNegative := lpAcc.Mintable.SafeSub(mintableDecrease)
 	if anyNegative {
-		return types.ErrNegativeMintableBalance(lpAcc.GetAddress()).Result()
+		return nil, sdkerrors.Wrapf(types.ErrNegativeMintableBalance, "%v", lpAcc.String())
 	}
 
 	logger.Info("Liquidity provider mintable amount decreased", "account", liquidityProvider, "decrease", mintableDecrease)
 	lpAcc.DecreaseMintableAmount(mintableDecrease)
 	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 
 }
 
-func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) sdk.Result {
+func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	issuer, err := k.mustBeIssuer(ctx, issuerAddress)
 	if err != nil {
-		return types.ErrNotAnIssuer(issuerAddress).Result()
+		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuerAddress.String())
 	}
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+		return nil, sdkerrors.Wrap(types.ErrNotLiquidityProvider, liquidityProvider.String())
 	}
 
 	newMintableAmount := lpAcc.Mintable
@@ -113,7 +115,7 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 
 	if len(newMintableAmount) == len(lpAcc.Mintable) {
 		// Nothing was changed. Issuer was not controlling this lp.
-		return types.ErrNotLiquidityProvider(liquidityProvider).Result()
+		return nil, sdkerrors.Wrap(types.ErrNotLiquidityProvider, liquidityProvider.String())
 	}
 
 	if len(newMintableAmount) == 0 {
@@ -125,13 +127,13 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) sdk.Result {
+func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) (*sdk.Result, error) {
 	_, err := k.mustBeIssuerOfDenom(ctx, issuer, denom)
 	if err != nil {
-		return types.ErrNotAnIssuer(issuer).Result()
+		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuer.String())
 	}
 
 	return k.ik.SetInflation(ctx, inflationRate, denom)
@@ -158,16 +160,16 @@ func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store.Set([]byte(keyIssuerList), bz)
 }
 
-func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
+func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result, error) {
 	issuers := k.GetIssuers(ctx)
 
 	existingDenoms := collectDenoms(issuers)
 	if anyContained(existingDenoms, newIssuer.Denoms...) {
-		return types.ErrDenominationAlreadyAssigned().Result()
+		return nil, sdkerrors.Wrapf(types.ErrDenominationAlreadyAssigned, "%v", newIssuer.Denoms)
 	}
 
 	found := false
-	for i, _ := range issuers {
+	for i := range issuers {
 		if issuers[i].Address.Equals(newIssuer.Address) {
 			issuers[i].Denoms = append(issuers[i].Denoms, newIssuer.Denoms...)
 			sort.Strings(issuers[i].Denoms)
@@ -181,11 +183,11 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) sdk.Result {
 	}
 
 	k.setIssuers(ctx, issuers)
-	k.ik.AddDenoms(ctx, newIssuer.Denoms)
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	k.ik.AddDenoms(ctx, newIssuer.Denoms) // TODO Check error?
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) sdk.Result {
+func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) (*sdk.Result, error) {
 	issuers := k.GetIssuers(ctx)
 
 	updatedIssuers := make([]types.Issuer, 0)
@@ -200,11 +202,11 @@ func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) sdk.Result 
 	}
 
 	if len(updatedIssuers) == len(issuers) {
-		return types.ErrIssuerNotFound(issuer).Result()
+		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuer.String())
 	}
 
 	k.setIssuers(ctx, updatedIssuers)
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 func anyContained(s []string, searchterms ...string) bool {

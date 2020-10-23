@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -6,13 +6,13 @@ package types // noalias
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	authe "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 )
 
 // AccountKeeper expected account keeper
 type AccountKeeper interface {
-	IterateAccounts(ctx sdk.Context, process func(auth.Account) (stop bool))
+	IterateAccounts(ctx sdk.Context, process func(authe.Account) (stop bool))
 }
 
 // StakingKeeper expected staking keeper
@@ -48,6 +48,6 @@ type StakingHooks interface {
 
 // SupplyKeeper defines the expected supply keeper
 type SupplyKeeper interface {
-	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) sdk.Error
-	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) sdk.Error
+	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) error
 }

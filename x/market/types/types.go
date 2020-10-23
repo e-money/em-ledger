@@ -7,28 +7,39 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"github.com/emirpasic/gods/sets/treeset"
-	"github.com/emirpasic/gods/utils"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"strings"
 	"time"
-
-	"github.com/emirpasic/gods/trees/btree"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const (
+	_ = iota
+	Order_Limit
+	Order_Market
+)
+
+const (
+	_ TimeInForce = iota
+	TimeInForce_GoodTilCancel
+	TimeInForce_ImmediateOrCancel
+	TimeInForce_FillOrKill
+)
+
 type (
+	TimeInForce int
+
 	Instrument struct {
 		Source, Destination string
-
-		Orders *btree.Tree
+		//LastPrice           sdk.Dec
+		//BestPlan            *ExecutionPlan
 	}
 
-	Instruments []Instrument
-
 	Order struct {
-		ID      uint64    `json:"id" yaml:"id"`
-		Created time.Time `json:"created" yaml:"created"`
+		ID uint64 `json:"id" yaml:"id"`
+
+		TimeInForce TimeInForce `json:"time_in_force" yaml:"time_in_force"`
 
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
 		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
@@ -38,8 +49,6 @@ type (
 		SourceFilled      sdk.Int  `json:"source_filled" yaml:"source_filled"`
 		Destination       sdk.Coin `json:"destination" yaml:"destination"`
 		DestinationFilled sdk.Int  `json:"destination_filled" yaml:"destination_filled"`
-
-		price sdk.Dec
 	}
 
 	ExecutionPlan struct {
@@ -48,53 +57,50 @@ type (
 		FirstOrder,
 		SecondOrder *Order
 	}
+
+	MarketData struct {
+		Source, Destination string
+		LastPrice           *sdk.Dec
+		Timestamp           *time.Time
+	}
 )
 
-func (is Instruments) String() string {
-	sb := strings.Builder{}
-
-	for _, instr := range is {
-		sb.WriteString(fmt.Sprintf("%v/%v - %v\n", instr.Source, instr.Destination, instr.Orders.Size()))
-	}
-
-	return sb.String()
+func (o Order) MarshalJSON() ([]byte, error) {
+	s := fmt.Sprintf(`
+{
+  "id": %v,
+  "time_in_force" : %v,
+  "owner": "%v",
+  "client_order_id": "%v",
+  "price": "%v",
+  "source": {
+    "denom": "%v",
+    "amount": "%v"
+  },
+  "source_remaining": "%v",
+  "source_filled": "%v",
+  "destination": {
+    "denom": "%v",
+    "amount": "%v"
+  },
+  "destination_filled": "%v",
 }
+`,
+		o.ID,
+		o.TimeInForce,
+		o.Owner.String(),
+		o.ClientOrderID,
+		o.Price().String(),
+		o.Source.Denom,
+		o.Source.Amount,
+		o.SourceRemaining,
+		o.SourceFilled,
+		o.Destination.Denom,
+		o.Destination.Amount,
+		o.DestinationFilled,
+	)
 
-func (is *Instruments) InsertOrder(order *Order) {
-	for _, i := range *is {
-		if i.Destination == order.Destination.Denom && i.Source == order.Source.Denom {
-			i.Orders.Put(order, nil)
-			return
-		}
-	}
-
-	i := Instrument{
-		Source:      order.Source.Denom,
-		Destination: order.Destination.Denom,
-		Orders:      btree.NewWith(3, OrderPriorityComparator),
-	}
-
-	*is = append(*is, i)
-	i.Orders.Put(order, nil)
-}
-
-func (is *Instruments) GetInstrument(source, destination string) *Instrument {
-	for _, i := range *is {
-		if i.Source == source && i.Destination == destination {
-			return &i
-		}
-	}
-
-	return nil
-}
-
-func (is *Instruments) RemoveInstrument(instr Instrument) {
-	for index, v := range *is {
-		if instr.Source == v.Source && instr.Destination == v.Destination {
-			*is = append((*is)[:index], (*is)[index+1:]...)
-			return
-		}
-	}
+	return []byte(s), nil
 }
 
 // Manual handling of de-/serialization in order to include private fields
@@ -128,7 +134,8 @@ func (o *Order) UnmarshalAmino(bz []byte) error {
 func (o *Order) allFields() []interface{} {
 	return []interface{}{
 		&o.ID,
-		&o.Created,
+
+		&o.TimeInForce,
 
 		&o.Owner,
 		&o.ClientOrderID,
@@ -138,62 +145,42 @@ func (o *Order) allFields() []interface{} {
 		&o.SourceFilled,
 		&o.Destination,
 		&o.DestinationFilled,
-
-		&o.price,
 	}
 }
-
-// Should return a number:
-//    negative , if a < b
-//    zero     , if a == b
-//    positive , if a > b
-func OrderPriorityComparator(a, b interface{}) int {
-	aAsserted := a.(*Order)
-	bAsserted := b.(*Order)
-
-	// Price priority
-	switch {
-	case aAsserted.Price().LT(bAsserted.Price()):
-		return -1
-	case aAsserted.Price().GT(bAsserted.Price()):
-		return 1
-	}
-
-	// Time priority
-	return int(aAsserted.ID - bAsserted.ID)
-}
-
-//func (o Order) InvertedPrice() sdk.Dec {
-//	return o.invertedPrice
-//}
 
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
 func (o Order) IsFilled() bool {
 	return o.SourceRemaining.ToDec().Mul(o.Price()).LT(sdk.OneDec()) || o.DestinationFilled.GTE(o.Destination.Amount)
 }
 
-func (o Order) IsValid() sdk.Error {
+func (o Order) IsValid() error {
+	switch o.TimeInForce {
+	case TimeInForce_GoodTilCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
+	default:
+		return sdkerrors.Wrapf(ErrUnknownTimeInForce, "Unknown 'time in force' specified : %v", o.TimeInForce)
+	}
+
 	if o.Source.Amount.LTE(sdk.ZeroInt()) {
-		return ErrInvalidPrice(o.Source, o.Destination)
+		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
 	}
 
 	if o.Destination.Amount.LTE(sdk.ZeroInt()) {
-		return ErrInvalidPrice(o.Source, o.Destination)
+		return sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", o.Source.Amount, o.Destination.Amount)
 	}
 
 	if o.Source.Denom == o.Destination.Denom {
-		return ErrInvalidInstrument(o.Source.Denom, o.Destination.Denom)
+		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%v/%v' is not a valid instrument", o.Source.Denom, o.Destination.Denom)
 	}
 
 	return nil
 }
 
 func (o Order) Price() sdk.Dec {
-	return o.price
+	return o.Destination.Amount.ToDec().Quo(o.Source.Amount.ToDec())
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.price, o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner.String())
+	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner.String())
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
@@ -235,13 +222,13 @@ func (ep ExecutionPlan) String() string {
 	return buf.String()
 }
 
-func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clientOrderId string) (Order, sdk.Error) {
+func NewOrder(timeInForce TimeInForce, src, dst sdk.Coin, seller sdk.AccAddress, clientOrderId string) (Order, error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
-		return Order{}, ErrInvalidPrice(src, dst)
+		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
 	}
 
 	o := Order{
-		Created: created,
+		TimeInForce: timeInForce,
 
 		Owner:         seller,
 		ClientOrderID: clientOrderId,
@@ -251,8 +238,6 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clien
 		SourceFilled:      sdk.ZeroInt(),
 		Destination:       dst,
 		DestinationFilled: sdk.ZeroInt(),
-
-		price: dst.Amount.ToDec().Quo(src.Amount.ToDec()),
 	}
 
 	if err := o.IsValid(); err != nil {
@@ -262,79 +247,30 @@ func NewOrder(src, dst sdk.Coin, seller sdk.AccAddress, created time.Time, clien
 	return o, nil
 }
 
-type Orders struct {
-	accountOrders map[string]*treeset.Set
-}
+// Convert from TimeInForce string representation to the internal enum type. Case insensitive.
+func TimeInForceFromString(p string) (TimeInForce, error) {
+	p = strings.ToLower(p)
 
-func NewOrders() Orders {
-	return Orders{make(map[string]*treeset.Set)}
-}
-
-// Get the sum of all of the seller's orders in the given instrument
-func (o Orders) GetAccountSourceDemand(owner sdk.AccAddress, src, dst string) sdk.Coin {
-	allOrders := o.GetAllOrders(owner)
-
-	sumSourceRemaining := sdk.ZeroInt()
-	for it := allOrders.Iterator(); it.Next(); {
-		order := it.Value().(*Order)
-		if order.Source.Denom != src || order.Destination.Denom != dst {
-			continue
-		}
-
-		sumSourceRemaining = sumSourceRemaining.Add(order.SourceRemaining)
+	switch p {
+	case "fillorkill":
+		return TimeInForce_FillOrKill, nil
+	case "immediateorcancel":
+		return TimeInForce_ImmediateOrCancel, nil
+	case "goodtilcancelled":
+		return TimeInForce_GoodTilCancel, nil
 	}
 
-	return sdk.NewCoin(src, sumSourceRemaining)
+	return 0, fmt.Errorf("unknown time-in-force value: %v", p)
 }
 
-func (o Orders) ContainsClientOrderId(owner sdk.AccAddress, clientOrderId string) bool {
-	allOrders := o.GetAllOrders(owner)
-
-	order := &Order{ClientOrderID: clientOrderId}
-	return allOrders.Contains(order)
-}
-
-func (o Orders) GetOrder(owner sdk.AccAddress, clientOrderId string) (res *Order) {
-	allOrders := o.GetAllOrders(owner)
-
-	allOrders.Find(func(_ int, value interface{}) bool {
-		order := value.(*Order)
-		if order.ClientOrderID == clientOrderId {
-			res = order
-			return true
-		}
-
-		return false
-	})
-
-	return
-}
-
-func (o *Orders) GetAllOrders(owner sdk.AccAddress) *treeset.Set {
-	allOrders, found := o.accountOrders[owner.String()]
-
-	if !found {
-		// Note that comparator only uses client order id.
-		allOrders = treeset.NewWith(OrderClientIdComparator)
-		o.accountOrders[owner.String()] = allOrders
+func (tif TimeInForce) String() string {
+	switch tif {
+	case TimeInForce_ImmediateOrCancel:
+		return "ImmediateOrCancel"
+	case TimeInForce_GoodTilCancel:
+		return "GoodTilCancelled"
+	case TimeInForce_FillOrKill:
+		return "FillOrKill"
 	}
-
-	return allOrders
-}
-
-func (o *Orders) AddOrder(order *Order) {
-	orders := o.GetAllOrders(order.Owner)
-	orders.Add(order)
-}
-
-func (o *Orders) RemoveOrder(order *Order) {
-	orders := o.GetAllOrders(order.Owner)
-	orders.Remove(order)
-}
-
-func OrderClientIdComparator(a, b interface{}) int {
-	aAsserted := a.(*Order)
-	bAsserted := b.(*Order)
-
-	return utils.StringComparator(aAsserted.ClientOrderID, bAsserted.ClientOrderID)
+	return "<unknown>"
 }

@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -7,15 +7,18 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/x/market"
+	"github.com/e-money/em-ledger/x/queries"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/e-money/em-ledger/x/market"
 
 	emauth "github.com/e-money/em-ledger/hooks/auth"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	emdistr "github.com/e-money/em-ledger/hooks/distribution"
 	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/buyback"
 	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
@@ -27,9 +30,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -51,7 +54,7 @@ var (
 	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
 
 	ModuleBasics = module.NewBasicManager(
-		genaccounts.AppModuleBasic{},
+		//genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
@@ -64,6 +67,8 @@ var (
 		issuer.AppModuleBasic{},
 		authority.AppModule{},
 		market.AppModule{},
+		buyback.AppModule{},
+		queries.AppModule{},
 	)
 
 	// module account permissions
@@ -76,6 +81,7 @@ var (
 		slashing.ModuleName:          {supply.Minter},
 		slashing.PenaltyAccount:      nil,
 		liquidityprovider.ModuleName: {supply.Minter, supply.Burner},
+		buyback.ModuleName:           {supply.Burner},
 	}
 )
 
@@ -98,6 +104,7 @@ type emoneyApp struct {
 	issuerKeeper    issuer.Keeper
 	authorityKeeper authority.Keeper
 	marketKeeper    *market.Keeper
+	buybackKeeper   buyback.Keeper
 
 	mm *module.Manager
 }
@@ -129,10 +136,12 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		issuer.StoreKey,
 		authority.StoreKey,
 		market.StoreKey,
+		market.StoreKeyIdx,
+		buyback.StoreKey,
 	)
 	application.keys = keys
 
-	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
+	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
 
 	var (
 		authSubspace     = application.paramsKeeper.Subspace(auth.DefaultParamspace)
@@ -140,50 +149,54 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		stakingSubspace  = application.paramsKeeper.Subspace(staking.DefaultParamspace)
 		distrSubspace    = application.paramsKeeper.Subspace(distr.DefaultParamspace)
 		slashingSubspace = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+
+		accountBlacklist = application.ModuleAccountAddrs()
 	)
 
-	accountBlacklist := application.ModuleAccountAddrs()
 	application.accountKeeper = emauth.Wrap(auth.NewAccountKeeper(cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount))
 
-	bankKeeper := bank.NewBaseKeeper(application.accountKeeper, bankSubspace, bank.DefaultCodespace, accountBlacklist)
+	bankKeeper := bank.NewBaseKeeper(application.accountKeeper, bankSubspace, accountBlacklist)
 
 	application.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], application.accountKeeper, bankKeeper, maccPerms)
-	application.stakingKeeper = staking.NewKeeper(cdc, keys[staking.StoreKey], tkeys[staking.TStoreKey], application.supplyKeeper,
-		stakingSubspace, staking.DefaultCodespace)
+	application.stakingKeeper = staking.NewKeeper(cdc, keys[staking.StoreKey], application.supplyKeeper, stakingSubspace)
 	application.distrKeeper = distr.NewKeeper(application.cdc, keys[distr.StoreKey], distrSubspace, &application.stakingKeeper,
-		application.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName, accountBlacklist)
+		application.supplyKeeper, auth.FeeCollectorName, accountBlacklist)
 
-	application.inflationKeeper = inflation.NewKeeper(application.cdc, keys[inflation.StoreKey], application.supplyKeeper, auth.FeeCollectorName)
-	application.slashingKeeper = slashing.NewKeeper(application.cdc, keys[slashing.StoreKey], &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, slashing.DefaultCodespace, application.database)
+	application.inflationKeeper = inflation.NewKeeper(application.cdc, keys[inflation.StoreKey], application.supplyKeeper, application.stakingKeeper, buyback.AccountName, auth.FeeCollectorName)
+	application.slashingKeeper = slashing.NewKeeper(application.cdc, keys[slashing.StoreKey], &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, application.database)
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
 	application.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], application.issuerKeeper, application.supplyKeeper, application)
-	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
+	// TODO Change market.StoreKeyIdx store to store/mem/store.go from the Cosmos SDK when v0.40 is available
+	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], keys[market.StoreKeyIdx], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
+	application.buybackKeeper = buyback.NewKeeper(application.cdc, keys[buyback.StoreKey], application.marketKeeper, application.supplyKeeper, application.stakingKeeper)
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
 
 	application.mm = module.NewManager(
-		genaccounts.NewAppModule(application.accountKeeper),
+		//genaccounts.NewAppModule(application.accountKeeper),
 		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
 		auth.NewAppModule(application.accountKeeper.InnerKeeper()),
 		bank.NewAppModule(embank.Wrap(bankKeeper, application.authorityKeeper), application.accountKeeper),
 		supply.NewAppModule(application.supplyKeeper, application.accountKeeper),
-		staking.NewAppModule(application.stakingKeeper, nil, application.accountKeeper, application.supplyKeeper),
+		staking.NewAppModule(application.stakingKeeper, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.inflationKeeper),
-		distr.NewAppModule(application.distrKeeper, application.supplyKeeper),
+		distr.NewAppModule(application.distrKeeper, application.accountKeeper, application.supplyKeeper, application.stakingKeeper),
 		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
 		liquidityprovider.NewAppModule(application.lpKeeper),
 		issuer.NewAppModule(application.issuerKeeper),
 		authority.NewAppModule(application.authorityKeeper),
 		market.NewAppModule(application.marketKeeper),
+		buyback.NewAppModule(application.buybackKeeper),
+		queries.NewAppModule(application.accountKeeper),
 	)
 
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
 	application.mm.SetOrderInitGenesis(
-		genaccounts.ModuleName,
+		//genaccounts.ModuleName,
 		distr.ModuleName,
 		staking.ModuleName,
 		auth.ModuleName,
@@ -195,6 +208,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		issuer.ModuleName,
 		authority.ModuleName,
 		market.ModuleName,
+		buyback.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
@@ -250,6 +264,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	inflation.BeginBlocker(ctx, app.inflationKeeper)
 	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)
+	buyback.BeginBlocker(ctx, app.buybackKeeper)
 
 	return abci.ResponseBeginBlock{
 		Events: ctx.EventManager().ABCIEvents(),
@@ -331,7 +346,8 @@ func distrDefaultGenesisState() func() distr.GenesisState {
 
 	return func() distr.GenesisState {
 		state := distrDefaultGenesisStateFn()
-		state.CommunityTax = sdk.NewDec(0)
+		//state.CommunityTax = sdk.NewDec(0)
+		// TODO Fix this parameter to 0.
 		return state
 	}
 }
@@ -357,6 +373,7 @@ func MakeCodec() *codec.Codec {
 	ModuleBasics.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
+	vesting.RegisterCodec(cdc) // TODO Verify that this is needed
 
 	return cdc.Seal()
 }

@@ -7,6 +7,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+
 	"net"
 	"path/filepath"
 	"strings"
@@ -19,16 +22,13 @@ import (
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/inflation"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
-	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -37,7 +37,7 @@ import (
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/common"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/p2p"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -49,6 +49,8 @@ const (
 	flagAddKeybaseAccounts = "keyaccounts"
 
 	nodeMonikerTemplate = "node%v"
+
+	defaultKeyPass = "pwd123456"
 )
 
 func testnetCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *cobra.Command {
@@ -65,7 +67,7 @@ Example:
 	emd testnet -v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config := ctx.Config
+			cfg := ctx.Config
 			chainID := args[0]
 
 			outputDir := viper.GetString(flagOutputDir)
@@ -74,11 +76,11 @@ Example:
 			numValidators := viper.GetInt(flagNumValidators)
 			addKeybaseAccounts := viper.GetString(flagAddKeybaseAccounts)
 
-			authority := getAuthorityKey(args[1], addKeybaseAccounts)
+			authorityKey := getAuthorityKey(args[1], addKeybaseAccounts)
 
 			//return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
 			//	minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
-			return initializeTestnet(cdc, mbm, config, outputDir, numValidators, startingIPAddress, addKeybaseAccounts, chainID, authority)
+			return initializeTestnet(cdc, mbm, cfg, outputDir, numValidators, startingIPAddress, addKeybaseAccounts, chainID, authorityKey)
 		},
 		Args: cobra.ExactArgs(2),
 	}
@@ -96,6 +98,7 @@ Example:
 	//	"Home directory of the node's cli configuration")
 	cmd.Flags().String(flagStartingIPAddress, "192.168.10.2",
 		"Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
+	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	//cmd.Flags().String(
 	//	client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	//cmd.Flags().String(
@@ -121,7 +124,7 @@ func initializeTestnet(
 	}
 
 	if chainID == "" {
-		chainID = fmt.Sprintf("emoney-%v", common.RandStr(6))
+		chainID = fmt.Sprintf("emoney-%v", tmrand.Str(6))
 	}
 
 	genDoc := &tmtypes.GenesisDoc{
@@ -132,7 +135,7 @@ func initializeTestnet(
 
 	nodeIDs := make([]string, validatorCount)
 	createValidatorTXs := make([]types.StdTx, validatorCount)
-	validatorAccounts := make([]genaccounts.GenesisAccount, validatorCount)
+	validatorAccounts := make([]exported.GenesisAccount, validatorCount)
 
 	for i := 0; i < validatorCount; i++ {
 		nodeMoniker := fmt.Sprintf(nodeMonikerTemplate, i)
@@ -157,7 +160,7 @@ func initializeTestnet(
 		validatorAccounts[i] = createValidatorAccounts(validatorAccountAddress)
 	}
 
-	var genaccounts genaccounts.GenesisAccounts
+	var genaccounts exported.GenesisAccounts
 	if addRandomAccounts != "" {
 		genaccounts = addRandomTestAccounts(addRandomAccounts)
 	}
@@ -192,7 +195,7 @@ func initializeTestnet(
 }
 
 func createInflationGenesis() json.RawMessage {
-	state := inflation.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01")
+	state := inflation.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01", "ungm", "0.1")
 
 	gen := inflation.GenesisState{
 		InflationState: state,
@@ -207,7 +210,7 @@ func createInflationGenesis() json.RawMessage {
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
-	gen := authority.NewGenesisState(akey, emtypes.RestrictedDenoms{}, sdk.NewDecCoins(sdk.NewCoins()))
+	gen := authority.NewGenesisState(akey, emtypes.RestrictedDenoms{}, sdk.NewDecCoins())
 
 	bz, err := json.Marshal(gen)
 	if err != nil {
@@ -217,19 +220,19 @@ func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
 	return json.RawMessage(bz)
 }
 
-func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
-	kb, err := keys.NewKeyBaseFromDir(keystorepath)
+func addRandomTestAccounts(keystorepath string) exported.GenesisAccounts {
+	kb, err := keys.NewKeyring(sdk.KeyringServiceName(), keys.BackendTest, keystorepath, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	keys, err := kb.List()
+	allKeys, err := kb.List()
 	if err != nil {
 		panic(err)
 	}
 
-	result := make(genaccounts.GenesisAccounts, len(keys))
-	for i, k := range keys {
+	result := make(exported.GenesisAccounts, len(allKeys))
+	for i, k := range allKeys {
 		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
 		coins := sdk.NewCoins(
 			sdk.NewCoin("ungm", sdk.NewInt(99000000000)),
@@ -238,16 +241,18 @@ func addRandomTestAccounts(keystorepath string) genaccounts.GenesisAccounts {
 			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
 		)
 
-		genAcc := genaccounts.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
+		//genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
+		genAcc := auth.NewBaseAccount(k.GetAddress(), coins, nil, 0, 0)
+		//genAcc := exported.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
 		result[i] = genAcc
 	}
 
 	return result
 }
 
-func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount {
+func createValidatorAccounts(address crypto.Address) exported.GenesisAccount {
 	accStakingTokens := sdk.TokensFromConsensusPower(100000)
-	account := genaccounts.GenesisAccount{
+	account := &auth.BaseAccount{
 		Address: sdk.AccAddress(address),
 		Coins: sdk.Coins{
 			sdk.NewCoin("ungm", accStakingTokens),
@@ -257,20 +262,24 @@ func createValidatorAccounts(address crypto.Address) genaccounts.GenesisAccount 
 	return account
 }
 
-func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []types.StdTx, accounts []genaccounts.GenesisAccount) {
+func addGenesisValidators(cdc *codec.Codec, genDoc *tmtypes.GenesisDoc, txs []types.StdTx, accounts []exported.GenesisAccount) {
 	var appState map[string]json.RawMessage
 	if err := cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
 		panic(err)
 	}
-	genutil.SetGenesisStateInAppState(cdc, appState, genutil.NewGenesisStateFromStdTx(txs))
-	genaccounts.SetGenesisStateInAppState(cdc, appState, accounts)
+
+	genutil.SetGenTxsInAppGenesisState(cdc, appState, txs)
+
+	authGenesis := auth.NewGenesisState(auth.DefaultParams(), accounts)
+	genesisStateBz := cdc.MustMarshalJSON(authGenesis)
+	appState[auth.ModuleName] = genesisStateBz
 
 	genDoc.AppState = cdc.MustMarshalJSON(appState)
 }
 
 func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string) (types.StdTx, crypto.Address) {
-	kb := keys.NewInMemoryKeyBase()
-	info, secret, err := kb.CreateMnemonic("nodename", ckeys.English, client.DefaultKeyPass, ckeys.Secp256k1)
+	kb := keys.NewInMemory()
+	info, secret, err := kb.CreateMnemonic("nodename", keys.English, defaultKeyPass, keys.Secp256k1)
 	if err != nil {
 		panic(err)
 	}
@@ -281,16 +290,15 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 		sdk.ValAddress(info.GetPubKey().Address()),
 		validatorpk,
 		sdk.NewCoin("ungm", valTokens),
-		staking.NewDescription(moniker, "", "", ""),
+		staking.NewDescription(moniker, "", "", "", ""),
 		staking.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 		sdk.OneInt())
 
-	// TODO Write mnemonic to file in the validator directory.
 	fmt.Printf("Key mnemonic for %v : %v\n", moniker, secret)
 
 	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, " - ")
-	txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo(" - ").WithKeybase(kb)
-	signedTx, err := txBldr.SignStdTx("nodename", client.DefaultKeyPass, tx, false)
+	txBldr := auth.NewTxBuilderFromCLI(strings.NewReader("")).WithChainID(chainID).WithMemo(" - ").WithKeybase(kb)
+	signedTx, err := txBldr.SignStdTx("nodename", defaultKeyPass, tx, false)
 
 	if err != nil {
 		panic(err)
@@ -365,7 +373,7 @@ func createConfigurationFiles(rootDir string) {
 	conf.ProfListenAddress = "localhost:6060"
 	conf.P2P.RecvRate = 5120000
 	conf.P2P.SendRate = 5120000
-	conf.TxIndex.IndexAllTags = true
+	conf.TxIndex.IndexAllKeys = true
 	conf.Consensus.TimeoutCommit = 2 * time.Second
 	conf.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
@@ -382,7 +390,7 @@ func getAuthorityKey(param string, keystorePath string) sdk.AccAddress {
 		return key
 	}
 
-	kb, err := keys.NewKeyBaseFromDir(keystorePath)
+	kb, err := keys.NewKeyring(sdk.KeyringServiceName(), keys.BackendTest, keystorePath, nil)
 	if err != nil {
 		panic(err)
 	}

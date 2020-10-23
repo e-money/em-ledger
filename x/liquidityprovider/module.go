@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -6,6 +6,7 @@ package liquidityprovider
 
 import (
 	"encoding/json"
+
 	"github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/gorilla/mux"
@@ -113,7 +114,7 @@ func (AppModule) QuerierRoute() string {
 // module querier
 func (am AppModule) NewQuerierHandler() sdk.Querier {
 	//return NewQuerier(am.keeper)
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		return []byte{}, nil
 	}
 }

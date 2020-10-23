@@ -4,16 +4,6 @@
 
 package bank
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-type CodeType = sdk.CodeType
-
-const (
-	Codespace sdk.CodespaceType = "embank"
-
-	CodeRestrictedDenomination sdk.CodeType = 1
-)
-
-func ErrRestrictedDenominationUsed(denom string) sdk.Error {
-	return sdk.NewError(Codespace, CodeRestrictedDenomination, "'%v' is a restricted denomination", denom)
-}
+var ErrRestrictedDenomination = sdkerrors.Register("embank", 1, "Denomination is restricted")

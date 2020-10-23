@@ -1,4 +1,4 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
@@ -8,10 +8,13 @@ package emoney
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/spf13/viper"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/spf13/viper"
 
 	nt "github.com/e-money/em-ledger/networktest"
 
@@ -22,7 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -45,6 +48,8 @@ var _ = Describe("Staking", func() {
 				viper.Set(flags.FlagTrustNode, true)
 				defer viper.Set(flags.FlagTrustNode, nil)
 
+				viper.Set(flags.FlagKeyringBackend, keys.BackendTest)
+				defer viper.Set(flags.FlagKeyringBackend, nil)
 				emcli := testnet.NewEmcli()
 
 				time.Sleep(2 * time.Second)
@@ -111,8 +116,8 @@ var _ = Describe("Staking", func() {
 						continue
 					}
 
-					s := gjson.ParseBytes(bz).Get("logs.0.success")
-					if s.Bool() {
+					s := gjson.ParseBytes(bz).Get("txhash")
+					if s.Exists() {
 						success++
 					} else {
 						failure++
@@ -148,12 +153,17 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	bank.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
+	httpClient, err := rpcclient.New("tcp://localhost:26657", "/websocket")
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
+
 	cliCtx := context.NewCLIContext().
 		WithCodec(cdc).
 		//WithBroadcastMode("block").
 		WithBroadcastMode("async").
 		WithTrustNode(true).
-		WithClient(rpcclient.NewHTTP("tcp://localhost:26657", "/websocket"))
+		WithClient(httpClient)
 
 	to, err := sdk.AccAddressFromBech32(toKey.GetAddress())
 	if err != nil {
@@ -187,7 +197,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		Amount:      amount,
 	}
 
-	txBldr := auth.NewTxBuilderFromCLI().
+	txBldr := auth.NewTxBuilderFromCLI(strings.NewReader("")).
 		WithTxEncoder(utils.GetTxEncoder(cdc)).
 		WithChainID(chainID).
 		WithAccountNumber(accInfo.AccountNo).

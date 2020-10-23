@@ -1,12 +1,14 @@
-// This software is Copyright (c) 2019 e-Money A/S. It is not offered under an open source license.
+// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
 //
 // Please contact partners@e-money.com for licensing related questions.
 
 package inflation
 
 import (
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/util"
 	"time"
+
+	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -53,7 +55,16 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		panic(err)
 	}
 
-	err = k.AddMintedCoins(ctx, mintedCoins)
+	// Divide into two pools: Staking tokens and Stablecoin tokens
+	stakingDenom := k.GetStakingDenomination(ctx)
+	stakingTokens, coinTokens := util.SplitCoinsByDenom(mintedCoins, stakingDenom)
+
+	err = k.DistributeMintedCoins(ctx, coinTokens)
+	if err != nil {
+		panic(err)
+	}
+
+	err = k.DistributeStakingCoins(ctx, stakingTokens)
 	if err != nil {
 		panic(err)
 	}
