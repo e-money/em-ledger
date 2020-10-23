@@ -35,15 +35,15 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		}
 
 		// Calculate the amount of staking tokens that can be purchased at that price
-		tokenCount := balance.Amount.ToDec().Mul(*pricedata.LastPrice).RoundInt()
-		if tokenCount.LT(sdk.OneInt()) {
+		destinationAmount := balance.Amount.ToDec().Mul(*pricedata.LastPrice).TruncateInt()
+		if destinationAmount.LT(sdk.OneInt()) {
 			continue
 		}
 
 		order, err := types.NewOrder(
 			types.TimeInForce_GoodTilCancel,
 			balance,
-			sdk.NewCoin(stakingDenom, tokenCount),
+			sdk.NewCoin(stakingDenom, destinationAmount),
 			account.GetAddress(),
 			generateClientOrderId(ctx, balance),
 		)
