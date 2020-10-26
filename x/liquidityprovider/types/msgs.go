@@ -16,13 +16,13 @@ var (
 
 type (
 	MsgMintTokens struct {
-		Amount            sdk.Coins
-		LiquidityProvider sdk.AccAddress
+		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
+		Amount            sdk.Coins      `json:"amount" yaml:"amount"`
 	}
 
 	MsgBurnTokens struct {
-		Amount            sdk.Coins
-		LiquidityProvider sdk.AccAddress
+		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
+		Amount            sdk.Coins      `json:"amount" yaml:"amount"`
 	}
 )
 

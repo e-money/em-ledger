@@ -20,31 +20,34 @@ var (
 
 type (
 	MsgAddLimitOrder struct {
-		Owner               sdk.AccAddress
-		TimeInForce         string
-		Source, Destination sdk.Coin
-		ClientOrderId       string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
+		Source        sdk.Coin       `json:"source" yaml:"source"`
+		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
 	MsgAddMarketOrder struct {
-		Owner         sdk.AccAddress
-		TimeInForce   string
-		Source        string
-		Destination   sdk.Coin
-		ClientOrderId string
-		MaxSlippage   sdk.Dec
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
+		Source        string         `json:"source" yaml:"source"`
+		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
+		MaxSlippage   sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
 	}
 
 	MsgCancelOrder struct {
-		Owner         sdk.AccAddress
-		ClientOrderId string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
 	MsgCancelReplaceOrder struct {
-		Owner                               sdk.AccAddress
-		Source, Destination                 sdk.Coin
-		OrigClientOrderId, NewClientOrderId string
-		MaxSlippage                         sdk.Dec
+		Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
+		Source            sdk.Coin       `json:"source" yaml:"source"`
+		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
+		OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
+		NewClientOrderId  string         `json:"new_client_order_id" yaml:"new_client_order_id"`
+		MaxSlippage       sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
 	}
 )
 

@@ -18,26 +18,26 @@ var (
 
 type (
 	MsgIncreaseMintable struct {
-		MintableIncrease  sdk.Coins
-		LiquidityProvider sdk.AccAddress
-		Issuer            sdk.AccAddress
+		Issuer            sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
+		MintableIncrease  sdk.Coins      `json:"amount" yaml:"amount"`
 	}
 
 	MsgDecreaseMintable struct {
-		MintableDecrease  sdk.Coins
-		LiquidityProvider sdk.AccAddress
-		Issuer            sdk.AccAddress
+		Issuer            sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
+		MintableDecrease  sdk.Coins      `json:"amount" yaml:"amount"`
 	}
 
 	MsgRevokeLiquidityProvider struct {
-		LiquidityProvider sdk.AccAddress
-		Issuer            sdk.AccAddress
+		Issuer            sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
 	}
 
 	MsgSetInflation struct {
-		Denom         string
-		InflationRate sdk.Dec
-		Issuer        sdk.AccAddress
+		Issuer        sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		Denom         string         `json:"denom" yaml:"denom"`
+		InflationRate sdk.Dec        `json:"inflation_rate" yaml:"inflation_rate"`
 	}
 )
 
