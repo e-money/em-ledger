@@ -20,31 +20,34 @@ var (
 
 type (
 	MsgAddLimitOrder struct {
-		Owner               sdk.AccAddress
-		TimeInForce         string
-		Source, Destination sdk.Coin
-		ClientOrderId       string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
+		Source        sdk.Coin       `json:"source" yaml:"source"`
+		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
 	MsgAddMarketOrder struct {
-		Owner         sdk.AccAddress
-		TimeInForce   string
-		Source        string
-		Destination   sdk.Coin
-		ClientOrderId string
-		MaxSlippage   sdk.Dec
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
+		Source        string         `json:"source" yaml:"source"`
+		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
+		MaxSlippage   sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
 	}
 
 	MsgCancelOrder struct {
-		Owner         sdk.AccAddress
-		ClientOrderId string
+		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
 	MsgCancelReplaceOrder struct {
-		Owner                               sdk.AccAddress
-		Source, Destination                 sdk.Coin
-		OrigClientOrderId, NewClientOrderId string
-		MaxSlippage                         sdk.Dec
+		Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
+		Source            sdk.Coin       `json:"source" yaml:"source"`
+		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
+		OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
+		NewClientOrderId  string         `json:"new_client_order_id" yaml:"new_client_order_id"`
+		MaxSlippage       sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
 	}
 )
 
@@ -53,7 +56,7 @@ func (m MsgAddMarketOrder) Route() string {
 }
 
 func (m MsgAddMarketOrder) Type() string {
-	return "addlimitorder"
+	return "add_market_order"
 }
 
 func (m MsgAddMarketOrder) ValidateBasic() error {
@@ -95,7 +98,7 @@ func (m MsgCancelReplaceOrder) Route() string {
 }
 
 func (m MsgCancelReplaceOrder) Type() string {
-	return "cancelreplaceorder"
+	return "cancel_replace_order"
 }
 
 func (m MsgCancelReplaceOrder) ValidateBasic() error {
@@ -136,7 +139,7 @@ func (m MsgCancelOrder) Route() string {
 }
 
 func (m MsgCancelOrder) Type() string {
-	return "cancelorder"
+	return "cancel_order"
 }
 
 func (m MsgCancelOrder) ValidateBasic() error {
@@ -160,7 +163,7 @@ func (m MsgAddLimitOrder) Route() string {
 }
 
 func (m MsgAddLimitOrder) Type() string {
-	return "addlimitorder"
+	return "add_limit_order"
 }
 
 func (m MsgAddLimitOrder) ValidateBasic() error {

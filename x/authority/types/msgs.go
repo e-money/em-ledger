@@ -17,26 +17,26 @@ var (
 
 type (
 	MsgCreateIssuer struct {
-		Issuer        sdk.AccAddress
-		Denominations []string
-		Authority     sdk.AccAddress
+		Authority     sdk.AccAddress `json:"authority" yaml:"authority"`
+		Issuer        sdk.AccAddress `json:"issuer" yaml:"issuer"`
+		Denominations []string       `json:"denoms" yaml:"denoms"`
 	}
 	MsgDestroyIssuer struct {
-		Issuer    sdk.AccAddress
-		Authority sdk.AccAddress
+		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
+		Issuer    sdk.AccAddress `json:"issuer" yaml:"issuer"`
 	}
 
 	MsgSetGasPrices struct {
-		GasPrices sdk.DecCoins
-		Authority sdk.AccAddress
+		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
+		GasPrices sdk.DecCoins   `json:"gas_prices" yaml:"gas_prices"`
 	}
 )
 
-func (msg MsgDestroyIssuer) Type() string { return "destroyIssuer" }
+func (msg MsgDestroyIssuer) Type() string { return "destroy_issuer" }
 
-func (msg MsgCreateIssuer) Type() string { return "createIssuer" }
+func (msg MsgCreateIssuer) Type() string { return "create_issuer" }
 
-func (msg MsgSetGasPrices) Type() string { return "setgasprices" }
+func (msg MsgSetGasPrices) Type() string { return "set_gas_prices" }
 
 func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if msg.Issuer.Empty() {

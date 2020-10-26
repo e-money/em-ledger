@@ -6,11 +6,12 @@ package keeper
 
 import (
 	"fmt"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/x/market/types"
 	"math"
 	"sync"
 	"time"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/market/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -276,10 +277,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			}
 
 			if passiveOrder.IsFilled() {
-				types.EmitFilledEvent(ctx, *passiveOrder, passiveOrder.Price())
+				types.EmitFilledEvent(ctx, *passiveOrder, false, passiveOrder.Price())
 				k.deleteOrder(ctx, passiveOrder)
 			} else {
-				types.EmitPartiallyFilledEvent(ctx, *passiveOrder, passiveOrder.Price())
+				types.EmitFilledEvent(ctx, *passiveOrder, true, passiveOrder.Price())
 				k.setOrder(ctx, passiveOrder)
 			}
 
@@ -291,10 +292,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		}
 
 		if aggressiveOrder.IsFilled() {
-			types.EmitFilledEvent(ctx, aggressiveOrder, plan.Price)
+			types.EmitFilledEvent(ctx, aggressiveOrder, false, plan.Price)
 			break
 		} else {
-			types.EmitPartiallyFilledEvent(ctx, aggressiveOrder, plan.Price)
+			types.EmitFilledEvent(ctx, aggressiveOrder, true, plan.Price)
 		}
 
 		// Register trades in market data
