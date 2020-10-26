@@ -43,7 +43,7 @@ type (
 
 func (msg MsgSetInflation) Route() string { return ModuleName }
 
-func (msg MsgSetInflation) Type() string { return "setInflation" }
+func (msg MsgSetInflation) Type() string { return "set_inflation" }
 
 func (msg MsgSetInflation) ValidateBasic() error {
 	if msg.InflationRate.IsNegative() {
@@ -69,7 +69,7 @@ func (msg MsgSetInflation) GetSigners() []sdk.AccAddress {
 
 func (msg MsgRevokeLiquidityProvider) Route() string { return ModuleName }
 
-func (msg MsgRevokeLiquidityProvider) Type() string { return "revokeLiquidityProvider" }
+func (msg MsgRevokeLiquidityProvider) Type() string { return "revoke_liquidity_provider" }
 
 func (msg MsgRevokeLiquidityProvider) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
@@ -95,7 +95,7 @@ func (msg MsgRevokeLiquidityProvider) GetSigners() []sdk.AccAddress {
 
 func (msg MsgDecreaseMintable) Route() string { return ModuleName }
 
-func (msg MsgDecreaseMintable) Type() string { return "decreaseMintable" }
+func (msg MsgDecreaseMintable) Type() string { return "decrease_mintable" }
 
 func (msg MsgDecreaseMintable) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
@@ -126,7 +126,7 @@ func (msg MsgDecreaseMintable) GetSigners() []sdk.AccAddress {
 
 func (msg MsgIncreaseMintable) Route() string { return ModuleName }
 
-func (msg MsgIncreaseMintable) Type() string { return "increaseMintable" }
+func (msg MsgIncreaseMintable) Type() string { return "increase_mintable" }
 
 func (msg MsgIncreaseMintable) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {

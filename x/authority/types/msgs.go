@@ -32,11 +32,11 @@ type (
 	}
 )
 
-func (msg MsgDestroyIssuer) Type() string { return "destroyIssuer" }
+func (msg MsgDestroyIssuer) Type() string { return "destroy_issuer" }
 
-func (msg MsgCreateIssuer) Type() string { return "createIssuer" }
+func (msg MsgCreateIssuer) Type() string { return "create_issuer" }
 
-func (msg MsgSetGasPrices) Type() string { return "setgasprices" }
+func (msg MsgSetGasPrices) Type() string { return "set_gas_prices" }
 
 func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if msg.Issuer.Empty() {

@@ -53,7 +53,7 @@ func (m MsgAddMarketOrder) Route() string {
 }
 
 func (m MsgAddMarketOrder) Type() string {
-	return "addlimitorder"
+	return "add_market_order"
 }
 
 func (m MsgAddMarketOrder) ValidateBasic() error {
@@ -95,7 +95,7 @@ func (m MsgCancelReplaceOrder) Route() string {
 }
 
 func (m MsgCancelReplaceOrder) Type() string {
-	return "cancelreplaceorder"
+	return "cancel_replace_order"
 }
 
 func (m MsgCancelReplaceOrder) ValidateBasic() error {
@@ -136,7 +136,7 @@ func (m MsgCancelOrder) Route() string {
 }
 
 func (m MsgCancelOrder) Type() string {
-	return "cancelorder"
+	return "cancel_order"
 }
 
 func (m MsgCancelOrder) ValidateBasic() error {
@@ -160,7 +160,7 @@ func (m MsgAddLimitOrder) Route() string {
 }
 
 func (m MsgAddLimitOrder) Type() string {
-	return "addlimitorder"
+	return "add_limit_order"
 }
 
 func (m MsgAddLimitOrder) ValidateBasic() error {
