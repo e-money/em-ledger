@@ -46,10 +46,9 @@ var (
 
 	EventTypeCancel = types.EventTypeCancel
 
-	EmitNewOrderEvent        = types.EmitNewOrderEvent
-	EmitFilledEvent          = types.EmitFilledEvent
-	EmitPartiallyFilledEvent = types.EmitPartiallyFilledEvent
-	EmitCancelEvent          = types.EmitCancelEvent
+	EmitNewOrderEvent = types.EmitNewOrderEvent
+	EmitFilledEvent   = types.EmitFilledEvent
+	EmitCancelEvent   = types.EmitCancelEvent
 
 	GetOwnerKey               = types.GetOwnerKey
 	GetMarketDataKey          = types.GetMarketDataKey

@@ -6,20 +6,21 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // market module event types
 const (
-	EventTypeCancel          = "market_cancel"
-	EventTypeFilled          = "market_fill"
-	EventTypePartiallyFilled = "market_partial_fill"
-	EventNewOrder            = "market_new"
+	EventTypeCancel = "market_cancel"
+	EventTypeFilled = "market_fill"
+	EventNewOrder   = "market_new"
 
 	AttributeKeyClientOrderID     = "client_order_id"
 	AttributeKeyOrderID           = "order_id"
 	AttributeKeyOwner             = "owner"
+	AttributeKeyPartialFill       = "partial_fill"
 	AttributeKeyPrice             = "price"
 	AttributeKeySource            = "source"
 	AttributeKeySourceRemaining   = "source_remaining"
@@ -52,19 +53,12 @@ func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 	)
 }
 
-func EmitPartiallyFilledEvent(ctx sdk.Context, order Order, price sdk.Dec) {
-	emitFilledEvent(ctx, order, EventTypePartiallyFilled, price)
-}
-
-func EmitFilledEvent(ctx sdk.Context, order Order, price sdk.Dec) {
-	emitFilledEvent(ctx, order, EventTypeFilled, price)
-}
-
-func emitFilledEvent(ctx sdk.Context, order Order, eventtype string, price sdk.Dec) {
+func EmitFilledEvent(ctx sdk.Context, order Order, partial_fill bool, price sdk.Dec) {
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(eventtype,
+		sdk.NewEvent(EventTypeFilled,
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyPartialFill, strconv.FormatBool(partial_fill)),
 			sdk.NewAttribute(AttributeKeyPrice, price.String()),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
