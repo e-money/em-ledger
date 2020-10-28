@@ -277,10 +277,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			}
 
 			if passiveOrder.IsFilled() {
-				types.EmitFilledEvent(ctx, *passiveOrder, false, passiveOrder.Price())
+				types.EmitFilledEvent(ctx, *passiveOrder, false)
 				k.deleteOrder(ctx, passiveOrder)
 			} else {
-				types.EmitFilledEvent(ctx, *passiveOrder, true, passiveOrder.Price())
+				types.EmitFilledEvent(ctx, *passiveOrder, true)
 				k.setOrder(ctx, passiveOrder)
 			}
 
@@ -292,10 +292,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		}
 
 		if aggressiveOrder.IsFilled() {
-			types.EmitFilledEvent(ctx, aggressiveOrder, false, plan.Price)
+			types.EmitFilledEvent(ctx, aggressiveOrder, false)
 			break
 		} else {
-			types.EmitFilledEvent(ctx, aggressiveOrder, true, plan.Price)
+			types.EmitFilledEvent(ctx, aggressiveOrder, true)
 		}
 
 		// Register trades in market data
