@@ -26,8 +26,8 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 		case types.MsgCancelOrder:
 			return handleMsgCancelOrder(ctx, k, msg)
 
-		case types.MsgCancelReplaceOrder:
-			return handleMsgCancelReplaceOrder(ctx, k, msg)
+		case types.MsgCancelReplaceLimitOrder:
+			return handleMsgCancelReplaceLimitOrder(ctx, k, msg)
 
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized market message type: %T", msg)
@@ -62,7 +62,7 @@ func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelOrder) 
 	return k.CancelOrder(ctx, msg.Owner, msg.ClientOrderId)
 }
 
-func handleMsgCancelReplaceOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceOrder) (*sdk.Result, error) {
+func handleMsgCancelReplaceLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceLimitOrder) (*sdk.Result, error) {
 	order, err := types.NewOrder(0, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err

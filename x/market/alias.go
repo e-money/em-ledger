@@ -71,10 +71,10 @@ type (
 	QueryInstrumentsResponse        = keeper.QueryInstrumentsResponse
 	QueryInstrumentsWrapperResponse = keeper.QueryInstrumentsWrapperResponse
 
-	MsgAddMarketOrder     = types.MsgAddMarketOrder
-	MsgAddLimitOrder      = types.MsgAddLimitOrder
-	MsgCancelOrder        = types.MsgCancelOrder
-	MsgCancelReplaceOrder = types.MsgCancelReplaceOrder
+	MsgAddMarketOrder          = types.MsgAddMarketOrder
+	MsgAddLimitOrder           = types.MsgAddLimitOrder
+	MsgCancelOrder             = types.MsgCancelOrder
+	MsgCancelReplaceLimitOrder = types.MsgCancelReplaceLimitOrder
 
 	AccountKeeper    = types.AccountKeeper
 	BankKeeper       = types.BankKeeper

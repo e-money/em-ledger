@@ -15,7 +15,7 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgAddLimitOrder{}, "e-money/MsgAddLimitOrder", nil)
 	cdc.RegisterConcrete(MsgAddMarketOrder{}, "e-money/MsgAddMarketOrder", nil)
-	cdc.RegisterConcrete(MsgCancelReplaceOrder{}, "e-money/MsgCancelReplaceOrder", nil)
+	cdc.RegisterConcrete(MsgCancelReplaceLimitOrder{}, "e-money/MsgCancelReplaceLimitOrder", nil)
 	cdc.RegisterConcrete(MsgCancelOrder{}, "e-money/MsgCancelOrder", nil)
 }
 
