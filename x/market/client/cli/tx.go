@@ -6,6 +6,7 @@ package cli
 
 import (
 	"bufio"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -205,7 +206,7 @@ func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
 			origClientOrderID := args[0]
 			newClientOrderID := args[3]
 
-			msg := types.MsgCancelReplaceOrder{
+			msg := types.MsgCancelReplaceLimitOrder{
 				Owner:             cliCtx.GetFromAddress(),
 				Source:            src,
 				Destination:       dst,

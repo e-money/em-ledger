@@ -53,14 +53,13 @@ func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 	)
 }
 
-func EmitFilledEvent(ctx sdk.Context, order Order, partial_fill bool, price sdk.Dec) {
+func EmitFilledEvent(ctx sdk.Context, order Order, partial_fill bool) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeFilled,
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
-			sdk.NewAttribute(AttributeKeyPartialFill, strconv.FormatBool(partial_fill)),
-			sdk.NewAttribute(AttributeKeyPrice, price.String()),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
+			sdk.NewAttribute(AttributeKeyPartialFill, strconv.FormatBool(partial_fill)),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),
 			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", order.SourceFilled.String(), order.Source.Denom)),

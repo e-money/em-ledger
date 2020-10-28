@@ -15,39 +15,42 @@ var (
 	_ sdk.Msg = MsgAddLimitOrder{}
 	_ sdk.Msg = MsgAddMarketOrder{}
 	_ sdk.Msg = MsgCancelOrder{}
-	_ sdk.Msg = MsgCancelReplaceOrder{}
+	_ sdk.Msg = MsgCancelReplaceLimitOrder{}
 )
 
 type (
+	// MsgAddLimitOrder represents a message to add a limit order.
 	MsgAddLimitOrder struct {
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
 		Source        sdk.Coin       `json:"source" yaml:"source"`
 		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
+	// MsgAddMarketOrder represents a message to add a market order.
 	MsgAddMarketOrder struct {
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
+		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
 		Source        string         `json:"source" yaml:"source"`
 		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 		MaxSlippage   sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
 	}
 
+	// MsgCancelOrder represents a message to cancel an existing order.
 	MsgCancelOrder struct {
 		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
 		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
 	}
 
-	MsgCancelReplaceOrder struct {
+	// MsgCancelReplaceLimitOrder represents a message to cancel an existing order and replace it with a limit order.
+	MsgCancelReplaceLimitOrder struct {
 		Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
-		Source            sdk.Coin       `json:"source" yaml:"source"`
-		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
 		OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
 		NewClientOrderId  string         `json:"new_client_order_id" yaml:"new_client_order_id"`
-		MaxSlippage       sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
+		Source            sdk.Coin       `json:"source" yaml:"source"`
+		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
 	}
 )
 
@@ -93,15 +96,15 @@ func (m MsgAddMarketOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
 }
 
-func (m MsgCancelReplaceOrder) Route() string {
+func (m MsgCancelReplaceLimitOrder) Route() string {
 	return RouterKey
 }
 
-func (m MsgCancelReplaceOrder) Type() string {
-	return "cancel_replace_order"
+func (m MsgCancelReplaceLimitOrder) Type() string {
+	return "cancel_replace_limit_order"
 }
 
-func (m MsgCancelReplaceOrder) ValidateBasic() error {
+func (m MsgCancelReplaceLimitOrder) ValidateBasic() error {
 	if m.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
 	}
@@ -126,11 +129,11 @@ func (m MsgCancelReplaceOrder) ValidateBasic() error {
 	return validateClientOrderID(m.NewClientOrderId)
 }
 
-func (m MsgCancelReplaceOrder) GetSignBytes() []byte {
+func (m MsgCancelReplaceLimitOrder) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
-func (m MsgCancelReplaceOrder) GetSigners() []sdk.AccAddress {
+func (m MsgCancelReplaceLimitOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
 }
 
