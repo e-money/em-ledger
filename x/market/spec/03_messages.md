@@ -75,6 +75,13 @@ MsgCancelReplaceLimitOrder struct {
 The unfilled part of the original order is canceled and replaced with a new limit order, taking into consideration how much of the original order was filled:
 
 ```go
+// Has the previous order already achieved the goal on the source side?
+if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
+  return nil, sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
+}
+
+[...]
+
 // Adjust remaining according to how much of the replaced order was filled:
 newOrder.SourceFilled = origOrder.SourceFilled
 newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
