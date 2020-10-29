@@ -7,9 +7,10 @@ package types
 import (
 	"bytes"
 	"fmt"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"strings"
 	"time"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -32,8 +33,6 @@ type (
 
 	Instrument struct {
 		Source, Destination string
-		//LastPrice           sdk.Dec
-		//BestPlan            *ExecutionPlan
 	}
 
 	Order struct {
