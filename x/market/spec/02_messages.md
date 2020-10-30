@@ -1,12 +1,12 @@
 # Messages
 
-The market module supports limit and market orders with multiple "time in force" values:
+The market module supports limit and market orders with multiple "Time In Force" values:
 
- | Time in force | Behaviour |
- |------|------|
- | GoodTilCancelled  | Aggresively match the order against the book. Add the remainder passively to the book, if the order is not filled.  | 
- | ImmediateOrCancel | Aggresively match the order against the book. The remainder of the order is canceled. | 
- | FillOrKill | Aggresively match the *entire* order against the book. If this does not succeed, cancel the entire order. |
+ | Time In Force | Behaviour |
+ |---------------|-----------|
+ | GTC           | Good 'Til Cancel: Aggresively match the order against the book. Add the remainder passively to the book, if the order is not filled. |
+ | IOC           | Immediate Or Cancel: Aggresively match the order against the book. The remainder of the order is canceled. |
+ | FOK           | Fill Or Kill: Aggresively match the *entire* order against the book. If this does not succeed, cancel the entire order. |
 
 The `ClientOrderId` is supplied by the order owner (sender) and must be unique among all active orders for the owner. It is used when canceling or replacing an active order.
 
