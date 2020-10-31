@@ -103,8 +103,9 @@ func (k Keeper) BurnStakingToken(ctx sdk.Context) error {
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
-			types.EventTypeBuybackBurn,
-			sdk.NewAttribute(types.AttributeKeyBurnAmount, stakingBalance.String()),
+			types.EventTypeBuyback,
+			sdk.NewAttribute(types.AttributeKeyAction, "burn"),
+			sdk.NewAttribute(types.AttributeKeyAmount, stakingBalance.String()),
 		),
 	})
 
