@@ -6,8 +6,8 @@ package types
 
 // Minting module event types
 const (
-	EventTypeMint = ModuleName
+	EventTypeInflation = ModuleName
 
+	AttributeKeyAction = "action"
 	AttributeKeyAmount = "amount"
-	AttributeKeyEvent  = "inflation"
 )

@@ -12,8 +12,9 @@ const (
 	StoreKey     = types.StoreKey
 	QueryBalance = types.QueryBalance
 
-	EventTypeBuybackBurn   = types.EventTypeBuybackBurn
-	AttributeKeyBurnAmount = types.AttributeKeyBurnAmount
+	EventTypeBuyback   = types.EventTypeBuyback
+	AttributeKeyAction = types.AttributeKeyAction
+	AttributeKeyAmount = types.AttributeKeyAmount
 )
 
 type (

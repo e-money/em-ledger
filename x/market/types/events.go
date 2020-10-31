@@ -6,44 +6,30 @@ package types
 
 import (
 	"fmt"
-	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // market module event types
 const (
-	EventTypeCancel = "market_cancel"
-	EventTypeFilled = "market_fill"
-	EventNewOrder   = "market_new"
+	EventTypeMarket = ModuleName
 
-	AttributeKeyClientOrderID     = "client_order_id"
+	AttributeKeyAction            = "action"
 	AttributeKeyOrderID           = "order_id"
 	AttributeKeyOwner             = "owner"
-	AttributeKeyPartialFill       = "partial_fill"
+	AttributeKeyClientOrderID     = "client_order_id"
 	AttributeKeyPrice             = "price"
 	AttributeKeySource            = "source"
 	AttributeKeySourceRemaining   = "source_remaining"
 	AttributeKeySourceFilled      = "source_filled"
 	AttributeKeyDestination       = "destination"
 	AttributeKeyDestinationFilled = "destination_filled"
-
-	AttributeValueCategory = ModuleName
 )
 
-func EmitCancelEvent(ctx sdk.Context, order Order) {
+func EmitAcceptEvent(ctx sdk.Context, order Order) {
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeCancel,
-			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
-			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
-			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
-		),
-	)
-}
-
-func EmitNewOrderEvent(ctx sdk.Context, order Order) {
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventNewOrder,
+		sdk.NewEvent(EventTypeMarket,
+			sdk.NewAttribute(AttributeKeyAction, "accept"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
@@ -53,18 +39,43 @@ func EmitNewOrderEvent(ctx sdk.Context, order Order) {
 	)
 }
 
-func EmitFilledEvent(ctx sdk.Context, order Order, partial_fill bool) {
+func EmitExpireEvent(ctx sdk.Context, order Order) {
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeFilled,
+		sdk.NewEvent(EventTypeMarket,
+			sdk.NewAttribute(AttributeKeyAction, "expire"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
-			sdk.NewAttribute(AttributeKeyPartialFill, strconv.FormatBool(partial_fill)),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
-			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),
 			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", order.SourceFilled.String(), order.Source.Denom)),
+			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),
 			sdk.NewAttribute(AttributeKeyDestination, order.Destination.String()),
 			sdk.NewAttribute(AttributeKeyDestinationFilled, fmt.Sprintf("%v%v", order.DestinationFilled.String(), order.Destination.Denom)),
+		),
+	)
+}
+
+func EmitFillEvent(ctx sdk.Context, order Order, sourceFilled sdk.Int, destinationFilled sdk.Int) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeMarket,
+			sdk.NewAttribute(AttributeKeyAction, "fill"),
+			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
+			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", sourceFilled.String(), order.Source.Denom)),
+			sdk.NewAttribute(AttributeKeyDestinationFilled, fmt.Sprintf("%v%v", destinationFilled.String(), order.Destination.Denom)),
+		),
+	)
+}
+
+func EmitUpdateEvent(ctx sdk.Context, order Order) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeMarket,
+			sdk.NewAttribute(AttributeKeyAction, "update"),
+			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
+			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),
 		),
 	)
 }

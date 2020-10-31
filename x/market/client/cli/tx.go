@@ -24,7 +24,7 @@ import (
 const (
 	flag_TimeInForce = "time-in-force"
 
-	flag_TimeInForceDescription = "Select the order's time-in-force value (ImmediateOrCancel|GoodTilCancelled|FillOrKill)"
+	flag_TimeInForceDescription = "Select the order's time-in-force value (GTC|IOC|FOK)"
 )
 
 // GetTxCmd returns the transaction commands for this module
