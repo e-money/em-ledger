@@ -282,7 +282,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 				panic(err)
 			}
 
-			types.EmitFillEvent(ctx, *passiveOrder, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
+			types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
 
 			if passiveOrder.IsFilled() {
 				k.deleteOrder(ctx, passiveOrder)
@@ -298,7 +298,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			stepDestinationFilled = stepSourceFilled
 		}
 
-		types.EmitFillEvent(ctx, aggressiveOrder, aggressiveSourceFilled, aggressiveDestinationFilled)
+		types.EmitFillEvent(ctx, aggressiveOrder, true, aggressiveSourceFilled, aggressiveDestinationFilled)
 		if aggressiveOrder.IsFilled() {
 			break
 		}
