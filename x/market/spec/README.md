@@ -39,8 +39,9 @@ When the balance of the owner account changes, SourceRemaining is adjusted accor
     - [MsgCancelOrder](02_messages.md#MsgCancelOrder)
     - [MsgCancelReplaceLimitOrder](02_messages.md#MsgCancelReplaceLimitOrder)
 3. **[Events](03_events.md)**
-    - [New Order](03_events.md#New-Order)
-    - [Cancel Order](03_events.md#Cancel-Order)
-    - [Order Fill](03_events.md#Order-Fill)
+    - [Order Accepted](03_events.md#order-accepted)
+    - [Order Expired](03_events.md#order-expired)
+    - [Order Filled](03_events.md#order-filled)
+    - [Order Updated](03_events.md#order-updated)
     - [Handlers](03_events.md#Handlers)
 4. **[Queries](04_queries.md)**
