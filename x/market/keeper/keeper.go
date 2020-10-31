@@ -197,12 +197,12 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	if !k.assetExists(ctx, aggressiveOrder.Destination) {
 		return nil, sdkerrors.Wrap(types.ErrUnknownAsset, aggressiveOrder.Destination.Denom)
 	}
-
-	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
 	k.registerMarketData(ctx, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
 	k.registerMarketData(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
 
-	types.EmitNewOrderEvent(ctx, aggressiveOrder)
+	// Accept order
+	aggressiveOrder.ID = k.getNextOrderNumber(ctx)
+	types.EmitAcceptEvent(ctx, aggressiveOrder)
 
 	for {
 		plan := k.createExecutionPlan(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
@@ -225,6 +225,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		aggressiveDestinationRemaining := aggressiveOrder.Destination.Amount.Sub(aggressiveOrder.DestinationFilled).ToDec().Quo(plan.Price)
 		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveDestinationRemaining)
 
+		// Track aggressive fill for event
+		aggressiveSourceFilled := sdk.ZeroInt()
+		aggressiveDestinationFilled := sdk.ZeroInt()
+
 		for _, passiveOrder := range []*types.Order{plan.SecondOrder, plan.FirstOrder} {
 			if passiveOrder == nil {
 				continue
@@ -238,6 +242,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 
 			// Update the aggressive order during the plan's final step.
 			if passiveOrder.Destination.Denom == aggressiveOrder.Source.Denom {
+				aggressiveSourceFilled = aggressiveSourceFilled.Add(stepDestinationFilled.RoundInt())
 				aggressiveOrder.SourceRemaining = aggressiveOrder.SourceRemaining.Sub(stepDestinationFilled.RoundInt())
 				aggressiveOrder.SourceFilled = aggressiveOrder.SourceFilled.Add(stepDestinationFilled.RoundInt())
 
@@ -248,6 +253,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			}
 
 			if passiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
+				aggressiveDestinationFilled = aggressiveDestinationFilled.Add(stepSourceFilled.RoundInt())
 				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(stepSourceFilled.RoundInt())
 
 				// Invariant check
@@ -276,11 +282,12 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 				panic(err)
 			}
 
+			types.EmitFillEvent(ctx, *passiveOrder, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
+
 			if passiveOrder.IsFilled() {
-				types.EmitFilledEvent(ctx, *passiveOrder, false)
 				k.deleteOrder(ctx, passiveOrder)
+				types.EmitExpireEvent(ctx, *passiveOrder)
 			} else {
-				types.EmitFilledEvent(ctx, *passiveOrder, true)
 				k.setOrder(ctx, passiveOrder)
 			}
 
@@ -291,11 +298,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			stepDestinationFilled = stepSourceFilled
 		}
 
+		types.EmitFillEvent(ctx, aggressiveOrder, aggressiveSourceFilled, aggressiveDestinationFilled)
 		if aggressiveOrder.IsFilled() {
-			types.EmitFilledEvent(ctx, aggressiveOrder, false)
 			break
-		} else {
-			types.EmitFilledEvent(ctx, aggressiveOrder, true)
 		}
 
 		// Register trades in market data
@@ -303,8 +308,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		k.setMarketData(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom, sdk.NewDec(1).Quo(plan.Price))
 	}
 
-	// Order was not fully matched. Add to book unless restricted.
-	if !aggressiveOrder.IsFilled() {
+	if aggressiveOrder.IsFilled() {
+		types.EmitExpireEvent(ctx, aggressiveOrder)
+	} else {
 		// Check whether this denomination is restricted and thus cannot create passive orders
 		addToBook := true
 		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Source.Denom); found {
@@ -318,10 +324,11 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		switch aggressiveOrder.TimeInForce {
 		case types.TimeInForce_ImmediateOrCancel:
 			addToBook = false
+			types.EmitExpireEvent(ctx, aggressiveOrder)
 		case types.TimeInForce_FillOrKill:
 			KillOrder = true
 			ctx = ctx.WithEventManager(sdk.NewEventManager())
-			types.EmitCancelEvent(ctx, aggressiveOrder)
+			types.EmitExpireEvent(ctx, aggressiveOrder)
 		}
 
 		if addToBook {
@@ -394,7 +401,7 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	}
 
 	k.deleteOrder(ctx, origOrder)
-	types.EmitCancelEvent(ctx, *origOrder)
+	types.EmitExpireEvent(ctx, *origOrder)
 
 	// Adjust remaining according to how much of the replaced order was filled:
 	newOrder.SourceFilled = origOrder.SourceFilled
@@ -443,28 +450,28 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, clientOrderId)
 	}
 
+	types.EmitExpireEvent(ctx, *order)
 	k.deleteOrder(ctx, order)
-	types.EmitCancelEvent(ctx, *order)
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // Update any orders that can no longer be filled with the account's balance.
 func (k *Keeper) accountChanged(ctx sdk.Context, acc authe.Account) {
-	//orders := k.accountOrders.GetAllOrders(acc.GetAddress())
 	orders := k.GetOrdersByOwner(ctx, acc.GetAddress())
 
 	for _, order := range orders {
 		denomBalance := acc.SpendableCoins(ctx.BlockTime()).AmountOf(order.Source.Denom)
 
 		origSourceRemaining := order.SourceRemaining
-
 		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
 		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
 
 		if order.SourceRemaining.IsZero() {
+			types.EmitExpireEvent(ctx, *order)
 			k.deleteOrder(ctx, order)
 		} else if !origSourceRemaining.Equal(order.SourceRemaining) {
+			types.EmitUpdateEvent(ctx, *order)
 			k.setOrder(ctx, order)
 		}
 	}

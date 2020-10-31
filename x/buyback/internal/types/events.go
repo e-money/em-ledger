@@ -2,9 +2,8 @@ package types
 
 // staking module event types
 const (
-	EventTypeBuybackBurn = "buyback_burn"
+	EventTypeBuyback = ModuleName
 
-	AttributeKeyBurnAmount = "amount"
-
-	AttributeValueCategory = ModuleName
+	AttributeKeyAction = "action"
+	AttributeKeyAmount = "amount"
 )

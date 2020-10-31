@@ -1,10 +1,8 @@
 # State
 
-The `x/market` module keeps state of [...]
-
 ## Order State
 
-An order consists of the following data:
+Order state consists of the following data:
 
 * Owner: a `AccAddress` which will be used for settlement and order modifications.
 * OrderId: a `uint64` assigned by the market module, monotonically increasing.

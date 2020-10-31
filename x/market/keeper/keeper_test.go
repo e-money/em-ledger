@@ -6,12 +6,13 @@ package keeper
 
 import (
 	"fmt"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
-	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
-	"github.com/e-money/em-ledger/x/market/types"
 	"math"
 	"testing"
 	"time"
+
+	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	"github.com/e-money/em-ledger/x/market/types"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -235,7 +236,9 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, result.Events, 1)
-	require.Equal(t, types.EventTypeCancel, result.Events[0].Type)
+	require.Equal(t, types.EventTypeMarket, result.Events[0].Type)
+	require.Equal(t, "action", string(result.Events[0].Attributes[0].GetKey()))
+	require.Equal(t, "expire", string(result.Events[0].Attributes[0].GetValue()))
 
 	// Last order must fail completely due to not being fillable
 	acc1Bal := ak.GetAccount(ctx, acc1.GetAddress()).GetCoins()
@@ -506,7 +509,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	found := false
 	for _, e := range ctx.EventManager().Events() {
-		found = found || (e.Type == types.EventTypeCancel)
+		found = found || (e.Type == types.EventTypeMarket && string(e.Attributes[0].GetValue()) == "expire")
 	}
 
 	require.True(t, found)

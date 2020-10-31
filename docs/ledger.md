@@ -84,13 +84,13 @@ You are now ready to start signing and sending transactions. Send a transaction 
 Be sure to unlock your device with the PIN and open the Cosmos app before trying to run these commands.
 
 ``` bash
-% emcli tx send --help # to see all available options.
+emcli tx send --help # to see all available options.
 ```
 
 Use the `key_name` you set for your Ledger key and gaia will connect with the Cosmos Ledger app to then sign your transaction.
 
 ```bash
-% emcli tx send <key_name> <destinationAddress> <amount><denomination>
+emcli tx send <key_name> <destination_address> <amount><denomination>
 ```
 
 When prompted with `confirm transaction before signing`, Answer `Y`.
@@ -99,13 +99,13 @@ Next you will be prompted to review and approve the transaction on your Ledger d
 
 ## Receive Funds
 
-To receive funds to the Cosmos account on your Ledger device, retrieve the address for your Ledger account (the ones with `TYPE ledger`) with this command:
+To receive funds to the e-Money account on your Ledger device, retrieve the address for your Ledger account (the ones with `TYPE ledger`) with this command:
 
 ```bash
-% emcli keys list
+emcli keys list
 
 NAME: TYPE: ADDRESS:     PUBKEY:
-<key_name> ledger emoney1... cosmospub1...
+<key_name> ledger emoney1... emoneypub1...
 ```
 
 ### Further Documentation

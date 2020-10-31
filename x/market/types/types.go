@@ -7,9 +7,10 @@ package types
 import (
 	"bytes"
 	"fmt"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"strings"
 	"time"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -32,8 +33,6 @@ type (
 
 	Instrument struct {
 		Source, Destination string
-		//LastPrice           sdk.Dec
-		//BestPlan            *ExecutionPlan
 	}
 
 	Order struct {
@@ -252,11 +251,11 @@ func TimeInForceFromString(p string) (TimeInForce, error) {
 	p = strings.ToLower(p)
 
 	switch p {
-	case "fillorkill":
+	case "fok":
 		return TimeInForce_FillOrKill, nil
-	case "immediateorcancel":
+	case "ioc":
 		return TimeInForce_ImmediateOrCancel, nil
-	case "goodtilcancelled":
+	case "gtc":
 		return TimeInForce_GoodTilCancel, nil
 	}
 
@@ -266,11 +265,11 @@ func TimeInForceFromString(p string) (TimeInForce, error) {
 func (tif TimeInForce) String() string {
 	switch tif {
 	case TimeInForce_ImmediateOrCancel:
-		return "ImmediateOrCancel"
+		return "IOC"
 	case TimeInForce_GoodTilCancel:
-		return "GoodTilCancelled"
+		return "GTC"
 	case TimeInForce_FillOrKill:
-		return "FillOrKill"
+		return "FOK"
 	}
 	return "<unknown>"
 }

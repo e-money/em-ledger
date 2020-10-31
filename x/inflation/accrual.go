@@ -5,8 +5,9 @@
 package inflation
 
 import (
-	"github.com/e-money/em-ledger/util"
 	"time"
+
+	"github.com/e-money/em-ledger/util"
 
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
@@ -71,9 +72,9 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
-			types.EventTypeMint,
+			types.EventTypeInflation,
+			sdk.NewAttribute(types.AttributeKeyAction, "mint"),
 			sdk.NewAttribute(types.AttributeKeyAmount, mintedCoins.String()),
-			sdk.NewAttribute(types.AttributeKeyEvent, "true"),
 		),
 	)
 }

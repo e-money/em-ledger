@@ -1,12 +1,12 @@
 # Messages
 
-The market module supports limit and market orders with multiple "time in force" values:
+The market module supports limit and market orders with multiple "Time In Force" values:
 
- | Time in force | Behaviour |
- |------|------|
- | GoodTilCancelled  | Aggresively match the order against the book. Add the remainder passively to the book, if the order is not filled.  | 
- | ImmediateOrCancel | Aggresively match the order against the book. The remainder of the order is canceled. | 
- | FillOrKill | Aggresively match the *entire* order against the book. If this does not succeed, cancel the entire order. |
+ | Time In Force | Behaviour |
+ |---------------|-----------|
+ | GTC           | Good 'Til Cancel: Aggresively match the order against the book. Add the remainder passively to the book, if the order is not filled. |
+ | IOC           | Immediate Or Cancel: Aggresively match the order against the book. The remainder of the order is canceled. |
+ | FOK           | Fill Or Kill: Aggresively match the *entire* order against the book. If this does not succeed, cancel the entire order. |
 
 The `ClientOrderId` is supplied by the order owner (sender) and must be unique among all active orders for the owner. It is used when canceling or replacing an active order.
 
@@ -75,6 +75,13 @@ MsgCancelReplaceLimitOrder struct {
 The unfilled part of the original order is canceled and replaced with a new limit order, taking into consideration how much of the original order was filled:
 
 ```go
+// Has the previous order already achieved the goal on the source side?
+if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
+  return nil, sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
+}
+
+[...]
+
 // Adjust remaining according to how much of the replaced order was filled:
 newOrder.SourceFilled = origOrder.SourceFilled
 newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)

@@ -1,4 +1,4 @@
-# x/market
+# Market Module ("DEX")
 
 ## Abstract
 
@@ -33,16 +33,15 @@ When the balance of the owner account changes, SourceRemaining is adjusted accor
 ## Contents
 
 1. **[State](01_state.md)**
-2. **[Keepers](02_keepers.md)**
-3. **[Messages](03_messages.md)**
-    - [MsgAddLimitOrder](03_messages.md#MsgAddLimitOrder)
-    - [MsgAddMarketOrder](03_messages.md#MsgAddMarketOrder)
-    - [MsgCancelOrder](03_messages.md#MsgCancelOrder)
-    - [MsgCancelReplaceLimitOrder](03_messages.md#MsgCancelReplaceLimitOrder)
-4. **[Events](04_events.md)**
-    - [New Order](04_events.md#New-Order)
-    - [Cancel Order](04_events.md#Cancel-Order)
-    - [Order Fill](04_events.md#Order-Fill)
-    - [Handlers](04_events.md#Handlers)
-5. **[Queries](05_queries.md)**
-
+2. **[Messages](02_messages.md)**
+    - [MsgAddLimitOrder](02_messages.md#MsgAddLimitOrder)
+    - [MsgAddMarketOrder](02_messages.md#MsgAddMarketOrder)
+    - [MsgCancelOrder](02_messages.md#MsgCancelOrder)
+    - [MsgCancelReplaceLimitOrder](02_messages.md#MsgCancelReplaceLimitOrder)
+3. **[Events](03_events.md)**
+    - [Order Accepted](03_events.md#order-accepted)
+    - [Order Expired](03_events.md#order-expired)
+    - [Order Filled](03_events.md#order-filled)
+    - [Order Updated](03_events.md#order-updated)
+    - [Handlers](03_events.md#Handlers)
+4. **[Queries](04_queries.md)**

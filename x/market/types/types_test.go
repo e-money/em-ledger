@@ -5,10 +5,11 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSerialization(t *testing.T) {
@@ -115,14 +116,14 @@ func TestMarketDataSerialization2(t *testing.T) {
 }
 
 func TestTimeInForce(t *testing.T) {
-	tif, err := TimeInForceFromString("FILLORKILL")
+	tif, err := TimeInForceFromString("FOK")
 	require.NoError(t, err)
 	require.Equal(t, TimeInForce_FillOrKill, tif)
 
-	_, err = TimeInForceFromString("filetOrKill")
+	_, err = TimeInForceFromString("f0k")
 	require.Error(t, err)
 
-	require.Equal(t, "FillOrKill", TimeInForce_FillOrKill.String())
+	require.Equal(t, "FOK", TimeInForce_FillOrKill.String())
 }
 
 func coin(s string) sdk.Coin {

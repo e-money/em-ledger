@@ -49,7 +49,7 @@ func TestBuyback1(t *testing.T) {
 
 	require.Condition(t, func() bool {
 		for _, evt := range ctx.EventManager().Events() {
-			if evt.Type == EventTypeBuybackBurn {
+			if evt.Type == EventTypeBuyback {
 				return true
 			}
 		}

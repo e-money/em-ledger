@@ -44,12 +44,6 @@ var (
 	ErrAccountBalanceInsufficientForInstrument = types.ErrAccountBalanceInsufficientForInstrument
 	ErrNonUniqueClientOrderId                  = types.ErrNonUniqueClientOrderId
 
-	EventTypeCancel = types.EventTypeCancel
-
-	EmitNewOrderEvent = types.EmitNewOrderEvent
-	EmitFilledEvent   = types.EmitFilledEvent
-	EmitCancelEvent   = types.EmitCancelEvent
-
 	GetOwnerKey               = types.GetOwnerKey
 	GetMarketDataKey          = types.GetMarketDataKey
 	GetMarketDataPrefix       = types.GetMarketDataPrefix
