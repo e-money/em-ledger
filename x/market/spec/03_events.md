@@ -54,10 +54,11 @@ average_fill_price = destination_filled / source_filled
 | market | order_id           | {uniqueOrderId}           |
 | market | owner              | {ownerAddress}            |
 | market | client_order_id    | {clientOrderId}           |
+| market | aggressive         | {aggressive}              |
 | market | source_filled      | {sourceFilledAmount}      |
 | market | destination_filled | {destinationFilledAmount} |
 
-When the market module executes a trade, the orders on each side of the trade receive a fill event.
+When the market module executes a trade, the orders on each side of the trade receive a fill event. The order that initiated the trade will have `aggressive` set to true.
 
 Both `source_filled` and `destination_filled` are specific to a single trade, i.e. in contrast to the [Order Expired](#order-expired) event they are non-cumulative.
 

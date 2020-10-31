@@ -6,6 +6,7 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -24,6 +25,7 @@ const (
 	AttributeKeySourceFilled      = "source_filled"
 	AttributeKeyDestination       = "destination"
 	AttributeKeyDestinationFilled = "destination_filled"
+	AttributeKeyAggressive        = "aggressive"
 )
 
 func EmitAcceptEvent(ctx sdk.Context, order Order) {
@@ -55,13 +57,14 @@ func EmitExpireEvent(ctx sdk.Context, order Order) {
 	)
 }
 
-func EmitFillEvent(ctx sdk.Context, order Order, sourceFilled sdk.Int, destinationFilled sdk.Int) {
+func EmitFillEvent(ctx sdk.Context, order Order, aggressive bool, sourceFilled sdk.Int, destinationFilled sdk.Int) {
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeMarket,
 			sdk.NewAttribute(AttributeKeyAction, "fill"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
 			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
+			sdk.NewAttribute(AttributeKeyAggressive, strconv.FormatBool(aggressive)),
 			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", sourceFilled.String(), order.Source.Denom)),
 			sdk.NewAttribute(AttributeKeyDestinationFilled, fmt.Sprintf("%v%v", destinationFilled.String(), order.Destination.Denom)),
 		),
