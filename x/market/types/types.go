@@ -68,7 +68,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 	s := fmt.Sprintf(`
 {
   "id": %v,
-  "time_in_force" : %v,
+  "time_in_force" : "%v",
   "owner": "%v",
   "client_order_id": "%v",
   "price": "%v",
@@ -82,7 +82,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
     "denom": "%v",
     "amount": "%v"
   },
-  "destination_filled": "%v",
+  "destination_filled": "%v"
 }
 `,
 		o.ID,
