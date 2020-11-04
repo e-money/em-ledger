@@ -8,11 +8,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/keeper"
 	"github.com/tidwall/gjson"
-	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -100,7 +101,7 @@ func stringifyOrders(bz []byte) string {
 
 		sb.WriteString(
 			fmt.Sprintf("%v : %v -> %v @ %v (%v)\n - (%v%v remaining) (%v%v filled) (%v%v filled)\n",
-				order.Get("id").Raw,
+				order.Get("order_id").Raw,
 				srcDenom,
 				dstDenom,
 				order.Get("price").Str,

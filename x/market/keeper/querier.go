@@ -66,7 +66,7 @@ func (q QueryByAccountResponse) String() string {
 }
 
 type QueryOrderResponse struct {
-	ID uint64 `json:"id" yaml:"id"`
+	ID uint64 `json:"order_id" yaml:"order_id"`
 
 	Owner           sdk.AccAddress `json:"owner" yaml:"owner"`
 	SourceRemaining string         `json:"source_remaining" yaml:"source_remaining"`

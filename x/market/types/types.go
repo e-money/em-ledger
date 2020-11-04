@@ -36,7 +36,7 @@ type (
 	}
 
 	Order struct {
-		ID uint64 `json:"id" yaml:"id"`
+		ID uint64 `json:"order_id" yaml:"order_id"`
 
 		TimeInForce TimeInForce `json:"time_in_force" yaml:"time_in_force"`
 
@@ -67,7 +67,7 @@ type (
 func (o Order) MarshalJSON() ([]byte, error) {
 	s := fmt.Sprintf(`
 {
-  "id": %v,
+  "order_id": "%v",
   "time_in_force" : "%v",
   "owner": "%v",
   "client_order_id": "%v",
