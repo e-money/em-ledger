@@ -164,6 +164,7 @@ func queryCmds(cdc *amino.Codec) *cobra.Command {
 	queryCmd.AddCommand(
 		authcmd.GetAccountCmd(cdc),
 		queries.GetQuerySpendableBalance(cdc),
+		queries.GetQueryStatementCmd(cdc),
 		authcmd.QueryTxCmd(cdc),
 		authcmd.QueryTxsByEventsCmd(cdc),
 	)

@@ -70,3 +70,21 @@ func GetQueryCirculatingSupplyCmd(cdc *codec.Codec) *cobra.Command {
 
 	return flags.GetCommands(circulatingSupplyCmd)[0]
 }
+
+func GetQueryStatementCmd(cdc *codec.Codec) *cobra.Command {
+	statementCmd := &cobra.Command{
+		Use:   "statement",
+		Short: "Display a statement for the given account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			// TODO
+			// Parse and verify argument address
+			// Use events query api to find transactions where the account is either "sender" or "recipient"
+
+			return nil
+		},
+	}
+
+	return flags.GetCommands(statementCmd)[0]
+}
