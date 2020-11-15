@@ -16,6 +16,7 @@ require (
 	github.com/tendermint/tm-db v0.5.1
 	github.com/tidwall/gjson v1.3.2
 	github.com/tidwall/sjson v1.0.4
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 )
 
 // replace github.com/cosmos/cosmos-sdk => ./tmpvendor/cosmos-sdk
