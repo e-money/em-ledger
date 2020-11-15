@@ -57,6 +57,9 @@ func GetQuerySpendableBalance(cdc *codec.Codec) *cobra.Command {
 			}
 
 			resp, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QuerySpendable, key))
+			if err != nil {
+				return err
+			}
 
 			var bal sdk.Coins
 			err = cdc.UnmarshalJSON(resp, &bal)
