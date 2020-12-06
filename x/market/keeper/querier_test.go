@@ -5,11 +5,12 @@
 package keeper
 
 import (
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tidwall/gjson"
-	"testing"
-	"time"
 )
 
 func TestQuerier1(t *testing.T) {
@@ -42,7 +43,7 @@ func TestQuerier1(t *testing.T) {
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
 		// An instrument is registered for both order directions
-		require.Len(t, instr.Array(), 6)
+		require.Len(t, instr.Array(), 12)
 
 		// Check that timestamps are included on instruments where trades have occurred
 		tradedTimestamps := json.Get("instruments.#.last_traded")

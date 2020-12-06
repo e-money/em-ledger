@@ -60,6 +60,7 @@ type (
 	MarketData struct {
 		Source, Destination string
 		LastPrice           *sdk.Dec
+		BestPrice           *sdk.Dec
 		Timestamp           *time.Time
 	}
 )

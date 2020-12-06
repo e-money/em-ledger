@@ -7,6 +7,7 @@ package keeper
 import (
 	"fmt"
 	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -32,13 +33,13 @@ type Keeper struct {
 	key        sdk.StoreKey
 	keyIndices sdk.StoreKey
 	cdc        *codec.Codec
-	//instruments types.Instruments
+	// instruments types.Instruments
 	ak         types.AccountKeeper
 	bk         types.BankKeeper
 	sk         types.SupplyKeeper
 	authorityk types.RestrictedKeeper
 
-	//accountOrders types.Orders
+	// accountOrders types.Orders
 	appstateInit *sync.Once
 
 	restrictedDenoms emtypes.RestrictedDenoms
@@ -62,28 +63,34 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, auth
 	return k
 }
 
+// createExecutionPlan returns the best priced plan for a pair of instruments by
+// requesting the latest instruments' orders.
 func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDenom string) types.ExecutionPlan {
+	instruments := k.getInstrumentsMap(ctx)
+
+	return k.calcExecutionPlan(ctx, SourceDenom, DestinationDenom, instruments)
+}
+
+// calcExecutionPlan returns the best priced plan for a pair of instruments
+// using as input the market instruments' orders.
+func (k *Keeper) calcExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDenom string, instrMap map[string]map[string]*types.MarketData) types.ExecutionPlan {
 	bestPlan := types.ExecutionPlan{
 		Price: sdk.NewDec(math.MaxInt64),
 	}
 
-	instruments := k.GetInstruments(ctx)
+	ordersBySrc := instrMap[SourceDenom]
 
-	for _, firstInstrument := range instruments {
+	for firstInstrument := range ordersBySrc {
 		//_, firstDenom := types.MustParseInstrumentKey(firstIt.Key())
 
-		if firstInstrument.Source != SourceDenom {
-			continue
-		}
-
-		//firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
-		firstPassiveOrder := k.getBestOrder(ctx, SourceDenom, firstInstrument.Destination)
+		// firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
+		firstPassiveOrder := k.getBestOrder(ctx, SourceDenom, firstInstrument)
 		if firstPassiveOrder == nil {
 			continue
 		}
 
 		// Check direct price
-		if firstInstrument.Destination == DestinationDenom {
+		if firstInstrument == DestinationDenom {
 			// Direct price is better than current plan
 
 			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
@@ -98,7 +105,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 
 		// Check synthetic price by going through two orders:
 		// (SourceDenom, X) -> (X, DestinationDenom)
-		secondPassiveOrder := k.getBestOrder(ctx, firstInstrument.Destination, DestinationDenom)
+		secondPassiveOrder := k.getBestOrder(ctx, firstInstrument, DestinationDenom)
 		if secondPassiveOrder == nil {
 			continue
 		}
@@ -443,7 +450,7 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 	ctx.GasMeter().ConsumeGas(gasPriceCancelOrder, "CancelOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	//orders := k.accountOrders.GetAllOrders(owner)
+	// orders := k.accountOrders.GetAllOrders(owner)
 	order := k.GetOrderByOwnerAndClientOrderId(ctx, owner.String(), clientOrderId)
 
 	if order == nil {
@@ -506,7 +513,8 @@ func (k Keeper) GetInstrument(ctx sdk.Context, src, dst string) *types.MarketDat
 	return md
 }
 
-// Get instruments based on current order book. Does not include synthetic instruments.
+// TODO: examine possibility to replace with getInstrumentsMap(): appears only
+//  in the keeper interface.
 func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 	idxStore := ctx.KVStore(k.keyIndices)
 
@@ -526,6 +534,84 @@ func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 	}
 
 	return
+}
+
+// getInstrumentsMap based on current order book. Does not include synthetic
+// instruments. Returns an indexed [source][destination] instruments map.
+func (k Keeper) getInstrumentsMap(ctx sdk.Context) (instrs map[string]map[string]*types.MarketData) {
+	idxStore := ctx.KVStore(k.keyIndices)
+	instrs = map[string]map[string]*types.MarketData{}
+
+	it := idxStore.Iterator(types.GetMarketDataPrefix(), sdk.PrefixEndBytes(types.GetMarketDataPrefix()))
+	defer it.Close()
+
+	for ; it.Valid(); it.Next() {
+		md := types.MarketData{}
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), &md)
+
+		// Amino appears to serialize nil *time.Time entries as Unix epoch. Convert to nil.
+		if md.Timestamp != nil && md.Timestamp.Equal(time.Unix(0, 0)) {
+			md.Timestamp = nil
+		}
+
+		if _, ok := instrs[md.Source]; ok {
+			instrs[md.Source][md.Destination] = &md
+			continue
+		}
+		// allocate nested map for source instr.
+		instrs[md.Source] = map[string]*types.MarketData{
+			md.Destination: &md,
+		}
+	}
+
+	return
+}
+
+// GetAllInstruments gets all instruments based on current order book. It
+// includes synthetic pairs calculates the best price for the pair.
+func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
+	instrsMap := k.getInstrumentsMap(ctx)
+
+	// Set of all single market instruments
+	denomMap := make(map[string]struct{})
+	for src, instrBySrc := range instrsMap {
+		for dst := range instrBySrc {
+			denomMap[src] = struct{}{}
+			denomMap[dst] = struct{}{}
+		}
+	}
+
+	n := len(denomMap)
+	instrLst := make([]*types.MarketData, n*(n-1))
+	idx := 0
+	for denomx := range denomMap {
+		for denomy := range denomMap {
+			if denomx == denomy {
+				continue
+			}
+			bestPlan := k.calcExecutionPlan(ctx, denomx, denomy, instrsMap)
+			marketTrade, ok := instrsMap[denomx][denomy]
+			if ok {
+				marketTrade.BestPrice = &bestPlan.Price
+				instrLst[idx] = marketTrade
+			} else {
+				// Allocate market data with just best price
+				instrLst[idx] = &types.MarketData{
+					Source:      denomx,
+					Destination: denomy,
+					BestPrice:   &bestPlan.Price,
+				}
+			}
+			idx++
+		}
+	}
+
+	// sort source+destination (ascending)
+	sort.Slice(instrLst, func(x, y int) bool {
+		return instrLst[x].Source+instrLst[x].Destination < instrLst[y].Source+instrLst[y].Destination
+	})
+
+	return instrLst
 }
 
 func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
@@ -651,12 +737,12 @@ func (k Keeper) registerMarketData(ctx sdk.Context, src, dst string) {
 	idxStore.Set(key, bz)
 }
 
-// Register succesful trade execution
+// Register successful trade execution
 func (k Keeper) setMarketData(ctx sdk.Context, src, dst string, price sdk.Dec) {
 	idxStore := ctx.KVStore(k.keyIndices)
 	timestamp := ctx.BlockTime()
 
-	md := types.MarketData{src, dst, &price, &timestamp}
+	md := types.MarketData{Source: src, Destination: dst, LastPrice: &price, Timestamp: &timestamp}
 	key := types.GetMarketDataKey(src, dst)
 
 	bz := k.cdc.MustMarshalBinaryBare(md)
