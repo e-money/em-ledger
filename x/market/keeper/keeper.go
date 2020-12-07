@@ -572,21 +572,24 @@ func (k Keeper) getInstrumentsMap(ctx sdk.Context) (instrs map[string]map[string
 func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
 	instrsMap := k.getInstrumentsMap(ctx)
 
-	// Set of all single market instruments
+	// Set of market instruments
 	denomMap := make(map[string]struct{})
-	for src, instrBySrc := range instrsMap {
-		for dst := range instrBySrc {
-			denomMap[src] = struct{}{}
-			denomMap[dst] = struct{}{}
+	for source, instrBySrc := range instrsMap {
+		for destination := range instrBySrc {
+			denomMap[source] = struct{}{}
+			denomMap[destination] = struct{}{}
 		}
 	}
 
 	n := len(denomMap)
+	// n instruments producing n*(n-1) pairs below
 	instrLst := make([]*types.MarketData, n*(n-1))
 	idx := 0
-	for denomx := range denomMap {
-		for denomy := range denomMap {
-			if denomx == denomy {
+	// produce cartesian products of denominations resulting in all
+	// denominations paired with each other except for themselves
+	for source := range denomMap {
+		for destination := range denomMap {
+			if source == destination {
 				continue
 			}
 			bestPlan := k.calcExecutionPlan(ctx, denomx, denomy, instrsMap)
@@ -597,8 +600,8 @@ func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
 			} else {
 				// Allocate market data with just best price
 				instrLst[idx] = &types.MarketData{
-					Source:      denomx,
-					Destination: denomy,
+					Source:      source,
+					Destination: destination,
 					BestPrice:   &bestPlan.Price,
 				}
 			}
