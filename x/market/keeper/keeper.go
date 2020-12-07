@@ -592,17 +592,22 @@ func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
 			if source == destination {
 				continue
 			}
-			bestPlan := k.calcExecutionPlan(ctx, denomx, denomy, instrsMap)
-			marketTrade, ok := instrsMap[denomx][denomy]
+			var bestPrice *sdk.Dec
+			bestPlan := k.calcExecutionPlan(ctx, source, destination, instrsMap)
+			if !bestPlan.DestinationCapacity().IsZero() { //} && bestPlan.Price.Equal() {
+				bestPrice = &bestPlan.Price
+			}
+
+			marketTrade, ok := instrsMap[source][destination]
 			if ok {
-				marketTrade.BestPrice = &bestPlan.Price
+				marketTrade.BestPrice = bestPrice
 				instrLst[idx] = marketTrade
 			} else {
 				// Allocate market data with just best price
 				instrLst[idx] = &types.MarketData{
 					Source:      source,
 					Destination: destination,
-					BestPrice:   &bestPlan.Price,
+					BestPrice:   bestPrice,
 				}
 			}
 			idx++
