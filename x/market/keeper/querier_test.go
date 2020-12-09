@@ -77,7 +77,7 @@ func TestQuerier1(t *testing.T) {
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
 		// An instrument is registered for both order directions
-		// 20 because of chf, eur, gbp, jpy, ngm, usd
+		// 30 because of chf, eur, gbp, jpy, ngm, usd
 		require.Len(t, instr.Array(), 30)
 
 		// Check that timestamps are included on instruments where trades have occurred
