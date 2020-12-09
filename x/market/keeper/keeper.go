@@ -532,9 +532,6 @@ func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 // includes synthetic pairs, last order timestamp and calculates the best price
 // for the pair.
 func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
-	// Two decimals
-	const decimalsToTruncate = 100
-
 	coins := k.sk.GetSupply(ctx).GetTotal().Sort()
 	n := len(coins)
 	// n instruments producing n*(n-1) pairs below
@@ -558,11 +555,7 @@ func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
 			// fill in best price
 			bestPlan := k.createExecutionPlan(ctx, destination, source)
 			if !bestPlan.DestinationCapacity().IsZero() {
-				truncated := bestPlan.Price.
-					MulInt64(decimalsToTruncate).
-					TruncateDec().
-					QuoInt64(decimalsToTruncate)
-				instrLst[idx].BestPrice = &truncated
+				instrLst[idx].BestPrice = &bestPlan.Price
 			}
 
 			// fill in last order price, timestamp
