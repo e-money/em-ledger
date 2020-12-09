@@ -5,12 +5,47 @@
 package keeper
 
 import (
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tidwall/gjson"
-	"testing"
-	"time"
 )
+
+func TestQryGetAllInstruments(t *testing.T) {
+	ctx, k, ak, _, _ := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf,400ngm")
+	acc2 := createAccount(ctx, ak, "acc2", "1000usd")
+
+	o := order(acc1, "100eur", "120usd")
+	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc1, "72eur", "1213jpy")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(acc1, "72chf", "312usd")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Execute an order
+	o = order(acc2, "156usd", "36chf")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	{
+		bz, err := queryInstruments(ctx, k)
+		require.NoError(t, err)
+		json := gjson.ParseBytes(bz)
+		instr := json.Get("instruments")
+		require.True(t, instr.IsArray())
+		// 30 because of chf, eur, gbp, jpy, ngm, usd
+		require.Len(t, instr.Array(), 30)
+	}
+}
 
 func TestQuerier1(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
@@ -42,7 +77,8 @@ func TestQuerier1(t *testing.T) {
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
 		// An instrument is registered for both order directions
-		require.Len(t, instr.Array(), 6)
+		// 30 because of chf, eur, gbp, jpy, ngm, usd
+		require.Len(t, instr.Array(), 30)
 
 		// Check that timestamps are included on instruments where trades have occurred
 		tradedTimestamps := json.Get("instruments.#.last_traded")
