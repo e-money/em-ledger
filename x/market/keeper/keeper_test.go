@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,13 +52,12 @@ func TestBasicTrade(t *testing.T) {
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
 
 	// Ensure that the instrument was registered
-	instruments := k.getInstrumentsMap(ctx)
-	instr, _ := json.Marshal(instruments)
-	fmt.Println(string(instr))
+	instruments := k.GetInstruments(ctx)
+	_, err = json.Marshal(instruments)
+	require.Nil(t, err)
 
 	require.Len(t, instruments, 2)
-	require.Nil(t, instruments[src1][dst1].LastPrice)
-
+	require.Nil(t, instruments[0].LastPrice)
 	gasmeter = sdk.NewGasMeter(math.MaxUint64)
 	src2, dst2 := dst1, src1
 	order2 := order(acc2, "60"+src2, "50"+dst2)
@@ -65,11 +65,11 @@ func TestBasicTrade(t *testing.T) {
 	require.NoError(t, err)
 
 	// Ensure that the trade has been correctly registered in market data.
-	instruments = k.getInstrumentsMap(ctx)
+	instruments = k.GetInstruments(ctx)
 	require.Len(t, instruments, 2)
 	p := order1.Price()
-	require.Equal(t, instruments[src1][dst1].LastPrice, &p)
-	require.Equal(t, *instruments[src1][dst1].Timestamp, ctx.BlockTime())
+	require.Equal(t, instruments[0].LastPrice, &p)
+	require.Equal(t, *instruments[0].Timestamp, ctx.BlockTime())
 
 	// Ensure that gas usage is not higher due to the order being matched.
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
@@ -445,26 +445,38 @@ func TestAllInstruments(t *testing.T) {
 	require.Len(t, orders, 0)
 
 	allInstruments := k.GetAllInstruments(ctx)
-	require.Len(t, allInstruments, 6)
+	// 30 because of chf, eur, gbp, jpy, ngm, usd
+	require.Len(t, allInstruments, 30)
 
+	bestPricedCnt := 0
+	transactedInstruments := "chfusd"
 	for _, i := range allInstruments {
-		require.False(t, i.BestPrice.IsZero())
-		fmt.Printf("%s, %s, best price: %s\n", i.Source, i.Destination, i.BestPrice)
+		if (i.Source == "eur" || i.Destination == "eur") &&
+			(strings.Contains(transactedInstruments, i.Source) || strings.Contains(transactedInstruments, i.Destination)) {
+			require.NotNil(t, i.LastPrice)
+			if i.BestPrice != nil {
+				require.False(t, i.BestPrice.IsZero())
+			}
+		}
+		// No unfulfilled orders
+		require.Nil(t, i.BestPrice)
 	}
+	require.Zero(t, bestPricedCnt, "No unfulfilled orders")
 
 	// Sorting assertions by source+destination
+	// instruments in supply: chf, eur, gbp, jpy, ngm, usd
 	require.Equal(t, "chf", allInstruments[0].Source)
 	require.Equal(t, "eur", allInstruments[0].Destination)
 	require.Equal(t, "chf", allInstruments[1].Source)
-	require.Equal(t, "usd", allInstruments[1].Destination)
-	require.Equal(t, "eur", allInstruments[2].Source)
-	require.Equal(t, "chf", allInstruments[2].Destination)
-	require.Equal(t, "eur", allInstruments[3].Source)
-	require.Equal(t, "usd", allInstruments[3].Destination)
-	require.Equal(t, "usd", allInstruments[4].Source)
-	require.Equal(t, "chf", allInstruments[4].Destination)
-	require.Equal(t, "usd", allInstruments[5].Source)
-	require.Equal(t, "eur", allInstruments[5].Destination)
+	require.Equal(t, "gbp", allInstruments[1].Destination)
+	require.Equal(t, "chf", allInstruments[2].Source)
+	require.Equal(t, "jpy", allInstruments[2].Destination)
+	require.Equal(t, "chf", allInstruments[3].Source)
+	require.Equal(t, "ngm", allInstruments[3].Destination)
+	require.Equal(t, "chf", allInstruments[4].Source)
+	require.Equal(t, "usd", allInstruments[4].Destination)
+	require.Equal(t, "eur", allInstruments[5].Source)
+	require.Equal(t, "chf", allInstruments[5].Destination)
 }
 
 func Test3(t *testing.T) {
@@ -1042,7 +1054,7 @@ func TestListInstruments(t *testing.T) {
 
 	gasmeter := sdk.NewGasMeter(math.MaxUint64)
 
-	instruments := k.getInstrumentsMap(ctx)
+	instruments := k.GetInstruments(ctx)
 	require.Empty(t, instruments)
 
 	// Create instruments between all denoms
@@ -1066,12 +1078,10 @@ func TestListInstruments(t *testing.T) {
 	}
 
 	allInstrumentsWithBestPrice := k.GetAllInstruments(ctx)
-	instr, err := json.Marshal(allInstrumentsWithBestPrice)
+	_, err := json.Marshal(allInstrumentsWithBestPrice)
 	require.Nil(t, err)
-	// total length -> 12
-	require.Len(t, allInstrumentsWithBestPrice, 12)
-
-	fmt.Println(string(instr))
+	// 30 because of chf, eur, gbp, jpy, ngm, usd
+	require.Len(t, allInstrumentsWithBestPrice, 30)
 }
 
 func printTotalBalance(accs ...authexported.Account) {
@@ -1117,7 +1127,7 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 	maccPerms := map[string][]string{}
 
 	supplyKeeper := supply.NewKeeper(types.ModuleCdc, supplyKey, accountKeeper, bankKeeper, maccPerms)
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp")))
+	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
 
 	marketKeeper := NewKeeper(types.ModuleCdc, keyMarket, keyIndices, accountKeeperWrapped, bankKeeper, supplyKeeper, dummyAuthority{})
 

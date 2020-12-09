@@ -7,7 +7,6 @@ package keeper
 import (
 	"fmt"
 	"math"
-	"sort"
 	"sync"
 	"time"
 
@@ -63,34 +62,28 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, auth
 	return k
 }
 
-// createExecutionPlan returns the best priced plan for a pair of instruments by
-// requesting the latest instruments' orders.
 func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDenom string) types.ExecutionPlan {
-	instruments := k.getInstrumentsMap(ctx)
-
-	return k.calcExecutionPlan(ctx, SourceDenom, DestinationDenom, instruments)
-}
-
-// calcExecutionPlan returns the best priced plan for a pair of instruments
-// using as input the market instruments' orders.
-func (k *Keeper) calcExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDenom string, instrMap map[string]map[string]*types.MarketData) types.ExecutionPlan {
 	bestPlan := types.ExecutionPlan{
 		Price: sdk.NewDec(math.MaxInt64),
 	}
 
-	ordersBySrc := instrMap[SourceDenom]
+	instruments := k.GetInstruments(ctx)
 
-	for firstInstrument := range ordersBySrc {
+	for _, firstInstrument := range instruments {
 		//_, firstDenom := types.MustParseInstrumentKey(firstIt.Key())
 
+		if firstInstrument.Source != SourceDenom {
+			continue
+		}
+
 		// firstPassiveOrder := firstInstrument.Orders.LeftKey().(*types.Order)
-		firstPassiveOrder := k.getBestOrder(ctx, SourceDenom, firstInstrument)
+		firstPassiveOrder := k.getBestOrder(ctx, SourceDenom, firstInstrument.Destination)
 		if firstPassiveOrder == nil {
 			continue
 		}
 
 		// Check direct price
-		if firstInstrument == DestinationDenom {
+		if firstInstrument.Destination == DestinationDenom {
 			// Direct price is better than current plan
 
 			planPrice := sdk.OneDec().Quo(firstPassiveOrder.Price())
@@ -105,7 +98,7 @@ func (k *Keeper) calcExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDeno
 
 		// Check synthetic price by going through two orders:
 		// (SourceDenom, X) -> (X, DestinationDenom)
-		secondPassiveOrder := k.getBestOrder(ctx, firstInstrument, DestinationDenom)
+		secondPassiveOrder := k.getBestOrder(ctx, firstInstrument.Destination, DestinationDenom)
 		if secondPassiveOrder == nil {
 			continue
 		}
@@ -513,8 +506,7 @@ func (k Keeper) GetInstrument(ctx sdk.Context, src, dst string) *types.MarketDat
 	return md
 }
 
-// TODO: examine possibility to replace with getInstrumentsMap(): appears only
-//  in the keeper interface.
+// Get instruments based on current order book. Does not include synthetic instruments.
 func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 	idxStore := ctx.KVStore(k.keyIndices)
 
@@ -536,88 +528,46 @@ func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 	return
 }
 
-// getInstrumentsMap based on current order book. Does not include synthetic
-// instruments. Returns an indexed [source][destination] instruments map.
-func (k Keeper) getInstrumentsMap(ctx sdk.Context) (instrs map[string]map[string]*types.MarketData) {
-	idxStore := ctx.KVStore(k.keyIndices)
-	instrs = map[string]map[string]*types.MarketData{}
-
-	it := idxStore.Iterator(types.GetMarketDataPrefix(), sdk.PrefixEndBytes(types.GetMarketDataPrefix()))
-	defer it.Close()
-
-	for ; it.Valid(); it.Next() {
-		md := types.MarketData{}
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &md)
-
-		// Amino appears to serialize nil *time.Time entries as Unix epoch. Convert to nil.
-		if md.Timestamp != nil && md.Timestamp.Equal(time.Unix(0, 0)) {
-			md.Timestamp = nil
-		}
-
-		if _, ok := instrs[md.Source]; ok {
-			instrs[md.Source][md.Destination] = &md
-			continue
-		}
-		// allocate nested map for source instr.
-		instrs[md.Source] = map[string]*types.MarketData{
-			md.Destination: &md,
-		}
-	}
-
-	return
-}
-
 // GetAllInstruments gets all instruments based on current order book. It
-// includes synthetic pairs calculates the best price for the pair.
+// includes synthetic pairs, last order timestamp and calculates the best price
+// for the pair.
 func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
-	instrsMap := k.getInstrumentsMap(ctx)
-
-	// Set of market instruments
-	denomMap := make(map[string]struct{})
-	for source, instrBySrc := range instrsMap {
-		for destination := range instrBySrc {
-			denomMap[source] = struct{}{}
-			denomMap[destination] = struct{}{}
-		}
-	}
-
-	n := len(denomMap)
+	coins := k.sk.GetSupply(ctx).GetTotal().Sort()
+	n := len(coins)
 	// n instruments producing n*(n-1) pairs below
 	instrLst := make([]*types.MarketData, n*(n-1))
 	idx := 0
 	// produce cartesian products of denominations resulting in all
 	// denominations paired with each other except for themselves
-	for source := range denomMap {
-		for destination := range denomMap {
+	for _, srcCoin := range coins {
+		source := srcCoin.Denom
+		for _, dstCoin := range coins {
+			destination := dstCoin.Denom
 			if source == destination {
 				continue
 			}
-			var bestPrice *sdk.Dec
-			bestPlan := k.calcExecutionPlan(ctx, source, destination, instrsMap)
-			if !bestPlan.DestinationCapacity().IsZero() { //} && bestPlan.Price.Equal() {
-				bestPrice = &bestPlan.Price
+
+			instrLst[idx] = &types.MarketData{
+				Source:      source,
+				Destination: destination,
 			}
 
-			marketTrade, ok := instrsMap[source][destination]
-			if ok {
-				marketTrade.BestPrice = bestPrice
-				instrLst[idx] = marketTrade
-			} else {
-				// Allocate market data with just best price
-				instrLst[idx] = &types.MarketData{
-					Source:      source,
-					Destination: destination,
-					BestPrice:   bestPrice,
-				}
+			// fill in best price
+			bestPlan := k.createExecutionPlan(ctx, source, destination)
+			if !bestPlan.DestinationCapacity().IsZero() {
+				instrLst[idx].BestPrice = &bestPlan.Price
 			}
+
+			// fill in last order price, timestamp
+			md := k.GetInstrument(ctx, source, destination)
+			if md != nil && md.LastPrice != nil {
+				instrLst[idx].LastPrice = md.LastPrice
+				instrLst[idx].Timestamp = md.Timestamp
+			}
+
 			idx++
 		}
 	}
-
-	// sort source+destination (ascending)
-	sort.Slice(instrLst, func(x, y int) bool {
-		return instrLst[x].Source+instrLst[x].Destination < instrLst[y].Source+instrLst[y].Destination
-	})
 
 	return instrLst
 }

@@ -5,7 +5,6 @@
 package keeper
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 func TestQryGetAllInstruments(t *testing.T) {
 	ctx, k, ak, _, _ := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf")
+	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf,400ngm")
 	acc2 := createAccount(ctx, ak, "acc2", "1000usd")
 
 	o := order(acc1, "100eur", "120usd")
@@ -43,9 +42,8 @@ func TestQryGetAllInstruments(t *testing.T) {
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
-		require.Len(t, instr.Array(), 12)
-
-		fmt.Println(instr)
+		// 30 because of chf, eur, gbp, jpy, ngm, usd
+		require.Len(t, instr.Array(), 30)
 	}
 }
 
@@ -79,7 +77,8 @@ func TestQuerier1(t *testing.T) {
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
 		// An instrument is registered for both order directions
-		require.Len(t, instr.Array(), 12)
+		// 20 because of chf, eur, gbp, jpy, ngm, usd
+		require.Len(t, instr.Array(), 30)
 
 		// Check that timestamps are included on instruments where trades have occurred
 		tradedTimestamps := json.Get("instruments.#.last_traded")
