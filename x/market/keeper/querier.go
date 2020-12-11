@@ -190,6 +190,20 @@ func (q QueryInstrumentsResponse) String() string {
 	return fmt.Sprintf("%v => %v", q.Source, q.Destination)
 }
 
+// getBestPrice returns the best priced passive order for source and
+// destination instruments. Returns nil when executePlan cannot find a best
+// plan.
+func getBestPrice(ctx sdk.Context, k *Keeper, source, destination string) *sdk.Dec {
+	var bestPrice *sdk.Dec
+
+	bestPlan := k.createExecutionPlan(ctx, destination, source)
+	if !bestPlan.DestinationCapacity().IsZero() {
+		bestPrice = &bestPlan.Price
+	}
+
+	return bestPrice
+}
+
 func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
 	instruments := k.GetAllInstruments(ctx)
 
@@ -199,7 +213,7 @@ func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
 			Source:      v.Source,
 			Destination: v.Destination,
 			LastPrice:   v.LastPrice,
-			BestPrice:   v.BestPrice,
+			BestPrice:   getBestPrice(ctx, k, v.Source, v.Destination),
 			LastTraded:  v.Timestamp,
 		}
 	}
