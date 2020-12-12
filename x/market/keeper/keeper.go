@@ -552,12 +552,6 @@ func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
 				Destination: destination,
 			}
 
-			// fill in best price
-			bestPlan := k.createExecutionPlan(ctx, destination, source)
-			if !bestPlan.DestinationCapacity().IsZero() {
-				instrLst[idx].BestPrice = &bestPlan.Price
-			}
-
 			// fill in last order price, timestamp
 			md := k.GetInstrument(ctx, source, destination)
 			if md != nil && md.LastPrice != nil {

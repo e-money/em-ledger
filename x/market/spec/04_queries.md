@@ -2,17 +2,17 @@
 
 The market module can be queried using `emcli` or the [REST interface](https://cosmos.network/rpc/) of any em-ledger node.
 
-A public interface is exposed at https://emoney.validator.network/light/.
+A public interface is exposed at <https://emoney.validator.network/api/>.
 
 ## Active account orders
 
-Active orders for a given account can be queried using `https://emoney.validator.network/light/market/account/<owner>`.
+Active orders for a given account can be queried using `https://emoney.validator.network/api/market/account/<owner>`.
 
 Or using `emcli query market account <owner>`.
 
 ## Active instruments
 
-All instruments with active orders can be queried using `https://emoney.validator.network/light/market/instruments`.
+All instruments with active orders can be queried using `https://emoney.validator.network/api/market/instruments`.
 
 Or using `emcli query market instruments`.
 
@@ -20,6 +20,6 @@ _Note that there is no listing requirement for new instruments, so these are cre
 
 ## Active orders per instrument
 
-All orders for a given instrument can be queried using `https://emoney.validator.network/light/market/instrument/<source>/<destination>`.
+All orders for a given instrument can be queried using `https://emoney.validator.network/api/market/instrument/<source>/<destination>`.
 
 Or using `emcli query market instrument <source-denom> <destination-denom>`.

@@ -448,20 +448,13 @@ func TestAllInstruments(t *testing.T) {
 	// 30 because of chf, eur, gbp, jpy, ngm, usd
 	require.Len(t, allInstruments, 30)
 
-	bestPricedCnt := 0
 	transactedInstruments := "chfusd"
 	for _, i := range allInstruments {
 		if (i.Source == "eur" || i.Destination == "eur") &&
 			(strings.Contains(transactedInstruments, i.Source) || strings.Contains(transactedInstruments, i.Destination)) {
 			require.NotNil(t, i.LastPrice)
-			if i.BestPrice != nil {
-				require.False(t, i.BestPrice.IsZero())
-			}
 		}
-		// No unfulfilled orders
-		require.Nil(t, i.BestPrice)
 	}
-	require.Zero(t, bestPricedCnt, "No unfulfilled orders")
 
 	// Sorting assertions by source+destination
 	// instruments in supply: chf, eur, gbp, jpy, ngm, usd
