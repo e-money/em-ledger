@@ -299,13 +299,14 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		}
 
 		types.EmitFillEvent(ctx, aggressiveOrder, true, aggressiveSourceFilled, aggressiveDestinationFilled)
-		if aggressiveOrder.IsFilled() {
-			break
-		}
 
 		// Register trades in market data
 		k.setMarketData(ctx, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom, plan.Price)
 		k.setMarketData(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom, sdk.NewDec(1).Quo(plan.Price))
+
+		if aggressiveOrder.IsFilled() {
+			break
+		}
 	}
 
 	if aggressiveOrder.IsFilled() {
