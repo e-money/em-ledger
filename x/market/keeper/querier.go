@@ -110,12 +110,12 @@ func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQ
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprint("Address could not be parsed", path[0], err))
 	}
 
-	//o := k.accountOrders.GetAllOrders(account)
+	// o := k.accountOrders.GetAllOrders(account)
 	orders := k.GetOrdersByOwner(ctx, account)
-	//orders := make(OrderResponses, 0)
+	// orders := make(OrderResponses, 0)
 
 	// TODO Determine suitable ordering or leave undefined
-	//sort.Sort(orders)
+	// sort.Sort(orders)
 
 	resp := QueryByAccountResponse{orders}
 	return json.Marshal(resp)
@@ -180,6 +180,7 @@ func (q QueryInstrumentsWrapperResponse) String() string {
 type QueryInstrumentsResponse struct {
 	Source      string     `json:"source" yaml:"source"`
 	Destination string     `json:"destination" yaml:"destination"`
+	BestPrice   *sdk.Dec   `json:"best_price,omitempty" yaml:"best_price,omitempty"`
 	LastPrice   *sdk.Dec   `json:"last_price,omitempty" yaml:"last_price,omitempty"`
 	LastTraded  *time.Time `json:"last_traded,omitempty" yaml:"last_traded,omitempty"`
 }
@@ -189,8 +190,22 @@ func (q QueryInstrumentsResponse) String() string {
 	return fmt.Sprintf("%v => %v", q.Source, q.Destination)
 }
 
+// getBestPrice returns the best priced passive order for source and
+// destination instruments. Returns nil when executePlan cannot find a best
+// plan.
+func getBestPrice(ctx sdk.Context, k *Keeper, source, destination string) *sdk.Dec {
+	var bestPrice *sdk.Dec
+
+	bestPlan := k.createExecutionPlan(ctx, destination, source)
+	if !bestPlan.DestinationCapacity().IsZero() {
+		bestPrice = &bestPlan.Price
+	}
+
+	return bestPrice
+}
+
 func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
-	instruments := k.GetInstruments(ctx)
+	instruments := k.GetAllInstruments(ctx)
 
 	response := make([]QueryInstrumentsResponse, len(instruments))
 	for i, v := range instruments {
@@ -198,6 +213,7 @@ func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
 			Source:      v.Source,
 			Destination: v.Destination,
 			LastPrice:   v.LastPrice,
+			BestPrice:   getBestPrice(ctx, k, v.Source, v.Destination),
 			LastTraded:  v.Timestamp,
 		}
 	}
