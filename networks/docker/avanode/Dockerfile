@@ -14,6 +14,6 @@ RUN ./scripts/build.sh
 # 2nd stage binary
 FROM debian:buster
 EXPOSE 9650 9651
-WORKDIR /
+WORKDIR /avalanchego
 COPY --from=build-env /go/src/github.com/ava-labs/avalanchego/ ./
 STOPSIGNAL SIGTERM
