@@ -7,28 +7,28 @@ services:
     network_mode: "host"
     volumes:
       - avalanchevol1:/avalanchego
-    command: build/avalanchego --log-display-highlight colors --log-display-level info --log-level info --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9650 --staking-port=9651 --db-dir=db/node1 --staking-enabled=true --network-id=local --bootstrap-ips= --staking-tls-cert-file=./staking/local/staker1.crt --staking-tls-key-file=./staking/local/staker1.key 
+    command: build/avalanchego --http-host=${HOST_IP} --log-display-highlight colors --log-display-level info --log-level info --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9650 --staking-port=9651 --db-dir=db/node1 --staking-enabled=true --network-id=local --bootstrap-ips= --staking-tls-cert-file=./staking/local/staker1.crt --staking-tls-key-file=./staking/local/staker1.key 
   emavanode2:
     container_name: emavanode2
     image: "emoney/avanode"
     network_mode: "host"
     volumes:
       - avalanchevol2:/avalanchego
-    command: build/avalanchego --log-display-highlight colors --log-display-level info --log-level info --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9652 --staking-port=9653 --db-dir=db/node2 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker2.crt --staking-tls-key-file=./staking/local/staker2.key 
+    command: build/avalanchego --http-host=${HOST_IP} --log-display-highlight colors --log-display-level info --log-level info --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9652 --staking-port=9653 --db-dir=db/node2 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker2.crt --staking-tls-key-file=./staking/local/staker2.key 
   emavanode3:
     container_name: emavanode3
     image: "emoney/avanode"
     network_mode: "host"
     volumes:
       - avalanchevol3:/avalanchego
-    command: build/avalanchego --log-display-highlight colors --log-display-level info --log-level info --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9654 --staking-port=9655 --db-dir=db/node3 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker3.crt --staking-tls-key-file=./staking/local/staker3.key 
+    command: build/avalanchego --http-host=${HOST_IP} --log-display-highlight colors --log-display-level info --log-level info --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9654 --staking-port=9655 --db-dir=db/node3 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker3.crt --staking-tls-key-file=./staking/local/staker3.key 
   emavanode4:
     container_name: emavanode4
     image: "emoney/avanode"
     network_mode: "host"
     volumes:
       - avalanchevol4:/avalanchego
-    command: build/avalanchego --log-display-highlight colors --log-display-level info --log-level info --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9656 --staking-port=9657 --db-dir=db/node4 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker4.crt --staking-tls-key-file=./staking/local/staker4.key
+    command: build/avalanchego --http-host=${HOST_IP} --log-display-highlight colors --log-display-level info --log-level info --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9656 --staking-port=9657 --db-dir=db/node4 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker4.crt --staking-tls-key-file=./staking/local/staker4.key
 volumes:
   avalanchevol1:
   avalanchevol2:
