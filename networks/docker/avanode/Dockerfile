@@ -16,4 +16,5 @@ FROM debian:buster
 EXPOSE 9650 9651
 WORKDIR /avalanchego
 COPY --from=build-env /go/src/github.com/ava-labs/avalanchego/ ./
+COPY ./coreth-config.json ./
 STOPSIGNAL SIGTERM
