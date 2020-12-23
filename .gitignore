@@ -3,6 +3,7 @@
 /build
 /config
 /keys
+avalanchego/
 
 # Used for temporarily adding local dependencies during debugging.
 /tmpvendor
