@@ -33,12 +33,12 @@ func (msg MsgBurnTokens) Type() string { return "burn_tokens" }
 func (msg MsgBurnTokens) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.LiquidityProvider.String())
-		//return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
+		// return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
 	}
 
 	if !msg.Amount.IsValid() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
-		//return sdk.ErrInvalidCoins(msg.Amount.String())
+		// return sdk.ErrInvalidCoins(msg.Amount.String())
 	}
 
 	return nil
@@ -59,12 +59,12 @@ func (msg MsgMintTokens) Type() string { return "mint_tokens" }
 func (msg MsgMintTokens) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.LiquidityProvider.String())
-		//return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
+		// return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
 	}
 
 	if !msg.Amount.IsValid() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
-		//return sdk.ErrInvalidCoins(msg.Amount.String())
+		// return sdk.ErrInvalidCoins(msg.Amount.String())
 	}
 
 	return nil

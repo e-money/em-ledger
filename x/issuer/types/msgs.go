@@ -48,12 +48,12 @@ func (msg MsgSetInflation) Type() string { return "set_inflation" }
 func (msg MsgSetInflation) ValidateBasic() error {
 	if msg.InflationRate.IsNegative() {
 		return sdkerrors.Wrap(ErrNegativeInflation, "cannot set negative inflation")
-		//return ErrNegativeInflation()
+		// return ErrNegativeInflation()
 	}
 
 	if msg.Issuer.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+		// return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	return nil
@@ -74,12 +74,12 @@ func (msg MsgRevokeLiquidityProvider) Type() string { return "revoke_liquidity_p
 func (msg MsgRevokeLiquidityProvider) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing liquidity provider address")
-		//return sdk.ErrInvalidAddress("missing liquidity provider address")
+		// return sdk.ErrInvalidAddress("missing liquidity provider address")
 	}
 
 	if msg.Issuer.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+		// return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	return nil
@@ -100,17 +100,17 @@ func (msg MsgDecreaseMintable) Type() string { return "decrease_mintable" }
 func (msg MsgDecreaseMintable) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing liquidity provider address")
-		//return sdk.ErrInvalidAddress("missing liquidity provider address")
+		// return sdk.ErrInvalidAddress("missing liquidity provider address")
 	}
 
 	if msg.Issuer.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+		// return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	if !msg.MintableDecrease.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "requested decrease is invalid: %v", msg.MintableDecrease.String())
-		//return sdk.ErrInvalidCoins("requested decrease is invalid: " + msg.MintableDecrease.String())
+		// return sdk.ErrInvalidCoins("requested decrease is invalid: " + msg.MintableDecrease.String())
 	}
 
 	return nil
@@ -131,17 +131,17 @@ func (msg MsgIncreaseMintable) Type() string { return "increase_mintable" }
 func (msg MsgIncreaseMintable) ValidateBasic() error {
 	if msg.LiquidityProvider.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing liquidity provider address")
-		//return sdk.ErrInvalidAddress("missing liquidity provider address")
+		// return sdk.ErrInvalidAddress("missing liquidity provider address")
 	}
 
 	if msg.Issuer.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+		// return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	if !msg.MintableIncrease.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "mintable increase is invalid: "+msg.MintableIncrease.String())
-		//return sdk.ErrInvalidCoins("mintable increase is invalid: " + msg.MintableIncrease.String())
+		// return sdk.ErrInvalidCoins("mintable increase is invalid: " + msg.MintableIncrease.String())
 	}
 
 	return nil

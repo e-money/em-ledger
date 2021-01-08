@@ -94,7 +94,6 @@ func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-
 }
 
 func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
@@ -272,7 +271,6 @@ func (k Keeper) mustBeIssuerOfDenom(ctx sdk.Context, address sdk.AccAddress, den
 					return issuer, nil
 				}
 			}
-
 		}
 	}
 

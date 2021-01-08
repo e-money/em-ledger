@@ -61,7 +61,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 
 // register rest routes
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	//rest.RegisterRoutes(ctx, rtr)
+	// rest.RegisterRoutes(ctx, rtr)
 }
 
 // get the root tx command of this module
@@ -71,7 +71,7 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 // get the root query command of this module
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	//return cli.GetQueryCmd(cdc)
+	// return cli.GetQueryCmd(cdc)
 	return nil
 }
 
@@ -113,7 +113,7 @@ func (AppModule) QuerierRoute() string {
 
 // module querier
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	//return NewQuerier(am.keeper)
+	// return NewQuerier(am.keeper)
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		return []byte{}, nil
 	}

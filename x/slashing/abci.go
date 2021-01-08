@@ -6,11 +6,10 @@ package slashing
 
 import (
 	"fmt"
-
-	db "github.com/tendermint/tm-db"
-
 	"sort"
 	"time"
+
+	db "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -63,7 +62,6 @@ func validatorset(validators []abci.VoteInfo) func() map[string]bool {
 }
 
 func truncateByWindow(blockTime time.Time, times []time.Time, signedBlocksWindow time.Duration) (bool, []time.Time) {
-
 	if len(times) > 0 && times[0].Add(signedBlocksWindow).Before(blockTime) {
 		// Remove timestamps outside of the time window we are watching
 		threshold := blockTime.Add(-signedBlocksWindow)

@@ -6,6 +6,7 @@ package keeper
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"

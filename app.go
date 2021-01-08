@@ -7,10 +7,11 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/x/queries"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/e-money/em-ledger/x/queries"
 
 	"github.com/e-money/em-ledger/x/market"
 
@@ -54,7 +55,7 @@ var (
 	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
 
 	ModuleBasics = module.NewBasicManager(
-		//genaccounts.AppModuleBasic{},
+		// genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
@@ -176,7 +177,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.MountTransientStores(tkeys)
 
 	application.mm = module.NewManager(
-		//genaccounts.NewAppModule(application.accountKeeper),
+		// genaccounts.NewAppModule(application.accountKeeper),
 		genutil.NewAppModule(application.accountKeeper, application.stakingKeeper, application.BaseApp.DeliverTx),
 		auth.NewAppModule(application.accountKeeper.InnerKeeper()),
 		bank.NewAppModule(embank.Wrap(bankKeeper, application.authorityKeeper), application.accountKeeper),
@@ -196,7 +197,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	// application.mm.SetOrderBeginBlockers() // NOTE Beginblockers are manually invoked in BeginBlocker func below
 	application.mm.SetOrderEndBlockers(staking.ModuleName)
 	application.mm.SetOrderInitGenesis(
-		//genaccounts.ModuleName,
+		// genaccounts.ModuleName,
 		distr.ModuleName,
 		staking.ModuleName,
 		auth.ModuleName,
@@ -346,7 +347,7 @@ func distrDefaultGenesisState() func() distr.GenesisState {
 
 	return func() distr.GenesisState {
 		state := distrDefaultGenesisStateFn()
-		//state.CommunityTax = sdk.NewDec(0)
+		// state.CommunityTax = sdk.NewDec(0)
 		// TODO Fix this parameter to 0.
 		return state
 	}

@@ -21,8 +21,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var _ module.AppModule = AppModule{}
-var _ module.AppModuleBasic = AppModuleBasic{}
+var (
+	_ module.AppModule      = AppModule{}
+	_ module.AppModuleBasic = AppModuleBasic{}
+)
 
 type AppModuleBasic struct{}
 

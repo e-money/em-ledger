@@ -274,7 +274,7 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquid
 	require.Nil(t, err)
 
 	logger := log.NewNopLogger() // Default
-	//logger = log.NewTMLogger(os.Stdout) // Override to see output
+	// logger = log.NewTMLogger(os.Stdout) // Override to see output
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, logger)
 

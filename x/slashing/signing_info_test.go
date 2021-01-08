@@ -26,10 +26,10 @@ func TestGetSetValidatorSigningInfo(t *testing.T) {
 	keeper.SetValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]), newInfo)
 	info, found = keeper.getValidatorSigningInfo(ctx, sdk.ConsAddress(addrs[0]))
 	require.True(t, found)
-	//require.Equal(t, info.StartHeight, int64(4))
-	//require.Equal(t, info.IndexOffset, int64(3))
+	// require.Equal(t, info.StartHeight, int64(4))
+	// require.Equal(t, info.IndexOffset, int64(3))
 	require.Equal(t, info.JailedUntil, time.Unix(2, 0).UTC())
-	//require.Equal(t, info.MissedBlocksCounter, int64(10))
+	// require.Equal(t, info.MissedBlocksCounter, int64(10))
 }
 
 func TestGetSetValidatorMissedBlockBitArray(t *testing.T) {

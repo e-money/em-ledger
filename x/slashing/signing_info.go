@@ -26,7 +26,6 @@ func (k Keeper) getValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress
 // Stored by *validator* address (not operator address)
 func (k Keeper) IterateValidatorSigningInfos(
 	ctx sdk.Context, handler func(address sdk.ConsAddress, info types.ValidatorSigningInfo) (stop bool)) {
-
 	store := ctx.KVStore(k.storeKey)
 	iter := sdk.KVStorePrefixIterator(store, types.ValidatorSigningInfoKey)
 

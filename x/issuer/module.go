@@ -6,6 +6,7 @@ package issuer
 
 import (
 	"encoding/json"
+
 	"github.com/e-money/em-ledger/x/issuer/client/cli"
 	"github.com/e-money/em-ledger/x/issuer/keeper"
 	"github.com/e-money/em-ledger/x/issuer/types"
@@ -51,7 +52,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 }
 
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	//rest.RegisterRoutes(ctx, rtr)
+	// rest.RegisterRoutes(ctx, rtr)
 }
 
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {

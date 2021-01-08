@@ -41,12 +41,12 @@ func (msg MsgSetGasPrices) Type() string { return "set_gas_prices" }
 func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if msg.Issuer.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+		// return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	if msg.Authority.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
-		//return sdk.ErrInvalidAddress("missing authority address")
+		// return sdk.ErrInvalidAddress("missing authority address")
 	}
 
 	return nil
@@ -55,17 +55,17 @@ func (msg MsgDestroyIssuer) ValidateBasic() error {
 func (msg MsgCreateIssuer) ValidateBasic() error {
 	if msg.Issuer.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+		// return sdk.ErrInvalidAddress("missing issuer address")
 	}
 
 	if msg.Authority.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
-		//return sdk.ErrInvalidAddress("missing authority address")
+		// return sdk.ErrInvalidAddress("missing authority address")
 	}
 
 	if len(msg.Denominations) == 0 {
 		return sdkerrors.Wrap(ErrNoDenomsSpecified, "No denomination specified")
-		//return ErrNoDenomsSpecified()
+		// return ErrNoDenomsSpecified()
 	}
 
 	return nil
@@ -74,12 +74,12 @@ func (msg MsgCreateIssuer) ValidateBasic() error {
 func (msg MsgSetGasPrices) ValidateBasic() error {
 	if msg.Authority.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
-		//return sdk.ErrInvalidAddress("missing authority address")
+		// return sdk.ErrInvalidAddress("missing authority address")
 	}
 
 	if !msg.GasPrices.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "%v", msg.GasPrices)
-		//return sdk.ErrInvalidCoins(msg.GasPrices.String())
+		// return sdk.ErrInvalidCoins(msg.GasPrices.String())
 	}
 
 	return nil

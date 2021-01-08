@@ -37,9 +37,9 @@ func TestCannotUnjailUnlessJailed(t *testing.T) {
 	// assert non-jailed validator can't be unjailed
 	_, err = slh(ctx, NewMsgUnjail(addr))
 	require.Error(t, err)
-	//require.False(t, got.IsOK(), "allowed unjail of non-jailed validator")
-	//require.EqualValues(t, CodeValidatorNotJailed, got.Code)
-	//require.EqualValues(t, DefaultCodespace, got.Codespace)
+	// require.False(t, got.IsOK(), "allowed unjail of non-jailed validator")
+	// require.EqualValues(t, CodeValidatorNotJailed, got.Code)
+	// require.EqualValues(t, DefaultCodespace, got.Codespace)
 }
 
 func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
@@ -52,7 +52,7 @@ func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 	msg.MinSelfDelegation = amt
 	_, err := staking.NewHandler(sk)(ctx, msg)
 	require.NoError(t, err)
-	//require.True(t, got.IsOK())
+	// require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 
 	require.Equal(
@@ -70,9 +70,9 @@ func TestCannotUnjailUnlessMeetMinSelfDelegation(t *testing.T) {
 	// assert non-jailed validator can't be unjailed
 	_, err = slh(ctx, NewMsgUnjail(addr))
 	require.Error(t, err)
-	//require.False(t, got.IsOK(), "allowed unjail of validator with less than MinSelfDelegation")
-	//require.EqualValues(t, CodeValidatorNotJailed, got.Code)
-	//require.EqualValues(t, DefaultCodespace, got.Codespace)
+	// require.False(t, got.IsOK(), "allowed unjail of validator with less than MinSelfDelegation")
+	// require.EqualValues(t, CodeValidatorNotJailed, got.Code)
+	// require.EqualValues(t, DefaultCodespace, got.Codespace)
 }
 
 func TestJailedValidatorDelegations(t *testing.T) {
@@ -90,7 +90,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	msgCreateVal := NewTestMsgCreateValidator(valAddr, valPubKey, bondAmount)
 	_, err := staking.NewHandler(stakingKeeper)(ctx, msgCreateVal)
 	require.NoError(t, err)
-	//require.True(t, got.IsOK(), "expected create validator msg to be ok, got: %v", got)
+	// require.True(t, got.IsOK(), "expected create validator msg to be ok, got: %v", got)
 
 	// end block
 	staking.EndBlocker(ctx, stakingKeeper)
@@ -104,7 +104,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	msgDelegate := newTestMsgDelegate(delAddr, valAddr, bondAmount)
 	_, err = staking.NewHandler(stakingKeeper)(ctx, msgDelegate)
 	require.NoError(t, err)
-	//require.True(t, got.IsOK(), "expected delegation to be ok, got %v", got)
+	// require.True(t, got.IsOK(), "expected delegation to be ok, got %v", got)
 
 	unbondAmt := sdk.NewCoin(stakingKeeper.GetParams(ctx).BondDenom, bondAmount)
 
@@ -112,7 +112,7 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	msgUndelegate := staking.NewMsgUndelegate(sdk.AccAddress(valAddr), valAddr, unbondAmt)
 	_, err = staking.NewHandler(stakingKeeper)(ctx, msgUndelegate)
 	require.NoError(t, err)
-	//require.True(t, got.IsOK(), "expected begin unbonding validator msg to be ok, got: %v", got)
+	// require.True(t, got.IsOK(), "expected begin unbonding validator msg to be ok, got: %v", got)
 
 	err = stakingKeeper.CompleteUnbonding(ctx, sdk.AccAddress(valAddr), valAddr)
 	require.Nil(t, err, "expected complete unbonding validator to be ok, got: %v", err)
@@ -125,18 +125,18 @@ func TestJailedValidatorDelegations(t *testing.T) {
 	// verify the validator cannot unjail itself
 	_, err = NewHandler(slashingKeeper)(ctx, NewMsgUnjail(valAddr))
 	require.Error(t, err)
-	//require.False(t, got.IsOK(), "expected jailed validator to not be able to unjail, got: %v", got)
+	// require.False(t, got.IsOK(), "expected jailed validator to not be able to unjail, got: %v", got)
 
 	// self-delegate to validator
 	msgSelfDelegate := newTestMsgDelegate(sdk.AccAddress(valAddr), valAddr, bondAmount)
 	_, err = staking.NewHandler(stakingKeeper)(ctx, msgSelfDelegate)
 	require.NoError(t, err)
-	//require.True(t, got.IsOK(), "expected delegation to not be ok, got %v", got)
+	// require.True(t, got.IsOK(), "expected delegation to not be ok, got %v", got)
 
 	// verify the validator can now unjail itself
 	_, err = NewHandler(slashingKeeper)(ctx, NewMsgUnjail(valAddr))
 	require.NoError(t, err)
-	//require.True(t, got.IsOK(), "expected jailed validator to be able to unjail, got: %v", got)
+	// require.True(t, got.IsOK(), "expected jailed validator to be able to unjail, got: %v", got)
 }
 
 func TestInvalidMsg(t *testing.T) {
@@ -145,5 +145,5 @@ func TestInvalidMsg(t *testing.T) {
 
 	_, err := h(sdk.NewContext(nil, abci.Header{}, false, nil), sdk.NewTestMsg())
 	require.Error(t, err)
-	//require.True(t, strings.Contains(res.Log, "unrecognized slashing message type"))
+	// require.True(t, strings.Contains(res.Log, "unrecognized slashing message type"))
 }

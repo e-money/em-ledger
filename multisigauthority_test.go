@@ -20,7 +20,6 @@ import (
 )
 
 var _ = Describe("Authority", func() {
-
 	var (
 		keystore  = testnet.Keystore
 		emcli     = testnet.NewEmcli()
@@ -103,8 +102,8 @@ var _ = Describe("Authority", func() {
 			tx, err = emcli.CustomCommand("tx", "multisign", transactionPath, "multikey", signature1Path, signature2Path)
 
 			// Manipulate threshold!
-			//val := gjson.Parse(tx).Get("value.signatures.0.pub_key.value.threshold").Raw
-			//fmt.Println("threshold :", val)
+			// val := gjson.Parse(tx).Get("value.signatures.0.pub_key.value.threshold").Raw
+			// fmt.Println("threshold :", val)
 
 			//{
 			//	bz, _ := sjson.SetBytes([]byte(tx), "value.signatures.0.pub_key.value.threshold", "1")

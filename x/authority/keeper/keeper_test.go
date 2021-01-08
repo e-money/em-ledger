@@ -199,7 +199,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper, *mo
 	cdc := makeTestCodec()
 
 	logger := log.NewNopLogger() // Default
-	//logger = log.NewTMLogger(os.Stdout) // Override to see output
+	// logger = log.NewTMLogger(os.Stdout) // Override to see output
 
 	var (
 		keyAuthority = sdk.NewKVStoreKey(types.ModuleName)

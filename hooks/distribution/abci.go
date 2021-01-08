@@ -13,9 +13,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-var (
-	previousProposerKey = []byte("emdistr/previousproposer")
-)
+var previousProposerKey = []byte("emdistr/previousproposer")
 
 // Adapted from cosmos-sdk/x/distribution/abci.go
 // A custom version was needed to keep the address of the previousProposer out of the consensus-state.
