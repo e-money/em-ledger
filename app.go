@@ -40,6 +40,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
+	"github.com/e-money/em-ledger/x/bep3"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
@@ -69,6 +70,7 @@ var (
 		authority.AppModule{},
 		market.AppModule{},
 		buyback.AppModule{},
+		bep3.AppModuleBasic{},
 		queries.AppModule{},
 	)
 
@@ -83,6 +85,7 @@ var (
 		slashing.PenaltyAccount:      nil,
 		liquidityprovider.ModuleName: {supply.Minter, supply.Burner},
 		buyback.ModuleName:           {supply.Burner},
+		bep3.ModuleName:              {supply.Minter, supply.Burner},
 	}
 )
 
@@ -106,6 +109,7 @@ type emoneyApp struct {
 	authorityKeeper authority.Keeper
 	marketKeeper    *market.Keeper
 	buybackKeeper   buyback.Keeper
+	bep3Keeper      bep3.Keeper
 
 	mm *module.Manager
 }
@@ -139,6 +143,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		market.StoreKey,
 		market.StoreKeyIdx,
 		buyback.StoreKey,
+		bep3.StoreKey,
 	)
 	application.keys = keys
 
@@ -150,6 +155,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		stakingSubspace  = application.paramsKeeper.Subspace(staking.DefaultParamspace)
 		distrSubspace    = application.paramsKeeper.Subspace(distr.DefaultParamspace)
 		slashingSubspace = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+		bep3Subspace     = application.paramsKeeper.Subspace(bep3.DefaultParamspace)
 
 		accountBlacklist = application.ModuleAccountAddrs()
 	)
@@ -172,6 +178,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	// TODO Change market.StoreKeyIdx store to store/mem/store.go from the Cosmos SDK when v0.40 is available
 	application.marketKeeper = market.NewKeeper(application.cdc, keys[market.StoreKey], keys[market.StoreKeyIdx], application.accountKeeper, bankKeeper, application.supplyKeeper, application.authorityKeeper)
 	application.buybackKeeper = buyback.NewKeeper(application.cdc, keys[buyback.StoreKey], application.marketKeeper, application.supplyKeeper, application.stakingKeeper)
+	application.bep3Keeper = bep3.NewKeeper(application.cdc, keys[bep3.StoreKey], application.supplyKeeper, application.accountKeeper, bep3Subspace, application.ModuleAccountAddrs())
 
 	application.MountKVStores(keys)
 	application.MountTransientStores(tkeys)
@@ -191,6 +198,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		authority.NewAppModule(application.authorityKeeper),
 		market.NewAppModule(application.marketKeeper),
 		buyback.NewAppModule(application.buybackKeeper),
+		bep3.NewAppModule(application.bep3Keeper, application.accountKeeper, application.supplyKeeper),
 		queries.NewAppModule(application.accountKeeper),
 	)
 
@@ -210,6 +218,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		authority.ModuleName,
 		market.ModuleName,
 		buyback.ModuleName,
+		bep3.ModuleName,
 	)
 
 	application.mm.RegisterRoutes(application.Router(), application.QueryRouter())
@@ -266,6 +275,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)
 	buyback.BeginBlocker(ctx, app.buybackKeeper)
+	bep3.BeginBlocker(ctx, app.bep3Keeper)
 
 	return abci.ResponseBeginBlock{
 		Events: ctx.EventManager().ABCIEvents(),
