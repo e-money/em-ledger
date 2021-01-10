@@ -215,7 +215,8 @@ func createTestBep3Genesis(cdc *codec.Codec) json.RawMessage {
 	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
 	// create the deputy account
 	memKb := sdkkeys.NewInMemoryKeyBase()
-	deputyAccount, err := memKb.CreateAccount("deputykey", mn, "", "deputy", "0",
+	hdPath := sdk.GetConfig().GetFullFundraiserPath()
+	deputyAccount, err := memKb.CreateAccount("deputykey", mn, "", "deputy", hdPath,
 		keys.Secp256k1)
 	if err != nil {
 		panic(err)

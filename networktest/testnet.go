@@ -170,12 +170,13 @@ func (t Testnet) makeTestnet() error {
 		t.Keystore.Authority.name,
 		"-o", WorkingDir,
 		"--keyaccounts", t.Keystore.path)
-
 	if err != nil {
 		return err
 	}
 
 	t.Keystore.addValidatorKeys(output)
+	t.Keystore.addDeputyKey()
+
 	return nil
 }
 

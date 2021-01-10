@@ -17,8 +17,10 @@ import (
 	"github.com/tendermint/tendermint/crypto/multisig"
 )
 
-const KeyPwd = "pwd12345"
-const Bip39Pwd = ""
+const (
+	KeyPwd   = "pwd12345"
+	Bip39Pwd = ""
+)
 
 type (
 	KeyStore struct {
@@ -166,6 +168,18 @@ func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 			panic(err)
 		}
 	}
+}
+
+func (ks KeyStore) addDeputyKey() {
+	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
+	// create the deputy account
+	hdPath := sdk.GetConfig().GetFullFundraiserPath()
+	deputyAccount, err := ks.keybase.CreateAccount("deputykey", mn, "", "deputy", hdPath,
+		keys.Secp256k1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("deputy address: %s\nmnemonic: %s\n", deputyAccount.GetAddress().String(), mn)
 }
 
 func initializeKeystore(kb keys.Keybase) {
