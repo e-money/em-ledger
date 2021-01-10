@@ -7,9 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
-
+	"math/rand"
 	"net"
 	"path/filepath"
 	"strings"
@@ -34,6 +32,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdkkeys "github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/e-money/em-ledger/x/bep3/simulation"
+	bep3types "github.com/e-money/em-ledger/x/bep3/types"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
@@ -54,7 +57,6 @@ const (
 )
 
 func testnetCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:   "testnet [chain-id] [authority_key_or_address] ]",
 		Short: "Initialize files for an e-money testnet",
@@ -78,7 +80,7 @@ Example:
 
 			authorityKey := getAuthorityKey(args[1], addKeybaseAccounts)
 
-			//return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
+			// return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
 			//	minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
 			return initializeTestnet(cdc, mbm, cfg, outputDir, numValidators, startingIPAddress, addKeybaseAccounts, chainID, authorityKey)
 		},
@@ -92,16 +94,16 @@ Example:
 	cmd.Flags().String(flagAddKeybaseAccounts, "", "Generate accounts for each key in the keystore at the specified path.")
 	cmd.Flags().Lookup(flagAddKeybaseAccounts).NoOptDefVal = ""
 
-	//cmd.Flags().String(flagNodeDaemonHome, "gaiad",
+	// cmd.Flags().String(flagNodeDaemonHome, "gaiad",
 	//	"Home directory of the node's daemon configuration")
-	//cmd.Flags().String(flagNodeCLIHome, "gaiacli",
+	// cmd.Flags().String(flagNodeCLIHome, "gaiacli",
 	//	"Home directory of the node's cli configuration")
 	cmd.Flags().String(flagStartingIPAddress, "192.168.10.2",
 		"Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
-	//cmd.Flags().String(
+	// cmd.Flags().String(
 	//	client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	//cmd.Flags().String(
+	// cmd.Flags().String(
 	//	server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
 	//	"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	return cmd
@@ -111,12 +113,12 @@ func initializeTestnet(
 	cdc *codec.Codec, mbm module.BasicManager, config *cfg.Config,
 	outputDir string, validatorCount int, baseIPAddress,
 	addRandomAccounts, chainID string, authorityKey sdk.AccAddress) error {
-
 	config.Genesis = "genesis.json"
 
 	gen := mbm.DefaultGenesis()
 	gen["authority"] = createAuthorityGenesis(authorityKey)
 	gen["inflation"] = createInflationGenesis()
+	gen["bep3"] = createTestBep3Genesis(cdc)
 
 	appState, err := codec.MarshalJSONIndent(cdc, gen)
 	if err != nil {
@@ -209,6 +211,57 @@ func createInflationGenesis() json.RawMessage {
 	return json.RawMessage(bz)
 }
 
+func createTestBep3Genesis(cdc *codec.Codec) json.RawMessage {
+	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
+	// create the deputy account
+	memKb := sdkkeys.NewInMemoryKeyBase()
+	deputyAccount, err := memKb.CreateAccount("deputykey", mn, "", "deputy", "0",
+		keys.Secp256k1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("deputy address: %s\n", deputyAccount.GetAddress().String())
+
+	// bep3 genesis for supported coins
+	bep3Coins := []string{"echf", "edkk", "eeur", "enok", "esek", "ungm"}
+	gen := bep3types.DefaultGenesisState()
+	gen.Params.AssetParams = make([]bep3types.AssetParam, len(bep3Coins))
+	gen.Supplies = make([]bep3types.AssetSupply, len(bep3Coins))
+
+	// Deterministic randomizer
+	r := rand.New(rand.NewSource(1))
+	limit := sdk.NewInt(int64(simulation.MaxSupplyLimit))
+	for idx, coin := range bep3Coins {
+		gen.Supplies[idx] = bep3types.AssetSupply{
+			IncomingSupply:           sdk.NewCoin(coin, sdk.ZeroInt()),
+			OutgoingSupply:           sdk.NewCoin(coin, sdk.ZeroInt()),
+			CurrentSupply:            sdk.NewCoin(coin, limit),
+			TimeLimitedCurrentSupply: sdk.NewCoin(coin, sdk.ZeroInt()),
+			TimeElapsed:              0,
+		}
+		gen.Params.AssetParams[idx] =
+			bep3types.AssetParam{
+				Denom:  coin,
+				CoinID: idx + 1,
+				SupplyLimit: bep3types.SupplyLimit{
+					Limit:          limit,
+					TimeLimited:    false,
+					TimePeriod:     time.Hour * 24,
+					TimeBasedLimit: sdk.ZeroInt(),
+				},
+				Active:        true,
+				DeputyAddress: deputyAccount.GetAddress(),
+				FixedFee:      simulation.GenRandFixedFee(r),
+				MinSwapAmount: sdk.OneInt(),
+				MaxSwapAmount: limit,
+				SwapTimestamp: uint64(time.Now().Unix()),
+				SwapTimeSpan:  60 * 60 * 24 * 3, // 3 days
+			}
+	}
+
+	return cdc.MustMarshalJSON(gen)
+}
+
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
 	gen := authority.NewGenesisState(akey, emtypes.RestrictedDenoms{}, sdk.NewDecCoins())
 
@@ -241,9 +294,9 @@ func addRandomTestAccounts(keystorepath string) exported.GenesisAccounts {
 			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
 		)
 
-		//genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
+		// genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
 		genAcc := auth.NewBaseAccount(k.GetAddress(), coins, nil, 0, 0)
-		//genAcc := exported.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
+		// genAcc := exported.NewGenesisAccountRaw(k.GetAddress(), coins, sdk.NewCoins(), 0, 0, "")
 		result[i] = genAcc
 	}
 
@@ -299,7 +352,6 @@ func createValidatorTransaction(i int, validatorpk crypto.PubKey, chainID string
 	tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, " - ")
 	txBldr := auth.NewTxBuilderFromCLI(strings.NewReader("")).WithChainID(chainID).WithMemo(" - ").WithKeybase(kb)
 	signedTx, err := txBldr.SignStdTx("nodename", defaultKeyPass, tx, false)
-
 	if err != nil {
 		panic(err)
 	}
