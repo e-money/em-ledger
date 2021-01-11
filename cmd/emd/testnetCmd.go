@@ -118,7 +118,9 @@ func initializeTestnet(
 	gen := mbm.DefaultGenesis()
 	gen["authority"] = createAuthorityGenesis(authorityKey)
 	gen["inflation"] = createInflationGenesis()
-	gen["bep3"] = createTestBep3Genesis(cdc)
+
+	deputyKeyInfo := createDeputyKeyPair()
+	gen["bep3"] = createTestBep3Genesis(cdc, deputyKeyInfo)
 
 	appState, err := codec.MarshalJSONIndent(cdc, gen)
 	if err != nil {
@@ -167,6 +169,8 @@ func initializeTestnet(
 		genaccounts = addRandomTestAccounts(addRandomAccounts)
 	}
 
+	genaccounts = append(genaccounts, createFundedDeputyAccount(deputyKeyInfo))
+
 	// Update genesis file with the created validators
 	allAccounts := append(validatorAccounts, genaccounts...)
 	addGenesisValidators(cdc, genDoc, createValidatorTXs, allAccounts)
@@ -211,7 +215,7 @@ func createInflationGenesis() json.RawMessage {
 	return json.RawMessage(bz)
 }
 
-func createTestBep3Genesis(cdc *codec.Codec) json.RawMessage {
+func createDeputyKeyPair() keys.Info {
 	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
 	// create the deputy account
 	memKb := sdkkeys.NewInMemoryKeyBase()
@@ -221,10 +225,24 @@ func createTestBep3Genesis(cdc *codec.Codec) json.RawMessage {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("deputy address: %s\n", deputyAccount.GetAddress().String())
 
-	// bep3 genesis for supported coins
-	bep3Coins := []string{"echf", "edkk", "eeur", "enok", "esek", "ungm"}
+	return deputyAccount
+}
+
+func createFundedDeputyAccount(deputyKeyPair keys.Info) *types.BaseAccount {
+	_, coins := getBep3Coins()
+
+	// genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
+	deputyGenAccount := auth.NewBaseAccount(deputyKeyPair.GetAddress(), coins, nil,
+		0, 0)
+	fmt.Printf("deputy address: %s\n", deputyKeyPair.GetAddress().String())
+
+	return deputyGenAccount
+}
+
+func createTestBep3Genesis(cdc *codec.Codec, deputyAccount keys.Info) json.RawMessage {
+	bep3Coins, coins := getBep3Coins()
+
 	gen := bep3types.DefaultGenesisState()
 	gen.Params.AssetParams = make([]bep3types.AssetParam, len(bep3Coins))
 	gen.Supplies = make([]bep3types.AssetSupply, len(bep3Coins))
@@ -232,17 +250,20 @@ func createTestBep3Genesis(cdc *codec.Codec) json.RawMessage {
 	// Deterministic randomizer
 	r := rand.New(rand.NewSource(1))
 	limit := sdk.NewInt(int64(simulation.MaxSupplyLimit))
-	for idx, coin := range bep3Coins {
+	for idx, denom := range bep3Coins {
+		coins[idx] = sdk.NewCoin(denom, limit)
+
 		gen.Supplies[idx] = bep3types.AssetSupply{
-			IncomingSupply:           sdk.NewCoin(coin, sdk.ZeroInt()),
-			OutgoingSupply:           sdk.NewCoin(coin, sdk.ZeroInt()),
-			CurrentSupply:            sdk.NewCoin(coin, limit),
-			TimeLimitedCurrentSupply: sdk.NewCoin(coin, sdk.ZeroInt()),
+			IncomingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
+			OutgoingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
+			CurrentSupply:            sdk.NewCoin(denom, limit),
+			TimeLimitedCurrentSupply: sdk.NewCoin(denom, sdk.ZeroInt()),
 			TimeElapsed:              0,
 		}
+
 		gen.Params.AssetParams[idx] =
 			bep3types.AssetParam{
-				Denom:  coin,
+				Denom:  denom,
 				CoinID: idx + 1,
 				SupplyLimit: bep3types.SupplyLimit{
 					Limit:          limit,
@@ -261,6 +282,14 @@ func createTestBep3Genesis(cdc *codec.Codec) json.RawMessage {
 	}
 
 	return cdc.MustMarshalJSON(gen)
+}
+
+func getBep3Coins() ([]string, []sdk.Coin) {
+	// bep3 genesis for supported coins
+	bep3Coins := []string{"echf", "edkk", "eeur", "enok", "esek", "ungm"}
+	coins := make([]sdk.Coin, len(bep3Coins))
+
+	return bep3Coins, coins
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
