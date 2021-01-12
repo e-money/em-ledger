@@ -232,9 +232,9 @@ func createDeputyKeyPair() keys.Info {
 func createFundedDeputyAccount(deputyKeyPair keys.Info) *types.BaseAccount {
 	_, coins := getBep3Coins()
 
-	// genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
 	deputyGenAccount := auth.NewBaseAccount(deputyKeyPair.GetAddress(), coins, nil,
 		0, 0)
+
 	fmt.Printf("deputy address: %s\n", deputyKeyPair.GetAddress().String())
 
 	return deputyGenAccount
@@ -288,6 +288,12 @@ func getBep3Coins() ([]string, []sdk.Coin) {
 	// bep3 genesis for supported coins
 	bep3Coins := []string{"echf", "edkk", "eeur", "enok", "esek", "ungm"}
 	coins := make([]sdk.Coin, len(bep3Coins))
+
+	amount := sdk.NewInt(int64(simulation.MaxSupplyLimit))
+
+	for idx, denom := range bep3Coins {
+		coins[idx] = sdk.NewCoin(denom, amount)
+	}
 
 	return bep3Coins, coins
 }
