@@ -174,7 +174,7 @@ func (ks KeyStore) addDeputyKey() {
 	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
 	// create the deputy account
 	hdPath := sdk.GetConfig().GetFullFundraiserPath()
-	deputyAccount, err := ks.keybase.CreateAccount("deputykey", mn, "", "deputy", hdPath,
+	deputyAccount, err := ks.keybase.CreateAccount("deputykey", mn, "", KeyPwd, hdPath,
 		keys.Secp256k1)
 	if err != nil {
 		panic(err)
@@ -183,21 +183,34 @@ func (ks KeyStore) addDeputyKey() {
 }
 
 func initializeKeystore(kb keys.Keybase) {
-	_, _ = kb.CreateAccount("authoritykey",
-		"play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty",
-		"", KeyPwd, "0", keys.Secp256k1)
+	hdPath := sdk.GetConfig().GetFullFundraiserPath()
+	const mnemonic1 = "then nuclear favorite advance plate glare shallow enhance replace embody list dose quick scale service sentence hover announce advance nephew phrase order useful this"
+	ac1, _ := kb.CreateAccount("authoritykey", mnemonic1, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac1.GetAddress(), mnemonic1)
 
-	_, _ = kb.CreateAccount("key1",
-		"document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil",
-		"", KeyPwd, "0", keys.Secp256k1)
+	const mnemonic2 = "document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil"
+	ac2, _ := kb.CreateAccount("key1", mnemonic2, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac2.GetAddress(), mnemonic2)
 
-	_, _ = kb.CreateAccount("key2",
-		"treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich",
-		"", KeyPwd, "0", keys.Secp256k1)
+	const mnemonic3 = "treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich"
+	ac3, _ := kb.CreateAccount("key2", mnemonic3, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac3.GetAddress(), mnemonic3)
 
-	_, _ = kb.CreateAccount("key3",
-		"rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel",
-		"", KeyPwd, "0", keys.Secp256k1)
+	const mnemonic4 = "rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel"
+	ac4, _ := kb.CreateAccount("key3", mnemonic4, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac4.GetAddress(), mnemonic4)
+
+	const mnemonic5 = "census museum crew rude tower vapor mule rib weasel faith page cushion rain inherit much cram that blanket occur region track hub zero topple"
+	ac5, _ := kb.CreateAccount("key4", mnemonic5, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac5.GetAddress(), mnemonic5)
+
+	const mnemonic6 = "flavor print loyal canyon expand salmon century field say frequent human dinosaur frame claim bridge affair web way direct win become merry crash frequent"
+	ac6, _ := kb.CreateAccount("key5", mnemonic6, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac6.GetAddress(), mnemonic6)
+
+	const mnemonic7 = "very health column only surface project output absent outdoor siren reject era legend legal twelve setup roast lion rare tunnel devote style random food"
+	ac7, _ := kb.CreateAccount("key6", mnemonic7, "", KeyPwd, hdPath, keys.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac7.GetAddress(), mnemonic7)
 
 	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
 	pks := make([]crypto.PubKey, 3)

@@ -235,8 +235,6 @@ func createFundedDeputyAccount(deputyKeyPair keys.Info) *types.BaseAccount {
 	deputyGenAccount := auth.NewBaseAccount(deputyKeyPair.GetAddress(), coins, nil,
 		0, 0)
 
-	fmt.Printf("deputy address: %s\n", deputyKeyPair.GetAddress().String())
-
 	return deputyGenAccount
 }
 
@@ -322,12 +320,15 @@ func addRandomTestAccounts(keystorepath string) exported.GenesisAccounts {
 
 	result := make(exported.GenesisAccounts, len(allKeys))
 	for i, k := range allKeys {
-		fmt.Printf("Creating genesis account for key %v.\n", k.GetName())
+		fmt.Printf("Creating genesis account for key %v, address %s.\n", k.GetName(), k.GetAddress())
 		coins := sdk.NewCoins(
-			sdk.NewCoin("ungm", sdk.NewInt(99000000000)),
-			sdk.NewCoin("eeur", sdk.NewInt(10000000000)),
+			sdk.NewCoin("ungm", sdk.NewInt(990000000000)),
+			sdk.NewCoin("eeur", sdk.NewInt(100000000000)),
 			sdk.NewCoin("ejpy", sdk.NewInt(3500000000000)),
-			sdk.NewCoin("echf", sdk.NewInt(10000000000)),
+			sdk.NewCoin("echf", sdk.NewInt(100000000000)),
+			sdk.NewCoin("edkk", sdk.NewInt(3500000000000)),
+			sdk.NewCoin("enok", sdk.NewInt(3500000000000)),
+			sdk.NewCoin("esek", sdk.NewInt(3500000000000)),
 		)
 
 		// genAcc := auth.NewBaseAccount(k.GetAddress(), coins, k.GetPubKey(), 0, 0)
