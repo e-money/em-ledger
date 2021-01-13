@@ -105,7 +105,7 @@ func DefaultParams() Params {
 type AtomicSwap struct {
 	Amount              sdk.Coins        `json:"amount"  yaml:"amount"`
 	RandomNumberHash    tmbytes.HexBytes `json:"random_number_hash"  yaml:"random_number_hash"`
-	ExpireHeight        uint64           `json:"expire_timestamp"  yaml:"expire_timestamp"`
+	ExpireTimestamp     uint64           `json:"expire_timestamp"  yaml:"expire_timestamp"`
 	Timestamp           int64            `json:"timestamp"  yaml:"timestamp"`
 	Sender              sdk.AccAddress   `json:"sender"  yaml:"sender"`
 	Recipient           sdk.AccAddress   `json:"recipient"  yaml:"recipient"`

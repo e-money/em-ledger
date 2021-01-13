@@ -244,7 +244,7 @@ type AssetSupplies []AssetSupply
 type AtomicSwap struct {
 	Amount              sdk.Coins        `json:"amount"  yaml:"amount"`
 	RandomNumberHash    tmbytes.HexBytes `json:"random_number_hash"  yaml:"random_number_hash"`
-	ExpireHeight        uint64           `json:"expire_timestamp"  yaml:"expire_timestamp"`
+	ExpireTimestamp     uint64           `json:"expire_timestamp"  yaml:"expire_timestamp"`
 	Timestamp           int64            `json:"timestamp"  yaml:"timestamp"`
 	Sender              sdk.AccAddress   `json:"sender"  yaml:"sender"`
 	Recipient           sdk.AccAddress   `json:"recipient"  yaml:"recipient"`
@@ -286,7 +286,7 @@ func (a AtomicSwap) Validate() error {
 	if len(a.RandomNumberHash) != RandomNumberHashLength {
 		return fmt.Errorf("the length of random number hash should be %d", RandomNumberHashLength)
 	}
-	if a.ExpireHeight == 0 {
+	if a.ExpireTimestamp == 0 {
 		return errors.New("expire height cannot be 0")
 	}
 	if a.Timestamp == 0 {
