@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/pkg/errors"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 )
 

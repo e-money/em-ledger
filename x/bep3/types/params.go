@@ -58,7 +58,7 @@ type AssetParam struct {
 	SupplyLimit   SupplyLimit    `json:"supply_limit" yaml:"supply_limit"`       // asset supply limit
 	Active        bool           `json:"active" yaml:"active"`                   // denotes if asset is available or paused
 	DeputyAddress sdk.AccAddress `json:"deputy_address" yaml:"deputy_address"`   // the address of the relayer process
-	FixedFee      sdk.Int        `json:"fixed_fee" yaml:"fixed_fee"`             // the fixed fee charged by the relayer process for outgoing swaps
+	FixedFee      sdk.Int        `json:"fixed_fee" yaml:"fixed_fee"`             // It should match the deputy config chain values. The fixed fee charged by the relayer process for outgoing swaps
 	MinSwapAmount sdk.Int        `json:"min_swap_amount" yaml:"min_swap_amount"` // Minimum swap amount
 	MaxSwapAmount sdk.Int        `json:"max_swap_amount" yaml:"max_swap_amount"` // Maximum swap amount
 	SwapTimestamp uint64         `json:"swap_time" yaml:"swap_time"`             // Unix seconds of swap creation block timestamp

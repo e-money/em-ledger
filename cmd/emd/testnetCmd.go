@@ -7,36 +7,31 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	emtypes "github.com/e-money/em-ledger/types"
-	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/inflation"
-
-	"github.com/cosmos/cosmos-sdk/server/config"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdkkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdkkeys "github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	emtypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/bep3/simulation"
 	bep3types "github.com/e-money/em-ledger/x/bep3/types"
+	"github.com/e-money/em-ledger/x/inflation"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
@@ -245,8 +240,6 @@ func createTestBep3Genesis(cdc *codec.Codec, deputyAccount keys.Info) json.RawMe
 	gen.Params.AssetParams = make([]bep3types.AssetParam, len(bep3Coins))
 	gen.Supplies = make([]bep3types.AssetSupply, len(bep3Coins))
 
-	// Deterministic randomizer
-	r := rand.New(rand.NewSource(1))
 	limit := sdk.NewInt(int64(simulation.MaxSupplyLimit))
 	for idx, denom := range bep3Coins {
 		coins[idx] = sdk.NewCoin(denom, limit)
@@ -271,7 +264,7 @@ func createTestBep3Genesis(cdc *codec.Codec, deputyAccount keys.Info) json.RawMe
 				},
 				Active:        true,
 				DeputyAddress: deputyAccount.GetAddress(),
-				FixedFee:      simulation.GenRandFixedFee(r),
+				FixedFee:      sdk.OneInt(),
 				MinSwapAmount: sdk.OneInt(),
 				MaxSwapAmount: limit,
 				SwapTimestamp: uint64(time.Now().Unix()),
