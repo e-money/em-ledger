@@ -247,7 +247,7 @@ func createTestBep3Genesis(cdc *codec.Codec, deputyAccount keys.Info) json.RawMe
 		gen.Supplies[idx] = bep3types.AssetSupply{
 			IncomingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
 			OutgoingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
-			CurrentSupply:            sdk.NewCoin(denom, limit),
+			CurrentSupply:            sdk.NewCoin(denom, limit.QuoRaw(2)), // Ensure that only half of the allowed supply is used.
 			TimeLimitedCurrentSupply: sdk.NewCoin(denom, sdk.ZeroInt()),
 			TimeElapsed:              0,
 		}
