@@ -23,7 +23,6 @@ var _ = Describe("BEP3 Swap", func() {
 		emcli = testnet.NewEmcli()
 		key1  = testnet.Keystore.Key1
 		key2  = testnet.Keystore.Key2
-		//key3  = testnet.Keystore.Key3
 
 		deputy = testnet.Keystore.DeputyKey
 	)
@@ -53,13 +52,6 @@ var _ = Describe("BEP3 Swap", func() {
 
 		swapId = swap.Get("id").Str
 		Expect(strings.ToUpper(swap.Get("random_number_hash").Str)).To(Equal(strings.ToUpper(randomNumberHash)))
-
-		// TEST TODO
-		// - Verify account balances
-		// - Random account claims with wrong secret
-		// - Random account claims with right secret.
-		// - Intended recipient claims with wrong secret
-		// - Intended recipient claims with correct secret
 	})
 
 	It("Uses the wrong secret", func() {
@@ -92,9 +84,6 @@ var _ = Describe("BEP3 Swap", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		// Check updated state
-		balance, err := emcli.QueryAccountJson(key1.GetAddress())
-		Expect(err).ToNot(HaveOccurred())
-		fmt.Println("--- Recipient balance\n", string(balance))
 
 		totalSupply, err = emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())
@@ -106,5 +95,29 @@ var _ = Describe("BEP3 Swap", func() {
 		ungmBalanceAfter := gjson.ParseBytes(accountBalance).Get("value.coins.#(denom==\"ungm\").amount").Int()
 
 		Expect(ungmBalanceAfter).To(Equal(ungmBalanceBefore + 5000))
+	})
+
+	It("Allows a swap to expire", func() {
+		const swapStatusQuery = "#(sender_other_chain==\"0x001\").status"
+		const swapIdQuery = "#(sender_other_chain==\"0x001\").id"
+
+		secretNumber, _, _, err := emcli.BEP3Create(deputy, key1.GetAddress(), "0x002", "0x001", "1000ungm")
+		Expect(err).ToNot(HaveOccurred())
+
+		list, _ := emcli.BEP3ListSwaps()
+
+		id := gjson.Parse(list).Get(swapIdQuery).Str
+		Expect(gjson.Parse(list).Get(swapStatusQuery).Str).To(Equal("Open"))
+
+		time.Sleep(6 * time.Second) // Swap expires after 5 seconds
+
+		// Verify state
+		list, _ = emcli.BEP3ListSwaps()
+		Expect(gjson.Parse(list).Get(swapStatusQuery).Str).To(Equal("Expired"))
+
+		output, _ := emcli.BEP3Claim(key1, id, secretNumber)
+		jsonOutput := gjson.Parse(output)
+		Expect(jsonOutput.Get("codespace").Str).To(Equal("bep3"))
+		Expect(jsonOutput.Get("code").Int()).To(Equal(int64(17)))
 	})
 })
