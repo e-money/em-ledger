@@ -1,0 +1,27 @@
+syntax = "proto3";
+package em.authority.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/authority/types";
+
+message MsgCreateIssuerX {
+  string authority = 1 [(gogoproto.moretags) = "yaml:\"authority\""];
+  string issuer = 2 [(gogoproto.moretags) = "yaml:\"issuer\""];
+  repeated string denominations = 3 [(gogoproto.moretags) = "yaml:\"denoms\""];
+}
+
+message MsgDestroyIssuerX {
+  string authority = 1 [(gogoproto.moretags) = "yaml:\"authority\""];
+  string issuer = 2 [(gogoproto.moretags) = "yaml:\"issuer\""];
+}
+
+message MsgSetGasPricesX {
+  string authority = 1 [(gogoproto.moretags) = "yaml:\"authority\""];
+  repeated cosmos.base.v1beta1.DecCoin gas_prices = 2 [
+    (gogoproto.moretags) = "yaml:\"gas_prices\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.nullable) = false
+  ];
+}
