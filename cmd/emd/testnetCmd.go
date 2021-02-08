@@ -25,10 +25,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/e-money/bep3/module/simulation"
+	bep3types "github.com/e-money/bep3/module/types"
 	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/bep3/simulation"
-	bep3types "github.com/e-money/em-ledger/x/bep3/types"
 	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -247,7 +247,7 @@ func createTestBep3Genesis(cdc *codec.Codec, deputyAccount keys.Info) json.RawMe
 		gen.Supplies[idx] = bep3types.AssetSupply{
 			IncomingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
 			OutgoingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
-			CurrentSupply:            sdk.NewCoin(denom, limit),
+			CurrentSupply:            sdk.NewCoin(denom, limit.QuoRaw(2)), // Ensure that only half of the allowed supply is used.
 			TimeLimitedCurrentSupply: sdk.NewCoin(denom, sdk.ZeroInt()),
 			TimeElapsed:              0,
 		}
