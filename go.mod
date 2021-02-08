@@ -16,8 +16,8 @@ require (
 	github.com/tendermint/tm-db v0.5.1
 	github.com/tidwall/gjson v1.3.2
 	github.com/tidwall/sjson v1.0.4
+	github.com/gogo/protobuf v1.3.3
+	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 )
 
-// replace github.com/cosmos/cosmos-sdk => ./tmpvendor/cosmos-sdk
-
-// replace github.com/tendermint/tendermint => ./tmpvendor/tendermint
+replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
