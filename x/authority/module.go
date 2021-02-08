@@ -66,14 +66,16 @@ func NewAppModule(keeper Keeper) *AppModule {
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) (_ []abci.ValidatorUpdate) {
 	var genesisState GenesisState
 	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, genesisState)
+	if err := InitGenesis(ctx, am.keeper, genesisState); err != nil {
+		panic(err.Error())
+	}
 
 	return
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	genesis := GenesisState{
-		AuthorityKey:     am.keeper.GetAuthority(ctx),
+		AuthorityKey:     am.keeper.GetAuthority(ctx).String(),
 		RestrictedDenoms: am.keeper.GetRestrictedDenoms(ctx),
 		MinGasPrices:     am.keeper.GetGasPrices(ctx),
 	}

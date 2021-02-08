@@ -4,12 +4,92 @@
 
 ## Table of Contents
 
+- [em/authority/v1beta1/genesis.proto](#em/authority/v1beta1/genesis.proto)
+    - [GenesisState](#em.authority.v1beta1.GenesisState)
+  
 - [em/authority/v1beta1/tx.proto](#em/authority/v1beta1/tx.proto)
-    - [MsgCreateIssuerX](#em.authority.v1beta1.MsgCreateIssuerX)
-    - [MsgDestroyIssuerX](#em.authority.v1beta1.MsgDestroyIssuerX)
-    - [MsgSetGasPricesX](#em.authority.v1beta1.MsgSetGasPricesX)
+    - [MsgCreateIssuer](#em.authority.v1beta1.MsgCreateIssuer)
+    - [MsgDestroyIssuer](#em.authority.v1beta1.MsgDestroyIssuer)
+    - [MsgSetGasPrices](#em.authority.v1beta1.MsgSetGasPrices)
+  
+- [em/inflation/v1beta1/inflation.proto](#em/inflation/v1beta1/inflation.proto)
+    - [InflationAsset](#em.inflation.v1beta1.InflationAsset)
+    - [InflationState](#em.inflation.v1beta1.InflationState)
+  
+- [em/inflation/v1beta1/genesis.proto](#em/inflation/v1beta1/genesis.proto)
+    - [GenesisState](#em.inflation.v1beta1.GenesisState)
+  
+- [em/issuer/v1beta1/issuer.proto](#em/issuer/v1beta1/issuer.proto)
+    - [Issuer](#em.issuer.v1beta1.Issuer)
+  
+- [em/issuer/v1beta1/genesis.proto](#em/issuer/v1beta1/genesis.proto)
+    - [GenesisState](#em.issuer.v1beta1.GenesisState)
+  
+- [em/issuer/v1beta1/tx.proto](#em/issuer/v1beta1/tx.proto)
+    - [MsgDecreaseMintable](#em.issuer.v1beta1.MsgDecreaseMintable)
+    - [MsgIncreaseMintable](#em.issuer.v1beta1.MsgIncreaseMintable)
+    - [MsgRevokeLiquidityProvider](#em.issuer.v1beta1.MsgRevokeLiquidityProvider)
+    - [MsgSetInflation](#em.issuer.v1beta1.MsgSetInflation)
+  
+- [em/liquidityprovider/v1beta1/genesis.proto](#em/liquidityprovider/v1beta1/genesis.proto)
+    - [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc)
+    - [GenesisState](#em.liquidityprovider.v1beta1.GenesisState)
+  
+- [em/liquidityprovider/v1beta1/liquidityprovider.proto](#em/liquidityprovider/v1beta1/liquidityprovider.proto)
+    - [LiquidityProviderAccount](#em.liquidityprovider.v1beta1.LiquidityProviderAccount)
+  
+- [em/liquidityprovider/v1beta1/tx.proto](#em/liquidityprovider/v1beta1/tx.proto)
+    - [MsgBurnTokens](#em.liquidityprovider.v1beta1.MsgBurnTokens)
+    - [MsgMintTokens](#em.liquidityprovider.v1beta1.MsgMintTokens)
+  
+- [em/market/v1beta1/market.proto](#em/market/v1beta1/market.proto)
+    - [ExecutionPlan](#em.market.v1beta1.ExecutionPlan)
+    - [Instrument](#em.market.v1beta1.Instrument)
+    - [MarketData](#em.market.v1beta1.MarketData)
+    - [Order](#em.market.v1beta1.Order)
+  
+    - [TimeInForce](#em.market.v1beta1.TimeInForce)
+  
+- [em/market/v1beta1/tx.proto](#em/market/v1beta1/tx.proto)
+    - [MsgDecreaseMintable](#em.market.v1beta1.MsgDecreaseMintable)
+    - [MsgIncreaseMintable](#em.market.v1beta1.MsgIncreaseMintable)
+    - [MsgRevokeLiquidityProvider](#em.market.v1beta1.MsgRevokeLiquidityProvider)
+    - [MsgSetInflation](#em.market.v1beta1.MsgSetInflation)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="em/authority/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/authority/v1beta1/genesis.proto
+
+
+
+<a name="em.authority.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority_key` | [string](#string) |  |  |
+| `restricted_denoms` | [string](#string) | repeated |  |
+| `min_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
 
 
 
@@ -20,9 +100,9 @@
 
 
 
-<a name="em.authority.v1beta1.MsgCreateIssuerX"></a>
+<a name="em.authority.v1beta1.MsgCreateIssuer"></a>
 
-### MsgCreateIssuerX
+### MsgCreateIssuer
 
 
 
@@ -37,9 +117,9 @@
 
 
 
-<a name="em.authority.v1beta1.MsgDestroyIssuerX"></a>
+<a name="em.authority.v1beta1.MsgDestroyIssuer"></a>
 
-### MsgDestroyIssuerX
+### MsgDestroyIssuer
 
 
 
@@ -53,9 +133,9 @@
 
 
 
-<a name="em.authority.v1beta1.MsgSetGasPricesX"></a>
+<a name="em.authority.v1beta1.MsgSetGasPrices"></a>
 
-### MsgSetGasPricesX
+### MsgSetGasPrices
 
 
 
@@ -63,6 +143,546 @@
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |  |
 | `gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/inflation/v1beta1/inflation.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/inflation/v1beta1/inflation.proto
+
+
+
+<a name="em.inflation.v1beta1.InflationAsset"></a>
+
+### InflationAsset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `inflation` | [string](#string) |  |  |
+| `accum` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.inflation.v1beta1.InflationState"></a>
+
+### InflationState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `last_applied_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `last_applied_height` | [string](#string) |  |  |
+| `inflation_assets` | [InflationAsset](#em.inflation.v1beta1.InflationAsset) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/inflation/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/inflation/v1beta1/genesis.proto
+
+
+
+<a name="em.inflation.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `inflation_state` | [InflationState](#em.inflation.v1beta1.InflationState) |  | todo (reviewer): yaml naming is a bit inconsistent. state contains assets |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/issuer/v1beta1/issuer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/issuer/v1beta1/issuer.proto
+
+
+
+<a name="em.issuer.v1beta1.Issuer"></a>
+
+### Issuer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+| `denoms` | [string](#string) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/issuer/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/issuer/v1beta1/genesis.proto
+
+
+
+<a name="em.issuer.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuers` | [Issuer](#em.issuer.v1beta1.Issuer) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/issuer/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/issuer/v1beta1/tx.proto
+
+
+
+<a name="em.issuer.v1beta1.MsgDecreaseMintable"></a>
+
+### MsgDecreaseMintable
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `liquidity_provider` | [string](#string) |  |  |
+| `mintable_decrease` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+
+<a name="em.issuer.v1beta1.MsgIncreaseMintable"></a>
+
+### MsgIncreaseMintable
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `liquidity_provider` | [string](#string) |  |  |
+| `mintable_increase` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+
+<a name="em.issuer.v1beta1.MsgRevokeLiquidityProvider"></a>
+
+### MsgRevokeLiquidityProvider
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `liquidity_provider` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.issuer.v1beta1.MsgSetInflation"></a>
+
+### MsgSetInflation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `denom` | [string](#string) |  |  |
+| `inflation_rate` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/liquidityprovider/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/liquidityprovider/v1beta1/genesis.proto
+
+
+
+<a name="em.liquidityprovider.v1beta1.GenesisAcc"></a>
+
+### GenesisAcc
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `account` | [string](#string) |  |  |
+| `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `accounts` | [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/liquidityprovider/v1beta1/liquidityprovider.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/liquidityprovider/v1beta1/liquidityprovider.proto
+
+
+
+<a name="em.liquidityprovider.v1beta1.LiquidityProviderAccount"></a>
+
+### LiquidityProviderAccount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/liquidityprovider/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/liquidityprovider/v1beta1/tx.proto
+
+
+
+<a name="em.liquidityprovider.v1beta1.MsgBurnTokens"></a>
+
+### MsgBurnTokens
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `liquidity_provider` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1beta1.MsgMintTokens"></a>
+
+### MsgMintTokens
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `liquidity_provider` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/market/v1beta1/market.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/market/v1beta1/market.proto
+
+
+
+<a name="em.market.v1beta1.ExecutionPlan"></a>
+
+### ExecutionPlan
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `price` | [string](#string) |  |  |
+| `first_order` | [Order](#em.market.v1beta1.Order) |  |  |
+| `second_order` | [Order](#em.market.v1beta1.Order) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.Instrument"></a>
+
+### Instrument
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `source` | [string](#string) |  |  |
+| `destination` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MarketData"></a>
+
+### MarketData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `source` | [string](#string) |  |  |
+| `destination` | [string](#string) |  |  |
+| `last_price` | [string](#string) |  |  |
+| `timestamp` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.Order"></a>
+
+### Order
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
+| `owner` | [string](#string) |  |  |
+| `client_order_id` | [string](#string) |  |  |
+| `source` | [string](#string) |  |  |
+| `source_remaining` | [string](#string) |  |  |
+| `source_filled` | [string](#string) |  |  |
+| `inflation_rate` | [string](#string) |  |  |
+| `destination_filled` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+
+<a name="em.market.v1beta1.TimeInForce"></a>
+
+### TimeInForce
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNDEFINED | 0 |  |
+| GoodTilCancel | 1 |  |
+| ImmediateOrCancel | 2 |  |
+| FillOrKill | 3 |  |
+
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/market/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/market/v1beta1/tx.proto
+
+
+
+<a name="em.market.v1beta1.MsgDecreaseMintable"></a>
+
+### MsgDecreaseMintable
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `liquidity_provider` | [string](#string) |  |  |
+| `mintable_decrease` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MsgIncreaseMintable"></a>
+
+### MsgIncreaseMintable
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `liquidity_provider` | [string](#string) |  |  |
+| `mintable_increase` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MsgRevokeLiquidityProvider"></a>
+
+### MsgRevokeLiquidityProvider
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `liquidity_provider` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MsgSetInflation"></a>
+
+### MsgSetInflation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuer` | [string](#string) |  |  |
+| `denom` | [string](#string) |  |  |
+| `inflation_rate` | [string](#string) |  |  |
 
 
 

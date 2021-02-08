@@ -1,0 +1,28 @@
+syntax = "proto3";
+package em.authority.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/authority/types";
+
+message GenesisState {
+  string authority_key = 1 [ (gogoproto.moretags) = "yaml:\"key\"" ];
+  repeated string restricted_denoms = 2 [
+    (gogoproto.moretags) = "yaml:\"restricted_denoms\"",
+    (gogoproto.castrepeated) =
+        "github.com/e-money/em-ledger/types.RestrictedDenoms"
+  ];
+
+  repeated cosmos.base.v1beta1.DecCoin min_gas_prices = 3 [
+    (gogoproto.moretags) = "yaml:\"min_gas_prices\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.nullable) = false
+  ];
+}
+
+//// should go into common
+// message RestrictedDenomX {
+//  string denom = 1 [ (gogoproto.moretags) = "yaml:\"denom\"" ];
+//  repeated string allowed = 2 [ (gogoproto.moretags) = "yaml:\"allowed\"" ];
+//}
