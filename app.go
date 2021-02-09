@@ -7,6 +7,7 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/e-money/em-ledger/x/queries"
 	"os"
 	"path/filepath"
@@ -22,7 +23,7 @@ import (
 	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
-	"github.com/e-money/em-ledger/x/slashing"
+	//"github.com/e-money/em-ledger/x/slashing"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -62,7 +63,7 @@ var (
 		staking.AppModuleBasic{},
 		inflation.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		slashing.AppModuleBasic{},
+		//slashing.AppModuleBasic{},
 		liquidityprovider.AppModuleBasic{},
 		issuer.AppModuleBasic{},
 		authority.AppModule{},
@@ -73,13 +74,13 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:        nil,
-		distr.ModuleName:             nil,
-		inflation.ModuleName:         {supply.Minter},
-		staking.BondedPoolName:       {supply.Burner, supply.Staking},
-		staking.NotBondedPoolName:    {supply.Burner, supply.Staking},
-		slashing.ModuleName:          {supply.Minter},
-		slashing.PenaltyAccount:      nil,
+		auth.FeeCollectorName:     nil,
+		distr.ModuleName:          nil,
+		inflation.ModuleName:      {supply.Minter},
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		slashing.ModuleName:       {supply.Minter},
+		//slashing.PenaltyAccount:      nil,
 		liquidityprovider.ModuleName: {supply.Minter, supply.Burner},
 		buyback.ModuleName:           {supply.Burner},
 	}
@@ -144,11 +145,11 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 	application.paramsKeeper = params.NewKeeper(cdc, keys[params.StoreKey], tkeys[params.TStoreKey])
 
 	var (
-		authSubspace     = application.paramsKeeper.Subspace(auth.DefaultParamspace)
-		bankSubspace     = application.paramsKeeper.Subspace(bank.DefaultParamspace)
-		stakingSubspace  = application.paramsKeeper.Subspace(staking.DefaultParamspace)
-		distrSubspace    = application.paramsKeeper.Subspace(distr.DefaultParamspace)
-		slashingSubspace = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
+		authSubspace    = application.paramsKeeper.Subspace(auth.DefaultParamspace)
+		bankSubspace    = application.paramsKeeper.Subspace(bank.DefaultParamspace)
+		stakingSubspace = application.paramsKeeper.Subspace(staking.DefaultParamspace)
+		distrSubspace   = application.paramsKeeper.Subspace(distr.DefaultParamspace)
+		//slashingSubspace = application.paramsKeeper.Subspace(slashing.DefaultParamspace)
 
 		accountBlacklist = application.ModuleAccountAddrs()
 	)
@@ -163,7 +164,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		application.supplyKeeper, auth.FeeCollectorName, accountBlacklist)
 
 	application.inflationKeeper = inflation.NewKeeper(application.cdc, keys[inflation.StoreKey], application.supplyKeeper, application.stakingKeeper, buyback.AccountName, auth.FeeCollectorName)
-	application.slashingKeeper = slashing.NewKeeper(application.cdc, keys[slashing.StoreKey], &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, application.database)
+	//application.slashingKeeper = slashing.NewKeeper(application.cdc, keys[slashing.StoreKey], &application.stakingKeeper, application.supplyKeeper, auth.FeeCollectorName, slashingSubspace, application.database)
 	application.stakingKeeper = *application.stakingKeeper.SetHooks(staking.NewMultiStakingHooks(application.distrKeeper.Hooks(), application.slashingKeeper.Hooks()))
 	application.lpKeeper = liquidityprovider.NewKeeper(application.accountKeeper, application.supplyKeeper)
 	application.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], application.lpKeeper, application.inflationKeeper)
@@ -184,7 +185,7 @@ func NewApp(logger log.Logger, sdkdb db.DB, serverCtx *server.Context, baseAppOp
 		staking.NewAppModule(application.stakingKeeper, application.accountKeeper, application.supplyKeeper),
 		inflation.NewAppModule(application.inflationKeeper),
 		distr.NewAppModule(application.distrKeeper, application.accountKeeper, application.supplyKeeper, application.stakingKeeper),
-		slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
+		//slashing.NewAppModule(application.slashingKeeper, application.stakingKeeper),
 		liquidityprovider.NewAppModule(application.lpKeeper),
 		issuer.NewAppModule(application.issuerKeeper),
 		authority.NewAppModule(application.authorityKeeper),
@@ -262,7 +263,7 @@ func (app *emoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	authority.BeginBlocker(ctx, app.authorityKeeper)
 	market.BeginBlocker(ctx, app.marketKeeper)
 	inflation.BeginBlocker(ctx, app.inflationKeeper)
-	slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
+	//slashing.BeginBlocker(ctx, req, app.slashingKeeper, app.currentBatch)
 	emdistr.BeginBlocker(ctx, req, app.distrKeeper, app.supplyKeeper, app.database, app.currentBatch)
 	buyback.BeginBlocker(ctx, app.buybackKeeper)
 
@@ -329,7 +330,7 @@ func setGenesisDefaults() {
 	staking.DefaultGenesisState = stakingGenesisState
 	distr.DefaultGenesisState = distrDefaultGenesisState()
 	inflation.DefaultInflationState = mintDefaultInflationState()
-	slashing.DefaultGenesisState = slashingDefaultGenesisState()
+	//slashing.DefaultGenesisState = slashingDefaultGenesisState()
 }
 
 func slashingDefaultGenesisState() func() slashing.GenesisState {
