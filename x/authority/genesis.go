@@ -7,28 +7,22 @@ package authority
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	emtypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority/types"
 )
 
-type GenesisState struct {
-	AuthorityKey     string                   `json:"key" yaml:"key"`
-	RestrictedDenoms emtypes.RestrictedDenoms `json:"restricted_denoms" yaml:"restricted_denoms"`
-	MinGasPrices     sdk.DecCoins             `json:"min_gas_prices" yaml:"min_gas_prices"`
-}
-
-func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms emtypes.RestrictedDenoms, gasPrices sdk.DecCoins) GenesisState {
-	return GenesisState{
+func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms types.RestrictedDenoms, gasPrices sdk.DecCoins) types.GenesisState {
+	return types.GenesisState{
 		AuthorityKey:     authorityKey.String(),
 		RestrictedDenoms: restrictedDenoms,
 		MinGasPrices:     gasPrices,
 	}
 }
 
-func DefaultGenesisState() GenesisState {
-	return GenesisState{}
+func DefaultGenesisState() types.GenesisState {
+	return types.GenesisState{}
 }
 
-func InitGenesis(ctx sdk.Context, keeper Keeper, state GenesisState) error {
+func InitGenesis(ctx sdk.Context, keeper Keeper, state types.GenesisState) error {
 	authKey, err := sdk.AccAddressFromBech32(state.AuthorityKey)
 	if err != nil {
 		return sdkerrors.Wrap(err, "authority key")

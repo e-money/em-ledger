@@ -6,21 +6,38 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// generic sealed codec to be used throughout this module
-var ModuleCdc *codec.Codec
+var (
+	amino = codec.NewLegacyAmino()
 
-func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgIncreaseMintable{}, "e-money/MsgIncreaseMintable", nil)
-	cdc.RegisterConcrete(MsgDecreaseMintable{}, "e-money/MsgDecreaseMintable", nil)
-	cdc.RegisterConcrete(MsgRevokeLiquidityProvider{}, "e-money/MsgRevokeLiquidityProvider", nil)
-	cdc.RegisterConcrete(MsgSetInflation{}, "e-money/MsgSetInflation", nil)
+	// ModuleCdc references the module codec. Note, the codec should
+	// ONLY be used in certain instances of tests and for JSON encoding as Amino is
+	// still used for that purpose.
+	ModuleCdc = codec.NewAminoCodec(amino)
+)
+
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgIncreaseMintable{}, "e-money/MsgIncreaseMintable", nil)
+	cdc.RegisterConcrete(&MsgDecreaseMintable{}, "e-money/MsgDecreaseMintable", nil)
+	cdc.RegisterConcrete(&MsgRevokeLiquidityProvider{}, "e-money/MsgRevokeLiquidityProvider", nil)
+	cdc.RegisterConcrete(&MsgSetInflation{}, "e-money/MsgSetInflation", nil)
+}
+
+func RegisterInterfaces(registry types.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgIncreaseMintable{},
+		&MsgDecreaseMintable{},
+		&MsgRevokeLiquidityProvider{},
+		&MsgSetInflation{},
+	)
 }
 
 func init() {
-	ModuleCdc = codec.New()
-	RegisterCodec(ModuleCdc)
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
+	RegisterLegacyAminoCodec(amino)
+	cryptocodec.RegisterCrypto(amino)
+	amino.Seal()
 }

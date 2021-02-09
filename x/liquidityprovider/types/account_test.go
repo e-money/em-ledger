@@ -5,27 +5,24 @@
 package types
 
 import (
-	"testing"
-	"time"
-
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestBasic(t *testing.T) {
 	priv := ed25519.GenPrivKey()
 	addr := sdk.AccAddress(priv.PubKey().Address())
 
-	baseAcc := auth.NewBaseAccount(addr, sdk.NewCoins(), priv.PubKey(), 1, 0)
+	baseAcc := authtypes.NewBaseAccount(addr, priv.PubKey(), 1, 0)
 
 	mintable := sdk.NewCoin("eeur", sdk.NewIntWithDecimal(1000, 2))
-	lpAcc := NewLiquidityProviderAccount(baseAcc, sdk.NewCoins(mintable))
+	lpAcc, err := NewLiquidityProviderAccount(baseAcc, sdk.NewCoins(mintable))
 
-	// The mintable balance is not considered spendable.
-	assert.Equal(t, sdk.NewCoins(), lpAcc.SpendableCoins(time.Now()))
+	require.NoError(t, err)
 
 	lpAcc.IncreaseMintableAmount(sdk.NewCoins(sdk.NewCoin("ejpy", sdk.NewInt(400))))
 	assert.Equal(t, sdk.NewInt(400), lpAcc.Mintable.AmountOf("ejpy"))
@@ -35,10 +32,11 @@ func TestDecreaseMintable(t *testing.T) {
 	priv := ed25519.GenPrivKey()
 	addr := sdk.AccAddress(priv.PubKey().Address())
 
-	baseAcc := auth.NewBaseAccount(addr, sdk.NewCoins(), priv.PubKey(), 1, 0)
+	baseAcc := authtypes.NewBaseAccount(addr, priv.PubKey(), 1, 0)
 
 	mintable := MustParseCoins("100000eeur,700ejpy")
-	lpAcc := NewLiquidityProviderAccount(baseAcc, mintable)
+	lpAcc, err := NewLiquidityProviderAccount(baseAcc, mintable)
+	require.NoError(t, err)
 
 	reduction := MustParseCoins("200000eeur,300ejpy")
 	assert.Panics(t, func() {
@@ -50,7 +48,7 @@ func TestDecreaseMintable(t *testing.T) {
 }
 
 func MustParseCoins(coins string) sdk.Coins {
-	result, err := sdk.ParseCoins(coins)
+	result, err := sdk.ParseCoinsNormalized(coins)
 	if err != nil {
 		panic(err)
 	}

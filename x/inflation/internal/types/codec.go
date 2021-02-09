@@ -6,13 +6,19 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 )
 
-// generic sealed codec to be used throughout this module
-var ModuleCdc *codec.Codec
+var (
+	amino = codec.NewLegacyAmino()
+
+	// ModuleCdc references the module codec. Note, the codec should
+	// ONLY be used in certain instances of tests and for JSON encoding as Amino is
+	// still used for that purpose.
+	ModuleCdc = codec.NewAminoCodec(amino)
+)
 
 func init() {
-	ModuleCdc = codec.New()
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
+	cryptocodec.RegisterCrypto(amino)
+	amino.Seal()
 }

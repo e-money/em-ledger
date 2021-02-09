@@ -22,8 +22,13 @@ message InflationAsset {
 }
 
 message InflationState {
-  google.protobuf.Timestamp last_applied_time = 1
-      [ (gogoproto.moretags) = "yaml:\"last_applied\"" ];
+  option (gogoproto.goproto_stringer) = false;
+
+  google.protobuf.Timestamp last_applied_time = 1 [
+    (gogoproto.moretags) = "yaml:\"last_applied\"",
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false
+  ];
   string last_applied_height = 2 [
     (gogoproto.moretags) = "yaml:\"last_applied_height\"",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
@@ -31,6 +36,7 @@ message InflationState {
   ];
   repeated InflationAsset inflation_assets = 3 [
     (gogoproto.jsontag) = "assets",
-    (gogoproto.moretags) = "yaml:\"assets\""
+    (gogoproto.moretags) = "yaml:\"assets\"",
+    (gogoproto.nullable) = false
   ];
 }

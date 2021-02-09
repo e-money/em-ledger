@@ -7,6 +7,7 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"math"
 	"strings"
 	"testing"
@@ -567,7 +568,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	require.Len(t, allOrders3, 3)
 
 	found := false
-	for _, e := range ctx.EventManager().Events() {
+	for _, e := range ctx.EventManager().ABCIEvents() {
 		found = found || (e.Type == types.EventTypeMarket && string(e.Attributes[0].GetValue()) == "expire")
 	}
 
@@ -794,7 +795,7 @@ func TestRestrictedDenominations1(t *testing.T) {
 
 	// Restrict trading of gbp
 	k.authorityk = dummyAuthority{
-		RestrictedDenoms: []emtypes.RestrictedDenom{
+		RestrictedDenoms: []types2.RestrictedDenom{
 			{"gbp", []sdk.AccAddress{acc1.GetAddress()}},
 		},
 	}
@@ -849,7 +850,7 @@ func TestRestrictedDenominations2(t *testing.T) {
 
 	// Restrict trading of gbp and usd
 	k.authorityk = dummyAuthority{
-		RestrictedDenoms: []emtypes.RestrictedDenom{
+		RestrictedDenoms: []types2.RestrictedDenom{
 			{"gbp", []sdk.AccAddress{}},
 			{"usd", []sdk.AccAddress{acc1.GetAddress()}},
 		},
@@ -1129,10 +1130,10 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, auth.AccountKeepe
 }
 
 type dummyAuthority struct {
-	RestrictedDenoms emtypes.RestrictedDenoms
+	RestrictedDenoms types2.RestrictedDenoms
 }
 
-func (da dummyAuthority) GetRestrictedDenoms(sdk.Context) emtypes.RestrictedDenoms {
+func (da dummyAuthority) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
 	return da.RestrictedDenoms
 }
 

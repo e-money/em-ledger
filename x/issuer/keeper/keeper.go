@@ -62,7 +62,7 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
@@ -93,7 +93,7 @@ func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	lpAcc.DecreaseMintableAmount(mintableDecrease)
 	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 
 }
 
@@ -127,7 +127,7 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 		k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 	}
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) (*sdk.Result, error) {
@@ -150,13 +150,13 @@ func (k Keeper) GetIssuers(ctx sdk.Context) (issuers []types.Issuer) {
 		return
 	}
 
-	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &issuers)
+	types.ModuleCdc.LegacyAmino.MustUnmarshalBinaryLengthPrefixed(bz, &issuers)
 	return
 }
 
 func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store := ctx.KVStore(k.storeKey)
-	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(issuers)
+	bz := types.ModuleCdc.LegacyAmino.MustMarshalBinaryLengthPrefixed(issuers)
 	store.Set([]byte(keyIssuerList), bz)
 }
 
@@ -184,7 +184,7 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result,
 
 	k.setIssuers(ctx, issuers)
 	k.ik.AddDenoms(ctx, newIssuer.Denoms) // TODO Check error?
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) (*sdk.Result, error) {
@@ -206,7 +206,7 @@ func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) (*sdk.Resul
 	}
 
 	k.setIssuers(ctx, updatedIssuers)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func anyContained(s []string, searchterms ...string) bool {

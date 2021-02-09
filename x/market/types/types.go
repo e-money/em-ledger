@@ -5,63 +5,11 @@
 package types
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
-	"time"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-)
-
-const (
-	_ = iota
-	Order_Limit
-	Order_Market
-)
-
-const (
-	_ TimeInForce = iota
-	TimeInForce_GoodTilCancel
-	TimeInForce_ImmediateOrCancel
-	TimeInForce_FillOrKill
-)
-
-type (
-	TimeInForce int
-
-	Instrument struct {
-		Source, Destination string
-	}
-
-	Order struct {
-		ID uint64 `json:"order_id" yaml:"order_id"`
-
-		TimeInForce TimeInForce `json:"time_in_force" yaml:"time_in_force"`
-
-		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
-		ClientOrderID string         `json:"client_order_id" yaml:"client_order_id"`
-
-		Source            sdk.Coin `json:"source" yaml:"source"`
-		SourceRemaining   sdk.Int  `json:"source_remaining" yaml:"source_remaining"`
-		SourceFilled      sdk.Int  `json:"source_filled" yaml:"source_filled"`
-		Destination       sdk.Coin `json:"destination" yaml:"destination"`
-		DestinationFilled sdk.Int  `json:"destination_filled" yaml:"destination_filled"`
-	}
-
-	ExecutionPlan struct {
-		Price sdk.Dec
-
-		FirstOrder,
-		SecondOrder *Order
-	}
-
-	MarketData struct {
-		Source, Destination string
-		LastPrice           *sdk.Dec
-		Timestamp           *time.Time
-	}
 )
 
 func (o Order) MarshalJSON() ([]byte, error) {
@@ -87,7 +35,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 `,
 		o.ID,
 		o.TimeInForce,
-		o.Owner.String(),
+		o.Owner,
 		o.ClientOrderID,
 		o.Price().String(),
 		o.Source.Denom,
@@ -100,51 +48,6 @@ func (o Order) MarshalJSON() ([]byte, error) {
 	)
 
 	return []byte(s), nil
-}
-
-// Manual handling of de-/serialization in order to include private fields
-func (o Order) MarshalAmino() ([]byte, error) {
-	w := new(bytes.Buffer)
-
-	for _, v := range o.allFields() {
-		_, err := ModuleCdc.MarshalBinaryLengthPrefixedWriter(w, v)
-		if err != nil {
-			return []byte{}, err
-		}
-	}
-
-	return w.Bytes(), nil
-}
-
-func (o *Order) UnmarshalAmino(bz []byte) error {
-	r := bytes.NewBuffer(bz)
-
-	for _, v := range o.allFields() {
-		_, err := ModuleCdc.UnmarshalBinaryLengthPrefixedReader(r, v, 1024)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Ensure field order of de-/serialization
-func (o *Order) allFields() []interface{} {
-	return []interface{}{
-		&o.ID,
-
-		&o.TimeInForce,
-
-		&o.Owner,
-		&o.ClientOrderID,
-
-		&o.Source,
-		&o.SourceRemaining,
-		&o.SourceFilled,
-		&o.Destination,
-		&o.DestinationFilled,
-	}
 }
 
 // Signals whether the order can be meaningfully executed, ie will pay for more than one unit of the destination token.
@@ -179,7 +82,7 @@ func (o Order) Price() sdk.Dec {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner.String())
+	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner)
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
@@ -229,7 +132,7 @@ func NewOrder(timeInForce TimeInForce, src, dst sdk.Coin, seller sdk.AccAddress,
 	o := Order{
 		TimeInForce: timeInForce,
 
-		Owner:         seller,
+		Owner:         seller.String(),
 		ClientOrderID: clientOrderId,
 
 		Source:            src,

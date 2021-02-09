@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	types2 "github.com/e-money/em-ledger/x/authority/types"
 
 	"net"
 	"path/filepath"
@@ -18,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/inflation"
 
@@ -210,7 +210,7 @@ func createInflationGenesis() json.RawMessage {
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
-	gen := authority.NewGenesisState(akey, emtypes.RestrictedDenoms{}, sdk.NewDecCoins())
+	gen := authority.NewGenesisState(akey, types2.RestrictedDenoms{}, sdk.NewDecCoins())
 
 	bz, err := json.Marshal(gen)
 	if err != nil {

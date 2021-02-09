@@ -21,7 +21,7 @@ func TestSerialization(t *testing.T) {
 	order1.DestinationFilled = sdk.NewInt(50)
 	order1.TimeInForce = TimeInForce_FillOrKill
 
-	bz, err := ModuleCdc.MarshalBinaryBare(order1)
+	bz, err := ModuleCdc.MarshalBinaryBare(&order1)
 	require.NoError(t, err)
 
 	require.True(t, len(bz) > 0)
@@ -127,7 +127,7 @@ func TestTimeInForce(t *testing.T) {
 }
 
 func coin(s string) sdk.Coin {
-	coin, err := sdk.ParseCoin(s)
+	coin, err := sdk.ParseCoinNormalized(s)
 	if err != nil {
 		panic(err)
 	}

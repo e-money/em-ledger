@@ -111,7 +111,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `authority_key` | [string](#string) |  |  |
-| `restricted_denoms` | [string](#string) | repeated |  |
+| `restricted_denoms` | [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom) | repeated |  |
 | `min_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
 
 
@@ -482,7 +482,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
+| `account` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
 | `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 

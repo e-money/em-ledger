@@ -6,28 +6,24 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
-
-	"github.com/e-money/em-ledger/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	types2 "github.com/e-money/em-ledger/x/authority/types"
 )
 
 type (
 	AccountKeeper interface {
-		GetAccount(sdk.Context, sdk.AccAddress) auth.Account
-		AddAccountListener(func(sdk.Context, auth.Account))
+		GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
+		AddAccountListener(func(sdk.Context, authtypes.AccountI))
 	}
 
 	BankKeeper interface {
-		InputOutputCoins(ctx sdk.Context, inputs []bank.Input, outputs []bank.Output) error
-	}
-
-	SupplyKeeper interface {
-		GetSupply(ctx sdk.Context) (supply supply.SupplyI)
+		InputOutputCoins(ctx sdk.Context, inputs []banktypes.Input, outputs []banktypes.Output) error
+		SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
+		GetSupply(ctx sdk.Context) (supply banktypes.Supply)
 	}
 
 	RestrictedKeeper interface {
-		GetRestrictedDenoms(sdk.Context) types.RestrictedDenoms
+		GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms
 	}
 )

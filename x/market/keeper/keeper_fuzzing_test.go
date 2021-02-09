@@ -94,7 +94,7 @@ func TestFuzzing1(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	//dumpEvents(ctx.EventManager().Events())
+	//dumpEvents(ctx.EventManager().ABCIEvents())
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
 }
 

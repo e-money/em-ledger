@@ -37,6 +37,7 @@ message MsgAddMarketOrder {
       [ (gogoproto.moretags) = "yaml:\"destination\"" ];
 
   string maximum_slippage = 6 [
+    (gogoproto.customname) = "MaxSlippage",
     (gogoproto.moretags) = "yaml:\"maximum_slippage\"",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false

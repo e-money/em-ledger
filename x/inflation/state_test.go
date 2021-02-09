@@ -5,33 +5,39 @@
 package inflation
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
+	"github.com/cosmos/cosmos-sdk/store"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/inflation/internal/keeper"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 	"github.com/stretchr/testify/require"
-
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/supply"
 )
 
 func TestModule1(t *testing.T) {
-	ctx, keeper, supplyKeeper := createTestComponents()
+	ctx, keeper, bankKeeper, _ := createTestComponents()
 
-	initialEurAmount, _ := sdk.ParseCoin("1000000000eur")
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(sdk.NewCoins(initialEurAmount)))
+	initialEurAmount, _ := sdk.ParseCoinNormalized("1000000000eur")
+
+	bankKeeper.SetSupply(ctx, banktypes.NewSupply(sdk.Coins{initialEurAmount}))
 
 	currentTime := time.Now()
 	ctx = ctx.WithBlockTime(currentTime).WithBlockHeight(55)
@@ -46,7 +52,7 @@ func TestModule1(t *testing.T) {
 		BeginBlocker(ctx, keeper)
 
 		// Inflation of 1% per year on EUR1.000.000.000, each minute should add approximately 19 euro in interest.
-		total := supplyKeeper.GetSupply(ctx).GetTotal()
+		total := bankKeeper.GetSupply(ctx).GetTotal()
 		minted := total.AmountOf("eur").Sub(initialEurAmount.Amount)
 		require.True(t, minted.LT(sdk.NewInt(20).MulRaw(i)))
 	}
@@ -54,9 +60,9 @@ func TestModule1(t *testing.T) {
 
 // Verify that the newly minted tokens are sent to the correct modules
 func TestModuleDestinations(t *testing.T) {
-	ctx, keeper, supplyKeeper := createTestComponents()
+	ctx, keeper, bankKeeper, accountKeeper := createTestComponents()
 
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(coins("400000000eur,400000000chf,100000000ungm")))
+	bankKeeper.SetSupply(ctx, banktypes.NewSupply(coins("400000000eur,400000000chf,100000000ungm")))
 
 	currentTime := time.Now()
 	ctx = ctx.WithBlockTime(currentTime).WithBlockHeight(55)
@@ -75,25 +81,28 @@ func TestModuleDestinations(t *testing.T) {
 	}
 
 	// Stablecoin tokens should be in the buyback module's account
-	buybackacc := supplyKeeper.GetModuleAccount(ctx, "buyback")
-	require.Len(t, buybackacc.GetCoins(), 2)
-	require.False(t, buybackacc.GetCoins().AmountOf("chf").IsZero())
-	require.False(t, buybackacc.GetCoins().AmountOf("eur").IsZero())
-	require.True(t, buybackacc.GetCoins().AmountOf("ungm").IsZero())
+	buybackacc := accountKeeper.GetModuleAccount(ctx, "buyback")
+	balances := bankKeeper.GetAllBalances(ctx, buybackacc.GetAddress())
+	require.Len(t, balances, 2)
+	require.False(t, balances.AmountOf("chf").IsZero())
+	require.False(t, balances.AmountOf("eur").IsZero())
+	require.True(t, balances.AmountOf("ungm").IsZero())
 
 	// Staking token should be in the distribution account
-	distracc := supplyKeeper.GetModuleAccount(ctx, auth.FeeCollectorName)
-	require.Len(t, distracc.GetCoins(), 1)
-	require.True(t, distracc.GetCoins().AmountOf("chf").IsZero())
-	require.True(t, distracc.GetCoins().AmountOf("eur").IsZero())
-	require.False(t, distracc.GetCoins().AmountOf("ungm").IsZero())
+	distracc := accountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
+	balances = bankKeeper.GetAllBalances(ctx, distracc.GetAddress())
+
+	require.Len(t, balances, 1)
+	require.True(t, balances.AmountOf("chf").IsZero())
+	require.True(t, balances.AmountOf("eur").IsZero())
+	require.False(t, balances.AmountOf("ungm").IsZero())
 }
 
 func TestStartTimeInFuture(t *testing.T) {
-	ctx, keeper, supplyKeeper := createTestComponents()
+	ctx, keeper, bankKeeper, _ := createTestComponents()
 
-	initialEurAmount, _ := sdk.ParseCoin("1000000000eur")
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(sdk.NewCoins(initialEurAmount)))
+	initialEurAmount, _ := sdk.ParseCoinNormalized("1000000000eur")
+	bankKeeper.SetSupply(ctx, banktypes.NewSupply(sdk.NewCoins(initialEurAmount)))
 
 	ctx = ctx.WithBlockTime(time.Now()).WithBlockHeight(55)
 
@@ -111,31 +120,32 @@ func TestStartTimeInFuture(t *testing.T) {
 
 	// Inflation should not have started yet.
 	BeginBlocker(ctx, keeper)
-	total := supplyKeeper.GetSupply(ctx).GetTotal()
+	total := bankKeeper.GetSupply(ctx).GetTotal()
 	require.Equal(t, initialEurAmount.Amount.String(), total.AmountOf("eur").String())
 
 	// Not yet
 	ctx = ctx.WithBlockTime(time.Now().Add(time.Hour)).WithBlockHeight(60)
 	BeginBlocker(ctx, keeper)
-	total = supplyKeeper.GetSupply(ctx).GetTotal()
+	total = bankKeeper.GetSupply(ctx).GetTotal()
 	require.Equal(t, initialEurAmount.Amount.String(), total.AmountOf("eur").String())
 
 	// Now it should have started increasing the total supply
 	ctx = ctx.WithBlockTime(time.Now().Add(3 * time.Hour)).WithBlockHeight(65)
 	BeginBlocker(ctx, keeper)
-	total = supplyKeeper.GetSupply(ctx).GetTotal()
+	total = bankKeeper.GetSupply(ctx).GetTotal()
 	require.True(t, initialEurAmount.Amount.LT(total.AmountOf("eur")))
 }
 
-func createTestComponents() (sdk.Context, keeper.Keeper, supply.Keeper) {
-	cdc := createCDC()
-
+func createTestComponents() (sdk.Context, keeper.Keeper, bankkeeper.Keeper, authkeeper.AccountKeeper) {
+	encConfig := MakeTestEncodingConfig()
 	var (
 		keyInflation = sdk.NewKVStoreKey(ModuleName)
+		bankKey      = sdk.NewKVStoreKey(banktypes.ModuleName)
 		authCapKey   = sdk.NewKVStoreKey("authCapKey")
 		keyParams    = sdk.NewKVStoreKey("params")
 		stakingKey   = sdk.NewKVStoreKey("staking")
 		supplyKey    = sdk.NewKVStoreKey("supply")
+		authKey      = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
 
 		blacklistedAddrs = make(map[string]bool)
@@ -147,32 +157,38 @@ func createTestComponents() (sdk.Context, keeper.Keeper, supply.Keeper) {
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(supplyKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	if err != nil {
 		panic(err)
 	}
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
-
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
-	accountKeeper := auth.NewAccountKeeper(cdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-
-	bankKeeper := bank.NewBaseKeeper(accountKeeper, pk.Subspace(bank.DefaultParamspace), blacklistedAddrs)
-
-	maccperms := map[string][]string{
-		ModuleName:                {supply.Minter},
-		auth.FeeCollectorName:     nil,
-		"buyback":                 {supply.Burner},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+	maccPerms := map[string][]string{
+		ModuleName:                     {authtypes.Minter},
+		authtypes.FeeCollectorName:     nil,
+		"buyback":                      {authtypes.Burner},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 	}
 
-	supplyKeeper := supply.NewKeeper(cdc, supplyKey, accountKeeper, bankKeeper, maccperms)
+	pk := paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
+
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+
+	accountKeeper := authkeeper.NewAccountKeeper(
+		encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+	)
+
+	bankKeeper := bankkeeper.NewBaseKeeper(
+		encConfig.Marshaler, bankKey, accountKeeper, pk.Subspace(banktypes.ModuleName), blacklistedAddrs,
+	)
 
 	stakingKeeper := mockStakingKeeper{}
 
-	keeper := NewKeeper(cdc, keyInflation, supplyKeeper, stakingKeeper, "buyback", auth.FeeCollectorName)
+	inflationKeeper := NewKeeper(
+		encConfig.Amino, keyInflation, bankKeeper, accountKeeper, stakingKeeper, "buyback", authtypes.FeeCollectorName)
 
 	lastAppliedTime := time.Now().Add(-2400 * time.Hour)
 
@@ -181,23 +197,36 @@ func createTestComponents() (sdk.Context, keeper.Keeper, supply.Keeper) {
 		LastAppliedHeight: sdk.ZeroInt(),
 		InflationAssets:   nil,
 	}
-	keeper.SetState(ctx, state)
-
-	return ctx, keeper, supplyKeeper
+	inflationKeeper.SetState(ctx, state)
+	return ctx, inflationKeeper, bankKeeper, accountKeeper
 }
 
-func createCDC() *codec.Codec {
-	cdc := codec.New()
-	codec.RegisterCrypto(cdc)
-	supply.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	bank.RegisterCodec(cdc)
-	return cdc
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
 
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
+
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+	)
+
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }
 
 func coins(s string) sdk.Coins {
-	coins, err := sdk.ParseCoins(s)
+	coins, err := sdk.ParseCoinsNormalized(s)
 	if err != nil {
 		panic(err)
 	}
@@ -206,6 +235,6 @@ func coins(s string) sdk.Coins {
 
 type mockStakingKeeper struct{}
 
-func (m mockStakingKeeper) GetParams(_ sdk.Context) staking.Params {
-	return staking.NewParams(5*time.Minute, 40, 50, 0, "ungm")
+func (m mockStakingKeeper) GetParams(_ sdk.Context) stakingtypes.Params {
+	return stakingtypes.NewParams(5*time.Minute, 40, 50, 0, "ungm")
 }

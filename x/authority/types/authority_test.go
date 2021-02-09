@@ -20,9 +20,9 @@ func TestSimple(t *testing.T) {
 	)
 
 	state := []RestrictedDenom{
-		{"ngm", []sdk.AccAddress{addr1}},
-		{"evilt", []sdk.AccAddress{}},
-		{"othergovtoken", []sdk.AccAddress{addr2}},
+		{"ngm", []string{addr1.String()}},
+		{"evilt", []string{}},
+		{"othergovtoken", []string{addr2.String()}},
 	}
 
 	rs := RestrictedDenoms(state)

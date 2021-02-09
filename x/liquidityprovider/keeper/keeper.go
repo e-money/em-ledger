@@ -6,26 +6,22 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
-
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/exported"
-	"github.com/cosmos/cosmos-sdk/x/supply"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
 type Keeper struct {
-	authKeeper   types.AccountKeeper
-	supplyKeeper supply.Keeper
+	authKeeper types.AccountKeeper
+	bankKeeper types.BankKeeper
 }
 
-func NewKeeper(ak types.AccountKeeper, sk supply.Keeper) Keeper {
+func NewKeeper(ak types.AccountKeeper, bk types.BankKeeper) Keeper {
 	return Keeper{
-		authKeeper:   ak,
-		supplyKeeper: sk,
+		authKeeper: ak,
+		bankKeeper: bk,
 	}
 }
 
@@ -37,11 +33,14 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress,
 		logger.Info("Account not found", "account", address)
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownAddress, address.String())
 	}
-	lpAcc := types.NewLiquidityProviderAccount(account, mintable)
+	lpAcc, err := types.NewLiquidityProviderAccount(account, mintable)
+	if err != nil {
+		return nil, err
+	}
 	k.authKeeper.SetAccount(ctx, lpAcc)
 
 	logger.Info("Created liquidity provider account.", "account", lpAcc.GetAddress())
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
@@ -49,27 +48,26 @@ func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.Acc
 	if account == nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s is not a liquidity provider or does not exist", liquidityProvider.String())
 	}
-
-	_, anynegative := account.Account.GetCoins().SafeSub(amount)
+	balances := k.bankKeeper.GetAllBalances(ctx, liquidityProvider)
+	_, anynegative := balances.SafeSub(amount)
 	if anynegative {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "Insufficient balance for burn operation: %s < %s", account.Account.GetCoins(), amount)
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "Insufficient balance for burn operation: %s < %s", balances, amount)
 	}
 
-	err := k.supplyKeeper.SendCoinsFromAccountToModule(ctx, liquidityProvider, types.ModuleName, amount)
+	err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, liquidityProvider, types.ModuleName, amount)
 	if err != nil {
 		return nil, err
 	}
 
-	err = k.supplyKeeper.BurnCoins(ctx, types.ModuleName, amount)
+	err = k.bankKeeper.BurnCoins(ctx, types.ModuleName, amount)
 	if err != nil {
 		return nil, err
 	}
 
-	account = k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	account.Mintable = account.Mintable.Add(amount...)
 	k.SetLiquidityProviderAccount(ctx, account)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
@@ -86,12 +84,12 @@ func (k Keeper) MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, am
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "insufficient liquidity provider mintable amount: %s < %s", account.Mintable, amount)
 	}
 
-	err := k.supplyKeeper.MintCoins(ctx, types.ModuleName, amount)
+	err := k.bankKeeper.MintCoins(ctx, types.ModuleName, amount)
 	if err != nil {
 		return nil, err
 	}
 
-	err = k.supplyKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, liquidityProvider, amount)
+	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, liquidityProvider, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -100,16 +98,16 @@ func (k Keeper) MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, am
 	account.Mintable = updatedMintableAmount
 	k.SetLiquidityProviderAccount(ctx, account)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) SetLiquidityProviderAccount(ctx sdk.Context, account *types.LiquidityProviderAccount) {
 	k.authKeeper.SetAccount(ctx, account)
 }
 
-func (k Keeper) RevokeLiquidityProviderAccount(ctx sdk.Context, account auth.Account) bool {
+func (k Keeper) RevokeLiquidityProviderAccount(ctx sdk.Context, account authtypes.AccountI) bool {
 	if lpAcc, isLpAcc := account.(*types.LiquidityProviderAccount); isLpAcc {
-		account = lpAcc.Account
+		account = lpAcc.GetNestedAccount()
 		k.authKeeper.SetAccount(ctx, account)
 		return true
 	}
@@ -133,7 +131,7 @@ func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, liquidityProvider s
 func (k Keeper) GetAllLiquidityProviderAccounts(ctx sdk.Context) []types.LiquidityProviderAccount {
 	res := make([]types.LiquidityProviderAccount, 0)
 
-	k.authKeeper.IterateAccounts(ctx, func(acc exported.Account) (stop bool) {
+	k.authKeeper.IterateAccounts(ctx, func(acc authtypes.AccountI) (stop bool) {
 		if lpAcc, ok := acc.(*types.LiquidityProviderAccount); ok {
 			res = append(res, *lpAcc)
 		}

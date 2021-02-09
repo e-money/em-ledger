@@ -7,9 +7,8 @@ package bank
 import (
 	"fmt"
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"testing"
-
-	"github.com/e-money/em-ledger/types"
 
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +35,7 @@ func TestProxySendCoins(t *testing.T) {
 	)
 
 	bk.rk = restrictedKeeper{
-		RestrictedDenoms: []types.RestrictedDenom{
+		RestrictedDenoms: []types2.RestrictedDenom{
 			{"gbp", []sdk.AccAddress{}},
 			{"usd", []sdk.AccAddress{acc1.GetAddress()}},
 		},
@@ -78,7 +77,7 @@ func TestInputOutputCoins(t *testing.T) {
 	// For simplicity's sake, inputoutput will reject any transaction that includes restricted denominations.
 
 	bk.rk = restrictedKeeper{
-		RestrictedDenoms: []types.RestrictedDenom{
+		RestrictedDenoms: []types2.RestrictedDenom{
 			{"gbp", []sdk.AccAddress{}},
 			{"usd", []sdk.AccAddress{acc1.GetAddress()}},
 		},
@@ -167,10 +166,10 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, ProxyK
 }
 
 type restrictedKeeper struct {
-	RestrictedDenoms types.RestrictedDenoms
+	RestrictedDenoms types2.RestrictedDenoms
 }
 
-func (rk restrictedKeeper) GetRestrictedDenoms(sdk.Context) types.RestrictedDenoms {
+func (rk restrictedKeeper) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
 	return rk.RestrictedDenoms
 }
 

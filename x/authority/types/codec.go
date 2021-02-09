@@ -4,19 +4,38 @@
 
 package types
 
-import "github.com/cosmos/cosmos-sdk/codec"
+import (
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
-var ModuleCdc *codec.Codec
+var (
+	amino = codec.NewLegacyAmino()
 
-func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgCreateIssuer{}, "e-money/MsgCreateIssuer", nil)
-	cdc.RegisterConcrete(MsgDestroyIssuer{}, "e-money/MsgDestroyIssuer", nil)
-	cdc.RegisterConcrete(MsgSetGasPrices{}, "e-money/MsgSetGasPrices", nil)
+	// ModuleCdc references the module codec. Note, the codec should
+	// ONLY be used in certain instances of tests and for JSON encoding as Amino is
+	// still used for that purpose.
+	ModuleCdc = codec.NewAminoCodec(amino)
+)
+
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgCreateIssuer{}, "e-money/MsgCreateIssuer", nil)
+	cdc.RegisterConcrete(&MsgDestroyIssuer{}, "e-money/MsgDestroyIssuer", nil)
+	cdc.RegisterConcrete(&MsgSetGasPrices{}, "e-money/MsgSetGasPrices", nil)
+}
+
+func RegisterInterfaces(registry types.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgCreateIssuer{},
+		&MsgDestroyIssuer{},
+		&MsgSetGasPrices{},
+	)
 }
 
 func init() {
-	ModuleCdc = codec.New()
-	RegisterCodec(ModuleCdc)
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
+	RegisterLegacyAminoCodec(amino)
+	cryptocodec.RegisterCrypto(amino)
+	amino.Seal()
 }

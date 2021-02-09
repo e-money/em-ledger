@@ -4,8 +4,7 @@ package em.liquidityprovider.v1beta1;
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "cosmos/auth/v1beta1/auth.proto";
-import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/liquidityprovider/types";
 
@@ -16,10 +15,8 @@ message LiquidityProviderAccount {
 
   option (cosmos_proto.implements_interface) = "AccountI";
 
-  cosmos.auth.v1beta1.BaseAccount base_account = 1 [
-    (gogoproto.embed) = true,
-    (gogoproto.moretags) = "yaml:\"base_account\""
-  ];
+  google.protobuf.Any account = 1
+      [ (cosmos_proto.accepts_interface) = "AccountI" ];
 
   repeated cosmos.base.v1beta1.Coin mintable = 3 [
     (gogoproto.moretags) = "yaml:\"mintable\"",

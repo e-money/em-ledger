@@ -2,6 +2,7 @@ package buyback
 
 import (
 	"fmt"
+	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"strings"
 	"testing"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	emauth "github.com/e-money/em-ledger/hooks/auth"
-	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/e-money/em-ledger/x/market"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -48,7 +48,7 @@ func TestBuyback1(t *testing.T) {
 	require.True(t, account.GetCoins().AmountOf(stakingDenom).IsZero())
 
 	require.Condition(t, func() bool {
-		for _, evt := range ctx.EventManager().Events() {
+		for _, evt := range ctx.EventManager().ABCIEvents() {
 			if evt.Type == EventTypeBuyback {
 				return true
 			}
@@ -290,6 +290,6 @@ func (mockStakingKeeper) BondDenom(sdk.Context) string {
 	return stakingDenom
 }
 
-func (mockAuthority) GetRestrictedDenoms(sdk.Context) apptypes.RestrictedDenoms {
+func (mockAuthority) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
 	return nil
 }

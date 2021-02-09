@@ -10,26 +10,9 @@ import (
 )
 
 var (
-	_ sdk.Msg = MsgCreateIssuer{}
-	_ sdk.Msg = MsgDestroyIssuer{}
-	_ sdk.Msg = MsgSetGasPrices{}
-)
-
-type (
-	MsgCreateIssuer struct {
-		Authority     sdk.AccAddress `json:"authority" yaml:"authority"`
-		Issuer        sdk.AccAddress `json:"issuer" yaml:"issuer"`
-		Denominations []string       `json:"denoms" yaml:"denoms"`
-	}
-	MsgDestroyIssuer struct {
-		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
-		Issuer    sdk.AccAddress `json:"issuer" yaml:"issuer"`
-	}
-
-	MsgSetGasPrices struct {
-		Authority sdk.AccAddress `json:"authority" yaml:"authority"`
-		GasPrices sdk.DecCoins   `json:"gas_prices" yaml:"gas_prices"`
-	}
+	_ sdk.Msg = &MsgCreateIssuer{}
+	_ sdk.Msg = &MsgDestroyIssuer{}
+	_ sdk.Msg = &MsgSetGasPrices{}
 )
 
 func (msg MsgDestroyIssuer) Type() string { return "destroy_issuer" }
@@ -39,28 +22,22 @@ func (msg MsgCreateIssuer) Type() string { return "create_issuer" }
 func (msg MsgSetGasPrices) Type() string { return "set_gas_prices" }
 
 func (msg MsgDestroyIssuer) ValidateBasic() error {
-	if msg.Issuer.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid issuer address (%s)", err)
 	}
-
-	if msg.Authority.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
-		//return sdk.ErrInvalidAddress("missing authority address")
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
 	}
 
 	return nil
 }
 
 func (msg MsgCreateIssuer) ValidateBasic() error {
-	if msg.Issuer.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid issuer address (%s)", err)
 	}
-
-	if msg.Authority.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
-		//return sdk.ErrInvalidAddress("missing authority address")
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
 	}
 
 	if len(msg.Denominations) == 0 {
@@ -72,9 +49,8 @@ func (msg MsgCreateIssuer) ValidateBasic() error {
 }
 
 func (msg MsgSetGasPrices) ValidateBasic() error {
-	if msg.Authority.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Missing authority address")
-		//return sdk.ErrInvalidAddress("missing authority address")
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
 	}
 
 	if !msg.GasPrices.IsValid() {
@@ -86,27 +62,39 @@ func (msg MsgSetGasPrices) ValidateBasic() error {
 }
 
 func (msg MsgDestroyIssuer) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Authority}
+	from, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgCreateIssuer) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Authority}
+	from, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgSetGasPrices) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Authority}
+	from, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgDestroyIssuer) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgCreateIssuer) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgSetGasPrices) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgDestroyIssuer) Route() string { return ModuleName }

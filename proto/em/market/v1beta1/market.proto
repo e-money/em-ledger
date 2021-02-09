@@ -8,6 +8,8 @@ import "cosmos/base/v1beta1/coin.proto";
 option go_package = "github.com/e-money/em-ledger/x/market/types";
 
 enum TimeInForce {
+  option (gogoproto.goproto_enum_stringer) = false;
+
   TIME_IN_FORCE_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
   TIME_IN_FORCE_GOOD_TIL_CANCEL = 1
@@ -24,6 +26,8 @@ message Instrument {
 }
 
 message Order {
+  option (gogoproto.goproto_stringer) = false;
+
   uint64 order_id = 1 [
     (gogoproto.customname) = "ID",
     (gogoproto.moretags) = "yaml:\"order_id\""
@@ -34,8 +38,10 @@ message Order {
 
   string owner = 3 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
 
-  string client_order_id = 4
-      [ (gogoproto.moretags) = "yaml:\"client_order_id\"" ];
+  string client_order_id = 4 [
+    (gogoproto.customname) = "ClientOrderID",
+    (gogoproto.moretags) = "yaml:\"client_order_id\""
+  ];
 
   cosmos.base.v1beta1.Coin source = 5 [
     (gogoproto.moretags) = "yaml:\"source\"",
@@ -67,8 +73,10 @@ message Order {
 }
 
 message ExecutionPlan {
+  option (gogoproto.goproto_stringer) = false;
+
   string price = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];
   Order first_order = 2;
@@ -79,8 +87,7 @@ message MarketData {
   string source = 1;
   string destination = 2;
   string last_price = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
-    (gogoproto.nullable) = false
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"
   ];
-  google.protobuf.Timestamp timestamp = 4;
+  google.protobuf.Timestamp timestamp = 4 [ (gogoproto.stdtime) = true ];
 }
