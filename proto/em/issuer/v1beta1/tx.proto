@@ -10,7 +10,8 @@ message MsgIncreaseMintable {
   string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
   string liquidity_provider = 2
       [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
-  repeated cosmos.base.v1beta1.DecCoin mintable_increase = 3 [
+  repeated cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.customname) = "MintableIncrease",
     (gogoproto.moretags) = "yaml:\"amount\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false
@@ -21,12 +22,14 @@ message MsgDecreaseMintable {
   string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
   string liquidity_provider = 2
       [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
-  repeated cosmos.base.v1beta1.DecCoin mintable_decrease = 3 [
+  repeated cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.customname) = "MintableDecrease",
     (gogoproto.moretags) = "yaml:\"amount\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false
   ];
 }
+
 message MsgRevokeLiquidityProvider {
   string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
   string liquidity_provider = 2

@@ -29,6 +29,8 @@ message InflationState {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
-  repeated InflationAsset inflation_assets = 3
-      [ (gogoproto.moretags) = "yaml:\"assets\"" ];
+  repeated InflationAsset inflation_assets = 3 [
+    (gogoproto.jsontag) = "assets",
+    (gogoproto.moretags) = "yaml:\"assets\""
+  ];
 }

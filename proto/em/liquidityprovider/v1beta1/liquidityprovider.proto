@@ -20,4 +20,10 @@ message LiquidityProviderAccount {
     (gogoproto.embed) = true,
     (gogoproto.moretags) = "yaml:\"base_account\""
   ];
+
+  repeated cosmos.base.v1beta1.Coin mintable = 3 [
+    (gogoproto.moretags) = "yaml:\"mintable\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false
+  ];
 }

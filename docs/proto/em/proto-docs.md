@@ -4,6 +4,9 @@
 
 ## Table of Contents
 
+- [em/authority/v1beta1/authority.proto](#em/authority/v1beta1/authority.proto)
+    - [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom)
+  
 - [em/authority/v1beta1/genesis.proto](#em/authority/v1beta1/genesis.proto)
     - [GenesisState](#em.authority.v1beta1.GenesisState)
   
@@ -51,12 +54,44 @@
     - [TimeInForce](#em.market.v1beta1.TimeInForce)
   
 - [em/market/v1beta1/tx.proto](#em/market/v1beta1/tx.proto)
-    - [MsgDecreaseMintable](#em.market.v1beta1.MsgDecreaseMintable)
-    - [MsgIncreaseMintable](#em.market.v1beta1.MsgIncreaseMintable)
-    - [MsgRevokeLiquidityProvider](#em.market.v1beta1.MsgRevokeLiquidityProvider)
-    - [MsgSetInflation](#em.market.v1beta1.MsgSetInflation)
+    - [MsgAddLimitOrder](#em.market.v1beta1.MsgAddLimitOrder)
+    - [MsgAddMarketOrder](#em.market.v1beta1.MsgAddMarketOrder)
+    - [MsgCancelOrder](#em.market.v1beta1.MsgCancelOrder)
+    - [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="em/authority/v1beta1/authority.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/authority/v1beta1/authority.proto
+
+
+
+<a name="em.authority.v1beta1.RestrictedDenom"></a>
+
+### RestrictedDenom
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denom` | [string](#string) |  |  |
+| `allowed` | [string](#string) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
 
 
 
@@ -319,7 +354,7 @@
 | ----- | ---- | ----- | ----------- |
 | `issuer` | [string](#string) |  |  |
 | `liquidity_provider` | [string](#string) |  |  |
-| `mintable_decrease` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 
@@ -336,7 +371,7 @@
 | ----- | ---- | ----- | ----------- |
 | `issuer` | [string](#string) |  |  |
 | `liquidity_provider` | [string](#string) |  |  |
-| `mintable_increase` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 
@@ -400,7 +435,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `account` | [string](#string) |  |  |
+| `address` | [string](#string) |  |  |
 | `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
@@ -448,6 +483,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
+| `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 
@@ -479,7 +515,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `liquidity_provider` | [string](#string) |  |  |
-| `amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 
@@ -495,7 +531,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `liquidity_provider` | [string](#string) |  |  |
-| `amount` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 
@@ -577,14 +613,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `id` | [uint64](#uint64) |  |  |
+| `order_id` | [uint64](#uint64) |  |  |
 | `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
 | `owner` | [string](#string) |  |  |
 | `client_order_id` | [string](#string) |  |  |
-| `source` | [string](#string) |  |  |
+| `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `source_remaining` | [string](#string) |  |  |
 | `source_filled` | [string](#string) |  |  |
-| `inflation_rate` | [string](#string) |  |  |
+| `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination_filled` | [string](#string) |  |  |
 
 
@@ -601,10 +637,10 @@
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| UNDEFINED | 0 |  |
-| GoodTilCancel | 1 |  |
-| ImmediateOrCancel | 2 |  |
-| FillOrKill | 3 |  |
+| TIME_IN_FORCE_UNSPECIFIED | 0 |  |
+| TIME_IN_FORCE_GOOD_TIL_CANCEL | 1 |  |
+| TIME_IN_FORCE_IMMEDIATE_OR_CANCEL | 2 |  |
+| TIME_IN_FORCE_FILL_OR_KILL | 3 |  |
 
 
  <!-- end enums -->
@@ -622,67 +658,74 @@
 
 
 
-<a name="em.market.v1beta1.MsgDecreaseMintable"></a>
+<a name="em.market.v1beta1.MsgAddLimitOrder"></a>
 
-### MsgDecreaseMintable
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `issuer` | [string](#string) |  |  |
-| `liquidity_provider` | [string](#string) |  |  |
-| `mintable_decrease` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
-
-
-
-
-
-
-<a name="em.market.v1beta1.MsgIncreaseMintable"></a>
-
-### MsgIncreaseMintable
+### MsgAddLimitOrder
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `issuer` | [string](#string) |  |  |
-| `liquidity_provider` | [string](#string) |  |  |
-| `mintable_increase` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+| `owner` | [string](#string) |  |  |
+| `client_order_id` | [string](#string) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
+| `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
 
 
 
-<a name="em.market.v1beta1.MsgRevokeLiquidityProvider"></a>
+<a name="em.market.v1beta1.MsgAddMarketOrder"></a>
 
-### MsgRevokeLiquidityProvider
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `issuer` | [string](#string) |  |  |
-| `liquidity_provider` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="em.market.v1beta1.MsgSetInflation"></a>
-
-### MsgSetInflation
+### MsgAddMarketOrder
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `issuer` | [string](#string) |  |  |
-| `denom` | [string](#string) |  |  |
-| `inflation_rate` | [string](#string) |  |  |
+| `owner` | [string](#string) |  |  |
+| `client_order_id` | [string](#string) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
+| `source` | [string](#string) |  |  |
+| `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `maximum_slippage` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MsgCancelOrder"></a>
+
+### MsgCancelOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `owner` | [string](#string) |  |  |
+| `client_order_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MsgCancelReplaceLimitOrder"></a>
+
+### MsgCancelReplaceLimitOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `owner` | [string](#string) |  |  |
+| `original_client_order_id` | [string](#string) |  |  |
+| `new_client_order_id` | [string](#string) |  |  |
+| `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
 
 
