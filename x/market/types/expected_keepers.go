@@ -7,6 +7,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 )
@@ -18,9 +19,10 @@ type (
 	}
 
 	BankKeeper interface {
+		GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 		InputOutputCoins(ctx sdk.Context, inputs []banktypes.Input, outputs []banktypes.Output) error
 		SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-		GetSupply(ctx sdk.Context) (supply banktypes.Supply)
+		GetSupply(ctx sdk.Context) exported.SupplyI
 	}
 
 	RestrictedKeeper interface {

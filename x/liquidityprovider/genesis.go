@@ -6,23 +6,21 @@ package liquidityprovider
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 )
 
-type GenesisAcc struct {
-	Account  sdk.AccAddress `json:"address" yaml:"address"`
-	Mintable sdk.Coins      `json:"mintable" yaml:"mintable"`
+func defaultGenesisState() *types.GenesisState {
+	return &types.GenesisState{}
 }
 
-type genesisState struct {
-	Accounts []GenesisAcc `json:"accounts" yaml:"accounts"`
-}
-
-func defaultGenesisState() genesisState {
-	return genesisState{}
-}
-
-func InitGenesis(ctx sdk.Context, keeper Keeper, gs genesisState) {
+func InitGenesis(ctx sdk.Context, keeper Keeper, gs types.GenesisState) error {
 	for _, lp := range gs.Accounts {
-		keeper.CreateLiquidityProvider(ctx, lp.Account, lp.Mintable)
+		addr, err := sdk.AccAddressFromBech32(lp.Account)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "address: %s", lp.Account)
+		}
+		keeper.CreateLiquidityProvider(ctx, addr, lp.Mintable)
 	}
+	return nil
 }

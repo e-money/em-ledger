@@ -451,7 +451,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `accounts` | [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc) |  |  |
+| `accounts` | [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc) | repeated |  |
 
 
 

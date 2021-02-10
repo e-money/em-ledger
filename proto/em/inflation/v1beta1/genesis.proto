@@ -11,6 +11,7 @@ message GenesisState {
   // todo (reviewer): yaml naming is a bit inconsistent. state contains assets
   InflationState inflation_state = 1 [
     (gogoproto.jsontag) = "assets",
-    (gogoproto.moretags) = "yaml:\"assets\""
+    (gogoproto.moretags) = "yaml:\"assets\"",
+    (gogoproto.nullable) = false
   ];
 }

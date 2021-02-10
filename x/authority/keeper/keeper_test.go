@@ -5,24 +5,30 @@
 package keeper
 
 import (
-	"testing"
-
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -173,7 +179,7 @@ func TestManageGasPrices2(t *testing.T) {
 
 	// Manually write gas prices to appstate, circumventing the keeper
 	setGasPrices := func(gp sdk.DecCoins) {
-		bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(gp)
+		bz := types.ModuleCdc.LegacyAmino.MustMarshalBinaryLengthPrefixed(gp)
 		store := ctx.KVStore(keeper.storeKey)
 		store.Set([]byte(keyGasPrices), bz)
 	}
@@ -196,55 +202,54 @@ func TestManageGasPrices2(t *testing.T) {
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper, *mockGasPricesKeeper) {
-	cdc := makeTestCodec()
-
-	logger := log.NewNopLogger() // Default
-	//logger = log.NewTMLogger(os.Stdout) // Override to see output
-
+	t.Helper()
+	encConfig := MakeTestEncodingConfig()
 	var (
-		keyAuthority = sdk.NewKVStoreKey(types.ModuleName)
-		keyAcc       = sdk.NewKVStoreKey(auth.StoreKey)
-		keyParams    = sdk.NewKVStoreKey(params.StoreKey)
-		keySupply    = sdk.NewKVStoreKey(supply.StoreKey)
-		keyIssuer    = sdk.NewKVStoreKey(issuer.ModuleName)
-		tkeyParams   = sdk.NewTransientStoreKey(params.TStoreKey)
+		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
+		authCapKey = sdk.NewKVStoreKey("authCapKey")
+		keyParams  = sdk.NewKVStoreKey("params")
+		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
+		tkeyParams = sdk.NewTransientStoreKey("transient_params")
+		keyIssuer  = sdk.NewKVStoreKey(issuer.ModuleName)
+
+		blockedAddr = make(map[string]bool)
 	)
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(keyAuthority, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyAcc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keySupply, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
 
 	err := ms.LoadLatestVersion()
-	require.Nil(t, err)
-
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, logger)
+	require.NoError(t, err)
 
 	maccPerms := map[string][]string{
-		types.ModuleName: {supply.Minter},
+		types.ModuleName: {authtypes.Minter},
 	}
 
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
 	var (
-		pk  = params.NewKeeper(cdc, keyParams, tkeyParams)
-		ak  = auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-		bk  = bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), make(map[string]bool))
-		sk  = supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
-		lpk = liquidityprovider.NewKeeper(ak, sk)
+		pk = paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
+		ak = authkeeper.NewAccountKeeper(
+			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+		)
+		bk = bankkeeper.NewBaseKeeper(
+			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
+		)
+		lpk = liquidityprovider.NewKeeper(ak, bk)
 		ik  = issuer.NewKeeper(keyIssuer, lpk, mockInflationKeeper{})
 	)
 
-	sk.SetSupply(ctx, supply.NewSupply(
+	bk.SetSupply(ctx, banktypes.NewSupply(
 		sdk.NewCoins(
 			sdk.NewCoin("echf", sdk.NewInt(5000)),
 			sdk.NewCoin("eeur", sdk.NewInt(5000)),
 		)))
 
 	gpk := new(mockGasPricesKeeper)
-	keeper := NewKeeper(keyAuthority, ik, sk, gpk)
+	keeper := NewKeeper(authKey, ik, bk, gpk)
 
 	return ctx, keeper, ik, gpk
 }
@@ -273,18 +278,28 @@ func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ *sdk.Result, _ 
 	return
 }
 
-func makeTestCodec() (cdc *codec.Codec) {
-	cdc = codec.New()
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
 
-	bank.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	supply.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-	liquidityprovider.RegisterCodec(cdc)
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
 
-	return
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+	)
+
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }
 
 func mustParseAddress(address string) sdk.AccAddress {

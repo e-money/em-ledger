@@ -33,7 +33,7 @@ import (
 )
 
 func TestModule1(t *testing.T) {
-	ctx, keeper, bankKeeper, _ := createTestComponents()
+	ctx, keeper, bankKeeper, _ := createTestComponents(t)
 
 	initialEurAmount, _ := sdk.ParseCoinNormalized("1000000000eur")
 
@@ -60,7 +60,7 @@ func TestModule1(t *testing.T) {
 
 // Verify that the newly minted tokens are sent to the correct modules
 func TestModuleDestinations(t *testing.T) {
-	ctx, keeper, bankKeeper, accountKeeper := createTestComponents()
+	ctx, keeper, bankKeeper, accountKeeper := createTestComponents(t)
 
 	bankKeeper.SetSupply(ctx, banktypes.NewSupply(coins("400000000eur,400000000chf,100000000ungm")))
 
@@ -99,7 +99,7 @@ func TestModuleDestinations(t *testing.T) {
 }
 
 func TestStartTimeInFuture(t *testing.T) {
-	ctx, keeper, bankKeeper, _ := createTestComponents()
+	ctx, keeper, bankKeeper, _ := createTestComponents(t)
 
 	initialEurAmount, _ := sdk.ParseCoinNormalized("1000000000eur")
 	bankKeeper.SetSupply(ctx, banktypes.NewSupply(sdk.NewCoins(initialEurAmount)))
@@ -136,7 +136,8 @@ func TestStartTimeInFuture(t *testing.T) {
 	require.True(t, initialEurAmount.Amount.LT(total.AmountOf("eur")))
 }
 
-func createTestComponents() (sdk.Context, keeper.Keeper, bankkeeper.Keeper, authkeeper.AccountKeeper) {
+func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, bankkeeper.Keeper, authkeeper.AccountKeeper) {
+	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 	var (
 		keyInflation = sdk.NewKVStoreKey(ModuleName)
@@ -144,26 +145,22 @@ func createTestComponents() (sdk.Context, keeper.Keeper, bankkeeper.Keeper, auth
 		authCapKey   = sdk.NewKVStoreKey("authCapKey")
 		keyParams    = sdk.NewKVStoreKey("params")
 		stakingKey   = sdk.NewKVStoreKey("staking")
-		supplyKey    = sdk.NewKVStoreKey("supply")
 		authKey      = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
 
-		blacklistedAddrs = make(map[string]bool)
+		blockedAddrs = make(map[string]bool)
 	)
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(keyInflation, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(supplyKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 
 	maccPerms := map[string][]string{
 		ModuleName:                     {authtypes.Minter},
@@ -182,7 +179,7 @@ func createTestComponents() (sdk.Context, keeper.Keeper, bankkeeper.Keeper, auth
 	)
 
 	bankKeeper := bankkeeper.NewBaseKeeper(
-		encConfig.Marshaler, bankKey, accountKeeper, pk.Subspace(banktypes.ModuleName), blacklistedAddrs,
+		encConfig.Marshaler, bankKey, accountKeeper, pk.Subspace(banktypes.ModuleName), blockedAddrs,
 	)
 
 	stakingKeeper := mockStakingKeeper{}

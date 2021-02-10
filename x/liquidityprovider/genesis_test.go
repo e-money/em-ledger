@@ -2,12 +2,12 @@ package liquidityprovider
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
+	"github.com/stretchr/testify/require"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/gjson"
 	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	apptypes "github.com/e-money/em-ledger/types"
 )
 
 func init() {
@@ -19,7 +19,7 @@ func TestGenesisStruct1(t *testing.T) {
 		"accounts": []
 	}`
 
-	gs := genesisState{}
+	gs := types.GenesisState{}
 	err := ModuleCdc.UnmarshalJSON([]byte(input), &gs)
 	require.NoError(t, err)
 	require.Empty(t, gs.Accounts)
@@ -53,7 +53,7 @@ func TestGenesisStruct2(t *testing.T) {
 		]
 	}`
 
-	gs := genesisState{}
+	gs := types.GenesisState{}
 	err := ModuleCdc.UnmarshalJSON([]byte(input), &gs)
 	require.NoError(t, err)
 	require.Len(t, gs.Accounts, 2)
@@ -66,10 +66,10 @@ func TestGenesisStruct2(t *testing.T) {
 }
 
 func TestSerialize(t *testing.T) {
-	gs := genesisState{
-		Accounts: []GenesisAcc{
+	gs := &types.GenesisState{
+		Accounts: []types.GenesisAcc{
 			{
-				Account: sdk.AccAddress("account1"),
+				Account: randomAddress().String(),
 				Mintable: sdk.Coins{
 					sdk.Coin{
 						Denom:  "eeur",
@@ -82,7 +82,7 @@ func TestSerialize(t *testing.T) {
 				},
 			},
 			{
-				Account: sdk.AccAddress("account2"),
+				Account: randomAddress().String(),
 				Mintable: sdk.Coins{
 					sdk.Coin{
 						Denom:  "esek",
@@ -101,4 +101,8 @@ func TestSerialize(t *testing.T) {
 
 	require.Len(t, doc.Get("accounts.0.mintable").Array(), 2)
 	require.Len(t, doc.Get("accounts.1.mintable").Array(), 1)
+}
+
+func randomAddress() sdk.AccAddress {
+	return tmrand.Bytes(sdk.AddrLen)
 }

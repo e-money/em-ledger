@@ -68,8 +68,8 @@ func (q QueryByAccountResponse) String() string {
 type QueryOrderResponse struct {
 	ID uint64 `json:"order_id" yaml:"order_id"`
 
-	Owner           sdk.AccAddress `json:"owner" yaml:"owner"`
-	SourceRemaining string         `json:"source_remaining" yaml:"source_remaining"`
+	Owner           string `json:"owner" yaml:"owner"`
+	SourceRemaining string `json:"source_remaining" yaml:"source_remaining"`
 
 	ClientOrderId *string `json:"client_order_id,omitempty" yaml:"client_order_id,omitempty"`
 
@@ -77,7 +77,7 @@ type QueryOrderResponse struct {
 }
 
 func (q QueryOrderResponse) String() string {
-	return fmt.Sprintf(" - %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Owner.String())
+	return fmt.Sprintf(" - %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Owner)
 }
 
 type OrderResponses []*types.Order

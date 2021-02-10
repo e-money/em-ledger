@@ -69,6 +69,5 @@ type (
 
 	AccountKeeper    = types.AccountKeeper
 	BankKeeper       = types.BankKeeper
-	SupplyKeeper     = types.SupplyKeeper
 	RestrictedKeeper = types.RestrictedKeeper
 )

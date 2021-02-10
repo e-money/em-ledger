@@ -7,5 +7,8 @@ import "em/issuer/v1beta1/issuer.proto";
 option go_package = "github.com/e-money/em-ledger/x/issuer/types";
 
 message GenesisState {
-  repeated Issuer issuers = 1 [ (gogoproto.moretags) = "yaml:\"issuers\"" ];
+  repeated Issuer issuers = 1 [
+    (gogoproto.moretags) = "yaml:\"issuers\"",
+    (gogoproto.nullable) = false
+  ];
 }

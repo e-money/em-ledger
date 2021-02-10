@@ -7,7 +7,10 @@ import "cosmos/base/v1beta1/coin.proto";
 option go_package = "github.com/e-money/em-ledger/x/liquidityprovider/types";
 
 message GenesisState {
-  GenesisAcc accounts = 1 [ (gogoproto.moretags) = "yaml:\"accounts\"" ];
+  repeated GenesisAcc accounts = 1 [
+    (gogoproto.moretags) = "yaml:\"accounts\"",
+    (gogoproto.nullable) = false
+  ];
 }
 
 message GenesisAcc {

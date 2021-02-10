@@ -5,27 +5,30 @@
 package keeper
 
 import (
-	"sort"
-	"testing"
-
-	apptypes "github.com/e-money/em-ledger/types"
-	"github.com/e-money/em-ledger/x/liquidityprovider"
-
-	"github.com/e-money/em-ledger/x/issuer/types"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-
-	abci "github.com/tendermint/tendermint/abci/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/issuer/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"sort"
+	"testing"
 )
 
 func init() {
@@ -60,13 +63,13 @@ func TestAddIssuer(t *testing.T) {
 	require.Len(t, keeper.GetIssuers(ctx), 2)
 	require.Len(t, collectDenoms(keeper.GetIssuers(ctx)), 4)
 
-	issuer, _ := keeper.mustBeIssuer(ctx, acc2)
+	issuer, _ := keeper.mustBeIssuer(ctx, acc2.String())
 	require.Equal(t, issuer2, issuer)
 
-	_, err = keeper.mustBeIssuer(ctx, randomacc)
+	_, err = keeper.mustBeIssuer(ctx, randomacc.String())
 	require.Error(t, err)
 
-	_, err = keeper.mustBeIssuer(ctx, nil)
+	_, err = keeper.mustBeIssuer(ctx, "")
 	require.Error(t, err)
 }
 
@@ -106,10 +109,10 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	keeper.AddIssuer(ctx, issuer)
 	mintable := MustParseCoins("100000eeur,5000ejpy")
 
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
 
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
+	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 
 	// Verify the two increases in mintable balance
 	a := ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
@@ -117,8 +120,8 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	require.Equal(t, expected, a.Mintable)
 
 	// Decrease the mintable amount too much
-	mintable, _ = sdk.ParseCoins("400000eeur")
-	_, err := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
+	mintable, _ = sdk.ParseCoinsNormalized("400000eeur")
+	_, err := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 	require.NotNil(t, err)
 
 	// Verify unchanged mintable amount
@@ -127,7 +130,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	// Decrease mintable balance.
 	mintable = MustParseCoins("50000eeur, 2000ejpy")
-	_, err = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, issuer.Address, mintable)
+	_, err = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
 	require.NoError(t, err)
 
 	expected = MustParseCoins("150000eeur,8000ejpy")
@@ -163,7 +166,7 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 
 	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
 	require.NoError(t, err)
-	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lpacc))
+	require.IsType(t, &authtypes.BaseAccount{}, ak.GetAccount(ctx, lpacc))
 }
 
 func TestDoubleLiquidityProvider(t *testing.T) {
@@ -202,18 +205,16 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 
 	_, err = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
 	require.NoError(t, err)
-	require.IsType(t, &auth.BaseAccount{}, ak.GetAccount(ctx, lp))
+	require.IsType(t, &authtypes.BaseAccount{}, ak.GetAccount(ctx, lp))
 }
 
 func TestCollectDenominations(t *testing.T) {
 	issuers := []types.Issuer{
 		{
-			Address: nil,
-			Denoms:  []string{"eeur", "ejpy"},
+			Denoms: []string{"eeur", "ejpy"},
 		},
 		{
-			Address: nil,
-			Denoms:  []string{"echf", "edkk"},
+			Denoms: []string{"echf", "edkk"},
 		},
 	}
 
@@ -251,48 +252,53 @@ func TestRemoveDenom(t *testing.T) {
 	require.EqualValues(t, coins[:len(coins)-1], res)
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, liquidityprovider.Keeper, Keeper) {
-	cdc := makeTestCodec()
-
+func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper) {
+	t.Helper()
+	encConfig := MakeTestEncodingConfig()
 	var (
-		keyAcc     = sdk.NewKVStoreKey(auth.StoreKey)
-		keyParams  = sdk.NewKVStoreKey(params.StoreKey)
-		keySupply  = sdk.NewKVStoreKey(supply.StoreKey)
-		keyIssuer  = sdk.NewKVStoreKey(types.StoreKey)
-		tkeyParams = sdk.NewTransientStoreKey(params.TStoreKey)
+		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
+		authCapKey = sdk.NewKVStoreKey("authCapKey")
+		keyParams  = sdk.NewKVStoreKey("params")
+		stakingKey = sdk.NewKVStoreKey("staking")
+		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
+		tkeyParams = sdk.NewTransientStoreKey("transient_params")
+		issuerKey  = sdk.NewKVStoreKey(types.StoreKey)
+
+		blockedAddrs = make(map[string]bool)
+		maccPerms    = map[string][]string{
+			types.ModuleName: {authtypes.Minter},
+		}
 	)
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(keyAcc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keySupply, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
+	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(issuerKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
-	require.Nil(t, err)
+	require.NoError(t, err)
 
-	logger := log.NewNopLogger() // Default
-	//logger = log.NewTMLogger(os.Stdout) // Override to see output
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "supply-chain"}, true, log.NewNopLogger())
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, logger)
-
-	maccPerms := map[string][]string{
-		types.ModuleName: {supply.Minter},
-	}
-
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
-	ak := auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), make(map[string]bool))
-	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
+	var (
+		pk = paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
+		ak = authkeeper.NewAccountKeeper(
+			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+		)
+		bk = bankkeeper.NewBaseKeeper(
+			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddrs,
+		)
+	)
 
 	// Empty supply
-	sk.SetSupply(ctx, supply.NewSupply(sdk.NewCoins()))
+	bk.SetSupply(ctx, banktypes.NewSupply(sdk.NewCoins()))
 
-	lpk := liquidityprovider.NewKeeper(ak, sk)
+	lpk := liquidityprovider.NewKeeper(ak, bk)
 
-	keeper := NewKeeper(keySupply, lpk, mockInflationKeeper{})
+	keeper := NewKeeper(issuerKey, lpk, mockInflationKeeper{})
 	return ctx, ak, lpk, keeper
 }
 
@@ -306,22 +312,33 @@ func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ *sdk.Result, _ 
 	return
 }
 
-func makeTestCodec() (cdc *codec.Codec) {
-	cdc = codec.New()
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
 
-	bank.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	supply.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-	liquidityprovider.RegisterCodec(cdc)
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
 
-	return
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+		liquidityprovider.AppModuleBasic{},
+	)
+
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }
 
 func MustParseCoins(coins string) sdk.Coins {
-	result, err := sdk.ParseCoins(coins)
+	result, err := sdk.ParseCoinsNormalized(coins)
 	if err != nil {
 		panic(err)
 	}

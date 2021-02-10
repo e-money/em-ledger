@@ -25,7 +25,6 @@ type (
 
 var (
 	ModuleCdc       = types.ModuleCdc
-	RegisterCodec   = types.RegisterCodec
 	NewKeeper       = keeper.NewKeeper
 	BeginBlocker    = keeper.BeginBlocker
 	GetGasPricesCmd = cli.GetGasPricesCmd

@@ -17,10 +17,10 @@ import (
 )
 
 func TestQryGetAllInstrumentsWithNonZeroBestPrices(t *testing.T) {
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf,400ngm")
-	acc2 := createAccount(ctx, ak, "acc2", "1000usd")
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur,2500chf,400ngm")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
 	// generate passive order
 	o := order(acc1, "100eur", "120usd")
@@ -73,11 +73,11 @@ func TestQryGetAllInstrumentsWithNonZeroBestPrices(t *testing.T) {
 }
 
 func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
-	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
-	acc3 := createAccount(ctx, ak, "acc3", "2200chf")
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "10000eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "7400usd")
+	acc3 := createAccount(ctx, ak, bk, randomAddress(), "2200chf")
 
 	// generate passive order
 	_, err := k.NewOrderSingle(ctx, order(acc1, "10000eur", "11000usd"))
@@ -129,10 +129,10 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 }
 
 func TestQuerier1(t *testing.T) {
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf")
-	acc2 := createAccount(ctx, ak, "acc2", "1000usd")
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur,2500chf")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
 	o := order(acc1, "100eur", "120usd")
 	_, err := k.NewOrderSingle(ctx, o)

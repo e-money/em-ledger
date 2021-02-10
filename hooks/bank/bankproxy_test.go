@@ -6,38 +6,43 @@ package bank
 
 import (
 	"fmt"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	emauth "github.com/e-money/em-ledger/hooks/auth"
-
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	abci "github.com/tendermint/tendermint/abci/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	types2 "github.com/e-money/em-ledger/x/authority/types"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"testing"
 )
 
 func TestProxySendCoins(t *testing.T) {
 	ctx, ak, bk := createTestComponents(t)
 
 	var (
-		acc1 = createAccount(ctx, ak, "acc1", "150000gbp, 150000usd, 150000sek")
-		acc2 = createAccount(ctx, ak, "acc2", "150000gbp, 150000usd, 150000sek")
-		dest = sdk.AccAddress([]byte("dest"))
+		acc1 = createAccount(ctx, ak, bk, randomAddress(), "150000gbp, 150000usd, 150000sek")
+		acc2 = createAccount(ctx, ak, bk, randomAddress(), "150000gbp, 150000usd, 150000sek")
+		dest = randomAddress()
 	)
 
 	bk.rk = restrictedKeeper{
 		RestrictedDenoms: []types2.RestrictedDenom{
-			{"gbp", []sdk.AccAddress{}},
-			{"usd", []sdk.AccAddress{acc1.GetAddress()}},
+			{"gbp", []string{}},
+			{"usd", []string{acc1.GetAddress().String()}},
 		},
 	}
 
@@ -54,14 +59,16 @@ func TestProxySendCoins(t *testing.T) {
 		{"sek", acc2.GetAddress(), true},
 	}
 
-	for _, d := range testdata {
-		c := fmt.Sprintf("1000%s", d.denom)
-		err := bk.SendCoins(ctx, d.acc, dest, coins(c))
-		if d.valid {
-			require.NoError(t, err)
-		} else {
-			require.True(t, ErrRestrictedDenomination.Is(err), "Actual error \"%s\" (%T)", err.Error(), err)
-		}
+	for i, d := range testdata {
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			c := fmt.Sprintf("1000%s", d.denom)
+			err := bk.SendCoins(ctx, d.acc, dest, coins(c))
+			if d.valid {
+				require.NoError(t, err)
+			} else {
+				require.True(t, ErrRestrictedDenomination.Is(err), "Actual error \"%s\" (%T)", err.Error(), err)
+			}
+		})
 	}
 }
 
@@ -69,71 +76,80 @@ func TestInputOutputCoins(t *testing.T) {
 	ctx, ak, bk := createTestComponents(t)
 
 	var (
-		acc1 = createAccount(ctx, ak, "acc1", "150000gbp, 150000usd, 150000sek")
-		acc2 = createAccount(ctx, ak, "acc2", "150000gbp, 150000usd, 150000sek")
-		acc3 = createAccount(ctx, ak, "acc3", "")
+		acc1 = createAccount(ctx, ak, bk, randomAddress(), "150000gbp, 150000usd, 150000sek")
+		acc2 = createAccount(ctx, ak, bk, randomAddress(), "150000gbp, 150000usd, 150000sek")
+		acc3 = createAccount(ctx, ak, bk, randomAddress(), "")
 	)
 
 	// For simplicity's sake, inputoutput will reject any transaction that includes restricted denominations.
 
 	bk.rk = restrictedKeeper{
 		RestrictedDenoms: []types2.RestrictedDenom{
-			{"gbp", []sdk.AccAddress{}},
-			{"usd", []sdk.AccAddress{acc1.GetAddress()}},
+			{"gbp", []string{}},
+			{"usd", []string{acc1.GetAddress().String()}},
 		},
 	}
 
 	var testdata = []struct {
-		inputs  []bank.Input
-		outputs []bank.Output
+		inputs  []banktypes.Input
+		outputs []banktypes.Output
 		valid   bool
 	}{
-		{[]bank.Input{}, []bank.Output{}, true},
+		{[]banktypes.Input{}, []banktypes.Output{}, true},
 		{
-			inputs: []bank.Input{
-				{acc1.GetAddress(), coins("1000sek")},
+			inputs: []banktypes.Input{
+				{acc1.GetAddress().String(), coins("1000sek")},
 			},
-			outputs: []bank.Output{
-				{acc2.GetAddress(), coins("500sek")},
-				{acc3.GetAddress(), coins("500sek")},
+			outputs: []banktypes.Output{
+				{acc2.GetAddress().String(), coins("500sek")},
+				{acc3.GetAddress().String(), coins("500sek")},
 			},
 			valid: true,
 		},
 		{
-			inputs: []bank.Input{
-				{acc1.GetAddress(), coins("500sek, 1000gbp")},
+			inputs: []banktypes.Input{
+				{acc1.GetAddress().String(), coins("500sek, 1000gbp")},
 			},
-			outputs: []bank.Output{
-				{acc2.GetAddress(), coins("500sek, 500gbp")},
-				{acc3.GetAddress(), coins("500gbp")},
+			outputs: []banktypes.Output{
+				{acc2.GetAddress().String(), coins("500sek, 500gbp")},
+				{acc3.GetAddress().String(), coins("500gbp")},
 			},
 			valid: false,
 		},
 		{
-			inputs: []bank.Input{
-				{acc1.GetAddress(), coins("1000usd")},
+			inputs: []banktypes.Input{
+				{acc1.GetAddress().String(), coins("1000usd")},
 			},
-			outputs: []bank.Output{
-				{acc2.GetAddress(), coins("1000usd")},
+			outputs: []banktypes.Output{
+				{acc2.GetAddress().String(), coins("1000usd")},
 			},
 			valid: false,
 		},
 	}
 
-	for _, d := range testdata {
-		err := bk.InputOutputCoins(ctx, d.inputs, d.outputs)
-		if d.valid {
-			require.NoError(t, err)
-		} else {
-			require.True(t, ErrRestrictedDenomination.Is(err), "Actual error \"%s\" (%T)", err.Error(), err)
-		}
+	for i, d := range testdata {
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			err := bk.InputOutputCoins(ctx, d.inputs, d.outputs)
+			if d.valid {
+				require.NoError(t, err)
+			} else {
+				require.True(t, ErrRestrictedDenomination.Is(err), "Actual error \"%s\" (%T)", err.Error(), err)
+			}
+		})
 	}
 
-	fmt.Println(ak.GetAccount(ctx, acc3.GetAddress()).GetCoins())
+	fmt.Println(bk.GetAllBalances(ctx, acc3.GetAddress()))
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, ProxyKeeper) {
+func randomAddress() sdk.AccAddress {
+	return rand.Bytes(sdk.AddrLen)
+}
+
+func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, ProxyKeeper) {
+	t.Helper()
+	encConfig := MakeTestEncodingConfig()
 	var (
+		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
@@ -141,27 +157,29 @@ func createTestComponents(t *testing.T) (sdk.Context, auth.AccountKeeper, ProxyK
 		blacklistedAddrs = make(map[string]bool)
 	)
 
-	cdc := createCodec()
-
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
-	require.Nil(t, err)
+	require.NoError(t, err)
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
+	maccPerms := map[string][]string{}
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
-	accountKeeper := auth.NewAccountKeeper(cdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	accountKeeperWrapped := emauth.Wrap(accountKeeper)
+	pk := paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
 
-	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), blacklistedAddrs)
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+
+	accountKeeper := authkeeper.NewAccountKeeper(
+		encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+	)
+
+	bankKeeper := bankkeeper.NewBaseKeeper(
+		encConfig.Marshaler, bankKey, accountKeeper, pk.Subspace(banktypes.ModuleName), blacklistedAddrs,
+	)
 
 	wrappedBK := Wrap(bankKeeper, restrictedKeeper{})
-
 	return ctx, accountKeeper, wrappedBK
 }
 
@@ -173,25 +191,43 @@ func (rk restrictedKeeper) GetRestrictedDenoms(sdk.Context) types2.RestrictedDen
 	return rk.RestrictedDenoms
 }
 
-func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) authexported.Account {
-	acc := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte(address)))
-	acc.SetCoins(coins(balance))
+func createAccount(ctx sdk.Context, ak authkeeper.AccountKeeper, bk bankkeeper.SendKeeper, address sdk.AccAddress, balance string) authtypes.AccountI {
+	acc := ak.NewAccountWithAddress(ctx, address)
+	if err := bk.SetBalances(ctx, address, coins(balance)); err != nil {
+		panic(err)
+	}
 	ak.SetAccount(ctx, acc)
 	return acc
 }
 
 func coins(s string) sdk.Coins {
-	coins, err := sdk.ParseCoins(s)
+	coins, err := sdk.ParseCoinsNormalized(s)
 	if err != nil {
 		panic(err)
 	}
 	return coins
 }
 
-func createCodec() *codec.Codec {
-	cdc := codec.New()
-	codec.RegisterCrypto(cdc)
-	auth.RegisterCodec(cdc)
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
 
-	return cdc
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
+
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+	)
+
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }

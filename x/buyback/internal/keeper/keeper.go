@@ -3,13 +3,11 @@ package keeper
 import (
 	"time"
 
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	market "github.com/e-money/em-ledger/x/market/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
 )
 
 var (
@@ -17,40 +15,42 @@ var (
 )
 
 type Keeper struct {
-	cdc      *codec.Codec
+	cdc      *codec.LegacyAmino
 	storeKey sdk.StoreKey
 
-	marketKeeper  MarketKeeper
-	supplyKeeper  SupplyKeeper
-	stakingKeeper StakingKeeper
+	marketKeeper   MarketKeeper
+	acccountKeeper AccountKeeper
+	stakingKeeper  StakingKeeper
+	bankKeeper     BankKeeper
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, mk MarketKeeper, sk SupplyKeeper, stakingKeeper StakingKeeper) Keeper {
+func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, mk MarketKeeper, ak AccountKeeper, stakingKeeper StakingKeeper, bk BankKeeper) Keeper {
 	return Keeper{
-		cdc:      cdc,
-		storeKey: key,
-
-		marketKeeper:  mk,
-		supplyKeeper:  sk,
-		stakingKeeper: stakingKeeper,
+		cdc:            cdc,
+		storeKey:       key,
+		marketKeeper:   mk,
+		acccountKeeper: ak,
+		stakingKeeper:  stakingKeeper,
+		bankKeeper:     bk,
 	}
 }
 
-func (k Keeper) GetBuybackAccount(ctx sdk.Context) supply.ModuleAccountI {
-	return k.supplyKeeper.GetModuleAccount(ctx, types.AccountName)
+func (k Keeper) GetBuybackAccountAddr() sdk.AccAddress {
+	return k.acccountKeeper.GetModuleAddress(types.AccountName)
 }
 
 func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
-	account := k.GetBuybackAccount(ctx)
-	orders := k.marketKeeper.GetOrdersByOwner(ctx, account.GetAddress())
+	buybackAccount := k.GetBuybackAccountAddr()
+	orders := k.marketKeeper.GetOrdersByOwner(ctx, buybackAccount)
 
 	for _, order := range orders {
-		result, err := k.marketKeeper.CancelOrder(ctx, account.GetAddress(), order.ClientOrderID)
+		result, err := k.marketKeeper.CancelOrder(ctx, buybackAccount, order.ClientOrderID)
 		if err != nil {
 			panic(err)
 		}
-
-		ctx.EventManager().EmitEvents(result.Events)
+		for _, ev := range result.Events {
+			ctx.EventManager().EmitEvent(sdk.Event(ev))
+		}
 	}
 }
 
@@ -94,9 +94,8 @@ func (k Keeper) UpdateBuybackMarket(ctx sdk.Context) bool {
 }
 
 func (k Keeper) BurnStakingToken(ctx sdk.Context) error {
-	moduleAccount := k.GetBuybackAccount(ctx)
-
-	stakingBalance, _ := util.SplitCoinsByDenom(moduleAccount.GetCoins(), k.stakingKeeper.BondDenom(ctx))
+	moduleAccountAddr := k.GetBuybackAccountAddr()
+	stakingBalance := k.bankKeeper.GetBalance(ctx, moduleAccountAddr, k.stakingKeeper.BondDenom(ctx))
 	if stakingBalance.IsZero() {
 		return nil
 	}
@@ -109,5 +108,5 @@ func (k Keeper) BurnStakingToken(ctx sdk.Context) error {
 		),
 	})
 
-	return k.supplyKeeper.BurnCoins(ctx, types.ModuleName, stakingBalance)
+	return k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.Coins{stakingBalance})
 }

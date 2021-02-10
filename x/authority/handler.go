@@ -14,30 +14,34 @@ import (
 
 func newHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (result *sdk.Result, err error) {
-		//defer func() {
-		//	if r := recover(); r != nil {
-		//		switch o := r.(type) {
-		//		case sdk.Result:
-		//			result = o
-		//		case sdk.Error:
-		//			result = o.Result()
-		//		default:
-		//			panic(r)
-		//		}
-		//	}
-		//}()
-		//
-		//if err := msg.ValidateBasic(); err != nil {
-		//	return sdk.ErrUnknownRequest(err.Error()).Result()
-		//}
-
 		switch msg := msg.(type) {
-		case types.MsgCreateIssuer:
-			return keeper.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
-		case types.MsgDestroyIssuer:
-			return keeper.DestroyIssuer(ctx, msg.Authority, msg.Issuer)
-		case types.MsgSetGasPrices:
-			return keeper.SetGasPrices(ctx, msg.Authority, msg.GasPrices)
+		case *types.MsgCreateIssuer:
+			authority, err := sdk.AccAddressFromBech32(msg.Authority)
+			if err != nil {
+				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
+			}
+			issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
+			if err != nil {
+				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
+			}
+			return keeper.CreateIssuer(ctx, authority, issuer, msg.Denominations)
+		case *types.MsgDestroyIssuer:
+			authority, err := sdk.AccAddressFromBech32(msg.Authority)
+			if err != nil {
+				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
+			}
+			issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
+			if err != nil {
+				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
+			}
+
+			return keeper.DestroyIssuer(ctx, authority, issuer)
+		case *types.MsgSetGasPrices:
+			authority, err := sdk.AccAddressFromBech32(msg.Authority)
+			if err != nil {
+				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
+			}
+			return keeper.SetGasPrices(ctx, authority, msg.GasPrices)
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg)
 		}

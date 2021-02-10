@@ -2,14 +2,14 @@ package buyback
 
 import (
 	"encoding/json"
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/e-money/em-ledger/x/buyback/client/cli"
-	"github.com/e-money/em-ledger/x/buyback/client/rest"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -40,56 +40,69 @@ func (amb AppModuleBasic) Name() string {
 	return ModuleName
 }
 
-func (amb AppModuleBasic) RegisterCodec(*codec.Codec) {}
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+}
 
-func (amb AppModuleBasic) DefaultGenesis() json.RawMessage {
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
 	return nil
 }
 
-func (amb AppModuleBasic) ValidateGenesis(json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
 	return nil
 }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
-	rest.RegisterQueryRoutes(ctx, r)
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	// todo (Alex)
+	//rest.RegisterRoutes(clientCtx, rtr, types.StoreKey)
 }
 
-func (amb AppModuleBasic) GetTxCmd(*codec.Codec) *cobra.Command {
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	// todo (Alex)
+	//types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
+}
+
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
 	return nil
 }
 
-func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(cdc)
-}
-
-func (am AppModule) InitGenesis(sdk.Context, json.RawMessage) []abci.ValidatorUpdate {
+func (AppModuleBasic) GetQueryCmd() *cobra.Command {
+	// todo (Alex)
+	//return cli.GetQueryCmd(cdc)
 	return nil
 }
 
-func (am AppModule) ExportGenesis(sdk.Context) json.RawMessage {
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+}
+
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
+}
+
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
 	return nil
 }
 
 func (am AppModule) RegisterInvariants(sdk.InvariantRegistry) {}
 
-func (am AppModule) Route() string {
-	return QuerierRoute
-}
-
-func (am AppModule) NewHandler() sdk.Handler {
-	return nil
+func (am AppModule) Route() sdk.Route {
+	return sdk.Route{}
 }
 
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
 }
 
-func (am AppModule) NewQuerierHandler() sdk.Querier {
+func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
 	return keeper.NewQuerier(am.keeper)
 }
 
-func (am AppModule) BeginBlock(sdk.Context, abci.RequestBeginBlock) {}
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	// todo (Alex)
+	//types.RegisterQueryServer(cfg.QueryServer(), am.accountKeeper)
+}
 
-func (am AppModule) EndBlock(sdk.Context, abci.RequestEndBlock) (_ []abci.ValidatorUpdate) {
-	return
+func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+
+func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
 }

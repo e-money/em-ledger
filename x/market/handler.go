@@ -17,16 +17,16 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case types.MsgAddLimitOrder:
+		case *types.MsgAddLimitOrder:
 			return handleMsgAddLimitOrder(ctx, k, msg)
 
-		case types.MsgAddMarketOrder:
+		case *types.MsgAddMarketOrder:
 			return handleMsgAddMarketOrder(ctx, k, msg)
 
-		case types.MsgCancelOrder:
+		case *types.MsgCancelOrder:
 			return handleMsgCancelOrder(ctx, k, msg)
 
-		case types.MsgCancelReplaceLimitOrder:
+		case *types.MsgCancelReplaceLimitOrder:
 			return handleMsgCancelReplaceLimitOrder(ctx, k, msg)
 
 		default:
@@ -35,22 +35,21 @@ func NewHandler(k *keeper.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgAddMarketOrder(ctx sdk.Context, k *keeper.Keeper, msg types.MsgAddMarketOrder) (*sdk.Result, error) {
-	timeInForce, err := types.TimeInForceFromString(msg.TimeInForce)
+func handleMsgAddMarketOrder(ctx sdk.Context, k *keeper.Keeper, msg *types.MsgAddMarketOrder) (*sdk.Result, error) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
-
-	return k.NewMarketOrderWithSlippage(ctx, msg.Source, msg.Destination, msg.MaxSlippage, msg.Owner, timeInForce, msg.ClientOrderId)
+	return k.NewMarketOrderWithSlippage(ctx, msg.Source, msg.Destination, msg.MaxSlippage, owner, msg.TimeInForce, msg.ClientOrderId)
 }
 
-func handleMsgAddLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddLimitOrder) (*sdk.Result, error) {
-	timeInForce, err := types.TimeInForceFromString(msg.TimeInForce)
+func handleMsgAddLimitOrder(ctx sdk.Context, k *Keeper, msg *types.MsgAddLimitOrder) (*sdk.Result, error) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 
-	order, err := types.NewOrder(timeInForce, msg.Source, msg.Destination, msg.Owner, msg.ClientOrderId)
+	order, err := types.NewOrder(msg.TimeInForce, msg.Source, msg.Destination, owner, msg.ClientOrderId)
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +57,21 @@ func handleMsgAddLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgAddLimitOrd
 	return k.NewOrderSingle(ctx, order)
 }
 
-func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelOrder) (*sdk.Result, error) {
-	return k.CancelOrder(ctx, msg.Owner, msg.ClientOrderId)
+func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg *types.MsgCancelOrder) (*sdk.Result, error) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
+	}
+
+	return k.CancelOrder(ctx, owner, msg.ClientOrderId)
 }
 
-func handleMsgCancelReplaceLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceLimitOrder) (*sdk.Result, error) {
-	order, err := types.NewOrder(TimeInForce_GoodTillCancel, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
+func handleMsgCancelReplaceLimitOrder(ctx sdk.Context, k *Keeper, msg *types.MsgCancelReplaceLimitOrder) (*sdk.Result, error) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
+	}
+	order, err := types.NewOrder(TimeInForce_GoodTillCancel, msg.Source, msg.Destination, owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err
 	}

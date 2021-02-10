@@ -16,10 +16,14 @@ message MsgAddLimitOrder {
   TimeInForce time_in_force = 3
       [ (gogoproto.moretags) = "yaml:\"time_in_force\"" ];
 
-  cosmos.base.v1beta1.Coin source = 4
-      [ (gogoproto.moretags) = "yaml:\"source\"" ];
-  cosmos.base.v1beta1.Coin destination = 5
-      [ (gogoproto.moretags) = "yaml:\"destination\"" ];
+  cosmos.base.v1beta1.Coin source = 4 [
+    (gogoproto.moretags) = "yaml:\"source\"",
+    (gogoproto.nullable) = false
+  ];
+  cosmos.base.v1beta1.Coin destination = 5 [
+    (gogoproto.moretags) = "yaml:\"destination\"",
+    (gogoproto.nullable) = false
+  ];
 }
 
 message MsgAddMarketOrder {
@@ -33,8 +37,10 @@ message MsgAddMarketOrder {
 
   string source = 4 [ (gogoproto.moretags) = "yaml:\"source\"" ];
 
-  cosmos.base.v1beta1.Coin destination = 5
-      [ (gogoproto.moretags) = "yaml:\"destination\"" ];
+  cosmos.base.v1beta1.Coin destination = 5 [
+    (gogoproto.moretags) = "yaml:\"destination\"",
+    (gogoproto.nullable) = false
+  ];
 
   string maximum_slippage = 6 [
     (gogoproto.customname) = "MaxSlippage",
@@ -63,8 +69,12 @@ message MsgCancelReplaceLimitOrder {
     (gogoproto.moretags) = "yaml:\"new_client_order_id\""
   ];
 
-  cosmos.base.v1beta1.Coin source = 4
-      [ (gogoproto.moretags) = "yaml:\"source\"" ];
-  cosmos.base.v1beta1.Coin destination = 5
-      [ (gogoproto.moretags) = "yaml:\"destination\"" ];
+  cosmos.base.v1beta1.Coin source = 4 [
+    (gogoproto.moretags) = "yaml:\"source\"",
+    (gogoproto.nullable) = false
+  ];
+  cosmos.base.v1beta1.Coin destination = 5 [
+    (gogoproto.moretags) = "yaml:\"destination\"",
+    (gogoproto.nullable) = false
+  ];
 }

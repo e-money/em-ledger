@@ -38,7 +38,7 @@ func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) K
 func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
-	i, err := k.mustBeIssuer(ctx, issuer)
+	i, err := k.mustBeIssuer(ctx, issuer.String())
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
-	i, err := k.mustBeIssuer(ctx, issuer)
+	i, err := k.mustBeIssuer(ctx, issuer.String())
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuer.String())
 	}
@@ -98,7 +98,7 @@ func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 }
 
 func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
-	issuer, err := k.mustBeIssuer(ctx, issuerAddress)
+	issuer, err := k.mustBeIssuer(ctx, issuerAddress.String())
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuerAddress.String())
 	}
@@ -131,7 +131,7 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.A
 }
 
 func (k Keeper) SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) (*sdk.Result, error) {
-	_, err := k.mustBeIssuerOfDenom(ctx, issuer, denom)
+	_, err := k.mustBeIssuerOfDenom(ctx, issuer.String(), denom)
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuer.String())
 	}
@@ -170,7 +170,7 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result,
 
 	found := false
 	for i := range issuers {
-		if issuers[i].Address.Equals(newIssuer.Address) {
+		if issuers[i].Address == newIssuer.Address {
 			issuers[i].Denoms = append(issuers[i].Denoms, newIssuer.Denoms...)
 			sort.Strings(issuers[i].Denoms)
 			found = true
@@ -194,7 +194,7 @@ func (k Keeper) RemoveIssuer(ctx sdk.Context, issuer sdk.AccAddress) (*sdk.Resul
 
 	// This is one way to remove an element from a slice. There are many. This is one.
 	for _, i := range issuers {
-		if i.Address.Equals(issuer) {
+		if i.Address == issuer.String() {
 			continue
 		}
 
@@ -241,32 +241,32 @@ func removeDenom(coins sdk.Coins, denom string) (res sdk.Coins) {
 	return
 }
 
-func (k Keeper) mustBeIssuer(ctx sdk.Context, address sdk.AccAddress) (types.Issuer, error) {
-	if address == nil {
+func (k Keeper) mustBeIssuer(ctx sdk.Context, bech32Addr string) (types.Issuer, error) {
+	if len(bech32Addr) == 0 {
 		return types.Issuer{}, fmt.Errorf("no issuer specified")
 	}
 
 	issuers := k.GetIssuers(ctx)
 
 	for _, issuer := range issuers {
-		if issuer.Address.Equals(address) {
+		if issuer.Address == bech32Addr {
 			return issuer, nil
 		}
 	}
 
-	k.logger(ctx).Info("Issuer operation attempted by non-issuer", "address", address)
-	return types.Issuer{}, fmt.Errorf("%v is not an issuer", address)
+	k.logger(ctx).Info("Issuer operation attempted by non-issuer", "address", bech32Addr)
+	return types.Issuer{}, fmt.Errorf("%v is not an issuer", bech32Addr)
 }
 
-func (k Keeper) mustBeIssuerOfDenom(ctx sdk.Context, address sdk.AccAddress, denom string) (types.Issuer, error) {
-	if address == nil {
+func (k Keeper) mustBeIssuerOfDenom(ctx sdk.Context, bech32Addr string, denom string) (types.Issuer, error) {
+	if len(bech32Addr) == 0 {
 		return types.Issuer{}, fmt.Errorf("no issuer specified")
 	}
 
 	issuers := k.GetIssuers(ctx)
 
 	for _, issuer := range issuers {
-		if issuer.Address.Equals(address) {
+		if issuer.Address == bech32Addr {
 			for _, d := range issuer.Denoms {
 				if d == denom {
 					return issuer, nil
@@ -276,6 +276,6 @@ func (k Keeper) mustBeIssuerOfDenom(ctx sdk.Context, address sdk.AccAddress, den
 		}
 	}
 
-	k.logger(ctx).Info("Issuer operation attempted by non-issuer", "address", address)
-	return types.Issuer{}, fmt.Errorf("%v is not an issuer", address)
+	k.logger(ctx).Info("Issuer operation attempted by non-issuer", "address", bech32Addr)
+	return types.Issuer{}, fmt.Errorf("%v is not an issuer", bech32Addr)
 }

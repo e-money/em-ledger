@@ -25,11 +25,8 @@ type QueryBalanceResponse struct {
 }
 
 func queryBalance(ctx sdk.Context, k Keeper) ([]byte, error) {
-	account := k.GetBuybackAccount(ctx)
-
 	response := QueryBalanceResponse{
-		Balance: account.GetCoins(),
+		Balance: k.bankKeeper.GetAllBalances(ctx, k.GetBuybackAccountAddr()),
 	}
-
 	return json.Marshal(response)
 }

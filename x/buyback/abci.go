@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func BeginBlocker(ctx sdk.Context, k Keeper) {
+func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 	if !k.UpdateBuybackMarket(ctx) {
 		return
 	}
@@ -19,10 +19,10 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 	var (
 		stakingDenom = k.GetStakingTokenDenom(ctx)
 		pricingInfo  = groupMarketDataBySource(k.GetMarketData(ctx), stakingDenom)
-		account      = k.GetBuybackAccount(ctx)
+		account      = k.GetBuybackAccountAddr()
 	)
 
-	for _, balance := range account.GetCoins() {
+	for _, balance := range bk.GetAllBalances(ctx, account) {
 		pricedata, found := pricingInfo[balance.Denom]
 		if !found {
 			// do not have market data to create an order.
@@ -44,7 +44,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 			types.TimeInForce_GoodTilCancel,
 			balance,
 			sdk.NewCoin(stakingDenom, destinationAmount),
-			account.GetAddress(),
+			account,
 			generateClientOrderId(ctx, balance),
 		)
 
@@ -58,8 +58,9 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 			ctx.Logger().Error("Error sending buyback order to market", "err", err)
 			panic(err)
 		}
-
-		ctx.EventManager().EmitEvents(result.Events)
+		for _, ev := range result.Events {
+			ctx.EventManager().EmitEvent(sdk.Event(ev))
+		}
 	}
 
 	err := k.BurnStakingToken(ctx)

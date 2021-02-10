@@ -16,13 +16,13 @@ import (
 func newHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
-		case types.MsgIncreaseMintable:
+		case *types.MsgIncreaseMintable:
 			return handleMsgIncreaseMintableAmount(ctx, msg, k)
-		case types.MsgDecreaseMintable:
+		case *types.MsgDecreaseMintable:
 			return handleMsgDecreaseMintableAmount(ctx, msg, k)
-		case types.MsgRevokeLiquidityProvider:
+		case *types.MsgRevokeLiquidityProvider:
 			return handleMsgRevokeLiquidityProvider(ctx, msg, k)
-		case types.MsgSetInflation:
+		case *types.MsgSetInflation:
 			return handleMsgSetInflation(ctx, msg, k)
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Unrecognized issuance Msg type: %T", msg)
@@ -30,18 +30,48 @@ func newHandler(k keeper.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgSetInflation(ctx sdk.Context, msg types.MsgSetInflation, k keeper.Keeper) (*sdk.Result, error) {
-	return k.SetInflationRate(ctx, msg.Issuer, msg.InflationRate, msg.Denom)
+func handleMsgSetInflation(ctx sdk.Context, msg *types.MsgSetInflation, k keeper.Keeper) (*sdk.Result, error) {
+	issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
+	}
+	return k.SetInflationRate(ctx, issuer, msg.InflationRate, msg.Denom)
 }
 
-func handleMsgRevokeLiquidityProvider(ctx sdk.Context, msg types.MsgRevokeLiquidityProvider, k keeper.Keeper) (*sdk.Result, error) {
-	return k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer)
+func handleMsgRevokeLiquidityProvider(ctx sdk.Context, msg *types.MsgRevokeLiquidityProvider, k keeper.Keeper) (*sdk.Result, error) {
+	issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
+	}
+	liquidityProvider, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+	}
+	return k.RevokeLiquidityProvider(ctx, liquidityProvider, issuer)
 }
 
-func handleMsgDecreaseMintableAmount(ctx sdk.Context, msg types.MsgDecreaseMintable, k keeper.Keeper) (*sdk.Result, error) {
-	return k.DecreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.MintableDecrease)
+func handleMsgDecreaseMintableAmount(ctx sdk.Context, msg *types.MsgDecreaseMintable, k keeper.Keeper) (*sdk.Result, error) {
+	issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
+	}
+	liquidityProvider, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+	}
+
+	return k.DecreaseMintableAmountOfLiquidityProvider(ctx, liquidityProvider, issuer, msg.MintableDecrease)
 }
 
-func handleMsgIncreaseMintableAmount(ctx sdk.Context, msg types.MsgIncreaseMintable, k keeper.Keeper) (*sdk.Result, error) {
-	return k.IncreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.MintableIncrease)
+func handleMsgIncreaseMintableAmount(ctx sdk.Context, msg *types.MsgIncreaseMintable, k keeper.Keeper) (*sdk.Result, error) {
+	issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
+	}
+	liquidityProvider, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+	}
+
+	return k.IncreaseMintableAmountOfLiquidityProvider(ctx, liquidityProvider, issuer, msg.MintableIncrease)
 }

@@ -86,8 +86,7 @@ message ExecutionPlan {
 message MarketData {
   string source = 1;
   string destination = 2;
-  string last_price = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"
-  ];
+  string last_price = 3
+      [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec" ];
   google.protobuf.Timestamp timestamp = 4 [ (gogoproto.stdtime) = true ];
 }

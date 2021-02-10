@@ -14,7 +14,7 @@ type (
 		SetMinimumGasPrices(gasPricesStr string) error
 	}
 
-	SupplyKeeper interface {
+	BankKeeper interface {
 		GetSupply(ctx sdk.Context) exported.SupplyI
 	}
 )

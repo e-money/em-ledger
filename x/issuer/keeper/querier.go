@@ -26,5 +26,5 @@ func NewQuerier(k Keeper) sdk.Querier {
 
 func listIssuers(ctx sdk.Context, k Keeper) ([]byte, error) {
 	issuers := k.GetIssuers(ctx)
-	return types.ModuleCdc.MarshalJSON(issuers)
+	return types.ModuleCdc.LegacyAmino.MarshalJSON(issuers)
 }

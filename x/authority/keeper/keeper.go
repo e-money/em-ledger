@@ -22,20 +22,20 @@ const (
 )
 
 type Keeper struct {
-	storeKey sdk.StoreKey
-	ik       issuer.Keeper
-	sk       types.SupplyKeeper
-	gpk      types.GasPricesKeeper
+	storeKey   sdk.StoreKey
+	ik         issuer.Keeper
+	bankKeeper types.BankKeeper
+	gpk        types.GasPricesKeeper
 
 	gasPricesInit *sync.Once
 }
 
-func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, supplyKeeper types.SupplyKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
 	return Keeper{
-		ik:       issuerKeeper,
-		sk:       supplyKeeper,
-		gpk:      gasPricesKeeper,
-		storeKey: storeKey,
+		ik:         issuerKeeper,
+		bankKeeper: bankKeeper,
+		gpk:        gasPricesKeeper,
+		storeKey:   storeKey,
 
 		gasPricesInit: new(sync.Once),
 	}
@@ -80,7 +80,7 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprice
 	}
 
 	// Check that the denominations actually exist before setting the gas prices to avoid being "locked out" of the blockchain
-	supply := k.sk.GetSupply(ctx).GetTotal()
+	supply := k.bankKeeper.GetSupply(ctx).GetTotal()
 	for _, d := range gasprices {
 		if supply.AmountOf(d.Denom).IsZero() {
 			return nil, sdkerrors.Wrapf(types.ErrUnknownDenom, "%v", d.Denom)

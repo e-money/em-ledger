@@ -18,8 +18,8 @@ func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms types.Restric
 	}
 }
 
-func DefaultGenesisState() types.GenesisState {
-	return types.GenesisState{}
+func DefaultGenesisState() *types.GenesisState {
+	return &types.GenesisState{}
 }
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, state types.GenesisState) error {

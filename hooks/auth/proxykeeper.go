@@ -5,76 +5,99 @@
 package auth
 
 import (
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
-// Wraps the auth's modules keeper in order to emit events when an account's balance changes.
+var _ authkeeper.AccountKeeperI = (*ProxyKeeper)(nil)
+var _ banktypes.AccountKeeper = (*ProxyKeeper)(nil)
 
-// Expected interface is copied from auth module
-type AccountKeeper interface {
-	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) exported.Account
-	NewAccount(sdk.Context, exported.Account) exported.Account
-
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account
-	GetAllAccounts(ctx sdk.Context) []exported.Account
-	SetAccount(ctx sdk.Context, acc exported.Account)
-
-	IterateAccounts(ctx sdk.Context, process func(exported.Account) bool)
-
-	InnerKeeper() auth.AccountKeeper
-	AddAccountListener(func(sdk.Context, exported.Account))
+type ProxyKeeper struct {
+	ak        authkeeper.AccountKeeper
+	listeners []func(sdk.Context, authtypes.AccountI)
 }
 
-var _ AccountKeeper = (*ProxyKeeper)(nil)
-
-func Wrap(ak auth.AccountKeeper) *ProxyKeeper {
+// Wraps the auth's modules keeper in order to emit events when an account's balance changes.
+func Wrap(ak authkeeper.AccountKeeper) *ProxyKeeper {
 	return &ProxyKeeper{
 		ak: ak,
 	}
 }
 
-type ProxyKeeper struct {
-	ak        auth.AccountKeeper
-	listeners []func(sdk.Context, exported.Account)
-}
-
-func (pk *ProxyKeeper) AddAccountListener(l func(sdk.Context, exported.Account)) {
+func (pk *ProxyKeeper) AddAccountListener(l func(sdk.Context, authtypes.AccountI)) {
 	pk.listeners = append(pk.listeners, l)
 }
 
-func (pk ProxyKeeper) InnerKeeper() auth.AccountKeeper {
-	return pk.ak
+func (pk ProxyKeeper) notifyListeners(ctx sdk.Context, acc authtypes.AccountI) {
+	for _, l := range pk.listeners {
+		l(ctx, acc)
+	}
 }
 
-func (pk ProxyKeeper) NewAccount(ctx sdk.Context, acc exported.Account) exported.Account {
-	return pk.ak.NewAccount(ctx, acc)
-}
-
-func (pk ProxyKeeper) NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
-	return pk.ak.NewAccountWithAddress(ctx, addr)
-}
-
-func (pk ProxyKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
-	return pk.ak.GetAccount(ctx, addr)
-}
-
-func (pk ProxyKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account {
-	return pk.ak.GetAllAccounts(ctx)
-}
-
-func (pk ProxyKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
+func (pk *ProxyKeeper) SetAccount(ctx sdk.Context, acc authtypes.AccountI) {
 	pk.ak.SetAccount(ctx, acc)
 	pk.notifyListeners(ctx, acc)
 }
 
-func (pk ProxyKeeper) IterateAccounts(ctx sdk.Context, process func(exported.Account) bool) {
-	pk.ak.IterateAccounts(ctx, process)
+func (pk *ProxyKeeper) NewAccountWithAddress(ctx sdk.Context, address sdk.AccAddress) authtypes.AccountI {
+	return pk.ak.NewAccountWithAddress(ctx, address)
 }
 
-func (pk ProxyKeeper) notifyListeners(ctx sdk.Context, acc exported.Account) {
-	for _, l := range pk.listeners {
-		l(ctx, acc)
-	}
+func (pk *ProxyKeeper) NewAccount(ctx sdk.Context, i authtypes.AccountI) authtypes.AccountI {
+	return pk.ak.NewAccount(ctx, i)
+}
+
+func (pk *ProxyKeeper) GetAccount(ctx sdk.Context, address sdk.AccAddress) authtypes.AccountI {
+	return pk.ak.GetAccount(ctx, address)
+}
+
+func (pk *ProxyKeeper) RemoveAccount(ctx sdk.Context, i authtypes.AccountI) {
+	pk.ak.RemoveAccount(ctx, i)
+}
+
+func (pk *ProxyKeeper) IterateAccounts(ctx sdk.Context, f func(authtypes.AccountI) bool) {
+	pk.ak.IterateAccounts(ctx, f)
+}
+
+func (pk *ProxyKeeper) GetPubKey(ctx sdk.Context, address sdk.AccAddress) (cryptotypes.PubKey, error) {
+	return pk.ak.GetPubKey(ctx, address)
+}
+
+func (pk *ProxyKeeper) GetSequence(ctx sdk.Context, address sdk.AccAddress) (uint64, error) {
+	return pk.ak.GetSequence(ctx, address)
+}
+
+func (pk *ProxyKeeper) GetNextAccountNumber(ctx sdk.Context) uint64 {
+	return pk.ak.GetNextAccountNumber(ctx)
+}
+
+func (pk *ProxyKeeper) GetAllAccounts(ctx sdk.Context) []authtypes.AccountI {
+	return pk.ak.GetAllAccounts(ctx)
+}
+
+func (pk *ProxyKeeper) ValidatePermissions(macc authtypes.ModuleAccountI) error {
+	return pk.ak.ValidatePermissions(macc)
+}
+
+func (pk *ProxyKeeper) GetModuleAddress(moduleName string) sdk.AccAddress {
+	return pk.ak.GetModuleAddress(moduleName)
+}
+
+func (pk *ProxyKeeper) GetModuleAddressAndPermissions(moduleName string) (addr sdk.AccAddress, permissions []string) {
+	return pk.ak.GetModuleAddressAndPermissions(moduleName)
+}
+
+func (pk *ProxyKeeper) GetModuleAccountAndPermissions(ctx sdk.Context, moduleName string) (authtypes.ModuleAccountI, []string) {
+	return pk.ak.GetModuleAccountAndPermissions(ctx, moduleName)
+}
+
+func (pk *ProxyKeeper) GetModuleAccount(ctx sdk.Context, moduleName string) authtypes.ModuleAccountI {
+	return pk.ak.GetModuleAccount(ctx, moduleName)
+}
+
+func (pk *ProxyKeeper) SetModuleAccount(ctx sdk.Context, macc authtypes.ModuleAccountI) {
+	pk.ak.SetModuleAccount(ctx, macc)
 }

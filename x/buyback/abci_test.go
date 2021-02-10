@@ -2,7 +2,19 @@ package buyback
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"strings"
 	"testing"
 	"time"
@@ -17,12 +29,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	dbm "github.com/tendermint/tm-db"
@@ -33,19 +40,20 @@ const (
 )
 
 func TestBuyback1(t *testing.T) {
-	ctx, keeper, market, accountKeeper, bankKeeper, supplyKeeper := createTestComponents(t)
+	ctx, keeper, market, accountKeeper, bankKeeper := createTestComponents(t)
 
 	ctx = ctx.WithBlockHeight(1)
-	generateMarketActivity(ctx, market, accountKeeper)
+	generateMarketActivity(ctx, market, accountKeeper, bankKeeper)
 
-	account := supplyKeeper.GetModuleAccount(ctx, ModuleName)
+	account := accountKeeper.GetModuleAccount(ctx, ModuleName)
 	bankKeeper.AddCoins(ctx, account.GetAddress(), coins("10000ungm"))
 
-	BeginBlocker(ctx, keeper)
+	BeginBlocker(ctx, keeper, bankKeeper)
 
 	// Verify that staking tokens are burned
-	account = supplyKeeper.GetModuleAccount(ctx, ModuleName)
-	require.True(t, account.GetCoins().AmountOf(stakingDenom).IsZero())
+	account = accountKeeper.GetModuleAccount(ctx, ModuleName)
+	balances := bankKeeper.GetAllBalances(ctx, account.GetAddress())
+	require.True(t, balances.AmountOf(stakingDenom).IsZero())
 
 	require.Condition(t, func() bool {
 		for _, evt := range ctx.EventManager().ABCIEvents() {
@@ -68,14 +76,14 @@ func TestBuyback1(t *testing.T) {
 	bankKeeper.AddCoins(ctx, account.GetAddress(), coins("10000eur,75000chf"))
 
 	// Update account balance information
-	account = supplyKeeper.GetModuleAccount(ctx, ModuleName)
-	BeginBlocker(ctx, keeper)
+	account = accountKeeper.GetModuleAccount(ctx, ModuleName)
+	BeginBlocker(ctx, keeper, bankKeeper)
 
 	orders = market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Len(t, orders, 2)
-
-	require.Equal(t, account.GetCoins().AmountOf("chf"), orders[0].Source.Amount)
-	require.Equal(t, account.GetCoins().AmountOf("eur"), orders[1].Source.Amount)
+	balances = bankKeeper.GetAllBalances(ctx, account.GetAddress())
+	require.Equal(t, balances.AmountOf("chf"), orders[0].Source.Amount)
+	require.Equal(t, balances.AmountOf("eur"), orders[1].Source.Amount)
 
 	require.True(t, strings.HasSuffix(orders[0].ClientOrderID, "2"))
 
@@ -86,17 +94,17 @@ func TestBuyback1(t *testing.T) {
 
 func TestBuyback2(t *testing.T) {
 	// Verify that the module does not update its market positions for every block
-	ctx, keeper, market, accountKeeper, bankKeeper, supplyKeeper := createTestComponents(t)
+	ctx, keeper, market, accountKeeper, bankKeeper := createTestComponents(t)
 
 	ctx = ctx.WithBlockHeight(1)
-	generateMarketActivity(ctx, market, accountKeeper)
+	generateMarketActivity(ctx, market, accountKeeper, bankKeeper)
 
-	account := supplyKeeper.GetModuleAccount(ctx, ModuleName)
+	account := accountKeeper.GetModuleAccount(ctx, ModuleName)
 
 	orders := market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Empty(t, orders)
 
-	BeginBlocker(ctx, keeper)
+	BeginBlocker(ctx, keeper, bankKeeper)
 
 	orders = market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Len(t, orders, 1)
@@ -106,7 +114,7 @@ func TestBuyback2(t *testing.T) {
 
 	// Time since last update is too short to update the module's market positions.
 	ctx = ctx.WithBlockHeight(2).WithBlockTime(ctx.BlockTime().Add(30 * time.Minute))
-	BeginBlocker(ctx, keeper)
+	BeginBlocker(ctx, keeper, bankKeeper)
 
 	orders = market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Len(t, orders, 1)
@@ -114,7 +122,7 @@ func TestBuyback2(t *testing.T) {
 
 	// Time since last update is sufficient. Market positions must be updated.
 	ctx = ctx.WithBlockHeight(3).WithBlockTime(ctx.BlockTime().Add(time.Hour))
-	BeginBlocker(ctx, keeper)
+	BeginBlocker(ctx, keeper, bankKeeper)
 
 	orders = market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Len(t, orders, 2)
@@ -123,14 +131,14 @@ func TestBuyback2(t *testing.T) {
 
 func TestBuyback3(t *testing.T) {
 	// Test very high NGM price with very low balance
-	ctx, keeper, market, accountKeeper, bankKeeper, supplyKeeper := createTestComponents(t)
-	account := supplyKeeper.GetModuleAccount(ctx, ModuleName)
+	ctx, keeper, market, accountKeeper, bankKeeper := createTestComponents(t)
+	account := accountKeeper.GetModuleAccount(ctx, ModuleName)
 	bankKeeper.AddCoins(ctx, account.GetAddress(), coins("50pesos"))
 
 	// Generate some prices for the pesos <-> ungm instrument
 	var (
-		acc1 = createAccount(ctx, accountKeeper, "acc1", "5000000pesos")
-		acc2 = createAccount(ctx, accountKeeper, "acc2", "10000ungm")
+		acc1 = createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "5000000pesos")
+		acc2 = createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
 	)
 	_, err := market.NewOrderSingle(ctx, order(acc1, "4000000pesos", "1ungm"))
 	require.NoError(t, err)
@@ -139,10 +147,11 @@ func TestBuyback3(t *testing.T) {
 	require.NoError(t, err)
 
 	// Attempt to create a position using the meager pesos balance of the module
-	BeginBlocker(ctx, keeper)
+	BeginBlocker(ctx, keeper, bankKeeper)
 
-	account = supplyKeeper.GetModuleAccount(ctx, ModuleName)
-	require.Equal(t, "50", account.GetCoins().AmountOf("pesos").String())
+	account = accountKeeper.GetModuleAccount(ctx, ModuleName)
+	balances := bankKeeper.GetAllBalances(ctx, account.GetAddress())
+	require.Equal(t, "50", balances.AmountOf("pesos").String())
 
 	orders := market.GetOrdersByOwner(ctx, account.GetAddress())
 	require.Empty(t, orders)
@@ -184,10 +193,10 @@ func TestGroupMarketData(t *testing.T) {
 }
 
 // Create some basic pricing information that market orders can be made from
-func generateMarketActivity(ctx sdk.Context, marketKeeper *market.Keeper, accounts auth.AccountKeeper) {
+func generateMarketActivity(ctx sdk.Context, marketKeeper *market.Keeper, ak banktypes.AccountKeeper, bk bankkeeper.SendKeeper) {
 	var (
-		acc1 = createAccount(ctx, accounts, "acc1", "50000ungm")
-		acc2 = createAccount(ctx, accounts, "acc2", "150000eur,290000chf")
+		acc1 = createAccount(ctx, ak, bk, randomAddress(), "50000ungm")
+		acc2 = createAccount(ctx, ak, bk, randomAddress(), "150000eur,290000chf")
 	)
 
 	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
@@ -196,9 +205,9 @@ func generateMarketActivity(ctx sdk.Context, marketKeeper *market.Keeper, accoun
 	marketKeeper.NewOrderSingle(ctx, order(acc2, "20000chf", "5000ungm"))
 }
 
-func order(account authexported.Account, src, dst string) types.Order {
-	s, _ := sdk.ParseCoin(src)
-	d, _ := sdk.ParseCoin(dst)
+func order(account authtypes.AccountI, src, dst string) types.Order {
+	s, _ := sdk.ParseCoinNormalized(src)
+	d, _ := sdk.ParseCoinNormalized(dst)
 	o, err := types.NewOrder(types.TimeInForce_GoodTilCancel, s, d, account.GetAddress(), tmrand.Str(10))
 	if err != nil {
 		panic(err)
@@ -207,73 +216,107 @@ func order(account authexported.Account, src, dst string) types.Order {
 	return o
 }
 
-func createAccount(ctx sdk.Context, ak auth.AccountKeeper, address, balance string) authexported.Account {
-	acc := ak.NewAccountWithAddress(ctx, sdk.AccAddress([]byte(address)))
-	acc.SetCoins(coins(balance))
+func createAccount(ctx sdk.Context, ak banktypes.AccountKeeper, bk bankkeeper.SendKeeper, address sdk.AccAddress, balance string) authtypes.AccountI {
+	acc := ak.NewAccountWithAddress(ctx, address)
+	if err := bk.SetBalances(ctx, address, coins(balance)); err != nil {
+		panic(err)
+	}
 	ak.SetAccount(ctx, acc)
 	return acc
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Keeper, auth.AccountKeeper, bank.Keeper, supply.Keeper) {
+func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Keeper, banktypes.AccountKeeper, bankkeeper.BaseKeeper) {
+	t.Helper()
+	encConfig := MakeTestEncodingConfig()
+
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
 		keyIndices = sdk.NewKVStoreKey(types.StoreKeyIdx)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
-		supplyKey  = sdk.NewKVStoreKey("supply")
+		stakingKey = sdk.NewKVStoreKey("staking")
 		buybackKey = sdk.NewKVStoreKey("buyback")
+		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
 
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 
-		blacklistedAddrs = make(map[string]bool)
+		blockedAddr = make(map[string]bool)
+		maccPerms   = map[string][]string{
+			AccountName: {authtypes.Burner},
+		}
 	)
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIndices, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(supplyKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(buybackKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	pk := params.NewKeeper(types.ModuleCdc, keyParams, tkeyParams)
-
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain", Time: time.Now()}, true, log.NewNopLogger())
-	accountKeeper := auth.NewAccountKeeper(types.ModuleCdc, authCapKey, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	accountKeeperWrapped := emauth.Wrap(accountKeeper)
-
-	bankKeeper := bank.NewBaseKeeper(accountKeeperWrapped, pk.Subspace(bank.DefaultParamspace), blacklistedAddrs)
-
-	maccPerms := map[string][]string{
-		AccountName: {supply.Burner},
-	}
-
-	supplyKeeper := supply.NewKeeper(types.ModuleCdc, supplyKey, accountKeeper, bankKeeper, maccPerms)
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+	var (
+		pk = paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
+		ak = emauth.Wrap(authkeeper.NewAccountKeeper(
+			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+		))
+		bk = bankkeeper.NewBaseKeeper(
+			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
+		)
+	)
 
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(initialSupply))
+	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
 
-	marketKeeper := market.NewKeeper(types.ModuleCdc, keyMarket, keyIndices, accountKeeperWrapped, bankKeeper, supplyKeeper, mockAuthority{})
+	marketKeeper := market.NewKeeper(encConfig.Amino, keyMarket, keyIndices, ak, bk, mockAuthority{})
 
-	keeper := NewKeeper(types.ModuleCdc, buybackKey, marketKeeper, supplyKeeper, mockStakingKeeper{})
+	keeper := NewKeeper(encConfig.Amino, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
 
 	// Deposit a working balance on the buyback module account.
-	buybackAccount := supplyKeeper.GetModuleAccount(ctx, ModuleName)
-	bankKeeper.SetCoins(ctx, buybackAccount.GetAddress(), coins("50000eur"))
+	buybackAccount := ak.GetModuleAddress(ModuleName)
+	bk.SetBalances(ctx, buybackAccount, coins("50000eur"))
 
-	return ctx, keeper, marketKeeper, accountKeeper, bankKeeper, supplyKeeper
+	return ctx, keeper, marketKeeper, ak, bk
+}
+
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
+
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
+
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+	)
+
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }
 
 func coins(c string) sdk.Coins {
-	coins, err := sdk.ParseCoins(c)
+	coins, err := sdk.ParseCoinsNormalized(c)
 	if err != nil {
 		panic(err)
 	}
 
 	return coins
+}
+
+func randomAddress() sdk.AccAddress {
+	return tmrand.Bytes(sdk.AddrLen)
 }
 
 var (

@@ -6,29 +6,17 @@ package market
 
 import (
 	"encoding/json"
-	"github.com/e-money/em-ledger/x/market/client/rest"
-
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
-
-	"github.com/e-money/em-ledger/x/market/client/cli"
-	"github.com/e-money/em-ledger/x/market/keeper"
-	"github.com/e-money/em-ledger/x/market/types"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/e-money/em-ledger/x/market/keeper"
+	"github.com/e-money/em-ledger/x/market/types"
+	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-)
-
-type (
-	AppModuleBasic struct{}
-
-	AppModule struct {
-		AppModuleBasic
-		k *Keeper
-	}
 )
 
 var (
@@ -36,76 +24,84 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-func NewAppModule(k *keeper.Keeper) AppModule {
-	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		k:              k,
-	}
+type AppModuleBasic struct{}
+
+type AppModule struct {
+	AppModuleBasic
+	keeper *Keeper
 }
 
-func (amb AppModuleBasic) Name() string {
-	return ModuleName
+func (amb AppModuleBasic) Name() string { return ModuleName }
+
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
-func (amb AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
-}
-
-func (amb AppModuleBasic) DefaultGenesis() (_ json.RawMessage) {
-	// Market data will never be part of a hard fork.
-	return
-}
-
-func (amb AppModuleBasic) ValidateGenesis(json.RawMessage) error {
-	// Market data will never be part of a hard fork.
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
 	return nil
 }
 
-func (amb AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
-	rest.RegisterQueryRoutes(ctx, r)
-	// TODO Tx routes
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+	return nil
 }
 
-func (amb AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	// todo (Alex)
+	//rest.RegisterRoutes(clientCtx, rtr, types.StoreKey)
 }
 
-func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(cdc)
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	// todo (Alex)
+	//types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
 }
 
-func (am AppModule) InitGenesis(sdk.Context, json.RawMessage) (_ []abci.ValidatorUpdate) {
-	// Market data will never be part of a hard fork.
-	return
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	return nil
 }
 
-func (am AppModule) ExportGenesis(sdk.Context) (_ json.RawMessage) {
-	// Market data will never be part of a hard fork.
-	return
+func (AppModuleBasic) GetQueryCmd() *cobra.Command {
+	// todo (Alex)
+	//return GetQueryCmd()
+	return nil
+}
+
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	types.RegisterInterfaces(registry)
+}
+
+func NewAppModule(k *keeper.Keeper) AppModule {
+	return AppModule{
+		keeper: k,
+	}
+}
+
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
+}
+
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+	return nil
 }
 
 func (am AppModule) RegisterInvariants(sdk.InvariantRegistry) {}
 
-func (am AppModule) Route() string {
-	return RouterKey
+func (am AppModule) Route() sdk.Route {
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
 }
 
-func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.k)
+func (am AppModule) QuerierRoute() string { return types.ModuleName }
+
+func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+	return nil
 }
 
-func (am AppModule) QuerierRoute() string {
-	return QuerierRoute
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	// todo (Alex)
+	//types.RegisterQueryServer(cfg.QueryServer(), am.accountKeeper)
 }
 
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(am.k)
-}
+func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
-	keeper.BeginBlocker(ctx, am.k)
-}
-
-func (am AppModule) EndBlock(sdk.Context, abci.RequestEndBlock) (_ []abci.ValidatorUpdate) {
-	return
+func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
 }
