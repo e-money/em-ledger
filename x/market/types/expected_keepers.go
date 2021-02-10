@@ -9,13 +9,12 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
+	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 )
 
 type (
 	AccountKeeper interface {
 		GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-		AddAccountListener(func(sdk.Context, authtypes.AccountI))
 	}
 
 	BankKeeper interface {
@@ -23,9 +22,10 @@ type (
 		InputOutputCoins(ctx sdk.Context, inputs []banktypes.Input, outputs []banktypes.Output) error
 		SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 		GetSupply(ctx sdk.Context) exported.SupplyI
+		AddBalanceListener(l func(sdk.Context, []sdk.AccAddress))
 	}
 
 	RestrictedKeeper interface {
-		GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms
+		GetRestrictedDenoms(sdk.Context) emauthtypes.RestrictedDenoms
 	}
 )

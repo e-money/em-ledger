@@ -145,7 +145,7 @@ func randomAddress() sdk.AccAddress {
 	return rand.Bytes(sdk.AddrLen)
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, ProxyKeeper) {
+func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, *ProxyKeeper) {
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 	var (

@@ -6,7 +6,6 @@ package keeper
 
 import (
 	"fmt"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"math"
@@ -55,7 +54,7 @@ func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, keyIndices sdk.StoreKey
 		authorityk: authorityKeeper,
 	}
 
-	authKeeper.AddAccountListener(k.accountChanged)
+	bankKeeper.AddBalanceListener(k.accountChanged)
 	return k
 }
 
@@ -456,22 +455,24 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 }
 
 // Update any orders that can no longer be filled with the account's balance.
-func (k *Keeper) accountChanged(ctx sdk.Context, acc auth.AccountI) {
-	orders := k.GetOrdersByOwner(ctx, acc.GetAddress())
-	spendableCoins := k.bk.SpendableCoins(ctx, acc.GetAddress())
-	for _, order := range orders {
-		denomBalance := spendableCoins.AmountOf(order.Source.Denom)
+func (k *Keeper) accountChanged(ctx sdk.Context, accounts []sdk.AccAddress) {
+	for _, acc := range accounts {
+		orders := k.GetOrdersByOwner(ctx, acc)
+		for _, order := range orders {
+			spendableCoins := k.bk.SpendableCoins(ctx, acc)
+			denomBalance := spendableCoins.AmountOf(order.Source.Denom)
 
-		origSourceRemaining := order.SourceRemaining
-		order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
-		order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
+			origSourceRemaining := order.SourceRemaining
+			order.SourceRemaining = order.Source.Amount.Sub(order.SourceFilled)
+			order.SourceRemaining = sdk.MinInt(order.SourceRemaining, denomBalance)
 
-		if order.SourceRemaining.IsZero() {
-			types.EmitExpireEvent(ctx, *order)
-			k.deleteOrder(ctx, order)
-		} else if !origSourceRemaining.Equal(order.SourceRemaining) {
-			types.EmitUpdateEvent(ctx, *order)
-			k.setOrder(ctx, order)
+			if order.SourceRemaining.IsZero() {
+				types.EmitExpireEvent(ctx, *order)
+				k.deleteOrder(ctx, order)
+			} else if !origSourceRemaining.Equal(order.SourceRemaining) {
+				types.EmitUpdateEvent(ctx, *order)
+				k.setOrder(ctx, order)
+			}
 		}
 	}
 }

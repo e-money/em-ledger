@@ -18,12 +18,13 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	vesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	emauth "github.com/e-money/em-ledger/hooks/auth"
+	embank "github.com/e-money/em-ledger/hooks/bank"
 	emtypes "github.com/e-money/em-ledger/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -386,10 +387,11 @@ func TestInsufficientBalance1(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	o := order(acc1, "300eur", "360usd")
-	k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
 
 	// Modify account balance to be below order source
-	err := bk.SendCoins(ctx, acc1.GetAddress(), acc3.GetAddress(), coins("250eur"))
+	err = bk.SendCoins(ctx, acc1.GetAddress(), acc3.GetAddress(), coins("250eur"))
 	require.NoError(t, err)
 
 	o = order(acc2, "360usd", "300eur")
@@ -398,7 +400,7 @@ func TestInsufficientBalance1(t *testing.T) {
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
 	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
-	require.Equal(t, "300usd", bal1.String())
+	require.Equal(t, "300usd", bal1.String()) // (500 -250) * 360/300
 	require.Equal(t, "250eur,440usd", bal2.String())
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
@@ -765,7 +767,7 @@ func TestVestingAccount(t *testing.T) {
 	account := createAccount(ctx, ak, bk, randomAddress(), "110000eur")
 
 	amount := coins("110000eur") // todo (reviewer): does this amount make sense?
-	vestingAcc := vesting.NewDelayedVestingAccount(account.(*authtypes.BaseAccount), amount, math.MaxInt64)
+	vestingAcc := vestingtypes.NewDelayedVestingAccount(account.(*authtypes.BaseAccount), amount, math.MaxInt64)
 	ak.SetAccount(ctx, vestingAcc)
 
 	_, err := keeper.NewOrderSingle(ctx, order(vestingAcc, "5000eur", "4700chf"))
@@ -1085,7 +1087,7 @@ func TestListInstruments(t *testing.T) {
 	require.Len(t, allInstrumentsWithBestPrice, 30)
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.AccountKeeper, bankkeeper.Keeper) {
+func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.AccountKeeper, *embank.ProxyKeeper) {
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 
@@ -1118,16 +1120,16 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.Accoun
 		ak = authkeeper.NewAccountKeeper(
 			encConfig.Marshaler, keyAuthCap, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 		)
-		accountKeeperWrapped = emauth.Wrap(ak)
-		bk                   = bankkeeper.NewBaseKeeper(
-			encConfig.Marshaler, keyBank, accountKeeperWrapped, pk.Subspace(banktypes.ModuleName), blockedAddr,
+		bk = bankkeeper.NewBaseKeeper(
+			encConfig.Marshaler, keyBank, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
+		wrappedBank = embank.Wrap(bk, AllowAllDenoms{})
 	)
 
 	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
 
-	marketKeeper := NewKeeper(encConfig.Amino, keyMarket, keyIndices, accountKeeperWrapped, bk, dummyAuthority{})
-	return ctx, marketKeeper, ak, bk
+	marketKeeper := NewKeeper(encConfig.Amino, keyMarket, keyIndices, ak, wrappedBank, dummyAuthority{})
+	return ctx, marketKeeper, ak, wrappedBank
 }
 
 func MakeTestEncodingConfig() simappparams.EncodingConfig {
@@ -1147,6 +1149,7 @@ func MakeTestEncodingConfig() simappparams.EncodingConfig {
 	ModuleBasics := module.NewBasicManager(
 		bank.AppModuleBasic{},
 		auth.AppModuleBasic{},
+		vesting.AppModuleBasic{},
 	)
 
 	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
@@ -1211,7 +1214,7 @@ func dumpEvents(events sdk.Events) {
 	}
 }
 
-func snapshotAccounts(ctx sdk.Context, bk bankkeeper.Keeper) (totalBalance sdk.Coins) {
+func snapshotAccounts(ctx sdk.Context, bk bankkeeper.ViewKeeper) (totalBalance sdk.Coins) {
 	bk.IterateAllBalances(ctx, func(_ sdk.AccAddress, coin sdk.Coin) (stop bool) {
 		totalBalance = totalBalance.Add(coin)
 		return
@@ -1221,4 +1224,10 @@ func snapshotAccounts(ctx sdk.Context, bk bankkeeper.Keeper) (totalBalance sdk.C
 
 func randomAddress() sdk.AccAddress {
 	return tmrand.Bytes(sdk.AddrLen)
+}
+
+type AllowAllDenoms struct{}
+
+func (AllowAllDenoms) GetRestrictedDenoms(ctx sdk.Context) types2.RestrictedDenoms {
+	return types2.RestrictedDenoms{}
 }
