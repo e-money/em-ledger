@@ -5,28 +5,34 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"testing"
-
-	"github.com/e-money/em-ledger/x/liquidityprovider/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-
-	abci "github.com/tendermint/tendermint/abci/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"testing"
 )
 
 var (
-	accAddr1 = sdk.AccAddress([]byte("account1"))
+	accAddr1 = sdk.AccAddress(tmrand.Bytes(sdk.AddrLen))
 
 	defaultMintable = sdk.NewCoins(
 		sdk.NewCoin("eeur", sdk.NewIntWithDecimal(1000, 2)),
@@ -39,17 +45,19 @@ var (
 )
 
 func TestCreateAndMint(t *testing.T) {
-	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+	ctx, ak, bk, keeper := createTestComponents(t, initialBalance)
 
-	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
+	assert.Equal(t, initialBalance, bk.GetSupply(ctx).GetTotal())
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
-	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
+	err := bk.SetBalances(ctx, acc, initialBalance)
+	require.NoError(t, err)
 
 	// Turn account into a LP
-	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
+	_, err = keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
+	require.NoError(t, err)
 	account = ak.GetAccount(ctx, acc)
 
 	assert.IsType(t, &types.LiquidityProviderAccount{}, account)
@@ -57,9 +65,9 @@ func TestCreateAndMint(t *testing.T) {
 	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)))
 	keeper.MintTokens(ctx, acc, toMint)
 
-	account = ak.GetAccount(ctx, acc)
-	assert.Equal(t, initialBalance.Add(toMint...), account.GetCoins())
-	assert.Equal(t, initialBalance.Add(toMint...), sk.GetSupply(ctx).GetTotal())
+	balances := bk.GetAllBalances(ctx, acc)
+	assert.Equal(t, initialBalance.Add(toMint...), balances)
+	assert.Equal(t, initialBalance.Add(toMint...), bk.GetSupply(ctx).GetTotal())
 
 	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -70,12 +78,13 @@ func TestCreateAndMint(t *testing.T) {
 }
 
 func TestMintTooMuch(t *testing.T) {
-	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+	ctx, ak, bk, keeper := createTestComponents(t, initialBalance)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
-	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
+	err := bk.SetBalances(ctx, acc, initialBalance)
+	require.NoError(t, err)
 
 	// Turn account into a LP
 	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
@@ -84,9 +93,9 @@ func TestMintTooMuch(t *testing.T) {
 	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(5000, 2)))
 	keeper.MintTokens(ctx, acc, toMint)
 
-	account = ak.GetAccount(ctx, acc)
-	assert.Equal(t, initialBalance, account.GetCoins())
-	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
+	balances := bk.GetAllBalances(ctx, acc)
+	assert.Equal(t, initialBalance, balances)
+	assert.Equal(t, initialBalance, bk.GetSupply(ctx).GetTotal())
 
 	// Ensure that the mintable amount of the account has not been modified by failed attempt to mint.
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -94,15 +103,16 @@ func TestMintTooMuch(t *testing.T) {
 }
 
 func TestMintMultipleDenoms(t *testing.T) {
-	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+	ctx, ak, bk, keeper := createTestComponents(t, initialBalance)
 
 	jpy := sdk.NewCoins(sdk.NewCoin("ejpy", sdk.NewInt(1000000)))
 	extendedMintable := defaultMintable.Add(jpy...)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
-	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
+	err := bk.SetBalances(ctx, acc, initialBalance)
+	require.NoError(t, err)
 
 	// Turn account into a LP
 	keeper.CreateLiquidityProvider(ctx, acc, extendedMintable)
@@ -114,9 +124,9 @@ func TestMintMultipleDenoms(t *testing.T) {
 	)
 
 	keeper.MintTokens(ctx, acc, toMint)
-	account = ak.GetAccount(ctx, acc)
-	assert.Equal(t, initialBalance.Add(toMint...), account.GetCoins())
-	assert.Equal(t, initialBalance.Add(toMint...), sk.GetSupply(ctx).GetTotal())
+	balances := bk.GetAllBalances(ctx, acc)
+	assert.Equal(t, initialBalance.Add(toMint...), balances)
+	assert.Equal(t, initialBalance.Add(toMint...), bk.GetSupply(ctx).GetTotal())
 
 	// Ensure that mintable amount available has been correspondingly reduced
 	lpAcc := keeper.GetLiquidityProviderAccount(ctx, acc)
@@ -124,32 +134,35 @@ func TestMintMultipleDenoms(t *testing.T) {
 }
 
 func TestMintWithoutLPAccount(t *testing.T) {
-	ctx, ak, sk, _, keeper := createTestComponents(t, initialBalance)
+	ctx, ak, bk, keeper := createTestComponents(t, initialBalance)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
-	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
+	err := bk.SetBalances(ctx, acc, initialBalance)
+	require.NoError(t, err)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)))
 	keeper.MintTokens(ctx, acc, toMint)
 
 	account = ak.GetAccount(ctx, acc)
-	assert.IsType(t, &auth.BaseAccount{}, account)
-	assert.Equal(t, initialBalance, sk.GetSupply(ctx).GetTotal())
-	assert.Equal(t, initialBalance, account.GetCoins())
+	assert.IsType(t, &authtypes.BaseAccount{}, account)
+	assert.Equal(t, initialBalance, bk.GetSupply(ctx).GetTotal())
+	balances := bk.GetAllBalances(ctx, acc)
+	assert.Equal(t, initialBalance, balances)
 
 	allLPs := keeper.GetAllLiquidityProviderAccounts(ctx)
 	require.Empty(t, allLPs)
 }
 
 func TestCreateAndRevoke(t *testing.T) {
-	ctx, ak, _, _, keeper := createTestComponents(t, initialBalance)
+	ctx, ak, bk, keeper := createTestComponents(t, initialBalance)
 	acc := accAddr1
 
 	account := ak.NewAccountWithAddress(ctx, acc)
-	_ = account.SetCoins(initialBalance)
 	ak.SetAccount(ctx, account)
+	err := bk.SetBalances(ctx, acc, initialBalance)
+	require.NoError(t, err)
 
 	// Turn account into a LP
 	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
@@ -159,64 +172,91 @@ func TestCreateAndRevoke(t *testing.T) {
 
 	keeper.RevokeLiquidityProviderAccount(ctx, account)
 	account = ak.GetAccount(ctx, acc)
-	assert.IsType(t, &auth.BaseAccount{}, account)
+	assert.IsType(t, &authtypes.BaseAccount{}, account)
 }
 
 func TestAccountNotFound(t *testing.T) {
-	ctx, ak, _, _, keeper := createTestComponents(t, initialBalance)
+	ctx, ak, _, keeper := createTestComponents(t, initialBalance)
 
 	acc := accAddr1
 	keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
 	assert.Nil(t, ak.GetAccount(ctx, acc))
 }
 
-func makeTestCodec() (cdc *codec.Codec) {
-	cdc = codec.New()
-
-	bank.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	supply.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-
-	return
-}
-
-func createTestComponents(t *testing.T, initialSupply sdk.Coins) (sdk.Context, auth.AccountKeeper, supply.Keeper, bank.Keeper, Keeper) {
-	cdc := makeTestCodec()
-
+func createTestComponents(t *testing.T, initialSupply sdk.Coins) (sdk.Context, authkeeper.AccountKeeper, bankkeeper.Keeper, Keeper) {
+	t.Helper()
+	encConfig := MakeTestEncodingConfig()
 	var (
-		keyAcc     = sdk.NewKVStoreKey(auth.StoreKey)
-		keyParams  = sdk.NewKVStoreKey(params.StoreKey)
-		keySupply  = sdk.NewKVStoreKey(supply.StoreKey)
-		tkeyParams = sdk.NewTransientStoreKey(params.TStoreKey)
+		keyInflation = sdk.NewKVStoreKey(types.ModuleName)
+		bankKey      = sdk.NewKVStoreKey(banktypes.ModuleName)
+		authCapKey   = sdk.NewKVStoreKey("authCapKey")
+		keyParams    = sdk.NewKVStoreKey("params")
+		stakingKey   = sdk.NewKVStoreKey("staking")
+		authKey      = sdk.NewKVStoreKey(authtypes.StoreKey)
+		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
+
+		blockedAddrs = make(map[string]bool)
 	)
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(keyAcc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keySupply, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
-	err := ms.LoadLatestVersion()
-	require.Nil(t, err)
+	ms.MountStoreWithDB(keyInflation, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "supply-chain"}, true, log.NewNopLogger())
+	err := ms.LoadLatestVersion()
+	require.NoError(t, err)
 
 	maccPerms := map[string][]string{
-		types.ModuleName: {supply.Minter},
+		types.ModuleName:               {authtypes.Minter},
+		authtypes.FeeCollectorName:     nil,
+		"buyback":                      {authtypes.Burner},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 	}
 
-	pk := params.NewKeeper(cdc, keyParams, tkeyParams)
-	ak := auth.NewAccountKeeper(cdc, keyAcc, pk.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bk := bank.NewBaseKeeper(ak, pk.Subspace(bank.DefaultParamspace), make(map[string]bool))
-	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
+	pk := paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
 
-	// Empty supply
-	sk.SetSupply(ctx, supply.NewSupply(initialSupply))
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
 
-	keeper := NewKeeper(ak, sk)
+	ak := authkeeper.NewAccountKeeper(
+		encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+	)
 
-	return ctx, ak, sk, bk, keeper
+	bk := bankkeeper.NewBaseKeeper(
+		encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddrs,
+	)
+
+	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
+
+	keeper := NewKeeper(ak, bk)
+
+	return ctx, ak, bk, keeper
+}
+
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
+
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
+
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+	)
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
 }

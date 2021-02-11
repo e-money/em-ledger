@@ -6,67 +6,70 @@ package cli
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/queries/types"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 )
 
-func GetQuerySpendableBalance(cdc *codec.Codec) *cobra.Command {
+func GetQuerySpendableBalance() *cobra.Command {
 	spendableBalanceCmd := &cobra.Command{
 		Use:   "spendable",
 		Short: "Display the vested balance of an account",
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			key, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return err
 			}
 
-			resp, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QuerySpendable, key))
+			resp, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QuerySpendable, key))
 
 			var bal sdk.Coins
-			err = cdc.UnmarshalJSON(resp, &bal)
+			err = clientCtx.LegacyAmino.UnmarshalJSON(resp, &bal)
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(bal)
+			return clientCtx.PrintBytes(resp)
 		},
 	}
 
-	return flags.GetCommands(spendableBalanceCmd)[0]
+	return spendableBalanceCmd
 }
 
 // Meant as an extension to the "emcli query supply" queries.
-func GetQueryCirculatingSupplyCmd(cdc *codec.Codec) *cobra.Command {
+func GetQueryCirculatingSupplyCmd() *cobra.Command {
 	circulatingSupplyCmd := &cobra.Command{
 		Use:   "circulating",
 		Short: "Display circulating (ie non-vesting) token supply",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
 
-			resp, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryCirculating))
+			resp, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryCirculating))
 			if err != nil {
 				return err
 			}
 
 			var totalSupply sdk.Coins
-			err = cdc.UnmarshalJSON(resp, &totalSupply)
+			err = clientCtx.LegacyAmino.UnmarshalJSON(resp, &totalSupply)
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(totalSupply)
+			return clientCtx.PrintBytes(resp)
 		},
 	}
 
-	return flags.GetCommands(circulatingSupplyCmd)[0]
+	return circulatingSupplyCmd
 }

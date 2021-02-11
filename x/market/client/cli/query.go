@@ -5,28 +5,18 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
-
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/keeper"
-	"github.com/tidwall/gjson"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-
 	"github.com/e-money/em-ledger/x/market/types"
+	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
+	"strings"
 )
 
-func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Querying commands for the market module",
@@ -36,59 +26,49 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		GetInstrumentsCmd(cdc),
-		GetInstrumentCmd(cdc),
-		GetByAccountCmd(cdc),
+		GetInstrumentsCmd(),
+		GetInstrumentCmd(),
+		GetByAccountCmd(),
 	)
 
 	return cmd
 }
 
-func GetByAccountCmd(cdc *codec.Codec) *cobra.Command {
+func GetByAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "account [key_or_address]",
 		Short: "Query orders placed by a specific account",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			addr, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				// Named key specified
-				addr, _, err = context.GetFromFields(os.Stdin, args[0], viper.GetBool(flags.FlagGenerateOnly))
-				if err != nil {
-					return err
-				}
-			}
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QueryByAccount, addr))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			switch cliCtx.OutputFormat {
+			addr, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				// Named key specified
+				addr = clientCtx.FromAddress
+			}
+
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QueryByAccount, addr))
+			if err != nil {
+				return err
+			}
+
+			switch clientCtx.OutputFormat {
 			case "text":
-				fmt.Println(stringifyOrders(bz))
+				return clientCtx.PrintString(stringifyOrders(bz))
 
 			case "json":
-				if cliCtx.Indent {
-					buf := new(bytes.Buffer)
-					err = json.Indent(buf, bz, "", "  ")
-					if err != nil {
-						return err
-					}
-
-					bz = buf.Bytes()
-				}
-
-				fmt.Println(string(bz))
+				return clientCtx.PrintBytes(bz)
 			}
 
 			return nil
 		},
 	}
 
-	return flags.GetCommands(cmd)[0]
+	return cmd
 }
 
 func stringifyOrders(bz []byte) string {
@@ -116,16 +96,20 @@ func stringifyOrders(bz []byte) string {
 	return sb.String()
 }
 
-func GetInstrumentCmd(cdc *codec.Codec) *cobra.Command {
+func GetInstrumentCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "instrument [source-denomination] [destination-denomination]",
 		Short: "Query the order book of a specific instrument",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
 			source, destination := args[0], args[1]
 
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, types.QueryInstrument, source, destination))
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, types.QueryInstrument, source, destination))
 			if err != nil {
 				return err
 			}
@@ -136,22 +120,25 @@ func GetInstrumentCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			return cliCtx.PrintOutput(resp)
+			return clientCtx.PrintBytes(bz)
 		},
 	}
 
-	return flags.GetCommands(cmd)[0]
+	return cmd
 }
 
-func GetInstrumentsCmd(cdc *codec.Codec) *cobra.Command {
+func GetInstrumentsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "instruments",
 		Short: "Query the current instruments",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
 
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInstruments))
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInstruments))
 			if err != nil {
 				return err
 			}
@@ -162,9 +149,9 @@ func GetInstrumentsCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			return cliCtx.PrintOutput(resp)
+			return clientCtx.PrintBytes(bz)
 		},
 	}
 
-	return flags.GetCommands(cmd)[0]
+	return cmd
 }

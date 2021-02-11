@@ -6,25 +6,26 @@ package cli
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 )
 
-func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	inflationQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Commands for querying the inflation state",
 		SuggestionsMinimumDistance: 2,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInflation)
-			res, _, err := cliCtx.QueryWithData(route, nil)
+			res, _, err := clientCtx.QueryWithData(route, nil)
 
 			if err != nil {
 				return err
@@ -32,15 +33,12 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 			// TODO Consider introducing a more presentation-friendly struct
 			var is types.InflationState
-			if err := cdc.UnmarshalJSON(res, &is); err != nil {
+			if err := clientCtx.LegacyAmino.UnmarshalJSON(res, &is); err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(is)
+			return clientCtx.PrintBytes(res)
 		},
 	}
-
-	inflationQueryCmd = flags.GetCommands(inflationQueryCmd)[0]
-
 	return inflationQueryCmd
 }

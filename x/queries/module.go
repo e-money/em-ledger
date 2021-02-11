@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/e-money/em-ledger/x/queries/client/rest"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -44,8 +45,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxE
 }
 
 func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	// todo (Alex)
-	//rest.RegisterRoutes(clientCtx, rtr, types.StoreKey)
+	rest.RegisterRoutes(clientCtx, rtr)
 }
 
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
@@ -58,8 +58,6 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	// todo (Alex)
-	//return GetQueryCmd()
 	return nil
 }
 

@@ -12,6 +12,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/e-money/em-ledger/x/authority/client/rest"
 	"github.com/e-money/em-ledger/x/authority/keeper"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/gorilla/mux"
@@ -51,8 +52,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxE
 }
 
 func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	// todo (Alex)
-	//rest.RegisterRoutes(clientCtx, rtr, types.StoreKey)
+	rest.RegisterQueryRoutes(clientCtx, rtr)
 }
 
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
@@ -65,9 +65,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	// todo (Alex)
-	//return GetQueryCmd()
-	return nil
+	return GetQueryCmd()
 }
 
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {

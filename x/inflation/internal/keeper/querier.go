@@ -31,5 +31,5 @@ func queryInflation(ctx sdk.Context, k Keeper) ([]byte, error) {
 	inflationState := k.GetState(ctx)
 
 	// TODO Introduce a more presentation-friendly response type
-	return types.ModuleCdc.MarshalJSON(inflationState)
+	return types.ModuleCdc.LegacyAmino.MarshalJSON(inflationState)
 }

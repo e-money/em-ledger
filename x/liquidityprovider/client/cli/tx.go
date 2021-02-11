@@ -5,21 +5,14 @@
 package cli
 
 import (
-	"bufio"
-
-	"github.com/spf13/cobra"
-
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/e-money/em-ledger/x/liquidityprovider/types"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
+	"github.com/spf13/cobra"
 )
 
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func GetTxCmd() *cobra.Command {
 	lpCmds := &cobra.Command{
 		Use:                "liquidityprovider",
 		Short:              "Liquidity provider operations",
@@ -27,62 +20,68 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		DisableFlagParsing: false,
 	}
 
-	lpCmds.AddCommand(flags.PostCommands(
-		getCmdMint(cdc),
-		getCmdBurn(cdc),
-	)...)
+	lpCmds.AddCommand(
+		getCmdMint(),
+		getCmdBurn(),
+	)
 
-	lpCmds = flags.PostCommands(lpCmds)[0]
 	return lpCmds
 }
 
-func getCmdBurn(cdc *codec.Codec) *cobra.Command {
+func getCmdBurn() *cobra.Command {
 	return &cobra.Command{
 		Use:   "burn [liquidity_provider_key_or_address] [amount]",
 		Short: "Destroys the given amount of tokens",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			amount, err := sdk.ParseCoins(args[1])
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgBurnTokens{
-				Amount:            amount,
-				LiquidityProvider: cliCtx.GetFromAddress(),
+			amount, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			msg := &types.MsgBurnTokens{
+				Amount:            amount,
+				LiquidityProvider: clientCtx.GetFromAddress().String(),
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 }
 
-func getCmdMint(cdc *codec.Codec) *cobra.Command {
+func getCmdMint() *cobra.Command {
 	return &cobra.Command{
 		Use:   "mint [liquidity_provider_key_or_address] [amount]",
 		Short: "Creates new tokens from the liquidity provider's mintable amount",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			amount, err := sdk.ParseCoins(args[1])
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgMintTokens{
-				Amount:            amount,
-				LiquidityProvider: cliCtx.GetFromAddress(),
+			amount, err := sdk.ParseCoinsNormalized(args[1])
+			if err != nil {
+				return err
 			}
 
-			result := utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-			return result
+			msg := &types.MsgMintTokens{
+				Amount:            amount,
+				LiquidityProvider: clientCtx.GetFromAddress().String(),
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 }

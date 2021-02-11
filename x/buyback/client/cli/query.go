@@ -5,21 +5,15 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
-	"github.com/spf13/cobra"
-
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-
+	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
+	"github.com/spf13/cobra"
 )
 
-func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Query commands for the buyback module",
@@ -29,51 +23,44 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		GetModuleBalanceCmd(cdc),
+		GetModuleBalanceCmd(),
 	)
 
 	return cmd
 }
 
-func GetModuleBalanceCmd(cdc *codec.Codec) *cobra.Command {
+func GetModuleBalanceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "balance",
 		Short: "Query for the current buyback balance",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryBalance))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			switch cliCtx.OutputFormat {
-			case "text":
-				response := keeper.QueryBalanceResponse{}
-				json.Unmarshal(bz, &response)
-
-				for _, b := range response.Balance {
-					fmt.Println(b.String())
-				}
-
-			case "json":
-				if cliCtx.Indent {
-					buf := new(bytes.Buffer)
-					err = json.Indent(buf, bz, "", "  ")
-					if err != nil {
-						return err
-					}
-
-					bz = buf.Bytes()
-				}
-
-				fmt.Println(string(bz))
+			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryBalance))
+			if err != nil {
+				return err
 			}
 
+			switch clientCtx.OutputFormat {
+			case "text":
+				response := keeper.QueryBalanceResponse{}
+				if err := json.Unmarshal(bz, &response); err != nil {
+					return err
+				}
+
+				for _, b := range response.Balance {
+					clientCtx.PrintString(b.String())
+				}
+			case "json":
+				clientCtx.PrintBytes(bz)
+			}
 			return nil
 		},
 	}
 
-	return flags.GetCommands(cmd)[0]
+	return cmd
 }

@@ -6,88 +6,130 @@
 package keeper
 
 import (
-	"os"
-	"testing"
-	"time"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-
-	"github.com/stretchr/testify/require"
-
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/cosmos-sdk/x/supply"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
+	"testing"
+	"time"
 )
 
 type testInput struct {
 	ctx        sdk.Context
-	cdc        *codec.Codec
+	cdc        *codec.LegacyAmino
 	mintKeeper Keeper
 }
 
 func newTestInput(t *testing.T) testInput {
+	t.Helper()
+	encConfig := MakeTestEncodingConfig()
+	var (
+		keyInflation = sdk.NewKVStoreKey(types.ModuleName)
+		bankKey      = sdk.NewKVStoreKey(banktypes.ModuleName)
+		authCapKey   = sdk.NewKVStoreKey("authCapKey")
+		keyParams    = sdk.NewKVStoreKey("params")
+		stakingKey   = sdk.NewKVStoreKey("staking")
+		authKey      = sdk.NewKVStoreKey(authtypes.StoreKey)
+		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
+
+		blockedAddrs = make(map[string]bool)
+	)
+
 	db := dbm.NewMemDB()
-
-	keyAcc := sdk.NewKVStoreKey(auth.StoreKey)
-	keySupply := sdk.NewKVStoreKey(supply.StoreKey)
-	keyStaking := sdk.NewKVStoreKey(staking.StoreKey)
-	keyParams := sdk.NewKVStoreKey(params.StoreKey)
-	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
-	keyInflation := sdk.NewKVStoreKey(types.StoreKey)
-
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(keyAcc, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyStaking, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keySupply, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyInflation, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
+	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
+
 	err := ms.LoadLatestVersion()
-	require.Nil(t, err)
+	require.NoError(t, err)
 
-	ctx := sdk.NewContext(ms, abci.Header{Time: time.Unix(0, 0)}, false, log.NewTMLogger(os.Stdout))
-
-	paramsKeeper := params.NewKeeper(types.ModuleCdc, keyParams, tkeyParams)
-	accountKeeper := auth.NewAccountKeeper(types.ModuleCdc, keyAcc, paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	bankKeeper := bank.NewBaseKeeper(accountKeeper, paramsKeeper.Subspace(bank.DefaultParamspace), make(map[string]bool))
 	maccPerms := map[string][]string{
-		auth.FeeCollectorName:     nil,
-		types.ModuleName:          {supply.Minter},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
-
-		// TODO Reference buyback module correctly when ready.
-		"buyback": {supply.Burner},
+		types.ModuleName:               {authtypes.Minter},
+		authtypes.FeeCollectorName:     nil,
+		"buyback":                      {authtypes.Burner},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 	}
-	supplyKeeper := supply.NewKeeper(types.ModuleCdc, keySupply, accountKeeper, bankKeeper, maccPerms)
-	supplyKeeper.SetSupply(ctx, supply.NewSupply(sdk.Coins{}))
 
-	stakingKeeper := staking.NewKeeper(types.ModuleCdc, keyStaking, supplyKeeper, paramsKeeper.Subspace(staking.DefaultParamspace))
+	pk := paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
 
-	// TODO
-	inflationKeeper := NewKeeper(types.ModuleCdc, keyInflation, supplyKeeper, stakingKeeper, "buyback", auth.FeeCollectorName)
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
 
-	// set module accounts
-	feeCollectorAcc := supply.NewEmptyModuleAccount(auth.FeeCollectorName)
-	minterAcc := supply.NewEmptyModuleAccount(types.ModuleName, supply.Minter)
-	notBondedPool := supply.NewEmptyModuleAccount(staking.NotBondedPoolName, supply.Burner)
-	bondPool := supply.NewEmptyModuleAccount(staking.BondedPoolName, supply.Burner)
+	accountKeeper := authkeeper.NewAccountKeeper(
+		encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
+	)
 
+	bankKeeper := bankkeeper.NewBaseKeeper(
+		encConfig.Marshaler, bankKey, accountKeeper, pk.Subspace(banktypes.ModuleName), blockedAddrs,
+	)
+
+	stakingKeeper := mockStakingKeeper{}
+
+	inflationKeeper := NewKeeper(
+		encConfig.Amino, keyInflation, bankKeeper, accountKeeper, stakingKeeper, "buyback", authtypes.FeeCollectorName,
+	)
 	inflationKeeper.SetState(ctx, types.NewInflationState("ejpy", "0.05", "echf", "0.10", "eeur", "0.01"))
 
-	supplyKeeper.SetModuleAccount(ctx, feeCollectorAcc)
-	supplyKeeper.SetModuleAccount(ctx, minterAcc)
-	supplyKeeper.SetModuleAccount(ctx, notBondedPool)
-	supplyKeeper.SetModuleAccount(ctx, bondPool)
+	//// set module accounts
+	//feeCollectorAcc := supply.NewEmptyModuleAccount(auth.FeeCollectorName)
+	//minterAcc := supply.NewEmptyModuleAccount(types.ModuleName, supply.Minter)
+	//notBondedPool := supply.NewEmptyModuleAccount(staking.NotBondedPoolName, supply.Burner)
+	//bondPool := supply.NewEmptyModuleAccount(staking.BondedPoolName, supply.Burner)
+	//
+	//supplyKeeper.SetModuleAccount(ctx, feeCollectorAcc)
+	//supplyKeeper.SetModuleAccount(ctx, minterAcc)
+	//supplyKeeper.SetModuleAccount(ctx, notBondedPool)
+	//supplyKeeper.SetModuleAccount(ctx, bondPool)
 
-	return testInput{ctx, types.ModuleCdc, inflationKeeper}
+	return testInput{ctx, encConfig.Amino, inflationKeeper}
+}
+
+func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	cdc := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
+
+	encodingConfig := simappparams.EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		Amino:             cdc,
+	}
+
+	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ModuleBasics := module.NewBasicManager(
+		bank.AppModuleBasic{},
+		auth.AppModuleBasic{},
+	)
+
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
+}
+
+type mockStakingKeeper struct{}
+
+func (m mockStakingKeeper) GetParams(_ sdk.Context) stakingtypes.Params {
+	return stakingtypes.NewParams(5*time.Minute, 40, 50, 0, "ungm")
 }
