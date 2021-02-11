@@ -3,61 +3,36 @@ version: '3.8'
 services:
   emavanode1:
     container_name: emavanode1
-    image: "emoney/avanode"
-    #    network_mode: "host"
-    networks:
-      ava_net:
-        ipv4_address: 127.0.0.1
-    ports:
-      - 9650-9651:9650-9651
+    image: "emoney/avanode:latest"
+    network_mode: "host"
     volumes:
       - avalanchevol1:/avalanchego
     command: build/avalanchego --http-host= --log-dir ./ --log-display-highlight colors --log-display-level debug --log-level debug --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9650 --staking-port=9651 --db-dir=db/node1 --staking-enabled=true --network-id=local --bootstrap-ips= --staking-tls-cert-file=./staking/local/staker1.crt --staking-tls-key-file=./staking/local/staker1.key --config-file=./coreth-config.json 
   emavanode2:
     container_name: emavanode2
-    image: "emoney/avanode"
-    #    network_mode: "host"
-    networks:
-      ava_net:
-        ipv4_address: 127.0.0.1
-    ports:
-      - 9652-9653:9652-9653
+    image: "emoney/avanode:latest"
+    network_mode: "host"
     volumes:
       - avalanchevol2:/avalanchego
     command: build/avalanchego --http-host= --log-dir ./ --log-display-highlight colors --log-display-level debug --log-level debug --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9652 --staking-port=9653 --db-dir=db/node2 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker2.crt --staking-tls-key-file=./staking/local/staker2.key --config-file=./coreth-config.json 
   emavanode3:
     container_name: emavanode3
-    image: "emoney/avanode"
-    #    network_mode: "host"
-    networks:
-      ava_net:
-        ipv4_address: 127.0.0.1
-    ports:
-      - 9654-9655:9654-9655
+    image: "emoney/avanode:latest"
+    network_mode: "host"
     volumes:
       - avalanchevol3:/avalanchego
     command: build/avalanchego --http-host= --log-dir ./ --log-display-highlight colors --log-display-level debug --log-level debug --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9654 --staking-port=9655 --db-dir=db/node3 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker3.crt --staking-tls-key-file=./staking/local/staker3.key --config-file=./coreth-config.json 
   emavanode4:
     container_name: emavanode4
-    image: "emoney/avanode"
-    #    network_mode: "host"
-    networks:
-      ava_net:
-        ipv4_address: 127.0.0.1
-    ports:
-      - 9656-9657:9656-9657
+    image: "emoney/avanode:latest"
+    network_mode: "host"
     volumes:
       - avalanchevol4:/avalanchego
     command: build/avalanchego --http-host= --log-dir ./ --log-display-highlight colors --log-display-level debug --log-level debug --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9656 --staking-port=9657 --db-dir=db/node4 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker4.crt --staking-tls-key-file=./staking/local/staker4.key --config-file=./coreth-config.json 
   emavanode5:
     container_name: emavanode5
-    image: "emoney/avanode"
-    #    network_mode: "host"
-    networks:
-      ava_net:
-        ipv4_address: 127.0.0.1
-    ports:
-      - 9658-9659:9658-9659
+    image: "emoney/avanode:latest"
+    network_mode: "host"
     volumes:
       - avalanchevol5:/avalanchego
     command: build/avalanchego --http-host= --log-dir ./ --log-display-highlight colors --log-display-level debug --log-level debug --api-admin-enabled=true --public-ip=127.0.0.1 --snow-sample-size=2 --snow-quorum-size=2 --http-port=9658 --staking-port=9659 --db-dir=db/node5 --staking-enabled=true --network-id=local --bootstrap-ips=127.0.0.1:9651 --bootstrap-ids=NodeID-7Xhw2mDxuDS44j42TCB6U5579esbSt3Lg --staking-tls-cert-file=./staking/local/staker5.crt --staking-tls-key-file=./staking/local/staker5.key --config-file=./coreth-config.json 
@@ -67,5 +42,3 @@ volumes:
   avalanchevol3:
   avalanchevol4:
   avalanchevol5:
-networks:
-  ava_net:
