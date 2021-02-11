@@ -5,11 +5,10 @@
 package bank
 
 import (
-	types2 "github.com/e-money/em-ledger/x/authority/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/authority/types"
 )
 
 type RestrictedKeeper interface {
-	GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms
+	GetRestrictedDenoms(sdk.Context) types.RestrictedDenoms
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/e-money/em-ledger/x/authority/types"
 )
 
 var _ bankingMethods = (*ProxyKeeper)(nil)
@@ -42,7 +43,7 @@ func (pk ProxyKeeper) notifyListeners(ctx sdk.Context, accounts ...sdk.AccAddres
 
 func deduplicate(accounts []sdk.AccAddress) []sdk.AccAddress {
 	idx := make(map[string]struct{}, len(accounts))
-	r := make([]sdk.AccAddress, len(accounts))
+	r := make([]sdk.AccAddress, 0, len(accounts))
 	for _, a := range accounts {
 		if _, exists := idx[string(a)]; exists {
 			continue
@@ -176,4 +177,11 @@ func (pk ProxyKeeper) SetParams(ctx sdk.Context, params banktypes.Params) {
 
 func (pk ProxyKeeper) GetSupply(ctx sdk.Context) exported.SupplyI {
 	return pk.bk.GetSupply(ctx)
+}
+
+// RestrictedKeeperFunc implements the RestrictedKeeper interface.
+type RestrictedKeeperFunc func(sdk.Context) types.RestrictedDenoms
+
+func (r RestrictedKeeperFunc) GetRestrictedDenoms(ctx sdk.Context) types.RestrictedDenoms {
+	return r(ctx)
 }

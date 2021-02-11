@@ -1123,7 +1123,10 @@ func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.Accoun
 		bk = bankkeeper.NewBaseKeeper(
 			encConfig.Marshaler, keyBank, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
-		wrappedBank = embank.Wrap(bk, AllowAllDenoms{})
+
+		wrappedBank = embank.Wrap(bk, embank.RestrictedKeeperFunc(func(ctx sdk.Context) types2.RestrictedDenoms {
+			return types2.RestrictedDenoms{} // allow all
+		}))
 	)
 
 	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
@@ -1224,10 +1227,4 @@ func snapshotAccounts(ctx sdk.Context, bk bankkeeper.ViewKeeper) (totalBalance s
 
 func randomAddress() sdk.AccAddress {
 	return tmrand.Bytes(sdk.AddrLen)
-}
-
-type AllowAllDenoms struct{}
-
-func (AllowAllDenoms) GetRestrictedDenoms(ctx sdk.Context) types2.RestrictedDenoms {
-	return types2.RestrictedDenoms{}
 }
