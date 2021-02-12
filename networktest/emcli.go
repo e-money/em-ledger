@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	EMCLI = "./build/emcli"
+	// todo (reviewer) : emcli was merged into emd:
+	EMCLI = "./build/emd"
 
 	// gjson paths
 	QGetMintableEUR = "value.mintable.#(denom==\"eeur\").amount"

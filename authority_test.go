@@ -4,7 +4,7 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	"encoding/json"

@@ -12,6 +12,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func GetQueryCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                        types.ModuleName,
+		Short:                      "Querying commands for circulation and vested balance",
+		SuggestionsMinimumDistance: 2,
+	}
+	cmd.AddCommand(
+		GetQuerySpendableBalance(),
+		GetQueryCirculatingSupplyCmd(),
+	)
+
+	return cmd
+}
+
 func GetQuerySpendableBalance() *cobra.Command {
 	spendableBalanceCmd := &cobra.Command{
 		Use:   "spendable",

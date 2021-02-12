@@ -39,21 +39,18 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # process linker flags
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
-          -X github.com/cosmos/cosmos-sdk/version.ServerName=emd \
-          -X github.com/cosmos/cosmos-sdk/version.ClientName=emcli \
-          -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
-          -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-          -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
+		  -X github.com/cosmos/cosmos-sdk/version.AppName=emd \
+		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emcli
 
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
-	go build -mod=readonly $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/emcli
 
 build-linux:
 	# Linux images for docker-compose

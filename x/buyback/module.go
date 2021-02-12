@@ -7,8 +7,10 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/e-money/em-ledger/x/buyback/client/cli"
 	"github.com/e-money/em-ledger/x/buyback/client/rest"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
+	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -26,14 +28,16 @@ type (
 	AppModule struct {
 		AppModuleBasic
 
-		keeper keeper.Keeper
+		keeper     keeper.Keeper
+		bankKeeper types.BankKeeper
 	}
 )
 
-func NewAppModule(k keeper.Keeper) AppModule {
+func NewAppModule(k keeper.Keeper, bk types.BankKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		bankKeeper:     bk,
 	}
 }
 
@@ -66,9 +70,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	// todo (Alex)
-	//return cli.GetQueryCmd(cdc)
-	return nil
+	return cli.GetQueryCmd()
 }
 
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
@@ -101,7 +103,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	//types.RegisterQueryServer(cfg.QueryServer(), am.accountKeeper)
 }
 
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
+	BeginBlocker(ctx, am.keeper, am.bankKeeper)
+}
 
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}

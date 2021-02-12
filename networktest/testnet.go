@@ -166,9 +166,10 @@ func (t Testnet) ChainID() string {
 func (t Testnet) makeTestnet() error {
 	output, err := execCmdAndWait(EMD,
 		"testnet",
-		t.chainID,
 		t.Keystore.Authority.name,
+		"--chain-id", t.chainID,
 		"-o", WorkingDir,
+		"--keyring-backend", "test",
 		"--keyaccounts", t.Keystore.path)
 
 	if err != nil {
@@ -253,11 +254,13 @@ func execCmdAndRun(name string, arguments []string, scanner func(string)) error 
 }
 
 func execCmdAndWait(name string, arguments ...string) (string, error) {
+	// todo (Alex): remove debug line
+	fmt.Println("+++: ", name, " ", strings.Join(arguments, " "))
 	cmd := exec.Command(name, arguments...)
 
 	// TODO Look into ways of not always setting this.
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "BUILD_TAGS=fast_consensus")
+	// todo (reviewer): dropped "fast_consensus" build tag in favour of
 
 	var output strings.Builder
 	captureOutput := func(s string) {

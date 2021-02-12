@@ -61,7 +61,7 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 }
 
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
+	return GetTxCmd()
 }
 
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
@@ -116,7 +116,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	//types.RegisterQueryServer(cfg.QueryServer(), am.accountKeeper)
 }
 
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
+	keeper.BeginBlocker(ctx, am.keeper)
+}
 
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}

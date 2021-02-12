@@ -7,14 +7,14 @@ package networktest
 import (
 	"bufio"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io/ioutil"
 	"os"
 	"strings"
-
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/multisig"
 )
 
 const KeyPwd = "pwd12345"
@@ -23,7 +23,7 @@ const Bip39Pwd = ""
 type (
 	KeyStore struct {
 		path    string
-		keybase keys.Keybase
+		keybase keyring.Keyring
 
 		Authority,
 		Key1,
@@ -37,22 +37,22 @@ type (
 
 	Key struct {
 		name    string
-		keybase keys.Keybase
-		privkey crypto.PrivKey
-		pubkey  crypto.PubKey
+		keybase keyring.Keyring
+		privkey string
+		pubkey  cryptotypes.PubKey
 		address sdk.AccAddress
 	}
 )
 
-func newKey(name string, keybase keys.Keybase) Key {
+func newKey(name string, keybase keyring.Keyring) Key {
 	// Extract key information to prevent future keystore access. Makes concurrent key usage possible.
 	var (
-		privkey, _ = keybase.ExportPrivateKeyObject(name, KeyPwd)
-		info, _    = keybase.Get(name)
+		privkey, _ = keybase.ExportPrivKeyArmor(name, KeyPwd)
+		info, _    = keybase.Key(name)
 	)
 
 	var address sdk.AccAddress
-	var pubKey crypto.PubKey
+	var pubKey cryptotypes.PubKey
 	if info != nil {
 		pubKey = info.GetPubKey()
 		address = info.GetAddress()
@@ -69,7 +69,7 @@ func newKey(name string, keybase keys.Keybase) Key {
 
 func (k Key) GetAddress() string {
 	if k.address.Empty() {
-		info, err := k.keybase.Get(k.name)
+		info, err := k.keybase.Key(k.name)
 		if err != nil {
 			panic(err)
 		}
@@ -80,16 +80,13 @@ func (k Key) GetAddress() string {
 	return k.address.String()
 }
 
-func (k Key) GetPublicKey() crypto.PubKey {
-	if k.pubkey != nil {
-		return k.pubkey
-	}
-
-	return k.privkey.PubKey()
+func (k Key) GetPublicKey() cryptotypes.PubKey {
+	return k.pubkey
 }
 
 func (k Key) Sign(bz []byte) ([]byte, error) {
-	return k.privkey.Sign(bz)
+	signed, _, err := k.keybase.Sign(k.name, bz)
+	return signed, err
 }
 
 func NewKeystore() (*KeyStore, error) {
@@ -98,7 +95,7 @@ func NewKeystore() (*KeyStore, error) {
 		return nil, err
 	}
 
-	keybase, err := keys.NewKeyring(sdk.KeyringServiceName(), keys.BackendTest, path, nil)
+	keybase, err := keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,34 +158,38 @@ func (ks KeyStore) addValidatorKeys(testnetoutput string) {
 	for i, mnemonic := range seeds {
 		accountName := fmt.Sprintf("validator%v", i)
 		hdPath := sdk.GetConfig().GetFullFundraiserPath()
-		_, err := ks.keybase.CreateAccount(accountName, mnemonic, Bip39Pwd, KeyPwd, hdPath, keys.Secp256k1)
+		_, err := ks.keybase.NewAccount(accountName, mnemonic, Bip39Pwd, hdPath, hd.Secp256k1)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-func initializeKeystore(kb keys.Keybase) {
-	_, _ = kb.CreateAccount("authoritykey",
+func initializeKeystore(kb keyring.Keyring) {
+	keyDerivationPath := sdk.FullFundraiserPath
+
+	_, err := kb.NewAccount("authoritykey",
 		"play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty",
-		"", KeyPwd, "0", keys.Secp256k1)
-
-	_, _ = kb.CreateAccount("key1",
+		KeyPwd, keyDerivationPath, hd.Secp256k1)
+	if err != nil {
+		panic(err.Error())
+	}
+	_, _ = kb.NewAccount("key1",
 		"document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil",
-		"", KeyPwd, "0", keys.Secp256k1)
+		KeyPwd, keyDerivationPath, hd.Secp256k1)
 
-	_, _ = kb.CreateAccount("key2",
+	_, _ = kb.NewAccount("key2",
 		"treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich",
-		"", KeyPwd, "0", keys.Secp256k1)
+		KeyPwd, keyDerivationPath, hd.Secp256k1)
 
-	_, _ = kb.CreateAccount("key3",
+	_, _ = kb.NewAccount("key3",
 		"rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel",
-		"", KeyPwd, "0", keys.Secp256k1)
+		KeyPwd, keyDerivationPath, hd.Secp256k1)
 
 	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
-	pks := make([]crypto.PubKey, 3)
+	pks := make([]cryptotypes.PubKey, 3)
 	for i, keyname := range []string{"key1", "key2", "key3"} {
-		keyinfo, err := kb.Get(keyname)
+		keyinfo, err := kb.Key(keyname)
 		if err != nil {
 			panic(err)
 		}
@@ -196,8 +197,8 @@ func initializeKeystore(kb keys.Keybase) {
 		pks[i] = keyinfo.GetPubKey()
 	}
 
-	pk := multisig.NewPubKeyMultisigThreshold(2, pks)
-	_, err := kb.CreateMulti("multikey", pk)
+	pk := multisig.NewLegacyAminoPubKey(2, pks)
+	_, err = kb.SaveMultisig("multikey", pk)
 	if err != nil {
 		panic(err)
 	}

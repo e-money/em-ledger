@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/e-money/em-ledger/x/issuer/client/cli"
 	"github.com/e-money/em-ledger/x/issuer/keeper"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/gorilla/mux"
@@ -61,13 +62,11 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 }
 
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
+	return cli.GetTxCmd()
 }
 
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	// todo (Alex)
-	//return GetQueryCmd()
-	return nil
+	return cli.GetQueryCmd()
 }
 
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {

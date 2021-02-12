@@ -4,7 +4,7 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	"testing"
@@ -24,8 +24,7 @@ import (
 var (
 	testnet = func() nt.Testnet {
 		version.Name = "e-money" // Used by the keyring library.
-		version.ClientName = "emcli"
-		version.ServerName = "emd"
+		version.AppName = "emd"
 
 		apptypes.ConfigureSDK()
 		return nt.NewTestnet()

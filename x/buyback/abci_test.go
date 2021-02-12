@@ -13,6 +13,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	embank "github.com/e-money/em-ledger/hooks/bank"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"strings"
@@ -21,7 +22,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	emauth "github.com/e-money/em-ledger/hooks/auth"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/e-money/em-ledger/x/market"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -46,14 +46,15 @@ func TestBuyback1(t *testing.T) {
 	generateMarketActivity(ctx, market, accountKeeper, bankKeeper)
 
 	account := accountKeeper.GetModuleAccount(ctx, ModuleName)
-	bankKeeper.AddCoins(ctx, account.GetAddress(), coins("10000ungm"))
+	err := bankKeeper.AddCoins(ctx, account.GetAddress(), coins("10000ungm"))
+	require.NoError(t, err)
 
 	BeginBlocker(ctx, keeper, bankKeeper)
 
 	// Verify that staking tokens are burned
 	account = accountKeeper.GetModuleAccount(ctx, ModuleName)
 	balances := bankKeeper.GetAllBalances(ctx, account.GetAddress())
-	require.True(t, balances.AmountOf(stakingDenom).IsZero())
+	require.True(t, balances.AmountOf(stakingDenom).IsZero(), balances)
 
 	require.Condition(t, func() bool {
 		for _, evt := range ctx.EventManager().ABCIEvents() {
@@ -225,7 +226,7 @@ func createAccount(ctx sdk.Context, ak banktypes.AccountKeeper, bk bankkeeper.Se
 	return acc
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Keeper, banktypes.AccountKeeper, bankkeeper.BaseKeeper) {
+func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Keeper, banktypes.AccountKeeper, bankkeeper.Keeper) {
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 
@@ -253,19 +254,23 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIndices, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(buybackKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
 
-	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain", Time: time.Now()}, true, log.NewNopLogger())
 	var (
 		pk = paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
-		ak = emauth.Wrap(authkeeper.NewAccountKeeper(
+		ak = authkeeper.NewAccountKeeper(
 			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
-		))
-		bk = bankkeeper.NewBaseKeeper(
-			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
+		allowAllDenoms = embank.RestrictedKeeperFunc(func(context sdk.Context) types2.RestrictedDenoms {
+			return types2.RestrictedDenoms{}
+		})
+		bk = embank.Wrap(bankkeeper.NewBaseKeeper(
+			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
+		), allowAllDenoms)
 	)
 
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))

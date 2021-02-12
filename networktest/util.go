@@ -7,9 +7,11 @@
 package networktest
 
 import (
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/signing"
+	emoney "github.com/e-money/em-ledger"
 	"strings"
 	"sync"
 	"time"
@@ -53,47 +55,31 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 	return
 }
 
-func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) types.StdTx {
-	memo := "+memo"
-	fee := auth.NewStdFee(100000, mustParseCoins(feestring))
+func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) signing.Tx {
+	ec := emoney.MakeEncodingConfig()
 
-	sig, err := key.Sign(
-		auth.StdSignBytes(
-			chainid,
-			accnum,
-			sequence,
-			fee,
-			msgs,
-			memo),
-	)
+	clientCtx := client.Context{
+		FromAddress:       key.address,
+		ChainID:           chainid,
+		JSONMarshaler:     ec.Marshaler,
+		InterfaceRegistry: ec.InterfaceRegistry,
+		Keyring:           key.keybase,
+		From:              key.name,
+		FromName:          key.name,
+		TxConfig:          ec.TxConfig,
+		LegacyAmino:       ec.Amino,
+	}
+	txf := tx.NewFactoryCLI(clientCtx, nil)
+	txf.WithMemo("+memo").WithFees(feestring).WithSequence(sequence).WithAccountNumber(accnum)
 
+	txb, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
-		panic(err)
+		panic("failed to build tx: " + err.Error())
 	}
-
-	signature := auth.StdSignature{
-		PubKey:    key.pubkey,
-		Signature: sig,
-	}
-
-	tx := auth.NewStdTx(msgs, fee, []auth.StdSignature{signature}, memo)
-	return tx
-}
-
-func mustParseCoins(coins string) sdk.Coins {
-	cs, err := sdk.ParseCoins(coins)
+	err = tx.Sign(txf, key.name, txb, false)
 	if err != nil {
-		panic(err)
+		panic("failed to sign tx: " + err.Error())
 	}
 
-	return cs
-}
-
-func mustParseCoin(coin string) sdk.Coin {
-	c, err := sdk.ParseCoin(coin)
-	if err != nil {
-		panic(err)
-	}
-
-	return c
+	return txb.GetTx()
 }

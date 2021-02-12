@@ -41,4 +41,5 @@ type (
 	InflationState  = types.InflationState
 	InflationAsset  = types.InflationAsset
 	InflationAssets = types.InflationAssets
+	GenesisState    = types.GenesisState
 )

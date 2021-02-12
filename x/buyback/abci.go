@@ -2,10 +2,9 @@ package buyback
 
 import (
 	"fmt"
-
-	"github.com/e-money/em-ledger/x/market/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/buyback/internal/types"
+	markettypes "github.com/e-money/em-ledger/x/market/types"
 )
 
 func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
@@ -40,8 +39,8 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 			continue
 		}
 
-		order, err := types.NewOrder(
-			types.TimeInForce_GoodTilCancel,
+		order, err := markettypes.NewOrder(
+			markettypes.TimeInForce_GoodTilCancel,
 			balance,
 			sdk.NewCoin(stakingDenom, destinationAmount),
 			account,
@@ -74,8 +73,8 @@ func generateClientOrderId(ctx sdk.Context, balance sdk.Coin) string {
 }
 
 // Return market data on trades that purchased the given denom.
-func groupMarketDataBySource(marketData []types.MarketData, denom string) map[string]types.MarketData {
-	result := make(map[string]types.MarketData)
+func groupMarketDataBySource(marketData []markettypes.MarketData, denom string) map[string]markettypes.MarketData {
+	result := make(map[string]markettypes.MarketData)
 
 	for _, md := range marketData {
 		if md.Destination != denom {

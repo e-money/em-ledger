@@ -5,6 +5,7 @@
 package bank
 
 import (
+	"context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/bank/exported"
@@ -13,15 +14,10 @@ import (
 	"github.com/e-money/em-ledger/x/authority/types"
 )
 
-var _ bankingMethods = (*ProxyKeeper)(nil)
-
-type bankingMethods interface {
-	bankkeeper.SendKeeper
-	GetSupply(ctx sdk.Context) exported.SupplyI
-}
+var _ bankkeeper.Keeper = (*ProxyKeeper)(nil)
 
 type ProxyKeeper struct {
-	bk        bankingMethods
+	bk        bankkeeper.Keeper
 	rk        RestrictedKeeper
 	listeners []func(sdk.Context, []sdk.AccAddress)
 }
@@ -177,6 +173,138 @@ func (pk ProxyKeeper) SetParams(ctx sdk.Context, params banktypes.Params) {
 
 func (pk ProxyKeeper) GetSupply(ctx sdk.Context) exported.SupplyI {
 	return pk.bk.GetSupply(ctx)
+}
+
+func (pk *ProxyKeeper) InitGenesis(ctx sdk.Context, state *banktypes.GenesisState) {
+	pk.bk.InitGenesis(ctx, state)
+}
+
+func (pk *ProxyKeeper) ExportGenesis(ctx sdk.Context) *banktypes.GenesisState {
+	return pk.bk.ExportGenesis(ctx)
+}
+
+func (pk *ProxyKeeper) SetSupply(ctx sdk.Context, supply exported.SupplyI) {
+	pk.bk.SetSupply(ctx, supply)
+}
+
+func (pk *ProxyKeeper) GetDenomMetaData(ctx sdk.Context, denom string) banktypes.Metadata {
+	return pk.bk.GetDenomMetaData(ctx, denom)
+}
+
+func (pk *ProxyKeeper) SetDenomMetaData(ctx sdk.Context, denomMetaData banktypes.Metadata) {
+	pk.bk.SetDenomMetaData(ctx, denomMetaData)
+}
+
+func (pk *ProxyKeeper) IterateAllDenomMetaData(ctx sdk.Context, cb func(banktypes.Metadata) bool) {
+	pk.bk.IterateAllDenomMetaData(ctx, cb)
+}
+
+func (pk *ProxyKeeper) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+	// todo (Alex) : test notifications
+	err := pk.bk.SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
+	if err != nil {
+		return err
+	}
+	pk.notifyListeners(ctx, recipientAddr)
+	return nil
+}
+
+func (pk *ProxyKeeper) SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error {
+	return pk.bk.SendCoinsFromModuleToModule(ctx, senderModule, recipientModule, amt)
+}
+
+func (pk *ProxyKeeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+	// todo (Alex) : test notifications
+	err := pk.bk.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
+	if err != nil {
+		return err
+	}
+	pk.notifyListeners(ctx, senderAddr)
+	return nil
+}
+
+func (pk *ProxyKeeper) DelegateCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+	// todo (Alex) : test notifications
+	err := pk.bk.DelegateCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
+	if err != nil {
+		return err
+	}
+	pk.notifyListeners(ctx, senderAddr)
+	return nil
+}
+
+func (pk *ProxyKeeper) UndelegateCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+	// todo (Alex) : test notifications
+	err := pk.bk.UndelegateCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
+	if err != nil {
+		return err
+	}
+	pk.notifyListeners(ctx, recipientAddr)
+	return nil
+}
+
+func (pk *ProxyKeeper) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+	return pk.bk.MintCoins(ctx, moduleName, amt)
+}
+
+func (pk *ProxyKeeper) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+	return pk.bk.BurnCoins(ctx, moduleName, amt)
+}
+
+func (pk *ProxyKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAddr sdk.AccAddress, amt sdk.Coins) error {
+	// todo (Alex) : test notifications
+	err := pk.bk.DelegateCoins(ctx, delegatorAddr, moduleAccAddr, amt)
+	if err != nil {
+		return err
+	}
+	pk.notifyListeners(ctx, delegatorAddr)
+	return nil
+}
+
+func (pk *ProxyKeeper) UndelegateCoins(ctx sdk.Context, moduleAccAddr, delegatorAddr sdk.AccAddress, amt sdk.Coins) error {
+	// todo (Alex) : test notifications
+	err := pk.bk.UndelegateCoins(ctx, moduleAccAddr, delegatorAddr, amt)
+	if err != nil {
+		return err
+	}
+	pk.notifyListeners(ctx, delegatorAddr)
+	return nil
+}
+
+func (pk *ProxyKeeper) MarshalSupply(supplyI exported.SupplyI) ([]byte, error) {
+	return pk.bk.MarshalSupply(supplyI)
+}
+
+func (pk *ProxyKeeper) UnmarshalSupply(bz []byte) (exported.SupplyI, error) {
+	return pk.bk.UnmarshalSupply(bz)
+}
+
+func (pk *ProxyKeeper) Balance(ctx context.Context, request *banktypes.QueryBalanceRequest) (*banktypes.QueryBalanceResponse, error) {
+	return pk.bk.Balance(ctx, request)
+}
+
+func (pk *ProxyKeeper) AllBalances(ctx context.Context, request *banktypes.QueryAllBalancesRequest) (*banktypes.QueryAllBalancesResponse, error) {
+	return pk.bk.AllBalances(ctx, request)
+}
+
+func (pk *ProxyKeeper) TotalSupply(ctx context.Context, request *banktypes.QueryTotalSupplyRequest) (*banktypes.QueryTotalSupplyResponse, error) {
+	return pk.bk.TotalSupply(ctx, request)
+}
+
+func (pk *ProxyKeeper) SupplyOf(ctx context.Context, request *banktypes.QuerySupplyOfRequest) (*banktypes.QuerySupplyOfResponse, error) {
+	return pk.bk.SupplyOf(ctx, request)
+}
+
+func (pk *ProxyKeeper) Params(ctx context.Context, request *banktypes.QueryParamsRequest) (*banktypes.QueryParamsResponse, error) {
+	return pk.bk.Params(ctx, request)
+}
+
+func (pk *ProxyKeeper) DenomMetadata(ctx context.Context, request *banktypes.QueryDenomMetadataRequest) (*banktypes.QueryDenomMetadataResponse, error) {
+	return pk.bk.DenomMetadata(ctx, request)
+}
+
+func (pk *ProxyKeeper) DenomsMetadata(ctx context.Context, request *banktypes.QueryDenomsMetadataRequest) (*banktypes.QueryDenomsMetadataResponse, error) {
+	return pk.bk.DenomsMetadata(ctx, request)
 }
 
 // RestrictedKeeperFunc implements the RestrictedKeeper interface.

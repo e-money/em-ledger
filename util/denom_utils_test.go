@@ -11,7 +11,8 @@ import (
 
 func TestDenoms(t *testing.T) {
 	assert.True(t, ValidateDenom("eeur"))
-	assert.False(t, ValidateDenom("EEUR"))
+	// todo (reviewer): the regexp pattern for valid denoms was changed for IBC to `[a-zA-Z][a-zA-Z0-9/]{2,127}`
+	//assert.False(t, ValidateDenom("EEUR"))
 	assert.False(t, ValidateDenom("123456"))
 }
 
@@ -25,7 +26,7 @@ func TestParseDenominations(t *testing.T) {
 		{"  eeur, ejpy ", true, 2},
 		{" eeur,,ejpy ", true, 2},
 		{"", true, 0},
-		{"  EEUR, ejpy ", false, -1},
+		{"  E-EUR, ejpy ", false, -1},
 	}
 
 	for _, d := range testdata {

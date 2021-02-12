@@ -4,10 +4,12 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	"fmt"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	emoney "github.com/e-money/em-ledger"
 	market "github.com/e-money/em-ledger/x/market/types"
 	"io/ioutil"
 	"os"
@@ -15,9 +17,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-
-	emoney "github.com/e-money/em-ledger" // To get around this issue: https://stackoverflow.com/q/14723229
 	"github.com/e-money/em-ledger/networktest"
 
 	. "github.com/onsi/ginkgo"
@@ -139,8 +138,8 @@ var _ = Describe("Market", func() {
 			}
 
 			clientOrderId := "ShouldNotBePresent"
-			addOrder := market.MsgAddLimitOrder{
-				Owner:         addr3,
+			addOrder := &market.MsgAddLimitOrder{
+				Owner:         addr3.String(),
 				Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
 				Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
 				ClientOrderId: clientOrderId,
@@ -156,7 +155,7 @@ var _ = Describe("Market", func() {
 
 			coins := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewInt(5000)))
 			for i := 0; i < 5; i++ {
-				msgs = append(msgs, bank.NewMsgSend(addr3, addr2, coins))
+				msgs = append(msgs, banktypes.NewMsgSend(addr3, addr2, coins))
 			}
 
 			accountJson, err := emcli.QueryAccountJson(acc3.GetAddress())
@@ -166,7 +165,7 @@ var _ = Describe("Market", func() {
 
 			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "500eeur", accNum, accSeq, msgs...)
 
-			cdc := emoney.MakeCodec()
+			cdc := emoney.MakeEncodingConfig().Amino
 			json := cdc.MustMarshalJSON(tx)
 
 			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
