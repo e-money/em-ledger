@@ -7,12 +7,13 @@ package cli
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/spf13/cobra"
 )
 
 func GetQueryCmd() *cobra.Command {
-	issuerQueryCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "issuers",
 		Short: "List issuers",
 		Args:  cobra.ExactArgs(0),
@@ -33,6 +34,6 @@ func GetQueryCmd() *cobra.Command {
 			return clientCtx.PrintBytes(resp)
 		},
 	}
-
-	return issuerQueryCmd
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

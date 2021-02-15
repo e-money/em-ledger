@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 	"time"
@@ -19,10 +19,18 @@ var (
 	previousProposerKey = []byte("emdistr/previousproposer")
 )
 
-const ModuleName = "distribution-hook"
+// todo (reviewer) : using the same name as sdk module to prevent adding both.
+const ModuleName = distrtypes.ModuleName
 
 type AccountKeeper interface {
 	GetModuleAddress(name string) sdk.AccAddress
+}
+
+type DistributionKeeper interface {
+	AllocateTokens(
+		ctx sdk.Context, sumPreviousPrecommitPower, totalPreviousPower int64,
+		previousProposer sdk.ConsAddress, previousVotes []abci.VoteInfo,
+	)
 }
 
 // Adapted from cosmos-sdk/x/distribution/abci.go
@@ -30,7 +38,8 @@ type AccountKeeper interface {
 
 // set the proposer for determining distribution during endblock
 // and distribute rewards for the previous block
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB, batch db.Batch) {
+// todo (reviewer): the logic in the this function was not modified. Please ensure that it still is what you need.
+func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB, batch db.Batch) {
 	defer telemetry.ModuleMeasureSince(ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 
 	// determine the total power signing the block
@@ -43,6 +52,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, a
 	}
 
 	previousProposer, err := db.Get(previousProposerKey)
+	// todo (reviewer) : a panic in the begin blocker will crash the node. It is not "recovered" anywhere downstream
 	if err != nil {
 		panic(err)
 	}

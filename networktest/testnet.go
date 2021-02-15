@@ -170,7 +170,9 @@ func (t Testnet) makeTestnet() error {
 		"--chain-id", t.chainID,
 		"-o", WorkingDir,
 		"--keyring-backend", "test",
-		"--keyaccounts", t.Keystore.path)
+		"--starting-ip-address", "192.168.10.2",
+		"--keyaccounts", t.Keystore.path,
+		"--minimum-gas-prices", "")
 
 	if err != nil {
 		return err
@@ -205,12 +207,11 @@ func (t *Testnet) updateGenesis() {
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 
-	window := (10 * time.Second).Nanoseconds()
-	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
+	// todo (Alex): does this attribute still exists?
+	//bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", "10s")
 
 	// Reduce jail time to be able to test unjailing
-	unjail := (5 * time.Second).Nanoseconds()
-	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", fmt.Sprint(unjail))
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", "5s")
 
 	// Start inflation before testnet start in order to have some rewards for NGM stakers.
 	inflationLastApplied := time.Now().Add(-2 * time.Hour).UTC().Format(time.RFC3339)
@@ -234,7 +235,8 @@ func compileBinaries() error {
 }
 
 func dockerComposeUp() (func() bool, error) {
-	wait, scanner := createOutputScanner("] Committed state", 30*time.Second)
+	// todo (reviewer): new zap logger produces different and coloured output
+	wait, scanner := createOutputScanner("Committed state", 30*time.Second)
 	return wait, execCmdAndRun(dockerComposePath, []string{"up", "--no-color"}, scanner)
 }
 

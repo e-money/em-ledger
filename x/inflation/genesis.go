@@ -24,6 +24,7 @@ func DefaultGenesisState() *types.GenesisState {
 }
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data types.GenesisState) {
+	keeper.Logger(ctx).Info("+++ InitGenesis", "state", data)
 	keeper.SetState(ctx, data.InflationState)
 }
 

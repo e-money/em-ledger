@@ -7,6 +7,7 @@ package cli
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
 
@@ -14,7 +15,7 @@ import (
 )
 
 func GetQueryCmd() *cobra.Command {
-	inflationQueryCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Commands for querying the inflation state",
 		SuggestionsMinimumDistance: 2,
@@ -40,5 +41,6 @@ func GetQueryCmd() *cobra.Command {
 			return clientCtx.PrintBytes(res)
 		},
 	}
-	return inflationQueryCmd
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

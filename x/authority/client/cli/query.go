@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/authority/keeper"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
@@ -58,5 +59,6 @@ func GetGasPricesCmd() *cobra.Command {
 			return nil
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

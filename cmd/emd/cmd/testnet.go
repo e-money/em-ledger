@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -36,6 +37,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 )
+
+const stakingToken = "ungm"
 
 var (
 	flagNodeDirPrefix     = "node-dir-prefix"
@@ -86,7 +89,7 @@ Example:
 			return InitTestnet(
 				clientCtx, cmd, config, mbm, genBalIterator, outputDir, chainID, minGasPrices,
 				nodeDirPrefix, nodeDaemonHome, startingIPAddress, keyringBackend, algo, numValidators,
-				authorityKey,
+				authorityKey, addKeybaseAccounts,
 			)
 		},
 	}
@@ -94,10 +97,11 @@ Example:
 	cmd.Flags().Int(flagNumValidators, 4, "Number of validators to initialize the testnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./mytestnet", "Directory to store initialization data for the testnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "emd", "Home directory of the node's daemon configuration")
+	cmd.Flags().String(flagNodeDaemonHome, "", "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagStartingIPAddress, "192.168.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
+
+	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", stakingToken), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	// todo (reviewer) : backend default is OS
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
@@ -109,7 +113,7 @@ Example:
 const nodeDirPerm = 0755
 
 // Initialize the testnet
-func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmconfig.Config, mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator, outputDir, chainID, minGasPrices, nodeDirPrefix, nodeDaemonHome, startingIPAddress, keyringBackend, algoStr string, numValidators int, authorityKey sdk.AccAddress) error {
+func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmconfig.Config, mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator, outputDir, chainID, minGasPrices, nodeDirPrefix, nodeDaemonHome, startingIPAddress, keyringBackend, algoStr string, numValidators int, authorityKey sdk.AccAddress, keybaseAccountPath string) error {
 	if chainID == "" {
 		chainID = "chain-" + tmrand.NewRand().Str(6)
 	}
@@ -196,7 +200,7 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		accStakingTokens := sdk.TokensFromConsensusPower(500)
 		coins := sdk.Coins{
 			sdk.NewCoin(fmt.Sprintf("%stoken", nodeDirName), accTokens),
-			sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
+			sdk.NewCoin(stakingToken, accStakingTokens),
 		}
 
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
@@ -206,7 +210,7 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(sdk.DefaultBondDenom, valTokens),
+			sdk.NewCoin(stakingToken, valTokens),
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
@@ -245,6 +249,12 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appConfig)
 	}
 
+	if keybaseAccountPath != "" {
+		// add our test accounts
+		testAccounts, testAccountBalances := addPredefinedTestAccounts(keybaseAccountPath)
+		genAccounts = append(genAccounts, testAccounts...)
+		genBalances = append(genBalances, testAccountBalances...)
+	}
 	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators, authorityKey); err != nil {
 		return err
 	}
@@ -274,7 +284,6 @@ func initGenFiles(
 	// set the accounts in the genesis state
 	var authGenState authtypes.GenesisState
 	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[authtypes.ModuleName], &authGenState)
-
 	accounts, err := authtypes.PackAccounts(genAccounts)
 	if err != nil {
 		return err
@@ -300,6 +309,8 @@ func initGenFiles(
 		AppState:   appGenStateJSON,
 		Validators: nil,
 	}
+	// quick & dirty solution to set our denom instead of sdk default
+	genDoc.AppState = []byte(strings.Replace(string(genDoc.AppState), "\"stake\"", fmt.Sprintf("%q", stakingToken), -1))
 
 	// generate empty genesis files for each validator and save
 	for i := 0; i < numValidators; i++ {
@@ -445,4 +456,31 @@ func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
 	}
 
 	return json.RawMessage(bz)
+}
+
+func addPredefinedTestAccounts(keystorepath string) (authtypes.GenesisAccounts, []banktypes.Balance) {
+	kb, err := keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, keystorepath, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	allKeys, err := kb.List()
+	if err != nil {
+		panic(err)
+	}
+	coins := sdk.NewCoins(
+		sdk.NewCoin(stakingToken, sdk.NewInt(99000000000)),
+		sdk.NewCoin("eeur", sdk.NewInt(10000000000)),
+		sdk.NewCoin("ejpy", sdk.NewInt(3500000000000)),
+		sdk.NewCoin("echf", sdk.NewInt(10000000000)),
+	)
+
+	accts := make(authtypes.GenesisAccounts, len(allKeys))
+	balances := make([]banktypes.Balance, len(allKeys))
+	for i, k := range allKeys {
+		fmt.Printf("Creating genesis account for key %v - %s.\n", k.GetName(), k.GetAddress().String())
+		accts[i] = authtypes.NewBaseAccount(k.GetAddress(), nil, 0, 0)
+		balances[i] = banktypes.Balance{Address: k.GetAddress().String(), Coins: coins.Sort()}
+	}
+	return accts, balances
 }

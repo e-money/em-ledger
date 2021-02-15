@@ -225,9 +225,9 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `last_applied_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `last_applied` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `last_applied_height` | [string](#string) |  |  |
-| `inflation_assets` | [InflationAsset](#em.inflation.v1beta1.InflationAsset) | repeated |  |
+| `assets` | [InflationAsset](#em.inflation.v1beta1.InflationAsset) | repeated |  |
 
 
 
@@ -258,7 +258,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `inflation_state` | [InflationState](#em.inflation.v1beta1.InflationState) |  | todo (reviewer): yaml naming is a bit inconsistent. state contains assets |
+| `assets` | [InflationState](#em.inflation.v1beta1.InflationState) |  | todo (reviewer): yaml naming is a bit inconsistent. state contains assets |
 
 
 

@@ -7,6 +7,7 @@ package cli
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/queries/types"
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ func GetQueryCmd() *cobra.Command {
 }
 
 func GetQuerySpendableBalance() *cobra.Command {
-	spendableBalanceCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "spendable",
 		Short: "Display the vested balance of an account",
 		Args:  cobra.ExactArgs(1),
@@ -54,13 +55,13 @@ func GetQuerySpendableBalance() *cobra.Command {
 			return clientCtx.PrintBytes(resp)
 		},
 	}
-
-	return spendableBalanceCmd
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }
 
 // Meant as an extension to the "emcli query supply" queries.
 func GetQueryCirculatingSupplyCmd() *cobra.Command {
-	circulatingSupplyCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "circulating",
 		Short: "Display circulating (ie non-vesting) token supply",
 		Args:  cobra.ExactArgs(0),
@@ -84,6 +85,6 @@ func GetQueryCirculatingSupplyCmd() *cobra.Command {
 			return clientCtx.PrintBytes(resp)
 		},
 	}
-
-	return circulatingSupplyCmd
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

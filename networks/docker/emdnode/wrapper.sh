@@ -32,9 +32,9 @@ fi
 export EMDHOME="/emoney/node${ID}"
 
 if [ -d "`dirname ${EMDHOME}/${LOG}`" ]; then
-  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} | tee "${EMDHOME}/${LOG}"
+  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --pruning=nothing | tee "${EMDHOME}/${LOG}"
 else
-  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL}
+  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --pruning=nothing
 fi
 
 chmod 777 -R /emoney

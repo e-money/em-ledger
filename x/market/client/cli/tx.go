@@ -6,6 +6,7 @@ package cli
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -82,7 +83,7 @@ func AddLimitOrderCmd() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
+	flags.AddTxFlagsToCmd(cmd)
 	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_GoodTilCancel.String(), flag_TimeInForceDescription)
 	return cmd
 }
@@ -94,7 +95,7 @@ func AddMarketOrderCmd() *cobra.Command {
 		Long: `Create an order based on latest pricing information. 
 
 Example:
- emcli tx market add-market eeur 300echf 0.05 order12345
+ emd tx market add-market eeur 300echf 0.05 order12345
 `,
 		Args: cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -139,7 +140,7 @@ Example:
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
+	flags.AddTxFlagsToCmd(cmd)
 	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_ImmediateOrCancel.String(), flag_TimeInForceDescription)
 	return cmd
 
@@ -172,6 +173,7 @@ func CancelOrderCmd() *cobra.Command {
 		},
 	}
 
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
@@ -215,6 +217,6 @@ func CancelReplaceOrder() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

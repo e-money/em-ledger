@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	"github.com/spf13/cobra"
@@ -61,6 +62,6 @@ func GetModuleBalanceCmd() *cobra.Command {
 			return nil
 		},
 	}
-
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

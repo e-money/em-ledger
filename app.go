@@ -184,6 +184,7 @@ type EMoneyApp struct {
 	memKeys map[string]*sdk.MemoryStoreKey
 
 	// keepers
+	// todo (Alex) : make attributes lower case
 	AccountKeeper    authkeeper.AccountKeeper
 	BankKeeper       *embank.ProxyKeeper
 	CapabilityKeeper *capabilitykeeper.Keeper
@@ -248,6 +249,7 @@ func NewApp(
 		// em types
 		// todo (Alex): add proper slashing module here
 		issuer.StoreKey, authority.StoreKey, market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
+		inflation.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -278,7 +280,6 @@ func NewApp(
 	app.AccountKeeper = authkeeper.NewAccountKeeper(
 		appCodec, keys[authtypes.StoreKey], app.GetSubspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 	)
-	wrappedBankKeeper := app.BankKeeper
 
 	app.BankKeeper = embank.Wrap(bankkeeper.NewBaseKeeper(
 		appCodec, keys[banktypes.StoreKey], app.AccountKeeper, app.GetSubspace(banktypes.ModuleName), app.BlockedAddrs(),
@@ -371,21 +372,25 @@ func NewApp(
 			encodingConfig.TxConfig,
 		),
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts),
-		vesting.NewAppModule(app.AccountKeeper, wrappedBankKeeper),
-		bank.NewAppModule(appCodec, wrappedBankKeeper, app.AccountKeeper),
+		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
 		capability.NewAppModule(appCodec, *app.CapabilityKeeper),
 		crisis.NewAppModule(&app.CrisisKeeper, skipGenesisInvariants),
-		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, wrappedBankKeeper),
+		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
 		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
-		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, wrappedBankKeeper, app.StakingKeeper),
-		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, wrappedBankKeeper, app.StakingKeeper),
-		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, wrappedBankKeeper),
+		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		//distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, wrappedBankKeeper, app.StakingKeeper),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper),
 		evidence.NewAppModule(app.EvidenceKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 		// todo (Alex): add proper slashing module
+		emdistr.NewAppModule(
+			distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+			app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.database, &app.currentBatch,
+		),
 		liquidityprovider.NewAppModule(app.lpKeeper),
 		issuer.NewAppModule(app.issuerKeeper),
 		authority.NewAppModule(app.authorityKeeper),
@@ -401,7 +406,7 @@ func NewApp(
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
 		// todo (reviewer): check which modules make sense
-		upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
+		upgradetypes.ModuleName, minttypes.ModuleName, slashingtypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
 		// todo (Alex): set custom slash module
 		authority.ModuleName, market.ModuleName, inflation.ModuleName, emdistr.ModuleName, buyback.ModuleName,
@@ -421,7 +426,7 @@ func NewApp(
 		slashingtypes.ModuleName, govtypes.ModuleName, minttypes.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
 		// todo (Alex): add proper slashing module
-		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName,
+		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName, inflation.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
@@ -438,7 +443,7 @@ func NewApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
-			app.AccountKeeper, wrappedBankKeeper, ante.DefaultSigVerificationGasConsumer,
+			app.AccountKeeper, app.BankKeeper, ante.DefaultSigVerificationGasConsumer,
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)

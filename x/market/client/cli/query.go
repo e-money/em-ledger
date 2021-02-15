@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/keeper"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -67,7 +68,7 @@ func GetByAccountCmd() *cobra.Command {
 			return nil
 		},
 	}
-
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
@@ -123,7 +124,7 @@ func GetInstrumentCmd() *cobra.Command {
 			return clientCtx.PrintBytes(bz)
 		},
 	}
-
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
@@ -152,6 +153,6 @@ func GetInstrumentsCmd() *cobra.Command {
 			return clientCtx.PrintBytes(bz)
 		},
 	}
-
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

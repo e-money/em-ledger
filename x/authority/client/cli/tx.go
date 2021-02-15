@@ -6,6 +6,7 @@ package cli
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/util"
@@ -30,12 +31,13 @@ func GetTxCmd() *cobra.Command {
 }
 
 func getCmdSetGasPrices() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "set-gas-prices [authority_key_or_address] [minimum_gas_prices]",
-		Example: "emcli authority set-gas-prices masterkey 0.0005eeur,0.0000001ejpy",
+		Example: "emd tx authority set-gas-prices masterkey 0.0005eeur,0.0000001ejpy",
 		Short:   "Control the minimum gas prices for the chain",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -56,15 +58,18 @@ func getCmdSetGasPrices() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func getCmdCreateIssuer() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "create-issuer [authority_key_or_address] [issuer_address] [denominations]",
-		Example: "emcli authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu eeur,ejpy",
+		Example: "emd tx authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu eeur,ejpy",
 		Short:   "Create a new issuer",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -92,15 +97,18 @@ func getCmdCreateIssuer() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func getCmdDestroyIssuer() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "destroy-issuer [authority_key_or_address] [issuer_address]",
-		Example: "emcli authority destory-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu",
+		Example: "emd tx authority destory-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu",
 		Short:   "Delete an issuer",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -122,4 +130,6 @@ func getCmdDestroyIssuer() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }

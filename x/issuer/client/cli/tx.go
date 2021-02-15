@@ -7,6 +7,7 @@ package cli
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/util"
@@ -34,12 +35,13 @@ func GetTxCmd() *cobra.Command {
 }
 
 func getCmdSetInflation() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "set-inflation [issuer_key_or_address] [denomination] [inflation]",
-		Example: "emcli issuer set-inflation issuerkey eeur 0.02",
+		Example: "emd tx issuer set-inflation issuerkey eeur 0.02",
 		Short:   "Set the inflation rate for a denomination",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -67,14 +69,17 @@ func getCmdSetInflation() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func getCmdIncreaseMintableAmount() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "increase-mintable [issuer_key_or_address] [liquidity_provider_address] [amount]",
 		Short: "Increase the amount mintable for a liquidity provider.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -102,14 +107,17 @@ func getCmdIncreaseMintableAmount() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func getCmdDecreaseMintableAmount() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "decrease-mintable [issuer_key_or_address] [liquidity_provider_address] [amount]",
 		Short: "Decrease the amount mintable for a liquidity provider. Result cannot be negative",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -137,14 +145,17 @@ func getCmdDecreaseMintableAmount() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
 func getCmdRevokeLiquidityProvider() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "revoke-mint [issuer_key_or_address] [liquidity_provider_address]",
 		Short: "Revoke liquidity provider status for an account",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -166,4 +177,6 @@ func getCmdRevokeLiquidityProvider() *cobra.Command {
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
