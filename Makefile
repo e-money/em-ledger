@@ -71,7 +71,7 @@ test:
 	go test -mod=readonly ./...
 
 bdd-test:
-	go test -mod=readonly -v -p 1 --tags="bdd" bdd_test.go staking_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go buyback_test.go
+	go test -mod=readonly -v -p 1 --tags="bdd" bdd_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go  market_test.go buyback_test.go # staking_test.go capacity_test.go
 
 local-testnet:
 	go test -mod=readonly -v --tags="bdd" bdd_test.go localnet_test.go

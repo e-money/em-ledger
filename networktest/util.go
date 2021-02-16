@@ -7,11 +7,16 @@
 package networktest
 
 import (
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	emoney "github.com/e-money/em-ledger"
+	"github.com/spf13/pflag"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -56,21 +61,32 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 }
 
 func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) signing.Tx {
-	ec := emoney.MakeEncodingConfig()
-
-	clientCtx := client.Context{
-		FromAddress:       key.address,
-		ChainID:           chainid,
-		JSONMarshaler:     ec.Marshaler,
-		InterfaceRegistry: ec.InterfaceRegistry,
-		Keyring:           key.keybase,
-		From:              key.name,
-		FromName:          key.name,
-		TxConfig:          ec.TxConfig,
-		LegacyAmino:       ec.Amino,
+	for i, m := range msgs {
+		if err := m.ValidateBasic(); err != nil {
+			panic(fmt.Sprintf("invalid msg at pos %d: %#v", i, m))
+		}
 	}
-	txf := tx.NewFactoryCLI(clientCtx, nil)
-	txf.WithMemo("+memo").WithFees(feestring).WithSequence(sequence).WithAccountNumber(accnum)
+	encodingConfig := emoney.MakeEncodingConfig()
+
+	clientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithLegacyAmino(encodingConfig.Amino).
+		WithInput(os.Stdin).
+		WithAccountRetriever(authtypes.AccountRetriever{}).
+		WithBroadcastMode(flags.BroadcastBlock).
+		WithHomeDir(emoney.DefaultNodeHome).
+		WithChainID(chainid).
+		WithFrom(key.address.String()).
+		WithKeyring(key.keybase)
+
+	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
+	txf := tx.NewFactoryCLI(clientCtx, flagSet).
+		WithMemo("+memo").
+		WithFees(feestring).
+		WithSequence(sequence).
+		WithAccountNumber(accnum)
 
 	txb, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {

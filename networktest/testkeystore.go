@@ -67,6 +67,10 @@ func newKey(name string, keybase keyring.Keyring) Key {
 	}
 }
 
+func (ks KeyStore) Keyring() keyring.Keyring {
+	return ks.keybase
+}
+
 func (k Key) GetAddress() string {
 	if k.address.Empty() {
 		info, err := k.keybase.Key(k.name)

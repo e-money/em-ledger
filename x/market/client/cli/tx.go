@@ -11,7 +11,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -62,7 +61,11 @@ func AddLimitOrderCmd() *cobra.Command {
 
 			clientOrderID := args[2]
 
-			timeInForce, err := types.TimeInForceFromString(viper.GetString(flag_TimeInForce))
+			tif, err := cmd.Flags().GetString(flag_TimeInForce)
+			if err != nil {
+				return err
+			}
+			timeInForce, err := types.TimeInForceFromString(tif)
 			if err != nil {
 				return err
 			}
@@ -84,7 +87,7 @@ func AddLimitOrderCmd() *cobra.Command {
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_GoodTilCancel.String(), flag_TimeInForceDescription)
+	cmd.Flags().String(flag_TimeInForce, "GTC", flag_TimeInForceDescription)
 	return cmd
 }
 
@@ -118,7 +121,11 @@ Example:
 
 			clientOrderID := args[3]
 
-			timeInForce, err := types.TimeInForceFromString(viper.GetString(flag_TimeInForce))
+			tif, err := cmd.Flags().GetString(flag_TimeInForce)
+			if err != nil {
+				return err
+			}
+			timeInForce, err := types.TimeInForceFromString(tif)
 			if err != nil {
 				return err
 			}
@@ -141,7 +148,7 @@ Example:
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_ImmediateOrCancel.String(), flag_TimeInForceDescription)
+	cmd.Flags().String(flag_TimeInForce, "IOC", flag_TimeInForceDescription)
 	return cmd
 
 }

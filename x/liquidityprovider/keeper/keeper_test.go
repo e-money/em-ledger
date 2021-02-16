@@ -10,6 +10,7 @@ import (
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
+	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -173,6 +174,33 @@ func TestCreateAndRevoke(t *testing.T) {
 	keeper.RevokeLiquidityProviderAccount(ctx, account)
 	account = ak.GetAccount(ctx, acc)
 	assert.IsType(t, &authtypes.BaseAccount{}, account)
+}
+
+func TestLiquidityProviderIO(t *testing.T) {
+	ctx, ak, _, keeper := createTestComponents(t, initialBalance)
+	_, pub, acc := testdata.KeyTestPubAddr()
+
+	account := ak.NewAccountWithAddress(ctx, acc)
+	err := account.SetPubKey(pub)
+	require.NoError(t, err)
+	ak.SetAccount(ctx, account)
+
+	// when serialize
+	_, err = keeper.CreateLiquidityProvider(ctx, acc, defaultMintable)
+	require.NoError(t, err)
+
+	// then deserialize
+	account = ak.GetAccount(ctx, acc)
+	require.Equal(t, pub, account.GetPubKey())
+
+	// and when updated
+	_, otherPub, _ := testdata.KeyTestPubAddr()
+	account.SetPubKey(otherPub)
+	ak.SetAccount(ctx, account)
+
+	// then
+	account = ak.GetAccount(ctx, acc)
+	require.Equal(t, otherPub, account.GetPubKey())
 }
 
 func TestAccountNotFound(t *testing.T) {

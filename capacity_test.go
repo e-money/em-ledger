@@ -8,28 +8,23 @@ package emoney_test
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	"strings"
-	"sync"
-	"time"
-
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/spf13/viper"
-
-	nt "github.com/e-money/em-ledger/networktest"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
-
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	emoney "github.com/e-money/em-ledger"
+	nt "github.com/e-money/em-ledger/networktest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
+	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
 	"github.com/tidwall/gjson"
+	"os"
+	"sync"
+	"time"
 )
 
 var _ = Describe("Staking", func() {
@@ -45,11 +40,6 @@ var _ = Describe("Staking", func() {
 			It("creates a new testnet", createNewTestnet)
 
 			It("Creates a lot of send transactions", func() {
-				viper.Set(flags.FlagTrustNode, true)
-				defer viper.Set(flags.FlagTrustNode, nil)
-
-				viper.Set(flags.FlagKeyringBackend, keys.BackendTest)
-				defer viper.Set(flags.FlagKeyringBackend, nil)
 				emcli := testnet.NewEmcli()
 
 				time.Sleep(2 * time.Second)
@@ -147,40 +137,33 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	sendMutex.Lock()
 	defer sendMutex.Unlock()
 
-	cdc := codec.New()
-	atypes.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	bank.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
+	encodingConfig := emoney.MakeEncodingConfig()
 
 	httpClient, err := rpcclient.New("tcp://localhost:26657", "/websocket")
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
 
-	cliCtx := context.NewCLIContext().
-		WithCodec(cdc).
-		//WithBroadcastMode("block").
-		WithBroadcastMode("async").
-		WithTrustNode(true).
+	clientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithLegacyAmino(encodingConfig.Amino).
+		WithInput(os.Stdin).
+		WithAccountRetriever(authtypes.AccountRetriever{}).
+		WithBroadcastMode(flags.BroadcastAsync).
+		WithHomeDir(emoney.DefaultNodeHome).
+		WithChainID(chainID).
+		WithFrom(fromKey.GetAddress()).
+		WithKeyring(testnet.Keystore.Keyring()).
 		WithClient(httpClient)
-
-	to, err := sdk.AccAddressFromBech32(toKey.GetAddress())
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
-
-	from, err := sdk.AccAddressFromBech32(fromKey.GetAddress())
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
 
 	var (
 		accInfo accountNoSequence
 		present bool
 	)
 	if accInfo, present = sequences[fromKey.GetAddress()]; !present {
-		accountNumber, sequence, err := atypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(from)
+		accountNumber, sequence, err := atypes.NewAccountRetriever(clientCtx).GetAccountNumberSequence(from)
 		if err != nil {
 			return sdk.TxResponse{}, err
 		}
@@ -191,43 +174,27 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		}
 	}
 
-	sendMsg := bank.MsgSend{
-		FromAddress: from,
-		ToAddress:   to,
+	sendMsg := banktypes.MsgSend{
+		FromAddress: fromKey.GetAddress(),
+		ToAddress:   toKey.GetAddress(),
 		Amount:      amount,
 	}
-
-	txBldr := auth.NewTxBuilderFromCLI(strings.NewReader("")).
-		WithTxEncoder(utils.GetTxEncoder(cdc)).
-		WithChainID(chainID).
-		WithAccountNumber(accInfo.AccountNo).
-		WithSequence(accInfo.Sequence)
+	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
+	txf := tx.NewFactoryCLI(clientCtx, flagSet)
+	txf.WithMemo("+memo").WithSequence(accInfo.Sequence).WithAccountNumber(accInfo.AccountNo)
 
 	accInfo.Sequence++
 
 	sequences[fromKey.GetAddress()] = accInfo
 
-	signMsg, err := txBldr.BuildSignMsg([]sdk.Msg{sendMsg})
+	txb, err := tx.BuildUnsignedTx(txf, sendMsg)
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
+	//err = tx.Sign(txf, fromKey.GetAddress(), txb, false)
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
 
-	sigBytes, err := fromKey.Sign(signMsg.Bytes())
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
-
-	stdSignature := atypes.StdSignature{
-		PubKey:    fromKey.GetPublicKey(),
-		Signature: sigBytes,
-	}
-
-	tx := auth.NewStdTx(signMsg.Msgs, signMsg.Fee, []atypes.StdSignature{stdSignature}, signMsg.Memo)
-
-	txBytes, err := txBldr.TxEncoder()(tx)
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
-
-	return cliCtx.BroadcastTx(txBytes)
+	return tx.BroadcastTx(clientCtx, txf, sendMsg)
 }

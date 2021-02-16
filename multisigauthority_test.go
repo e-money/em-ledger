@@ -51,7 +51,7 @@ var _ = Describe("Authority", func() {
 			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress, "--trust-node")
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
@@ -84,7 +84,7 @@ var _ = Describe("Authority", func() {
 			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress, "--trust-node")
+			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
@@ -103,11 +103,11 @@ var _ = Describe("Authority", func() {
 			tx, err = emcli.CustomCommand("tx", "multisign", transactionPath, "multikey", signature1Path, signature2Path)
 
 			// Manipulate threshold!
-			//val := gjson.Parse(tx).Get("value.signatures.0.pub_key.value.threshold").Raw
+			//val := gjson.Parse(tx).Get(emoney.NewAppsignatures.0.pub_key.value.threshold").Raw
 			//fmt.Println("threshold :", val)
 
 			//{
-			//	bz, _ := sjson.SetBytes([]byte(tx), "value.signatures.0.pub_key.value.threshold", "1")
+			//	bz, _ := sjson.SetBytes([]byte(tx), emoney.NewAppsignatures.0.pub_key.value.threshold", "1")
 			//	tx = string(bz)
 			//}
 

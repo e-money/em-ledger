@@ -143,7 +143,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 
 	for it.Valid() {
 		order := new(types.Order)
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
+		k.cdc.Amino.MustUnmarshalBinaryBare(it.Value(), order)
 
 		orders = append(orders, QueryOrderResponse{
 			ID:              order.ID,

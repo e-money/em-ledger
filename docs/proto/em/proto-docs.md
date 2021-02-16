@@ -110,7 +110,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `authority_key` | [string](#string) |  |  |
+| `key` | [string](#string) |  |  |
 | `restricted_denoms` | [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom) | repeated |  |
 | `min_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
 

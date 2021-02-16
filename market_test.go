@@ -107,6 +107,7 @@ var _ = Describe("Market", func() {
 			if strings.Contains(log, "Wrong Block.Header.AppHash") ||
 				strings.Contains(log, "panic") {
 				Fail(fmt.Sprintf("Validator 2 does not appear to have re-established consensus:\n%v", log))
+				// prevent false positives by creating a clean state `docker rm -f emdnode2` before running this.
 			}
 		})
 
@@ -124,6 +125,8 @@ var _ = Describe("Market", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1", "--fees", "50eeur")
+			Expect(err).To(BeNil())
+			Expect(success).To(BeTrue())
 
 			// Create one transaction that includes a market order and a lot transfers, which will make the tx run out of gas.
 			jsonPath, err := ioutil.TempDir("", "")
@@ -133,13 +136,12 @@ var _ = Describe("Market", func() {
 			msgs := make([]sdk.Msg, 0)
 
 			addr3, err := sdk.AccAddressFromBech32(acc3.GetAddress())
-			if err != nil {
-				panic(err)
-			}
+			Expect(err).To(BeNil())
 
 			clientOrderId := "ShouldNotBePresent"
 			addOrder := &market.MsgAddLimitOrder{
-				Owner:         addr3.String(),
+				TimeInForce:   market.TimeInForce_GoodTilCancel,
+				Owner:         acc3.GetAddress(),
 				Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
 				Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
 				ClientOrderId: clientOrderId,
@@ -149,9 +151,7 @@ var _ = Describe("Market", func() {
 
 			// Add a few transfers to make sure that gas is exhausted
 			addr2, err := sdk.AccAddressFromBech32(acc2.GetAddress())
-			if err != nil {
-				panic(err)
-			}
+			Expect(err).To(BeNil())
 
 			coins := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewInt(5000)))
 			for i := 0; i < 5; i++ {
@@ -160,18 +160,19 @@ var _ = Describe("Market", func() {
 
 			accountJson, err := emcli.QueryAccountJson(acc3.GetAddress())
 			Expect(err).To(BeNil())
-			accNum := gjson.ParseBytes(accountJson).Get("value.account_number").Uint()
-			accSeq := gjson.ParseBytes(accountJson).Get("value.sequence").Uint()
+			accNum := gjson.ParseBytes(accountJson).Get("account_number").Uint()
+			accSeq := gjson.ParseBytes(accountJson).Get("sequence").Uint()
 
 			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "500eeur", accNum, accSeq, msgs...)
 
-			cdc := emoney.MakeEncodingConfig().Amino
-			json := cdc.MustMarshalJSON(tx)
+			cfg := emoney.MakeEncodingConfig()
+			txBz, err := cfg.TxConfig.TxJSONEncoder()(tx)
+			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
-			ioutil.WriteFile(transactionPath, json, 0777)
+			ioutil.WriteFile(transactionPath, txBz, 0777)
 
-			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
+			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath, "--gas", "2")
 			Expect(err).To(BeNil())
 			// Transaction must have failed due to insufficient gas
 			Expect(gjson.Parse(s).Get("logs.0.success").Exists()).To(Equal(false))

@@ -6,7 +6,7 @@ package types
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/codec/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -21,7 +21,7 @@ func NewLiquidityProviderAccount(baseAccount auth.AccountI, mintable sdk.Coins) 
 	if !ok {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "can't proto marshal %T", msg)
 	}
-	any, err := types.NewAnyWithValue(msg)
+	any, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrPackAny, err.Error())
 	}
@@ -63,9 +63,13 @@ func (acc LiquidityProviderAccount) String() string {
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
-func (m LiquidityProviderAccount) UnpackInterfaces(unpacker types.AnyUnpacker) error {
+func (m LiquidityProviderAccount) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	// todo (Alex): add test for unpack nested type
 	var account auth.AccountI
-	return unpacker.UnpackAny(m.Account, &account)
+	if err := unpacker.UnpackAny(m.Account, &account); err != nil {
+		return err
+	}
+	return codectypes.UnpackInterfaces(account, unpacker)
 }
 
 func (m *LiquidityProviderAccount) GetNestedAccount() auth.AccountI {
@@ -82,6 +86,7 @@ func (acc *LiquidityProviderAccount) GetAddress() sdk.AccAddress {
 
 func (acc *LiquidityProviderAccount) SetAddress(address sdk.AccAddress) error {
 	return acc.GetNestedAccount().SetAddress(address)
+
 }
 
 func (acc *LiquidityProviderAccount) GetPubKey() cryptotypes.PubKey {
@@ -89,7 +94,17 @@ func (acc *LiquidityProviderAccount) GetPubKey() cryptotypes.PubKey {
 }
 
 func (acc *LiquidityProviderAccount) SetPubKey(key cryptotypes.PubKey) error {
-	return acc.GetNestedAccount().SetPubKey(key)
+	nestedAccount := acc.GetNestedAccount()
+	err := nestedAccount.SetPubKey(key)
+	if err != nil {
+		return err
+	}
+	any, err := codectypes.NewAnyWithValue(nestedAccount)
+	if err != nil {
+		return err
+	}
+	acc.Account = any
+	return nil
 }
 
 func (acc *LiquidityProviderAccount) GetAccountNumber() uint64 {

@@ -164,15 +164,3 @@ func TimeInForceFromString(p string) (TimeInForce, error) {
 
 	return 0, fmt.Errorf("unknown time-in-force value: %v", p)
 }
-
-func (tif TimeInForce) String() string {
-	switch tif {
-	case TimeInForce_ImmediateOrCancel:
-		return "IOC"
-	case TimeInForce_GoodTilCancel:
-		return "GTC"
-	case TimeInForce_FillOrKill:
-		return "FOK"
-	}
-	return "<unknown>"
-}

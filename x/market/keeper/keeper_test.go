@@ -7,6 +7,8 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
+	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -28,6 +30,7 @@ import (
 	emtypes "github.com/e-money/em-ledger/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/market/types"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -1087,6 +1090,38 @@ func TestListInstruments(t *testing.T) {
 	require.Len(t, allInstrumentsWithBestPrice, 30)
 }
 
+func TestTimeInForceIO(t *testing.T) {
+	encodingConfig := MakeTestEncodingConfig()
+
+	clientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithLegacyAmino(encodingConfig.Amino).
+		WithChainID("testing")
+
+	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
+	txf := clienttx.NewFactoryCLI(clientCtx, flagSet).
+		WithMemo("+memo").
+		WithFees("10ALX").
+		WithSequence(1).
+		WithAccountNumber(2)
+
+	msg := &types.MsgAddLimitOrder{
+		TimeInForce:   types.TimeInForce_GoodTilCancel,
+		Owner:         randomAddress().String(),
+		Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
+		Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
+		ClientOrderId: "foobar",
+	}
+	txb, err := clienttx.BuildUnsignedTx(txf, msg)
+	require.NoError(t, err)
+	txBz, err := encodingConfig.TxConfig.TxJSONEncoder()(txb.GetTx())
+	require.NoError(t, err)
+	_, err = clientCtx.TxConfig.TxJSONDecoder()(txBz)
+	require.NoError(t, err)
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.AccountKeeper, *embank.ProxyKeeper) {
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
@@ -1157,6 +1192,8 @@ func MakeTestEncodingConfig() simappparams.EncodingConfig {
 
 	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
 }
 

@@ -40,7 +40,7 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 }
 
 func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "send", from.name, to.GetAddress(), amount)
+	args := cli.addTransactionFlags("tx", "bank", "send", from.name, to.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -139,7 +139,7 @@ func (cli Emcli) QueryAccount(account string) (mintable int, err error) {
 }
 
 func (cli Emcli) QueryTotalSupply() ([]byte, error) {
-	args := cli.addQueryFlags("query", "supply", "total")
+	args := cli.addQueryFlags("query", "bank", "total")
 	return execCmdAndCollectResponse(args)
 }
 
@@ -257,6 +257,7 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 }
 
 func execCmdCollectOutput(arguments []string, input string) (string, error) {
+	println("***: ", EMCLI, strings.Join(arguments, " "))
 	cmd := exec.Command(EMCLI, arguments...)
 
 	stdin, err := cmd.StdinPipe()
@@ -296,9 +297,9 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 		return "", false, err
 	}
 
-	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
-	fmt.Println(" *** CombinedOutput", string(bz))
+	//fmt.Println(" *** CombinedOutput", string(bz))
 	if err != nil {
 		return "", false, err
 	}

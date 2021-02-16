@@ -283,7 +283,7 @@ func NewApp(
 
 	app.BankKeeper = embank.Wrap(bankkeeper.NewBaseKeeper(
 		appCodec, keys[banktypes.StoreKey], app.AccountKeeper, app.GetSubspace(banktypes.ModuleName), app.BlockedAddrs(),
-	), app.authorityKeeper)
+	), &app.authorityKeeper)
 
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName),
@@ -356,7 +356,6 @@ func NewApp(
 	app.lpKeeper = liquidityprovider.NewKeeper(app.AccountKeeper, app.BankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper)
 	app.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], app.issuerKeeper, app.BankKeeper, app)
-	// TODO Change market.StoreKeyIdx store to store/mem/store.go from the Cosmos SDK when v0.40 is available
 	app.marketKeeper = market.NewKeeper(app.legacyAmino, keys[market.StoreKey], keys[market.StoreKeyIdx], app.AccountKeeper, app.BankKeeper, app.authorityKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.legacyAmino, keys[buyback.StoreKey], app.marketKeeper, app.AccountKeeper, app.StakingKeeper, app.BankKeeper)
 
@@ -405,11 +404,11 @@ func NewApp(
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
-		// todo (reviewer): check which modules make sense
-		upgradetypes.ModuleName, minttypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
+		// todo (reviewer): check which modules make sense and which order
+		upgradetypes.ModuleName, /*minttypes.ModuleName, */
+		evidencetypes.ModuleName /* stakingtypes.ModuleName, */, ibchost.ModuleName,
 		// todo (Alex): set custom slash module
-		authority.ModuleName, market.ModuleName, inflation.ModuleName, emdistr.ModuleName, buyback.ModuleName,
+		authority.ModuleName, market.ModuleName, inflation.ModuleName, slashingtypes.ModuleName, emdistr.ModuleName, buyback.ModuleName,
 	)
 
 	// todo (reviewer): check which modules make sense

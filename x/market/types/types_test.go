@@ -122,8 +122,6 @@ func TestTimeInForce(t *testing.T) {
 
 	_, err = TimeInForceFromString("f0k")
 	require.Error(t, err)
-
-	require.Equal(t, "FOK", TimeInForce_FillOrKill.String())
 }
 
 func coin(s string) sdk.Coin {
