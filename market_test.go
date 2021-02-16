@@ -114,7 +114,7 @@ var _ = Describe("Market", func() {
 		// Create a vanilla testnet to reset market state
 		It("creates a new testnet", createNewTestnet)
 
-		It("Runs out of gas while using the market", func() {
+		XIt("Runs out of gas while using the market", func() {
 			time.Sleep(5 * time.Second)
 
 			prices, err := sdk.ParseDecCoins("0.00005eeur")
