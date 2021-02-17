@@ -406,8 +406,8 @@ func NewApp(
 	app.mm.SetOrderBeginBlockers(
 		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName, /*minttypes.ModuleName, */
-		evidencetypes.ModuleName /* stakingtypes.ModuleName, */, ibchost.ModuleName,
-		// todo (Alex): set custom slash module
+		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
+		slashingtypes.ModuleName, // todo (Alex): set custom slash module
 		authority.ModuleName, market.ModuleName, inflation.ModuleName, slashingtypes.ModuleName, emdistr.ModuleName, buyback.ModuleName,
 	)
 
