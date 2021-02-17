@@ -3,7 +3,7 @@ module github.com/e-money/em-ledger
 go 1.12
 
 require (
-	github.com/cosmos/cosmos-sdk v0.41.0
+	github.com/cosmos/cosmos-sdk v0.41.1
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/mux v1.8.0
@@ -17,8 +17,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tendermint/tendermint v0.34.3
-	github.com/tendermint/tm-db v0.6.3
+	github.com/tendermint/tendermint v0.34.4
+	github.com/tendermint/tm-db v0.6.4
 	github.com/tidwall/gjson v1.3.2
 	github.com/tidwall/sjson v1.0.4
 )
