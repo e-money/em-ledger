@@ -7,12 +7,12 @@
 package emoney_test
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	emoney "github.com/e-money/em-ledger"
@@ -121,21 +121,23 @@ var _ = Describe("Staking", func() {
 	})
 })
 
-var (
-	sendMutex sync.Mutex
-)
-
 type accountNoSequence struct {
 	AccountNo, Sequence uint64
 }
 
 var (
-	sequences map[string]accountNoSequence = make(map[string]accountNoSequence)
+	sendMutex sync.Mutex
+	sequences = make(map[string]accountNoSequence)
 )
 
 func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResponse, error) {
 	sendMutex.Lock()
 	defer sendMutex.Unlock()
+
+	from, err := sdk.AccAddressFromBech32(fromKey.GetAddress())
+	if err != nil {
+		return sdk.TxResponse{}, err
+	}
 
 	encodingConfig := emoney.MakeEncodingConfig()
 
@@ -154,16 +156,18 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		WithBroadcastMode(flags.BroadcastAsync).
 		WithHomeDir(emoney.DefaultNodeHome).
 		WithChainID(chainID).
-		WithFrom(fromKey.GetAddress()).
+		WithFromName(fromKey.GetName()).
+		WithFromAddress(from).
 		WithKeyring(testnet.Keystore.Keyring()).
-		WithClient(httpClient)
+		WithClient(httpClient).
+		WithSkipConfirmation(true)
 
 	var (
 		accInfo accountNoSequence
 		present bool
 	)
 	if accInfo, present = sequences[fromKey.GetAddress()]; !present {
-		accountNumber, sequence, err := atypes.NewAccountRetriever(clientCtx).GetAccountNumberSequence(from)
+		accountNumber, sequence, err := authtypes.AccountRetriever{}.GetAccountNumberSequence(clientCtx, from)
 		if err != nil {
 			return sdk.TxResponse{}, err
 		}
@@ -174,27 +178,28 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		}
 	}
 
-	sendMsg := banktypes.MsgSend{
+	sendMsg := &banktypes.MsgSend{
 		FromAddress: fromKey.GetAddress(),
 		ToAddress:   toKey.GetAddress(),
 		Amount:      amount,
 	}
+	if err := sendMsg.ValidateBasic(); err != nil {
+		return sdk.TxResponse{}, err
+	}
 	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
-	txf := tx.NewFactoryCLI(clientCtx, flagSet)
-	txf.WithMemo("+memo").WithSequence(accInfo.Sequence).WithAccountNumber(accInfo.AccountNo)
+	txf := tx.NewFactoryCLI(clientCtx, flagSet).
+		WithMemo("+memo").
+		WithSequence(accInfo.Sequence).
+		WithAccountNumber(accInfo.AccountNo)
 
 	accInfo.Sequence++
-
 	sequences[fromKey.GetAddress()] = accInfo
 
-	txb, err := tx.BuildUnsignedTx(txf, sendMsg)
+	var buf bytes.Buffer
+	err = tx.BroadcastTx(clientCtx.WithOutput(&buf), txf, sendMsg)
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
-	//err = tx.Sign(txf, fromKey.GetAddress(), txb, false)
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
-
-	return tx.BroadcastTx(clientCtx, txf, sendMsg)
+	var resp sdk.TxResponse
+	return resp, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
 }

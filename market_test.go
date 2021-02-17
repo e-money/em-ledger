@@ -8,22 +8,19 @@ package emoney_test
 
 import (
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	emoney "github.com/e-money/em-ledger"
+	"github.com/e-money/em-ledger/networktest"
 	market "github.com/e-money/em-ledger/x/market/types"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/networktest"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/tidwall/gjson"
-
-	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 var _ = Describe("Market", func() {
@@ -114,7 +111,7 @@ var _ = Describe("Market", func() {
 		// Create a vanilla testnet to reset market state
 		It("creates a new testnet", createNewTestnet)
 
-		XIt("Runs out of gas while using the market", func() {
+		It("Runs out of gas while using the market", func() {
 			time.Sleep(5 * time.Second)
 
 			prices, err := sdk.ParseDecCoins("0.00005eeur")
@@ -138,7 +135,14 @@ var _ = Describe("Market", func() {
 			addr3, err := sdk.AccAddressFromBech32(acc3.GetAddress())
 			Expect(err).To(BeNil())
 
-			clientOrderId := "ShouldNotBePresent"
+			const clientOrderId = "ShouldNotBePresent"
+
+			// Order must not be available for querying or fail fast
+			bz, err := emcli.QueryMarketByAccount(addr3.String())
+			Expect(err).To(BeNil())
+			query := fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
+			Expect(gjson.ParseBytes(bz).Get(query).Array()).To(BeEmpty())
+
 			addOrder := &market.MsgAddLimitOrder{
 				TimeInForce:   market.TimeInForce_GoodTilCancel,
 				Owner:         acc3.GetAddress(),
@@ -163,7 +167,8 @@ var _ = Describe("Market", func() {
 			accNum := gjson.ParseBytes(accountJson).Get("account_number").Uint()
 			accSeq := gjson.ParseBytes(accountJson).Get("sequence").Uint()
 
-			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "500eeur", accNum, accSeq, msgs...)
+			// todo (reviewer): reduced the fee to ensure the TX fails.
+			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "0.1eeur", accNum, accSeq, msgs...)
 
 			cfg := emoney.MakeEncodingConfig()
 			txBz, err := cfg.TxConfig.TxJSONEncoder()(tx)
@@ -172,16 +177,16 @@ var _ = Describe("Market", func() {
 			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
 			ioutil.WriteFile(transactionPath, txBz, 0777)
 
-			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath, "--gas", "2")
+			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			Expect(err).To(BeNil())
 			// Transaction must have failed due to insufficient gas
 			Expect(gjson.Parse(s).Get("logs.0.success").Exists()).To(Equal(false))
 
 			// Order must not be available for querying
-			bz, err := emcli.QueryMarketByAccount(addr3.String())
+			bz, err = emcli.QueryMarketByAccount(addr3.String())
 			Expect(err).To(BeNil())
 
-			query := fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
+			query = fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
 			Expect(gjson.ParseBytes(bz).Get(query).Array()).To(BeEmpty())
 		})
 	})

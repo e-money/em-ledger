@@ -88,6 +88,10 @@ func (k Key) GetPublicKey() cryptotypes.PubKey {
 	return k.pubkey
 }
 
+func (k Key) GetName() string {
+	return k.name
+}
+
 func (k Key) Sign(bz []byte) ([]byte, error) {
 	signed, _, err := k.keybase.Sign(k.name, bz)
 	return signed, err

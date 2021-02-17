@@ -38,16 +38,6 @@ var _ = Describe("Buyback", func() {
 
 	// todo (Alex) : balance at the end does not match expectations
 	XIt("queries the buyback balance", func() {
-		awaitReady, err := testnet.RestartWithModifications(
-			func(bz []byte) []byte {
-				genesisTime := time.Now().Add(-365 * 24 * time.Hour).UTC()
-				bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime.Format(time.RFC3339))
-				return bz
-			})
-
-		Expect(err).ShouldNot(HaveOccurred())
-		Expect(awaitReady()).To(BeTrue())
-
 		var js []gjson.Result
 		var bz []byte
 		for i := 0; i < 20; i++ { // await
@@ -62,8 +52,6 @@ var _ = Describe("Buyback", func() {
 			}
 		}
 		Expect(js).To(HaveLen(3), "Buyback module does not appear to have a balance %v", string(bz))
-
-		time.Sleep(4 * time.Second)
 
 		// Generate some trades to set a market price for ungm
 		_, success, err := emcli.MarketAddLimitOrder(key1, "1000eeur", "4000ungm", tmrand.Str(10))
