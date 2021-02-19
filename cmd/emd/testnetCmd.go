@@ -267,7 +267,7 @@ func createTestBep3Genesis(cdc *codec.Codec, deputyAccount keys.Info) json.RawMe
 				FixedFee:      sdk.OneInt(),
 				MinSwapAmount: sdk.OneInt(),
 				MaxSwapAmount: limit,
-				SwapTimestamp: time.Now().Unix(),
+				SwapTimestamp: uint64(time.Now().Unix()),
 				SwapTimeSpan:  60 * 60 * 24 * 3, // 3 days
 			}
 	}
