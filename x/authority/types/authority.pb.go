@@ -25,6 +25,8 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type RestrictedDenom struct {
+	// todo (reviewer) :  moved from /types/
+	// todo (reviewer) : please note the lower case json/yaml attribute names now (convention)
 	Denom   string   `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty" yaml:"denom"`
 	Allowed []string `protobuf:"bytes,2,rep,name=allowed,proto3" json:"allowed,omitempty" yaml:"allowed"`
 }

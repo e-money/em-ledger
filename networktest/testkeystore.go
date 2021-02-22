@@ -5,7 +5,7 @@
 package networktest
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -152,21 +153,22 @@ func (ks KeyStore) String() string {
 	return sb.String()
 }
 
-func (ks KeyStore) addValidatorKeys(testnetoutput string) {
-	scan := bufio.NewScanner(strings.NewReader(testnetoutput))
-	seeds := make([]string, 0)
-	for scan.Scan() {
-		s := scan.Text()
-		if strings.Contains(s, "Key mnemonic for Validator") {
-			seed := strings.Split(s, ":")[1]
-			seeds = append(seeds, strings.TrimSpace(seed))
+func (ks KeyStore) addValidatorKeys(workDir string, numberNodes int) {
+	for i := 0; i < numberNodes; i++ {
+		fileName := filepath.Join(workDir, fmt.Sprintf("node%d", i), "key_seed.json")
+		bz, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			panic(fmt.Sprintf("failed to load key see %q: %s", fileName, err))
 		}
-	}
-
-	for i, mnemonic := range seeds {
+		var obj struct {
+			Mnemonic string `json:"secret"`
+		}
+		if err := json.Unmarshal(bz, &obj); err != nil {
+			panic(err)
+		}
 		accountName := fmt.Sprintf("validator%v", i)
 		hdPath := sdk.GetConfig().GetFullFundraiserPath()
-		_, err := ks.keybase.NewAccount(accountName, mnemonic, Bip39Pwd, hdPath, hd.Secp256k1)
+		_, err = ks.keybase.NewAccount(accountName, obj.Mnemonic, Bip39Pwd, hdPath, hd.Secp256k1)
 		if err != nil {
 			panic(err)
 		}

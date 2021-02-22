@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -48,6 +49,7 @@ var (
 	flagStartingIPAddress = "starting-ip-address"
 	// e-money flags
 	flagAddKeybaseAccounts = "keyaccounts"
+	flagCommitTimeout      = "commit-timeout"
 )
 
 // get cmd to initialize all files for tendermint testnet and application
@@ -83,6 +85,11 @@ Example:
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
+			config.Consensus.TimeoutCommit, err = cmd.Flags().GetDuration(flagCommitTimeout)
+			if err != nil {
+				return err
+			}
+
 			addKeybaseAccounts, _ := cmd.Flags().GetString(flagAddKeybaseAccounts)
 			authorityKey := getAuthorityKey(args[0], addKeybaseAccounts)
 
@@ -107,6 +114,7 @@ Example:
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	// e-money flags
 	cmd.Flags().String(flagAddKeybaseAccounts, "", "Generate accounts for each key in the keystore at the specified path.")
+	cmd.Flags().Duration(flagCommitTimeout, 5*time.Second, "How long we wait after committing a block, before starting on the new height")
 	return cmd
 }
 

@@ -18,26 +18,24 @@ type AppModuleBasic = distr.AppModuleBasic
 
 type AppModule struct {
 	distr.AppModule
-	k     DistributionKeeper
-	ak    AccountKeeper
-	bk    bankkeeper.ViewKeeper
-	db    db.DB
-	batch *db.Batch // a pointer is required a the batch object is hold and modified in app
+	k  DistributionKeeper
+	ak AccountKeeper
+	bk bankkeeper.ViewKeeper
+	db db.DB
 }
 
-func NewAppModule(nested distr.AppModule, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB, batch *db.Batch) AppModule {
+func NewAppModule(nested distr.AppModule, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB) AppModule {
 	return AppModule{
 		AppModule: nested,
 		k:         k,
 		ak:        ak,
 		bk:        bk,
 		db:        db,
-		batch:     batch,
 	}
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.k, am.ak, am.bk, am.db, *am.batch)
+	BeginBlocker(ctx, req, am.k, am.ak, am.bk, am.db)
 }
 
 // todo (reviewer) : IMHO this modules would fit better into x/ than hooks as it contains an alternative/modified impl than adding callbacks

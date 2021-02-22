@@ -10,6 +10,7 @@ import (
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	apptypes "github.com/e-money/em-ledger/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 	"time"
@@ -39,8 +40,13 @@ type DistributionKeeper interface {
 // set the proposer for determining distribution during endblock
 // and distribute rewards for the previous block
 // todo (reviewer): the logic in the this function was not modified. Please ensure that it still is what you need.
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB, batch db.Batch) {
+func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB) {
 	defer telemetry.ModuleMeasureSince(ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
+
+	batch := apptypes.GetCurrentBatch(ctx)
+	if batch == nil {
+		panic("batch object not found") // todo (reviewer): panic in begin blocker is not handled downstream and will crash the node.
+	}
 
 	// determine the total power signing the block
 	var previousTotalPower, sumPreviousPrecommitPower int64

@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -164,7 +165,8 @@ func (t Testnet) ChainID() string {
 }
 
 func (t Testnet) makeTestnet() error {
-	output, err := execCmdAndWait(EMD,
+	numNodes := 4
+	_, err := execCmdAndWait(EMD,
 		"testnet",
 		t.Keystore.Authority.name,
 		"--chain-id", t.chainID,
@@ -172,13 +174,15 @@ func (t Testnet) makeTestnet() error {
 		"--keyring-backend", "test",
 		"--starting-ip-address", "192.168.10.2",
 		"--keyaccounts", t.Keystore.path,
+		"--commit-timeout", "1500ms",
+		"--v", strconv.Itoa(numNodes),
 		"--minimum-gas-prices", "")
 
 	if err != nil {
 		return err
 	}
 
-	t.Keystore.addValidatorKeys(output)
+	t.Keystore.addValidatorKeys(WorkingDir, numNodes)
 	return nil
 }
 
@@ -207,8 +211,7 @@ func (t *Testnet) updateGenesis() {
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 
-	// todo (Alex): does this attribute still exists?
-	//bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", "10s")
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window", (10 * time.Second).Nanoseconds())
 
 	// Reduce jail time to be able to test unjailing
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", "5s")

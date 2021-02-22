@@ -51,15 +51,14 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
-	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	sdkslashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	embank "github.com/e-money/em-ledger/hooks/bank"
+	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/queries"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -81,6 +80,8 @@ import (
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"github.com/e-money/em-ledger/x/market"
+	emslashing "github.com/e-money/em-ledger/x/slashing"
+	emslashingtypes "github.com/e-money/em-ledger/x/slashing/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -117,7 +118,7 @@ var (
 		capability.AppModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
-		distr.AppModuleBasic{},
+		emdistr.AppModuleBasic{},
 		// todo (reviewer) : gov was deactivated in the original app.go but for ICS-20 we should have the `upgradeclient` handlers
 		gov.NewAppModuleBasic(
 			//paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
@@ -125,7 +126,7 @@ var (
 		),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
-		slashing.AppModuleBasic{}, // todo (Alex): replace with custom staking module
+		emslashing.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
@@ -151,10 +152,11 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		// em modules
-		inflation.ModuleName: {authtypes.Minter},
-		//slashing.ModuleName:       {supply.Minter}, // todo (Alex): enable again
-		liquidityprovider.ModuleName: {authtypes.Minter, authtypes.Burner},
-		buyback.ModuleName:           {authtypes.Burner},
+		inflation.ModuleName:           {authtypes.Minter},
+		emslashingtypes.ModuleName:     {authtypes.Minter},
+		liquidityprovider.ModuleName:   {authtypes.Minter, authtypes.Burner},
+		buyback.ModuleName:             {authtypes.Burner},
+		emslashingtypes.PenaltyAccount: nil,
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -189,7 +191,7 @@ type EMoneyApp struct {
 	BankKeeper       *embank.ProxyKeeper
 	CapabilityKeeper *capabilitykeeper.Keeper
 	StakingKeeper    stakingkeeper.Keeper
-	SlashingKeeper   slashingkeeper.Keeper // todo (Alex): replace with custom module
+	SlashingKeeper   emslashing.Keeper // todo (Alex): replace with custom module
 	MintKeeper       mintkeeper.Keeper
 	DistrKeeper      distrkeeper.Keeper
 	GovKeeper        govkeeper.Keeper
@@ -243,7 +245,7 @@ func NewApp(
 
 	keys := sdk.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
-		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
+		minttypes.StoreKey, distrtypes.StoreKey, emslashing.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		// em types
@@ -296,8 +298,9 @@ func NewApp(
 		appCodec, keys[distrtypes.StoreKey], app.GetSubspace(distrtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
 		&stakingKeeper, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
 	)
-	app.SlashingKeeper = slashingkeeper.NewKeeper( // todo (Alex): use proper module
-		appCodec, keys[slashingtypes.StoreKey], &stakingKeeper, app.GetSubspace(slashingtypes.ModuleName),
+	app.SlashingKeeper = emslashing.NewKeeper(
+		appCodec, keys[emslashing.StoreKey], &stakingKeeper, app.GetSubspace(emslashing.ModuleName), app.BankKeeper,
+		app.database, authtypes.FeeCollectorName,
 	)
 	app.CrisisKeeper = crisiskeeper.NewKeeper(
 		app.GetSubspace(crisistypes.ModuleName), invCheckPeriod, app.BankKeeper, authtypes.FeeCollectorName,
@@ -349,10 +352,6 @@ func NewApp(
 	app.EvidenceKeeper = *evidenceKeeper
 
 	app.inflationKeeper = inflation.NewKeeper(app.legacyAmino, keys[inflation.StoreKey], app.BankKeeper, app.AccountKeeper, app.StakingKeeper, buyback.AccountName, authtypes.FeeCollectorName)
-	// todo (Alex): enable custom slashing module
-	//app.slashingKeeper = slashing.NewKeeper(app.cdc, keys[slashing.StoreKey], &app.stakingKeeper, app.BankKeeper, auth.FeeCollectorName, slashingSubspace, app.database)
-	// todo (Alex): hooks are setup above already. check with the custom slashing module
-	//app.StakingKeeper = *app.StakingKeeper.SetHooks(stakingtypes.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()))
 	app.lpKeeper = liquidityprovider.NewKeeper(app.AccountKeeper, app.BankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper)
 	app.authorityKeeper = authority.NewKeeper(keys[authority.StoreKey], app.issuerKeeper, app.BankKeeper, app)
@@ -377,19 +376,14 @@ func NewApp(
 		crisis.NewAppModule(&app.CrisisKeeper, skipGenesisInvariants),
 		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
 		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
-		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-		//distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, wrappedBankKeeper, app.StakingKeeper),
+		emslashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper),
 		evidence.NewAppModule(app.EvidenceKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
-		// todo (Alex): add proper slashing module
-		emdistr.NewAppModule(
-			distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-			app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.database, &app.currentBatch,
-		),
+		emdistr.NewAppModule(distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper), app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.database),
 		liquidityprovider.NewAppModule(app.lpKeeper),
 		issuer.NewAppModule(app.issuerKeeper),
 		authority.NewAppModule(app.authorityKeeper),
@@ -399,16 +393,13 @@ func NewApp(
 		queries.NewAppModule(app.AccountKeeper, app.BankKeeper),
 	)
 
-	// During begin block slashing happens after distr.BeginBlocker so that
-	// there is nothing left over in the validator fee pool, so as to keep the
-	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
 		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName, /*minttypes.ModuleName, */
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		slashingtypes.ModuleName, // todo (Alex): set custom slash module
-		authority.ModuleName, market.ModuleName, inflation.ModuleName, slashingtypes.ModuleName, emdistr.ModuleName, buyback.ModuleName,
+		sdkslashingtypes.ModuleName, // todo (Alex): set custom slash module
+		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
 	)
 
 	// todo (reviewer): check which modules make sense
@@ -422,9 +413,8 @@ func NewApp(
 	app.mm.SetOrderInitGenesis(
 		// todo (reviewer): check which modules make sense
 		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, distrtypes.ModuleName, stakingtypes.ModuleName,
-		slashingtypes.ModuleName, govtypes.ModuleName, minttypes.ModuleName, crisistypes.ModuleName,
+		emslashing.ModuleName, govtypes.ModuleName, minttypes.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
-		// todo (Alex): add proper slashing module
 		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName, inflation.ModuleName,
 	)
 
@@ -502,6 +492,7 @@ func (app *EMoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 
 	app.currentBatch = app.database.NewBatch()
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
+	ctx = apptypes.WithCurrentBatch(ctx, app.currentBatch)
 
 	return app.mm.BeginBlock(ctx, req)
 }
@@ -649,12 +640,11 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	paramsKeeper.Subspace(stakingtypes.ModuleName)
 	paramsKeeper.Subspace(minttypes.ModuleName)
 	paramsKeeper.Subspace(distrtypes.ModuleName)
-	paramsKeeper.Subspace(slashingtypes.ModuleName)
+	paramsKeeper.Subspace(emslashing.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
-	// todo (Alex): set proper slashing module
 	// todo (Alex): add custom modules
 
 	return paramsKeeper
@@ -685,10 +675,10 @@ func setGenesisDefaults() {
 	inflation.DefaultInflationState = mintDefaultInflationState()
 }
 
-func slashingDefaultGenesisState() func() *slashingtypes.GenesisState {
-	slashingDefaultGenesisStateFn := slashingtypes.DefaultGenesisState
+func slashingDefaultGenesisState() func() *sdkslashingtypes.GenesisState {
+	slashingDefaultGenesisStateFn := sdkslashingtypes.DefaultGenesisState
 
-	return func() *slashingtypes.GenesisState {
+	return func() *sdkslashingtypes.GenesisState {
 		state := slashingDefaultGenesisStateFn()
 		return state
 	}

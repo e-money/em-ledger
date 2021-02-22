@@ -59,6 +59,10 @@
     - [MsgCancelOrder](#em.market.v1beta1.MsgCancelOrder)
     - [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder)
   
+- [em/slashing/v1beta1/slashing.proto](#em/slashing/v1beta1/slashing.proto)
+    - [Penalties](#em.liquidityprovider.v1beta1.Penalties)
+    - [Penalty](#em.liquidityprovider.v1beta1.Penalty)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -78,7 +82,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `denom` | [string](#string) |  |  |
+| `denom` | [string](#string) |  | todo (reviewer) : moved from /types/ todo (reviewer) : please note the lower case json/yaml attribute names now (convention) |
 | `allowed` | [string](#string) | repeated |  |
 
 
@@ -726,6 +730,53 @@
 | `new_client_order_id` | [string](#string) |  |  |
 | `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/slashing/v1beta1/slashing.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/slashing/v1beta1/slashing.proto
+
+
+
+<a name="em.liquidityprovider.v1beta1.Penalties"></a>
+
+### Penalties
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `elements` | [Penalty](#em.liquidityprovider.v1beta1.Penalty) | repeated |  |
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1beta1.Penalty"></a>
+
+### Penalty
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator` | [string](#string) |  |  |
+| `amounts` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 
