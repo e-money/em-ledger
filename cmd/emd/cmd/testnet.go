@@ -205,7 +205,7 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		}
 
 		accTokens := sdk.TokensFromConsensusPower(1000)
-		accStakingTokens := sdk.TokensFromConsensusPower(500)
+		accStakingTokens := sdk.TokensFromConsensusPower(6000)
 		coins := sdk.Coins{
 			sdk.NewCoin(fmt.Sprintf("%stoken", nodeDirName), accTokens),
 			sdk.NewCoin(stakingToken, accStakingTokens),
@@ -214,13 +214,13 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 		genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
 
-		valTokens := sdk.TokensFromConsensusPower(100)
+		valTokens := sdk.TokensFromConsensusPower(6000)
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
 			sdk.NewCoin(stakingToken, valTokens),
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
-			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
+			stakingtypes.NewCommissionRates(sdk.NewDecWithPrec(15, 2), sdk.NewDecWithPrec(100, 2), sdk.NewDecWithPrec(100, 2)),
 			sdk.OneInt(),
 		)
 		if err != nil {

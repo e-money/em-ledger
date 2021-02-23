@@ -8,6 +8,7 @@ import (
 	sdkslashing "github.com/cosmos/cosmos-sdk/x/slashing"
 	sdkslashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
@@ -447,6 +448,62 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	staking.EndBlocker(ctx, sk)
 	validator, _ = sk.GetValidator(ctx, addr)
 	require.Equal(t, stakingtypes.Unbonding, validator.Status)
+}
+
+func TestHandlePendingPenalties(t *testing.T) {
+	specs := map[string]struct {
+		srcPenalties    types.Penalties
+		srcValidatorSet map[string]bool
+		exp             types.Penalties
+	}{
+		"payout when validator not in the active set": {
+			srcPenalties: types.Penalties{Elements: []types.Penalty{{
+				Validator: "a",
+				Amounts:   sdk.NewCoins(sdk.NewCoin("foo", sdk.NewInt(1)))},
+			}},
+			srcValidatorSet: map[string]bool{},
+		},
+		"validator in the active set": {
+			srcPenalties: types.Penalties{Elements: []types.Penalty{{
+				Validator: "a",
+				Amounts:   sdk.NewCoins(sdk.NewCoin("foo", sdk.NewInt(1)))},
+			}},
+			srcValidatorSet: map[string]bool{
+				"a": true,
+			},
+			exp: types.Penalties{Elements: []types.Penalty{{
+				Validator: "a",
+				Amounts:   sdk.NewCoins(sdk.NewCoin("foo", sdk.NewInt(1)))},
+			}},
+		},
+		"non penalties": {
+			srcValidatorSet: map[string]bool{
+				"a": true,
+			},
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			ctx, keeper, accountKeeper, bankKeeper, _, database := createTestComponents(t)
+
+			err := bankKeeper.SetBalances(ctx, accountKeeper.GetModuleAddress(types.PenaltyAccount), sdk.NewCoins(sdk.NewCoin("foo", sdk.NewInt(1))))
+			require.NoError(t, err)
+
+			batch := database.NewBatch()
+			keeper.setPendingPenalties(batch, spec.srcPenalties)
+			require.NoError(t, batch.Write())
+
+			// when
+			batch = database.NewBatch()
+			fn := func() map[string]bool { return spec.srcValidatorSet }
+			keeper.handlePendingPenalties(ctx, batch, fn)
+			require.NoError(t, batch.Write())
+
+			// then
+			assert.Equal(t, spec.exp, keeper.getPendingPenalties())
+		})
+	}
+
 }
 
 func blockTimeGenerator(blocktime time.Duration) func(int) time.Time {

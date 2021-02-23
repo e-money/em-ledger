@@ -259,13 +259,10 @@ func execCmdAndRun(name string, arguments []string, scanner func(string)) error 
 }
 
 func execCmdAndWait(name string, arguments ...string) (string, error) {
-	// todo (Alex): remove debug line
-	fmt.Println("+++: ", name, " ", strings.Join(arguments, " "))
 	cmd := exec.Command(name, arguments...)
 
 	// TODO Look into ways of not always setting this.
-	cmd.Env = os.Environ()
-	// todo (reviewer): dropped "fast_consensus" build tag in favour of
+	// todo (reviewer): dropped "fast_consensus" build tag
 
 	var output strings.Builder
 	captureOutput := func(s string) {

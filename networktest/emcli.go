@@ -257,7 +257,6 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 }
 
 func execCmdCollectOutput(arguments []string, input string) (string, error) {
-	println("***: ", EMCLI, strings.Join(arguments, " "))
 	cmd := exec.Command(EMCLI, arguments...)
 
 	stdin, err := cmd.StdinPipe()
@@ -284,7 +283,6 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 }
 
 func execCmdWithInput(arguments []string, input string) (string, bool, error) {
-	println("***: ", EMCLI, strings.Join(arguments, " "))
 	cmd := exec.Command(EMCLI, arguments...)
 
 	stdin, err := cmd.StdinPipe()
@@ -308,8 +306,6 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
-	println("***: ", EMCLI, strings.Join(arguments, " "))
-
 	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
 	//fmt.Println(" *** Output: ", string(bz))

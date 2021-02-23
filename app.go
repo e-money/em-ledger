@@ -145,7 +145,7 @@ var (
 	// module account permissions
 	maccPerms = map[string][]string{
 		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
+		emdistr.ModuleName:             nil,
 		minttypes.ModuleName:           {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
@@ -161,7 +161,7 @@ var (
 
 	// module accounts that are allowed to receive tokens
 	allowedReceivingModAcc = map[string]bool{
-		distrtypes.ModuleName: true, // todo (Alex): revisit if this default makes sense
+		emdistr.ModuleName: true,
 	}
 )
 var (
@@ -191,7 +191,7 @@ type EMoneyApp struct {
 	BankKeeper       *embank.ProxyKeeper
 	CapabilityKeeper *capabilitykeeper.Keeper
 	StakingKeeper    stakingkeeper.Keeper
-	SlashingKeeper   emslashing.Keeper // todo (Alex): replace with custom module
+	SlashingKeeper   emslashing.Keeper
 	MintKeeper       mintkeeper.Keeper
 	DistrKeeper      distrkeeper.Keeper
 	GovKeeper        govkeeper.Keeper
@@ -398,7 +398,6 @@ func NewApp(
 		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName, /*minttypes.ModuleName, */
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		sdkslashingtypes.ModuleName, // todo (Alex): set custom slash module
 		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
 	)
 
@@ -412,7 +411,7 @@ func NewApp(
 	// can do so safely.
 	app.mm.SetOrderInitGenesis(
 		// todo (reviewer): check which modules make sense
-		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, distrtypes.ModuleName, stakingtypes.ModuleName,
+		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, emdistr.ModuleName, stakingtypes.ModuleName,
 		emslashing.ModuleName, govtypes.ModuleName, minttypes.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
 		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName, inflation.ModuleName,
@@ -504,7 +503,10 @@ func (app *EMoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 	app.Logger(ctx).Info(fmt.Sprintf("Endblock: Block %v was proposed by %v", ctx.BlockHeight(), sdk.ValAddress(proposerAddress)))
 
 	response := app.mm.EndBlock(ctx, req)
-	app.currentBatch.Write() // Write non-IAVL state to database
+	err := app.currentBatch.Write() // Write non-IAVL state to database
+	if err != nil {                 // todo (reviewer): should we panic or ignore? panics are not handled downstream will cause a crash
+		panic(err)
+	}
 	return response
 }
 
