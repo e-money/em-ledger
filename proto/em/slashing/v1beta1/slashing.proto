@@ -16,7 +16,7 @@ message Penalties {
 }
 
 message Penalty {
-  string validator = 1 [(gogoproto.moretags) = "yaml:\"validator\""];
+  string validator = 1 [ (gogoproto.moretags) = "yaml:\"validator\"" ];
 
   repeated cosmos.base.v1beta1.Coin amounts = 4 [
     (gogoproto.moretags) = "yaml:\"amounts\"",

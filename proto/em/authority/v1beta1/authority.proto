@@ -8,7 +8,8 @@ option go_package = "github.com/e-money/em-ledger/x/authority/types";
 
 message RestrictedDenom {
   // todo (reviewer) :  moved from /types/
-  // todo (reviewer) : please note the lower case json/yaml attribute names now (convention)
+  // todo (reviewer) : please note the lower case json/yaml attribute names now
+  // (convention)
   string denom = 1 [ (gogoproto.moretags) = "yaml:\"denom\"" ];
   repeated string allowed = 2 [ (gogoproto.moretags) = "yaml:\"allowed\"" ];
 }
