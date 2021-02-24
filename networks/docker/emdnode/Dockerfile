@@ -10,7 +10,7 @@ RUN apk update && \
 
 VOLUME  /emoney
 WORKDIR /emoney
-EXPOSE 26656 26657
+EXPOSE 26656 26657 1317
 ENTRYPOINT ["/usr/bin/wrapper.sh"]
 CMD ["start"]
 STOPSIGNAL SIGTERM
