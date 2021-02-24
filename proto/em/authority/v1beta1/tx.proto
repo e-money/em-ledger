@@ -6,6 +6,12 @@ import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/authority/types";
 
+service Msg {
+  rpc CreateIssuer(MsgCreateIssuer) returns (MsgCreateIssuerResponse);
+  rpc DestroyIssuer(MsgDestroyIssuer) returns (MsgDestroyIssuerResponse);
+  rpc SetGasPrices(MsgSetGasPrices) returns (MsgSetGasPricesResponse);
+}
+
 message MsgCreateIssuer {
   string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
   string issuer = 2 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
@@ -13,10 +19,14 @@ message MsgCreateIssuer {
       [ (gogoproto.moretags) = "yaml:\"denoms\"" ];
 }
 
+message MsgCreateIssuerResponse {}
+
 message MsgDestroyIssuer {
   string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
   string issuer = 2 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
 }
+
+message MsgDestroyIssuerResponse {}
 
 message MsgSetGasPrices {
   string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
@@ -26,3 +36,5 @@ message MsgSetGasPrices {
     (gogoproto.nullable) = false
   ];
 }
+
+message MsgSetGasPricesResponse {}

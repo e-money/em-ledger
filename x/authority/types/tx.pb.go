@@ -4,11 +4,16 @@
 package types
 
 import (
+	context "context"
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
+	grpc1 "github.com/gogo/protobuf/grpc"
 	proto "github.com/gogo/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -85,6 +90,42 @@ func (m *MsgCreateIssuer) GetDenominations() []string {
 	return nil
 }
 
+type MsgCreateIssuerResponse struct {
+}
+
+func (m *MsgCreateIssuerResponse) Reset()         { *m = MsgCreateIssuerResponse{} }
+func (m *MsgCreateIssuerResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgCreateIssuerResponse) ProtoMessage()    {}
+func (*MsgCreateIssuerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_11f2b53ee291f45c, []int{1}
+}
+func (m *MsgCreateIssuerResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCreateIssuerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgCreateIssuerResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgCreateIssuerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCreateIssuerResponse.Merge(m, src)
+}
+func (m *MsgCreateIssuerResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCreateIssuerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCreateIssuerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCreateIssuerResponse proto.InternalMessageInfo
+
 type MsgDestroyIssuer struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty" yaml:"authority"`
 	Issuer    string `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty" yaml:"issuer"`
@@ -94,7 +135,7 @@ func (m *MsgDestroyIssuer) Reset()         { *m = MsgDestroyIssuer{} }
 func (m *MsgDestroyIssuer) String() string { return proto.CompactTextString(m) }
 func (*MsgDestroyIssuer) ProtoMessage()    {}
 func (*MsgDestroyIssuer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_11f2b53ee291f45c, []int{1}
+	return fileDescriptor_11f2b53ee291f45c, []int{2}
 }
 func (m *MsgDestroyIssuer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -137,6 +178,42 @@ func (m *MsgDestroyIssuer) GetIssuer() string {
 	return ""
 }
 
+type MsgDestroyIssuerResponse struct {
+}
+
+func (m *MsgDestroyIssuerResponse) Reset()         { *m = MsgDestroyIssuerResponse{} }
+func (m *MsgDestroyIssuerResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgDestroyIssuerResponse) ProtoMessage()    {}
+func (*MsgDestroyIssuerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_11f2b53ee291f45c, []int{3}
+}
+func (m *MsgDestroyIssuerResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgDestroyIssuerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgDestroyIssuerResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgDestroyIssuerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgDestroyIssuerResponse.Merge(m, src)
+}
+func (m *MsgDestroyIssuerResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgDestroyIssuerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgDestroyIssuerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgDestroyIssuerResponse proto.InternalMessageInfo
+
 type MsgSetGasPrices struct {
 	Authority string                                      `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty" yaml:"authority"`
 	GasPrices github_com_cosmos_cosmos_sdk_types.DecCoins `protobuf:"bytes,2,rep,name=gas_prices,json=gasPrices,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.DecCoins" json:"gas_prices" yaml:"gas_prices"`
@@ -146,7 +223,7 @@ func (m *MsgSetGasPrices) Reset()         { *m = MsgSetGasPrices{} }
 func (m *MsgSetGasPrices) String() string { return proto.CompactTextString(m) }
 func (*MsgSetGasPrices) ProtoMessage()    {}
 func (*MsgSetGasPrices) Descriptor() ([]byte, []int) {
-	return fileDescriptor_11f2b53ee291f45c, []int{2}
+	return fileDescriptor_11f2b53ee291f45c, []int{4}
 }
 func (m *MsgSetGasPrices) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -189,40 +266,237 @@ func (m *MsgSetGasPrices) GetGasPrices() github_com_cosmos_cosmos_sdk_types.DecC
 	return nil
 }
 
+type MsgSetGasPricesResponse struct {
+}
+
+func (m *MsgSetGasPricesResponse) Reset()         { *m = MsgSetGasPricesResponse{} }
+func (m *MsgSetGasPricesResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSetGasPricesResponse) ProtoMessage()    {}
+func (*MsgSetGasPricesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_11f2b53ee291f45c, []int{5}
+}
+func (m *MsgSetGasPricesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSetGasPricesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSetGasPricesResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSetGasPricesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetGasPricesResponse.Merge(m, src)
+}
+func (m *MsgSetGasPricesResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSetGasPricesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetGasPricesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSetGasPricesResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgCreateIssuer)(nil), "em.authority.v1beta1.MsgCreateIssuer")
+	proto.RegisterType((*MsgCreateIssuerResponse)(nil), "em.authority.v1beta1.MsgCreateIssuerResponse")
 	proto.RegisterType((*MsgDestroyIssuer)(nil), "em.authority.v1beta1.MsgDestroyIssuer")
+	proto.RegisterType((*MsgDestroyIssuerResponse)(nil), "em.authority.v1beta1.MsgDestroyIssuerResponse")
 	proto.RegisterType((*MsgSetGasPrices)(nil), "em.authority.v1beta1.MsgSetGasPrices")
+	proto.RegisterType((*MsgSetGasPricesResponse)(nil), "em.authority.v1beta1.MsgSetGasPricesResponse")
 }
 
 func init() { proto.RegisterFile("em/authority/v1beta1/tx.proto", fileDescriptor_11f2b53ee291f45c) }
 
 var fileDescriptor_11f2b53ee291f45c = []byte{
-	// 384 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x92, 0xc1, 0x8a, 0xd3, 0x40,
-	0x18, 0xc7, 0x93, 0x2d, 0x2c, 0x74, 0x64, 0x71, 0x37, 0xf4, 0x10, 0x16, 0x4d, 0xca, 0x9c, 0x56,
-	0xa4, 0x33, 0xec, 0x7a, 0x10, 0x3c, 0x76, 0x17, 0xac, 0x87, 0x82, 0xc4, 0x9b, 0x17, 0x99, 0xa4,
-	0x1f, 0xd3, 0xc1, 0x4e, 0xa6, 0xe6, 0x9b, 0x4a, 0xf3, 0x00, 0xde, 0x7d, 0x0d, 0x7d, 0x92, 0x5e,
-	0x84, 0x1e, 0x3d, 0x45, 0x69, 0xdf, 0xa0, 0x4f, 0x20, 0xcd, 0xb4, 0x69, 0x7b, 0xf5, 0xb0, 0xa7,
-	0x84, 0xf9, 0xff, 0xff, 0xbf, 0xf9, 0x98, 0xff, 0x47, 0x9e, 0x83, 0xe6, 0x62, 0x66, 0xc7, 0xa6,
-	0x50, 0xb6, 0xe4, 0x5f, 0x6f, 0x53, 0xb0, 0xe2, 0x96, 0xdb, 0x39, 0x9b, 0x16, 0xc6, 0x9a, 0xa0,
-	0x03, 0x9a, 0x35, 0x32, 0xdb, 0xc9, 0xd7, 0x1d, 0x69, 0xa4, 0xa9, 0x0d, 0x7c, 0xfb, 0xe7, 0xbc,
-	0xd7, 0x51, 0x66, 0x50, 0x1b, 0xe4, 0xa9, 0x40, 0x68, 0x48, 0x99, 0x51, 0xb9, 0xd3, 0xe9, 0x0f,
-	0x9f, 0x3c, 0x1d, 0xa2, 0xbc, 0x2f, 0x40, 0x58, 0x78, 0x87, 0x38, 0x83, 0x22, 0xb8, 0x23, 0xed,
-	0x06, 0x1f, 0xfa, 0x5d, 0xff, 0xa6, 0xdd, 0xef, 0x6c, 0xaa, 0xf8, 0xb2, 0x14, 0x7a, 0xf2, 0x86,
-	0x36, 0x12, 0x4d, 0x0e, 0xb6, 0xe0, 0x05, 0x39, 0x57, 0x75, 0x3a, 0x3c, 0xab, 0x03, 0x57, 0x9b,
-	0x2a, 0xbe, 0x70, 0x01, 0x77, 0x4e, 0x93, 0x9d, 0x21, 0x78, 0x4d, 0x2e, 0x46, 0x90, 0x1b, 0xad,
-	0x72, 0x61, 0x95, 0xc9, 0x31, 0x6c, 0x75, 0x5b, 0xa7, 0x89, 0x5a, 0x46, 0x9a, 0x9c, 0xfa, 0xe8,
-	0x17, 0x72, 0x39, 0x44, 0xf9, 0x00, 0x68, 0x0b, 0x53, 0x3e, 0xca, 0xac, 0xf4, 0x97, 0x7b, 0x9e,
-	0x0f, 0x60, 0xdf, 0x0a, 0x7c, 0x5f, 0xa8, 0x0c, 0xf0, 0xbf, 0xae, 0xfc, 0xe6, 0x13, 0x22, 0x05,
-	0x7e, 0x9a, 0xd6, 0x88, 0xf0, 0xac, 0xdb, 0xba, 0x79, 0x72, 0xf7, 0x8c, 0xb9, 0x72, 0xd8, 0xb6,
-	0x9c, 0x7d, 0x8f, 0xec, 0x01, 0xb2, 0x7b, 0xa3, 0xf2, 0xfe, 0x60, 0x51, 0xc5, 0xde, 0xa6, 0x8a,
-	0xaf, 0x1c, 0xf7, 0x90, 0xa6, 0x3f, 0xff, 0xc4, 0x2f, 0xa5, 0xb2, 0xe3, 0x59, 0xca, 0x32, 0xa3,
-	0xf9, 0xae, 0x61, 0xf7, 0xe9, 0xe1, 0xe8, 0x33, 0xb7, 0xe5, 0x14, 0x70, 0x0f, 0xc2, 0xa4, 0x2d,
-	0xf7, 0xb3, 0xf7, 0x07, 0x8b, 0x55, 0xe4, 0x2f, 0x57, 0x91, 0xff, 0x77, 0x15, 0xf9, 0xdf, 0xd7,
-	0x91, 0xb7, 0x5c, 0x47, 0xde, 0xef, 0x75, 0xe4, 0x7d, 0x64, 0x47, 0x44, 0xe8, 0x69, 0x93, 0x43,
-	0xc9, 0x41, 0xf7, 0x26, 0x30, 0x92, 0x50, 0xf0, 0xf9, 0xd1, 0x3e, 0xd6, 0xf4, 0xf4, 0xbc, 0xde,
-	0x9f, 0x57, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x60, 0x96, 0xbb, 0x46, 0xac, 0x02, 0x00, 0x00,
+	// 472 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x54, 0xc1, 0x6a, 0xdb, 0x40,
+	0x10, 0xb5, 0x6c, 0x08, 0x78, 0x1b, 0xd3, 0x44, 0x18, 0xaa, 0x8a, 0x56, 0x32, 0x0b, 0x2d, 0x29,
+	0xc5, 0xbb, 0xc4, 0x3d, 0x14, 0x7a, 0x74, 0x02, 0x4d, 0x0f, 0x86, 0xa2, 0xde, 0x7a, 0x29, 0xb2,
+	0x34, 0x6c, 0x44, 0xb3, 0x5a, 0x57, 0xb3, 0x2e, 0xd1, 0x07, 0xf4, 0xde, 0xdf, 0x68, 0x3f, 0xa1,
+	0x5f, 0x90, 0x4b, 0x21, 0xc7, 0x9e, 0xdc, 0x62, 0xff, 0x81, 0xbf, 0xa0, 0x44, 0x6b, 0x29, 0x96,
+	0x49, 0x8a, 0xe9, 0x21, 0x27, 0x1b, 0xcd, 0x7b, 0x6f, 0xe6, 0xcd, 0x1b, 0x89, 0x3c, 0x06, 0xc9,
+	0xc3, 0xa9, 0x3e, 0x55, 0x59, 0xa2, 0x73, 0xfe, 0xf9, 0x70, 0x0c, 0x3a, 0x3c, 0xe4, 0xfa, 0x9c,
+	0x4d, 0x32, 0xa5, 0x95, 0xdd, 0x05, 0xc9, 0xaa, 0x32, 0x5b, 0x95, 0xdd, 0xae, 0x50, 0x42, 0x15,
+	0x00, 0x7e, 0xf5, 0xcf, 0x60, 0x5d, 0x2f, 0x52, 0x28, 0x15, 0xf2, 0x71, 0x88, 0x50, 0x29, 0x45,
+	0x2a, 0x49, 0x4d, 0x9d, 0x7e, 0xb3, 0xc8, 0xfd, 0x11, 0x8a, 0xa3, 0x0c, 0x42, 0x0d, 0x6f, 0x10,
+	0xa7, 0x90, 0xd9, 0x03, 0xd2, 0xae, 0xe4, 0x1d, 0xab, 0x67, 0x1d, 0xb4, 0x87, 0xdd, 0xe5, 0xcc,
+	0xdf, 0xcb, 0x43, 0x79, 0xf6, 0x8a, 0x56, 0x25, 0x1a, 0x5c, 0xc3, 0xec, 0x67, 0x64, 0x27, 0x29,
+	0xd8, 0x4e, 0xb3, 0x20, 0xec, 0x2f, 0x67, 0x7e, 0xc7, 0x10, 0xcc, 0x73, 0x1a, 0xac, 0x00, 0xf6,
+	0x4b, 0xd2, 0x89, 0x21, 0x55, 0x32, 0x49, 0x43, 0x9d, 0xa8, 0x14, 0x9d, 0x56, 0xaf, 0x55, 0x67,
+	0x14, 0x65, 0xa4, 0x41, 0x1d, 0x47, 0x1f, 0x92, 0x07, 0x1b, 0xa3, 0x06, 0x80, 0x13, 0x95, 0x22,
+	0xd0, 0x4f, 0x64, 0x6f, 0x84, 0xe2, 0x18, 0x50, 0x67, 0x2a, 0xbf, 0x13, 0x1b, 0xd4, 0x25, 0xce,
+	0x66, 0xcb, 0x6a, 0x9c, 0x9f, 0x66, 0xab, 0xef, 0x40, 0xbf, 0x0e, 0xf1, 0x6d, 0x96, 0x44, 0x80,
+	0xff, 0x35, 0xce, 0x17, 0x8b, 0x10, 0x11, 0xe2, 0x87, 0x49, 0x21, 0xe1, 0x34, 0x7b, 0xad, 0x83,
+	0x7b, 0x83, 0x47, 0xcc, 0x64, 0xca, 0xae, 0x32, 0x2d, 0xe3, 0x67, 0xc7, 0x10, 0x1d, 0xa9, 0x24,
+	0x1d, 0x9e, 0x5c, 0xcc, 0xfc, 0xc6, 0x72, 0xe6, 0xef, 0x1b, 0xdd, 0x6b, 0x36, 0xfd, 0xfe, 0xdb,
+	0x7f, 0x2e, 0x12, 0x7d, 0x3a, 0x1d, 0xb3, 0x48, 0x49, 0xbe, 0x3a, 0x0c, 0xf3, 0xd3, 0xc7, 0xf8,
+	0x23, 0xd7, 0xf9, 0x04, 0xb0, 0x14, 0xc2, 0xa0, 0x2d, 0xca, 0xd9, 0x57, 0x9b, 0x5f, 0xb7, 0x53,
+	0x5a, 0x1d, 0xfc, 0x68, 0x92, 0xd6, 0x08, 0x85, 0x1d, 0x93, 0xdd, 0xda, 0x11, 0x3d, 0x61, 0x37,
+	0x5d, 0x29, 0xdb, 0x08, 0xd0, 0xed, 0x6f, 0x05, 0x2b, 0xbb, 0xd9, 0x82, 0x74, 0xea, 0x21, 0x3f,
+	0xbd, 0x95, 0x5f, 0xc3, 0xb9, 0x6c, 0x3b, 0x5c, 0xd5, 0x28, 0x26, 0xbb, 0xb5, 0xf4, 0x6e, 0xb7,
+	0xb3, 0x0e, 0xfb, 0x87, 0x9d, 0x9b, 0x96, 0x37, 0x3c, 0xb9, 0x98, 0x7b, 0xd6, 0xe5, 0xdc, 0xb3,
+	0xfe, 0xcc, 0x3d, 0xeb, 0xeb, 0xc2, 0x6b, 0x5c, 0x2e, 0xbc, 0xc6, 0xaf, 0x85, 0xd7, 0x78, 0xcf,
+	0xd6, 0x92, 0x82, 0xbe, 0x54, 0x29, 0xe4, 0x1c, 0x64, 0xff, 0x0c, 0x62, 0x01, 0x19, 0x3f, 0x5f,
+	0xfb, 0x3c, 0x14, 0xa9, 0x8d, 0x77, 0x8a, 0xd7, 0xf9, 0xc5, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0x20, 0x45, 0x91, 0x2d, 0x3b, 0x04, 0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// MsgClient is the client API for Msg service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type MsgClient interface {
+	CreateIssuer(ctx context.Context, in *MsgCreateIssuer, opts ...grpc.CallOption) (*MsgCreateIssuerResponse, error)
+	DestroyIssuer(ctx context.Context, in *MsgDestroyIssuer, opts ...grpc.CallOption) (*MsgDestroyIssuerResponse, error)
+	SetGasPrices(ctx context.Context, in *MsgSetGasPrices, opts ...grpc.CallOption) (*MsgSetGasPricesResponse, error)
+}
+
+type msgClient struct {
+	cc grpc1.ClientConn
+}
+
+func NewMsgClient(cc grpc1.ClientConn) MsgClient {
+	return &msgClient{cc}
+}
+
+func (c *msgClient) CreateIssuer(ctx context.Context, in *MsgCreateIssuer, opts ...grpc.CallOption) (*MsgCreateIssuerResponse, error) {
+	out := new(MsgCreateIssuerResponse)
+	err := c.cc.Invoke(ctx, "/em.authority.v1beta1.Msg/CreateIssuer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) DestroyIssuer(ctx context.Context, in *MsgDestroyIssuer, opts ...grpc.CallOption) (*MsgDestroyIssuerResponse, error) {
+	out := new(MsgDestroyIssuerResponse)
+	err := c.cc.Invoke(ctx, "/em.authority.v1beta1.Msg/DestroyIssuer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetGasPrices(ctx context.Context, in *MsgSetGasPrices, opts ...grpc.CallOption) (*MsgSetGasPricesResponse, error) {
+	out := new(MsgSetGasPricesResponse)
+	err := c.cc.Invoke(ctx, "/em.authority.v1beta1.Msg/SetGasPrices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MsgServer is the server API for Msg service.
+type MsgServer interface {
+	CreateIssuer(context.Context, *MsgCreateIssuer) (*MsgCreateIssuerResponse, error)
+	DestroyIssuer(context.Context, *MsgDestroyIssuer) (*MsgDestroyIssuerResponse, error)
+	SetGasPrices(context.Context, *MsgSetGasPrices) (*MsgSetGasPricesResponse, error)
+}
+
+// UnimplementedMsgServer can be embedded to have forward compatible implementations.
+type UnimplementedMsgServer struct {
+}
+
+func (*UnimplementedMsgServer) CreateIssuer(ctx context.Context, req *MsgCreateIssuer) (*MsgCreateIssuerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIssuer not implemented")
+}
+func (*UnimplementedMsgServer) DestroyIssuer(ctx context.Context, req *MsgDestroyIssuer) (*MsgDestroyIssuerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DestroyIssuer not implemented")
+}
+func (*UnimplementedMsgServer) SetGasPrices(ctx context.Context, req *MsgSetGasPrices) (*MsgSetGasPricesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetGasPrices not implemented")
+}
+
+func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
+	s.RegisterService(&_Msg_serviceDesc, srv)
+}
+
+func _Msg_CreateIssuer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreateIssuer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CreateIssuer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.authority.v1beta1.Msg/CreateIssuer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CreateIssuer(ctx, req.(*MsgCreateIssuer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_DestroyIssuer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgDestroyIssuer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).DestroyIssuer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.authority.v1beta1.Msg/DestroyIssuer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).DestroyIssuer(ctx, req.(*MsgDestroyIssuer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetGasPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetGasPrices)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetGasPrices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.authority.v1beta1.Msg/SetGasPrices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetGasPrices(ctx, req.(*MsgSetGasPrices))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Msg_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "em.authority.v1beta1.Msg",
+	HandlerType: (*MsgServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateIssuer",
+			Handler:    _Msg_CreateIssuer_Handler,
+		},
+		{
+			MethodName: "DestroyIssuer",
+			Handler:    _Msg_DestroyIssuer_Handler,
+		},
+		{
+			MethodName: "SetGasPrices",
+			Handler:    _Msg_SetGasPrices_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "em/authority/v1beta1/tx.proto",
 }
 
 func (m *MsgCreateIssuer) Marshal() (dAtA []byte, err error) {
@@ -271,6 +545,29 @@ func (m *MsgCreateIssuer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgCreateIssuerResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCreateIssuerResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCreateIssuerResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func (m *MsgDestroyIssuer) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -305,6 +602,29 @@ func (m *MsgDestroyIssuer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0xa
 	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgDestroyIssuerResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgDestroyIssuerResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgDestroyIssuerResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	return len(dAtA) - i, nil
 }
 
@@ -352,6 +672,29 @@ func (m *MsgSetGasPrices) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgSetGasPricesResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetGasPricesResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetGasPricesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -386,6 +729,15 @@ func (m *MsgCreateIssuer) Size() (n int) {
 	return n
 }
 
+func (m *MsgCreateIssuerResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *MsgDestroyIssuer) Size() (n int) {
 	if m == nil {
 		return 0
@@ -400,6 +752,15 @@ func (m *MsgDestroyIssuer) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
+	return n
+}
+
+func (m *MsgDestroyIssuerResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -419,6 +780,15 @@ func (m *MsgSetGasPrices) Size() (n int) {
 			n += 1 + l + sovTx(uint64(l))
 		}
 	}
+	return n
+}
+
+func (m *MsgSetGasPricesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -574,6 +944,56 @@ func (m *MsgCreateIssuer) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *MsgCreateIssuerResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCreateIssuerResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCreateIssuerResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *MsgDestroyIssuer) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -667,6 +1087,56 @@ func (m *MsgDestroyIssuer) Unmarshal(dAtA []byte) error {
 			}
 			m.Issuer = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgDestroyIssuerResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgDestroyIssuerResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgDestroyIssuerResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -783,6 +1253,56 @@ func (m *MsgSetGasPrices) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetGasPricesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetGasPricesResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetGasPricesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

@@ -90,30 +90,30 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	_, err := keeper.CreateIssuer(ctx, accAuthority, issuer1, []string{"eeur", "ejpy"})
+	_, err := keeper.createIssuer(ctx, accAuthority, issuer1, []string{"eeur", "ejpy"})
 	require.NoError(t, err)
 
-	_, err = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"})
+	_, err = keeper.createIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"})
 	require.Error(t, err) // Must fail due to duplicate token denomination
 
-	_, err = keeper.CreateIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp"})
+	_, err = keeper.createIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp"})
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 2)
 
-	_, err = keeper.DestroyIssuer(ctx, accAuthority, issuer2)
+	_, err = keeper.destroyIssuer(ctx, accAuthority, issuer2)
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 1)
 
 	require.Panics(t, func() {
 		// Make sure only authority key can destroy an issuer
-		keeper.DestroyIssuer(ctx, issuer1, issuer2)
+		keeper.destroyIssuer(ctx, issuer1, issuer2)
 	})
 
-	_, err = keeper.DestroyIssuer(ctx, accAuthority, issuer2)
+	_, err = keeper.destroyIssuer(ctx, accAuthority, issuer2)
 	require.Error(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 1)
 
-	_, err = keeper.DestroyIssuer(ctx, accAuthority, issuer1)
+	_, err = keeper.destroyIssuer(ctx, accAuthority, issuer1)
 	require.NoError(t, err)
 	require.Empty(t, ik.GetIssuers(ctx))
 }
@@ -128,10 +128,10 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	_, err := keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
+	_, err := keeper.createIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
 	require.NoError(t, err)
 
-	_, err = keeper.CreateIssuer(ctx, accAuthority, accIssuer, []string{"ekrw"})
+	_, err = keeper.createIssuer(ctx, accAuthority, accIssuer, []string{"ekrw"})
 	require.NoError(t, err)
 	issuers := ik.GetIssuers(ctx)
 
@@ -202,8 +202,12 @@ func TestManageGasPrices2(t *testing.T) {
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, issuer.Keeper, *mockGasPricesKeeper) {
-	t.Helper()
 	encConfig := MakeTestEncodingConfig()
+	return createTestComponentWithEncodingConfig(t, encConfig)
+}
+
+func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.EncodingConfig) (sdk.Context, Keeper, issuer.Keeper, *mockGasPricesKeeper) {
+	t.Helper()
 	var (
 		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")

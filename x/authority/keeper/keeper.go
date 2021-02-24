@@ -59,7 +59,7 @@ func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress) {
 	return
 }
 
-func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
+func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
@@ -107,7 +107,7 @@ func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
 	return
 }
 
-func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
+func (k Keeper) destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	return k.ik.RemoveIssuer(ctx, issuerAddress)

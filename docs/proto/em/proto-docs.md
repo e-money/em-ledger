@@ -10,10 +10,21 @@
 - [em/authority/v1beta1/genesis.proto](#em/authority/v1beta1/genesis.proto)
     - [GenesisState](#em.authority.v1beta1.GenesisState)
   
+- [em/authority/v1beta1/query.proto](#em/authority/v1beta1/query.proto)
+    - [QueryGasPricesRequest](#em.authority.v1beta1.QueryGasPricesRequest)
+    - [QueryGasPricesResponse](#em.authority.v1beta1.QueryGasPricesResponse)
+  
+    - [Query](#em.authority.v1beta1.Query)
+  
 - [em/authority/v1beta1/tx.proto](#em/authority/v1beta1/tx.proto)
     - [MsgCreateIssuer](#em.authority.v1beta1.MsgCreateIssuer)
+    - [MsgCreateIssuerResponse](#em.authority.v1beta1.MsgCreateIssuerResponse)
     - [MsgDestroyIssuer](#em.authority.v1beta1.MsgDestroyIssuer)
+    - [MsgDestroyIssuerResponse](#em.authority.v1beta1.MsgDestroyIssuerResponse)
     - [MsgSetGasPrices](#em.authority.v1beta1.MsgSetGasPrices)
+    - [MsgSetGasPricesResponse](#em.authority.v1beta1.MsgSetGasPricesResponse)
+  
+    - [Msg](#em.authority.v1beta1.Msg)
   
 - [em/buyback/v1beta1/genesis.proto](#em/buyback/v1beta1/genesis.proto)
     - [GenesisState](#em.buyback.v1beta1.GenesisState)
@@ -135,6 +146,57 @@
 
 
 
+<a name="em/authority/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/authority/v1beta1/query.proto
+
+
+
+<a name="em.authority.v1beta1.QueryGasPricesRequest"></a>
+
+### QueryGasPricesRequest
+
+
+
+
+
+
+
+<a name="em.authority.v1beta1.QueryGasPricesResponse"></a>
+
+### QueryGasPricesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `min_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.authority.v1beta1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GasPrices` | [QueryGasPricesRequest](#em.authority.v1beta1.QueryGasPricesRequest) | [QueryGasPricesResponse](#em.authority.v1beta1.QueryGasPricesResponse) |  | GET|/e-money/authority/v1beta1/gasprices|
+
+ <!-- end services -->
+
+
+
 <a name="em/authority/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -159,6 +221,16 @@
 
 
 
+<a name="em.authority.v1beta1.MsgCreateIssuerResponse"></a>
+
+### MsgCreateIssuerResponse
+
+
+
+
+
+
+
 <a name="em.authority.v1beta1.MsgDestroyIssuer"></a>
 
 ### MsgDestroyIssuer
@@ -169,6 +241,16 @@
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |  |
 | `issuer` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.authority.v1beta1.MsgDestroyIssuerResponse"></a>
+
+### MsgDestroyIssuerResponse
+
 
 
 
@@ -190,11 +272,33 @@
 
 
 
+
+<a name="em.authority.v1beta1.MsgSetGasPricesResponse"></a>
+
+### MsgSetGasPricesResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+
+<a name="em.authority.v1beta1.Msg"></a>
+
+### Msg
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `CreateIssuer` | [MsgCreateIssuer](#em.authority.v1beta1.MsgCreateIssuer) | [MsgCreateIssuerResponse](#em.authority.v1beta1.MsgCreateIssuerResponse) |  | |
+| `DestroyIssuer` | [MsgDestroyIssuer](#em.authority.v1beta1.MsgDestroyIssuer) | [MsgDestroyIssuerResponse](#em.authority.v1beta1.MsgDestroyIssuerResponse) |  | |
+| `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1beta1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1beta1.MsgSetGasPricesResponse) |  | |
 
  <!-- end services -->
 

@@ -19,8 +19,6 @@ const (
 
 type (
 	Keeper = keeper.Keeper
-
-	QueryGasPricesResponse = keeper.QueryGasPricesResponse
 )
 
 var (

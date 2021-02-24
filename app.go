@@ -241,8 +241,6 @@ func NewApp(
 		distrtypes.StoreKey, emslashing.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		// em types
-		// todo (Alex): add proper slashing module here
 		issuer.StoreKey, authority.StoreKey, market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
 		inflation.StoreKey,
 	)
@@ -634,7 +632,6 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
-	// todo (Alex): add custom modules
 
 	return paramsKeeper
 }

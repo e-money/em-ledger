@@ -6,42 +6,32 @@ package authority
 
 import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/authority/keeper"
 
 	"github.com/e-money/em-ledger/x/authority/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func newHandler(keeper Keeper) sdk.Handler {
+func newHandler(k Keeper) sdk.Handler {
+	msgServer := keeper.NewMsgServerImpl(k)
+
 	return func(ctx sdk.Context, msg sdk.Msg) (result *sdk.Result, err error) {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		case *types.MsgCreateIssuer:
-			authority, err := sdk.AccAddressFromBech32(msg.Authority)
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
-			}
-			issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
-			}
-			return keeper.CreateIssuer(ctx, authority, issuer, msg.Denominations)
-		case *types.MsgDestroyIssuer:
-			authority, err := sdk.AccAddressFromBech32(msg.Authority)
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
-			}
-			issuer, err := sdk.AccAddressFromBech32(msg.Issuer)
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
-			}
+			res, err := msgServer.CreateIssuer(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
 
-			return keeper.DestroyIssuer(ctx, authority, issuer)
+		case *types.MsgDestroyIssuer:
+			res, err := msgServer.DestroyIssuer(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
 		case *types.MsgSetGasPrices:
-			authority, err := sdk.AccAddressFromBech32(msg.Authority)
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
-			}
-			return keeper.SetGasPrices(ctx, authority, msg.GasPrices)
+			res, err := msgServer.SetGasPrices(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg)
 		}

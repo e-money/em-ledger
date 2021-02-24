@@ -5,11 +5,8 @@
 package cli
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/e-money/em-ledger/x/authority/keeper"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
 )
@@ -41,22 +38,13 @@ func GetGasPricesCmd() *cobra.Command {
 				return err
 			}
 
-			//queryClient := types.NewQueryClient(clientCtx)
-
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryGasPrices))
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.GasPrices(cmd.Context(), &types.QueryGasPricesRequest{})
 			if err != nil {
 				return err
 			}
 
-			resp := new(keeper.QueryGasPricesResponse)
-			err = json.Unmarshal(bz, resp)
-			if err != nil {
-				return err
-			}
-			clientCtx.PrintBytes(bz)
-			// todo (Alex): refactor to GRPC
-			//return clientCtx.PrintProto(res.Balance)
-			return nil
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

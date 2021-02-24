@@ -21,6 +21,8 @@ require (
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tidwall/gjson v1.3.2
 	github.com/tidwall/sjson v1.0.4
+	google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f
+	google.golang.org/grpc v1.35.0
 )
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
