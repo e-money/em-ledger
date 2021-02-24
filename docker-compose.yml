@@ -6,6 +6,7 @@ services:
     image: "emoney/emdnode"
     ports:
       - "26656-26657:26656-26657"
+      - "1317:1317"
     environment:
       - ID=0
       - LOG=${LOG:-emd.log}
@@ -21,6 +22,7 @@ services:
     image: "emoney/emdnode"
     ports:
       - "26659-26660:26656-26657"
+      - "1318:1317"
     environment:
       - ID=1
       - LOG=${LOG:-emd.log}
@@ -40,6 +42,7 @@ services:
 #      - LOGLEVEL=*:info
     ports:
       - "26661-26662:26656-26657"
+      - "1319:1317"
     volumes:
       - ./build:/emoney:Z
     networks:
@@ -55,24 +58,12 @@ services:
 #      - LOGLEVEL=*:info
     ports:
       - "26663-26664:26656-26657"
+      - "1320:1317"
     volumes:
       - ./build:/emoney:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.5
-
-#  rest-server:
-#    container_name: rest-serve
-#    image: "emoney/emdnode" # TODO (reviewer) : rest server is included into the emd binary. enable rest (api) via `app.toml`
-#    environment:
-#      - NODE=http://emdnode0:26657
-#    ports:
-#      - "1317:1317"
-#    volumes:
-#      - ./build:/emoney:Z
-#    networks:
-#      localnet:
-#        ipv4_address: 192.168.10.128
 
 networks:
   localnet:
@@ -82,4 +73,3 @@ networks:
       config:
       -
         subnet: 192.168.10.0/16
-
