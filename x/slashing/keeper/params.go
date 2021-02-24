@@ -16,6 +16,7 @@ func (k Keeper) SignedBlocksWindowDuration(ctx sdk.Context) time.Duration {
 	var x int64
 	k.paramspace.Get(ctx, types.KeySignedBlocksWindow, &x)
 	return time.Duration(x) * time.Nanosecond // multiplication only for doc. Duration is ns
+	// todo (reviewer): is int64 ok?
 }
 
 func (k Keeper) MinSignedPerWindow(ctx sdk.Context) (res sdk.Dec) {

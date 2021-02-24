@@ -16,8 +16,8 @@ import (
 
 var _ auth.AccountI = &LiquidityProviderAccount{}
 
-func NewLiquidityProviderAccount(baseAccount auth.AccountI, mintable sdk.Coins) (*LiquidityProviderAccount, error) {
-	msg, ok := baseAccount.(proto.Message)
+func NewLiquidityProviderAccount(account auth.AccountI, mintable sdk.Coins) (*LiquidityProviderAccount, error) {
+	msg, ok := account.(proto.Message)
 	if !ok {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "can't proto marshal %T", msg)
 	}
@@ -64,7 +64,7 @@ func (acc LiquidityProviderAccount) String() string {
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (m LiquidityProviderAccount) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	// todo (Alex): add test for unpack nested type
+	// todo (Alex)`: add test for unpack nested type
 	var account auth.AccountI
 	if err := unpacker.UnpackAny(m.Account, &account); err != nil {
 		return err

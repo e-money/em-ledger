@@ -640,13 +640,13 @@ func getOrdersSourceDemand(orders []*types.Order, src, dst string) sdk.Coin {
 
 func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destinationFilled sdk.Coin, passiveAccountAddr, aggressiveAccountAddr string) error {
 	inputs := []banktypes.Input{
-		{aggressiveAccountAddr, sdk.NewCoins(sourceFilled)},
-		{passiveAccountAddr, sdk.NewCoins(destinationFilled)},
+		{Address: aggressiveAccountAddr, Coins: sdk.NewCoins(sourceFilled)},
+		{Address: passiveAccountAddr, Coins: sdk.NewCoins(destinationFilled)},
 	}
 
 	outputs := []banktypes.Output{
-		{aggressiveAccountAddr, sdk.NewCoins(destinationFilled)},
-		{passiveAccountAddr, sdk.NewCoins(sourceFilled)},
+		{Address: aggressiveAccountAddr, Coins: sdk.NewCoins(destinationFilled)},
+		{Address: passiveAccountAddr, Coins: sdk.NewCoins(sourceFilled)},
 	}
 
 	return k.bk.InputOutputCoins(ctx, inputs, outputs)

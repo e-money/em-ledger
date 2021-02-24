@@ -60,8 +60,8 @@
     - [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder)
   
 - [em/slashing/v1beta1/slashing.proto](#em/slashing/v1beta1/slashing.proto)
-    - [Penalties](#em.liquidityprovider.v1beta1.Penalties)
-    - [Penalty](#em.liquidityprovider.v1beta1.Penalty)
+    - [Penalties](#em.slashing.v1beta1.Penalties)
+    - [Penalty](#em.slashing.v1beta1.Penalty)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -752,7 +752,7 @@
 
 
 
-<a name="em.liquidityprovider.v1beta1.Penalties"></a>
+<a name="em.slashing.v1beta1.Penalties"></a>
 
 ### Penalties
 
@@ -760,14 +760,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `elements` | [Penalty](#em.liquidityprovider.v1beta1.Penalty) | repeated |  |
+| `elements` | [Penalty](#em.slashing.v1beta1.Penalty) | repeated |  |
 
 
 
 
 
 
-<a name="em.liquidityprovider.v1beta1.Penalty"></a>
+<a name="em.slashing.v1beta1.Penalty"></a>
 
 ### Penalty
 

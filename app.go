@@ -228,7 +228,7 @@ func (app *EMoneyApp) SimulationManager() *module.SimulationManager {
 
 type GenesisState map[string]json.RawMessage
 
-// NewApp returns a reference to an initialized SimApp.
+// NewApp returns a reference to an initialized App.
 func NewApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig EncodingConfig,

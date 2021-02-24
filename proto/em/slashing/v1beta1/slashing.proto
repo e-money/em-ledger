@@ -1,5 +1,5 @@
 syntax = "proto3";
-package em.liquidityprovider.v1beta1;
+package em.slashing.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
