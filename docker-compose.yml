@@ -6,7 +6,8 @@ services:
     image: "emoney/emdnode"
     ports:
       - "26656-26657:26656-26657"
-      - "1317:1317"
+      - "1317:1317" # rest legacy
+      - "9090:9090" # grpc query
     environment:
       - ID=0
       - LOG=${LOG:-emd.log}
