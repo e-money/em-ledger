@@ -30,7 +30,6 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress,
 
 	account := k.authKeeper.GetAccount(ctx, address)
 	if account == nil {
-		logger.Info("Account not found", "account", address)
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownAddress, address.String())
 	}
 	lpAcc, err := types.NewLiquidityProviderAccount(account, mintable)

@@ -20,7 +20,10 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, gs types.GenesisState) error {
 		if err != nil {
 			return sdkerrors.Wrapf(err, "address: %s", lp.Account)
 		}
-		keeper.CreateLiquidityProvider(ctx, addr, lp.Mintable)
+		_, err = keeper.CreateLiquidityProvider(ctx, addr, lp.Mintable)
+		if err != nil {
+			return sdkerrors.Wrap(err, "liquidity provider")
+		}
 	}
 	return nil
 }

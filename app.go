@@ -48,7 +48,6 @@ import (
 	ibckeeper "github.com/cosmos/cosmos-sdk/x/ibc/core/keeper"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	sdkslashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
@@ -650,53 +649,5 @@ func (app EMoneyApp) SetMinimumGasPrices(gasPricesStr string) (err error) {
 }
 
 func init() {
-	setGenesisDefaults()
-
 	sdk.PowerReduction = sdk.OneInt()
-}
-
-func setGenesisDefaults() {
-	// Override module defaults for use in testnets and the default init functionality.
-	// todo (reviewer): is this still needed?
-	// the default state is a function in sdk module now
-
-	//stakingtypes.DefaultGenesisState = stakingGenesisState
-	//distrtypes.DefaultGenesisState = distrDefaultGenesisState()
-	inflation.DefaultInflationState = mintDefaultInflationState()
-}
-
-func slashingDefaultGenesisState() func() *sdkslashingtypes.GenesisState {
-	slashingDefaultGenesisStateFn := sdkslashingtypes.DefaultGenesisState
-
-	return func() *sdkslashingtypes.GenesisState {
-		state := slashingDefaultGenesisStateFn()
-		return state
-	}
-}
-
-func distrDefaultGenesisState() func() *distrtypes.GenesisState {
-	distrDefaultGenesisStateFn := distrtypes.DefaultGenesisState
-
-	return func() *distrtypes.GenesisState {
-		state := distrDefaultGenesisStateFn()
-		//state.CommunityTax = sdk.NewDec(0)
-		// TODO Fix this parameter to 0.
-		return state
-	}
-}
-
-func mintDefaultInflationState() func() inflation.InflationState {
-	mintDefaultInflationStateFn := inflation.DefaultInflationState
-
-	return func() inflation.InflationState {
-		state := mintDefaultInflationStateFn()
-		return state
-	}
-}
-
-func stakingGenesisState() *stakingtypes.GenesisState {
-	genesisState := stakingtypes.DefaultGenesisState()
-	genesisState.Params.BondDenom = stakingTokenDenom
-
-	return genesisState
 }
