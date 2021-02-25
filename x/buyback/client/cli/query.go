@@ -5,11 +5,8 @@
 package cli
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	"github.com/spf13/cobra"
 )
@@ -40,26 +37,13 @@ func GetModuleBalanceCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryBalance))
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Balance(cmd.Context(), &types.QueryBalanceRequest{})
 			if err != nil {
 				return err
 			}
 
-			switch clientCtx.OutputFormat {
-			case "text":
-				response := keeper.QueryBalanceResponse{}
-				if err := json.Unmarshal(bz, &response); err != nil {
-					return err
-				}
-
-				for _, b := range response.Balance {
-					clientCtx.PrintString(b.String())
-				}
-			case "json":
-				clientCtx.PrintBytes(bz)
-			}
-			return nil
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

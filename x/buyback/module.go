@@ -1,6 +1,7 @@
 package buyback
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -66,8 +67,7 @@ func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Rout
 }
 
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
-	// todo (Alex)
-	//types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
+	types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
 }
 
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
@@ -110,13 +110,12 @@ func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
 }
 
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
 	return keeper.NewQuerier(am.keeper)
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	// todo (Alex)
-	//types.RegisterQueryServer(cfg.QueryServer(), am.accountKeeper)
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {

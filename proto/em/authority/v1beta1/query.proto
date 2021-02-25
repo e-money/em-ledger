@@ -8,8 +8,8 @@ import "google/api/annotations.proto";
 option go_package = "github.com/e-money/em-ledger/x/authority/types";
 
 service Query {
-  rpc GasPrices(QueryGasPricesRequest) returns (QueryGasPricesResponse){
-    // todo (reviewer) : does the rest route make sense
+  rpc GasPrices(QueryGasPricesRequest) returns (QueryGasPricesResponse) {
+    // todo (reviewer) : this and others doe the rest route make sense
     option (google.api.http).get = "/e-money/authority/v1beta1/gasprices";
   };
 }
