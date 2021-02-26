@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/buyback"
 	"github.com/e-money/em-ledger/x/inflation"
 	"net"
 	"os"
@@ -288,6 +289,7 @@ func initGenFiles(
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
 	appGenState["authority"] = createAuthorityGenesis(authorityKey)
 	appGenState["inflation"] = createInflationGenesis()
+	appGenState["buyback"] = createBuybackGenesis()
 
 	// set the accounts in the genesis state
 	var authGenState authtypes.GenesisState
@@ -438,6 +440,17 @@ func getAuthorityKey(param string, keystorePath string) sdk.AccAddress {
 	}
 
 	panic(fmt.Errorf("unable to find key %s", param))
+}
+
+func createBuybackGenesis() json.RawMessage {
+	gen := buyback.NewGenesisState(time.Millisecond)
+
+	bz, err := json.Marshal(gen)
+	if err != nil {
+		panic(err)
+	}
+
+	return json.RawMessage(bz)
 }
 
 func createInflationGenesis() json.RawMessage {

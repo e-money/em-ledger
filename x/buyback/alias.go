@@ -21,6 +21,7 @@ type (
 	Keeper               = keeper.Keeper
 	StakingKeeper        = keeper.StakingKeeper
 	QueryBalanceResponse = keeper.QueryBalanceResponse
+	GenesisState         = types.GenesisState
 )
 
 var (

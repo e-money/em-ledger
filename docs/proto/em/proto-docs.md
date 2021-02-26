@@ -15,6 +15,9 @@
     - [MsgDestroyIssuer](#em.authority.v1beta1.MsgDestroyIssuer)
     - [MsgSetGasPrices](#em.authority.v1beta1.MsgSetGasPrices)
   
+- [em/buyback/v1beta1/genesis.proto](#em/buyback/v1beta1/genesis.proto)
+    - [GenesisState](#em.buyback.v1beta1.GenesisState)
+  
 - [em/inflation/v1beta1/inflation.proto](#em/inflation/v1beta1/inflation.proto)
     - [InflationAsset](#em.inflation.v1beta1.InflationAsset)
     - [InflationState](#em.inflation.v1beta1.InflationState)
@@ -182,6 +185,37 @@
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |  |
 | `gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/buyback/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/buyback/v1beta1/genesis.proto
+
+
+
+<a name="em.buyback.v1beta1.GenesisState"></a>
+
+### GenesisState
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `interval` | [string](#string) |  |  |
 
 
 

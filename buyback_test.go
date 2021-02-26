@@ -14,7 +14,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tidwall/sjson"
 )
 
 var _ = Describe("Buyback", func() {
@@ -27,8 +26,13 @@ var _ = Describe("Buyback", func() {
 	It("starts a new testnet", func() {
 		awaitReady, err := testnet.RestartWithModifications(
 			func(bz []byte) []byte {
+				// Allow for stablecoin inflation to create a buyback balance
 				genesisTime := time.Now().Add(-365 * 24 * time.Hour).UTC()
-				bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime.Format(time.RFC3339))
+				bz = setGenesisTime(bz, genesisTime)
+
+				// Disable inflation for NGM token to better detect burn events.
+				bz = setInflation(bz, "ungm", sdk.ZeroDec())
+
 				return bz
 			})
 
@@ -37,7 +41,7 @@ var _ = Describe("Buyback", func() {
 	})
 
 	// todo (Alex) : balance at the end does not match expectations
-	XIt("queries the buyback balance", func() {
+	It("queries the buyback balance", func() {
 		var js []gjson.Result
 		var bz []byte
 		for i := 0; i < 20; i++ { // await

@@ -10,10 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var (
-	updateInterval = time.Hour
-)
-
 type Keeper struct {
 	cdc      *codec.LegacyAmino
 	storeKey sdk.StoreKey
@@ -80,6 +76,7 @@ func (k Keeper) UpdateBuybackMarket(ctx sdk.Context) bool {
 		}
 	}
 
+	updateInterval := k.GetUpdateInterval(ctx)
 	if blockTime.Sub(*lastUpdated) < updateInterval {
 		return false
 	}
@@ -109,4 +106,19 @@ func (k Keeper) BurnStakingToken(ctx sdk.Context) error {
 	})
 
 	return k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.Coins{stakingBalance})
+}
+
+func (k Keeper) GetUpdateInterval(ctx sdk.Context) time.Duration {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GetUpdateIntervalKey())
+
+	var updateInterval time.Duration
+	k.cdc.MustUnmarshalBinaryBare(bz, &updateInterval)
+	return updateInterval
+}
+
+func (k Keeper) SetUpdateInterval(ctx sdk.Context, newVal time.Duration) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshalBinaryBare(newVal)
+	store.Set(types.GetUpdateIntervalKey(), bz)
 }

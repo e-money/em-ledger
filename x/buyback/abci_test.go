@@ -279,6 +279,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	marketKeeper := market.NewKeeper(encConfig.Amino, keyMarket, keyIndices, ak, bk, mockAuthority{})
 
 	keeper := NewKeeper(encConfig.Amino, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
+	keeper.SetUpdateInterval(ctx, time.Hour)
 
 	// Deposit a working balance on the buyback module account.
 	buybackAccount := ak.GetModuleAddress(ModuleName)
