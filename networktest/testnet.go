@@ -239,7 +239,7 @@ func compileBinaries() error {
 
 func dockerComposeUp() (func() bool, error) {
 	// todo (reviewer): new zap logger produces different and coloured output
-	wait, scanner := createOutputScanner("Committed state", 30*time.Second)
+	wait, scanner := createOutputScanner("committed state", 30*time.Second)
 	return wait, execCmdAndRun(dockerComposePath, []string{"up", "--no-color"}, scanner)
 }
 
