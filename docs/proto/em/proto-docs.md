@@ -29,6 +29,12 @@
 - [em/buyback/v1beta1/genesis.proto](#em/buyback/v1beta1/genesis.proto)
     - [GenesisState](#em.buyback.v1beta1.GenesisState)
   
+- [em/buyback/v1beta1/query.proto](#em/buyback/v1beta1/query.proto)
+    - [QueryBalanceRequest](#em.buyback.v1beta1.QueryBalanceRequest)
+    - [QueryBalanceResponse](#em.buyback.v1beta1.QueryBalanceResponse)
+  
+    - [Query](#em.buyback.v1beta1.Query)
+  
 - [em/inflation/v1beta1/inflation.proto](#em/inflation/v1beta1/inflation.proto)
     - [InflationAsset](#em.inflation.v1beta1.InflationAsset)
     - [InflationState](#em.inflation.v1beta1.InflationState)
@@ -75,7 +81,11 @@
   
 - [em/liquidityprovider/v1beta1/tx.proto](#em/liquidityprovider/v1beta1/tx.proto)
     - [MsgBurnTokens](#em.liquidityprovider.v1beta1.MsgBurnTokens)
+    - [MsgBurnTokensResponse](#em.liquidityprovider.v1beta1.MsgBurnTokensResponse)
     - [MsgMintTokens](#em.liquidityprovider.v1beta1.MsgMintTokens)
+    - [MsgMintTokensResponse](#em.liquidityprovider.v1beta1.MsgMintTokensResponse)
+  
+    - [Msg](#em.liquidityprovider.v1beta1.Msg)
   
 - [em/market/v1beta1/market.proto](#em/market/v1beta1/market.proto)
     - [ExecutionPlan](#em.market.v1beta1.ExecutionPlan)
@@ -85,11 +95,37 @@
   
     - [TimeInForce](#em.market.v1beta1.TimeInForce)
   
+- [em/market/v1beta1/query.proto](#em/market/v1beta1/query.proto)
+    - [QueryByAccountRequest](#em.market.v1beta1.QueryByAccountRequest)
+    - [QueryByAccountResponse](#em.market.v1beta1.QueryByAccountResponse)
+    - [QueryInstrumentRequest](#em.market.v1beta1.QueryInstrumentRequest)
+    - [QueryInstrumentResponse](#em.market.v1beta1.QueryInstrumentResponse)
+    - [QueryInstrumentsRequest](#em.market.v1beta1.QueryInstrumentsRequest)
+    - [QueryInstrumentsResponse](#em.market.v1beta1.QueryInstrumentsResponse)
+    - [QueryInstrumentsResponse.Element](#em.market.v1beta1.QueryInstrumentsResponse.Element)
+    - [QueryOrderResponse](#em.market.v1beta1.QueryOrderResponse)
+  
+    - [Query](#em.market.v1beta1.Query)
+  
 - [em/market/v1beta1/tx.proto](#em/market/v1beta1/tx.proto)
     - [MsgAddLimitOrder](#em.market.v1beta1.MsgAddLimitOrder)
+    - [MsgAddLimitOrderResponse](#em.market.v1beta1.MsgAddLimitOrderResponse)
     - [MsgAddMarketOrder](#em.market.v1beta1.MsgAddMarketOrder)
+    - [MsgAddMarketOrderResponse](#em.market.v1beta1.MsgAddMarketOrderResponse)
     - [MsgCancelOrder](#em.market.v1beta1.MsgCancelOrder)
+    - [MsgCancelOrderResponse](#em.market.v1beta1.MsgCancelOrderResponse)
     - [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder)
+    - [MsgCancelReplaceLimitOrderResponse](#em.market.v1beta1.MsgCancelReplaceLimitOrderResponse)
+  
+    - [Msg](#em.market.v1beta1.Msg)
+  
+- [em/queries/v1beta1/query.proto](#em/queries/v1beta1/query.proto)
+    - [QueryCirculatingRequest](#em.queries.v1beta1.QueryCirculatingRequest)
+    - [QueryCirculatingResponse](#em.queries.v1beta1.QueryCirculatingResponse)
+    - [QuerySpendableRequest](#em.queries.v1beta1.QuerySpendableRequest)
+    - [QuerySpendableResponse](#em.queries.v1beta1.QuerySpendableResponse)
+  
+    - [Query](#em.queries.v1beta1.Query)
   
 - [em/slashing/v1beta1/slashing.proto](#em/slashing/v1beta1/slashing.proto)
     - [Penalties](#em.slashing.v1beta1.Penalties)
@@ -348,6 +384,57 @@
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/buyback/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/buyback/v1beta1/query.proto
+
+
+
+<a name="em.buyback.v1beta1.QueryBalanceRequest"></a>
+
+### QueryBalanceRequest
+
+
+
+
+
+
+
+<a name="em.buyback.v1beta1.QueryBalanceResponse"></a>
+
+### QueryBalanceResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `balance` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.buyback.v1beta1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Balance` | [QueryBalanceRequest](#em.buyback.v1beta1.QueryBalanceRequest) | [QueryBalanceResponse](#em.buyback.v1beta1.QueryBalanceResponse) | Query for the current buyback balance | GET|/e-money/buyback/v1beta1/balance|
 
  <!-- end services -->
 
@@ -837,6 +924,16 @@
 
 
 
+<a name="em.liquidityprovider.v1beta1.MsgBurnTokensResponse"></a>
+
+### MsgBurnTokensResponse
+
+
+
+
+
+
+
 <a name="em.liquidityprovider.v1beta1.MsgMintTokens"></a>
 
 ### MsgMintTokens
@@ -852,11 +949,32 @@
 
 
 
+
+<a name="em.liquidityprovider.v1beta1.MsgMintTokensResponse"></a>
+
+### MsgMintTokensResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+
+<a name="em.liquidityprovider.v1beta1.Msg"></a>
+
+### Msg
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `MintTokens` | [MsgMintTokens](#em.liquidityprovider.v1beta1.MsgMintTokens) | [MsgMintTokensResponse](#em.liquidityprovider.v1beta1.MsgMintTokensResponse) |  | |
+| `BurnTokens` | [MsgBurnTokens](#em.liquidityprovider.v1beta1.MsgBurnTokens) | [MsgBurnTokensResponse](#em.liquidityprovider.v1beta1.MsgBurnTokensResponse) |  | |
 
  <!-- end services -->
 
@@ -953,7 +1071,7 @@
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | TIME_IN_FORCE_UNSPECIFIED | 0 |  |
-| TIME_IN_FORCE_GOOD_TIL_CANCEL | 1 |  |
+| TIME_IN_FORCE_GOOD_TILL_CANCEL | 1 |  |
 | TIME_IN_FORCE_IMMEDIATE_OR_CANCEL | 2 |  |
 | TIME_IN_FORCE_FILL_OR_KILL | 3 |  |
 
@@ -961,6 +1079,160 @@
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/market/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/market/v1beta1/query.proto
+
+
+
+<a name="em.market.v1beta1.QueryByAccountRequest"></a>
+
+### QueryByAccountRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryByAccountResponse"></a>
+
+### QueryByAccountResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `orders` | [Order](#em.market.v1beta1.Order) | repeated |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryInstrumentRequest"></a>
+
+### QueryInstrumentRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `source` | [string](#string) |  |  |
+| `destination` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryInstrumentResponse"></a>
+
+### QueryInstrumentResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `source` | [string](#string) |  |  |
+| `destination` | [string](#string) |  |  |
+| `orders` | [QueryOrderResponse](#em.market.v1beta1.QueryOrderResponse) | repeated |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryInstrumentsRequest"></a>
+
+### QueryInstrumentsRequest
+
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryInstrumentsResponse"></a>
+
+### QueryInstrumentsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `instruments` | [QueryInstrumentsResponse.Element](#em.market.v1beta1.QueryInstrumentsResponse.Element) | repeated |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryInstrumentsResponse.Element"></a>
+
+### QueryInstrumentsResponse.Element
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `source` | [string](#string) |  |  |
+| `destination` | [string](#string) |  |  |
+| `last_price` | [string](#string) |  |  |
+| `best_price` | [string](#string) |  |  |
+| `last_traded` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.QueryOrderResponse"></a>
+
+### QueryOrderResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [uint64](#uint64) |  |  |
+| `owner` | [string](#string) |  |  |
+| `source_remaining` | [string](#string) |  |  |
+| `client_order_id` | [string](#string) |  |  |
+| `price` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.market.v1beta1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `ByAccount` | [QueryByAccountRequest](#em.market.v1beta1.QueryByAccountRequest) | [QueryByAccountResponse](#em.market.v1beta1.QueryByAccountResponse) |  | GET|/e-money/market/v1beta1/account/{address}|
+| `Instruments` | [QueryInstrumentsRequest](#em.market.v1beta1.QueryInstrumentsRequest) | [QueryInstrumentsResponse](#em.market.v1beta1.QueryInstrumentsResponse) |  | GET|/e-money/market/v1beta1/instruments|
+| `Instrument` | [QueryInstrumentRequest](#em.market.v1beta1.QueryInstrumentRequest) | [QueryInstrumentResponse](#em.market.v1beta1.QueryInstrumentResponse) |  | GET|/e-money/market/v1beta1/instrument/{source}/{destination}|
 
  <!-- end services -->
 
@@ -992,6 +1264,16 @@
 
 
 
+<a name="em.market.v1beta1.MsgAddLimitOrderResponse"></a>
+
+### MsgAddLimitOrderResponse
+
+
+
+
+
+
+
 <a name="em.market.v1beta1.MsgAddMarketOrder"></a>
 
 ### MsgAddMarketOrder
@@ -1012,6 +1294,16 @@
 
 
 
+<a name="em.market.v1beta1.MsgAddMarketOrderResponse"></a>
+
+### MsgAddMarketOrderResponse
+
+
+
+
+
+
+
 <a name="em.market.v1beta1.MsgCancelOrder"></a>
 
 ### MsgCancelOrder
@@ -1022,6 +1314,16 @@
 | ----- | ---- | ----- | ----------- |
 | `owner` | [string](#string) |  |  |
 | `client_order_id` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1beta1.MsgCancelOrderResponse"></a>
+
+### MsgCancelOrderResponse
+
 
 
 
@@ -1046,11 +1348,116 @@
 
 
 
+
+<a name="em.market.v1beta1.MsgCancelReplaceLimitOrderResponse"></a>
+
+### MsgCancelReplaceLimitOrderResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+
+<a name="em.market.v1beta1.Msg"></a>
+
+### Msg
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `AddLimitOrder` | [MsgAddLimitOrder](#em.market.v1beta1.MsgAddLimitOrder) | [MsgAddLimitOrderResponse](#em.market.v1beta1.MsgAddLimitOrderResponse) |  | |
+| `AddMarketOrder` | [MsgAddMarketOrder](#em.market.v1beta1.MsgAddMarketOrder) | [MsgAddMarketOrderResponse](#em.market.v1beta1.MsgAddMarketOrderResponse) |  | |
+| `CancelOrder` | [MsgCancelOrder](#em.market.v1beta1.MsgCancelOrder) | [MsgCancelOrderResponse](#em.market.v1beta1.MsgCancelOrderResponse) |  | |
+| `CancelReplaceLimitOrder` | [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder) | [MsgCancelReplaceLimitOrderResponse](#em.market.v1beta1.MsgCancelReplaceLimitOrderResponse) |  | |
+
+ <!-- end services -->
+
+
+
+<a name="em/queries/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/queries/v1beta1/query.proto
+
+
+
+<a name="em.queries.v1beta1.QueryCirculatingRequest"></a>
+
+### QueryCirculatingRequest
+
+
+
+
+
+
+
+<a name="em.queries.v1beta1.QueryCirculatingResponse"></a>
+
+### QueryCirculatingResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `total` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="em.queries.v1beta1.QuerySpendableRequest"></a>
+
+### QuerySpendableRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.queries.v1beta1.QuerySpendableResponse"></a>
+
+### QuerySpendableResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `balance` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.queries.v1beta1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Circulating` | [QueryCirculatingRequest](#em.queries.v1beta1.QueryCirculatingRequest) | [QueryCirculatingResponse](#em.queries.v1beta1.QueryCirculatingResponse) |  | GET|/e-money/bank/v1beta1/circulating|
+| `Spendable` | [QuerySpendableRequest](#em.queries.v1beta1.QuerySpendableRequest) | [QuerySpendableResponse](#em.queries.v1beta1.QuerySpendableResponse) |  | GET|/e-money/bank/v1beta1/spendable/{address}|
 
  <!-- end services -->
 

@@ -57,7 +57,7 @@ func (o Order) IsFilled() bool {
 
 func (o Order) IsValid() error {
 	switch o.TimeInForce {
-	case TimeInForce_GoodTilCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
+	case TimeInForce_GoodTillCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel:
 	default:
 		return sdkerrors.Wrapf(ErrUnknownTimeInForce, "Unknown 'time in force' specified : %v", o.TimeInForce)
 	}
@@ -159,7 +159,7 @@ func TimeInForceFromString(p string) (TimeInForce, error) {
 	case "ioc":
 		return TimeInForce_ImmediateOrCancel, nil
 	case "gtc":
-		return TimeInForce_GoodTilCancel, nil
+		return TimeInForce_GoodTillCancel, nil
 	}
 
 	return 0, fmt.Errorf("unknown time-in-force value: %v", p)

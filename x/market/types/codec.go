@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -36,6 +37,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgCancelReplaceLimitOrder{},
 		&MsgCancelOrder{},
 	)
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
 
 func init() {

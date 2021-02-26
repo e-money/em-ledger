@@ -7,12 +7,9 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
-	"time"
-
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -23,7 +20,8 @@ func NewQuerier(k *Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryInstruments:
-			return queryInstruments(ctx, k)
+			result := queryInstruments(ctx, k)
+			return json.Marshal(result)
 		case types.QueryInstrument:
 			return queryInstrument(ctx, k, path[1:], req)
 		case types.QueryByAccount:
@@ -32,52 +30,6 @@ func NewQuerier(k *Keeper) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unrecognized market query endpoint")
 		}
 	}
-}
-
-type QueryInstrumentResponse struct {
-	Source      string               `json:"source" yaml:"source"`
-	Destination string               `json:"destination" yaml:"destination"`
-	Orders      []QueryOrderResponse `json:"orders" yaml:"orders"`
-}
-
-func (q QueryInstrumentResponse) String() string {
-	sb := new(strings.Builder)
-
-	sb.WriteString(fmt.Sprintf("%v => %v\n", q.Source, q.Destination))
-
-	for _, order := range q.Orders {
-		sb.WriteString(order.String())
-	}
-
-	return sb.String()
-}
-
-type QueryByAccountResponse struct {
-	Orders OrderResponses `json:"orders" yaml:"orders"`
-}
-
-func (q QueryByAccountResponse) String() string {
-	sb := new(strings.Builder)
-	for _, order := range q.Orders {
-		sb.WriteString(order.String())
-	}
-
-	return sb.String()
-}
-
-type QueryOrderResponse struct {
-	ID uint64 `json:"order_id" yaml:"order_id"`
-
-	Owner           string `json:"owner" yaml:"owner"`
-	SourceRemaining string `json:"source_remaining" yaml:"source_remaining"`
-
-	ClientOrderId *string `json:"client_order_id,omitempty" yaml:"client_order_id,omitempty"`
-
-	Price sdk.Dec `json:"price" yaml:"price"`
-}
-
-func (q QueryOrderResponse) String() string {
-	return fmt.Sprintf(" - %v %v %v %v\n", q.ID, q.Price, q.SourceRemaining, q.Owner)
 }
 
 type OrderResponses []*types.Order
@@ -117,7 +69,7 @@ func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQ
 	// TODO Determine suitable ordering or leave undefined
 	// sort.Sort(orders)
 
-	resp := QueryByAccountResponse{orders}
+	resp := types.QueryByAccountResponse{Orders: orders}
 	return json.Marshal(resp)
 }
 
@@ -133,7 +85,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
 	}
 
-	orders := make([]QueryOrderResponse, 0)
+	orders := make([]types.QueryOrderResponse, 0)
 
 	idxStore := ctx.KVStore(k.keyIndices)
 	key := types.GetPriorityKeyBySrcAndDst(source, destination)
@@ -145,7 +97,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 		order := new(types.Order)
 		k.cdc.Amino.MustUnmarshalBinaryBare(it.Value(), order)
 
-		orders = append(orders, QueryOrderResponse{
+		orders = append(orders, types.QueryOrderResponse{
 			ID:              order.ID,
 			Owner:           order.Owner,
 			SourceRemaining: order.SourceRemaining.String(),
@@ -155,39 +107,13 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 		it.Next()
 	}
 
-	resp := QueryInstrumentResponse{
+	resp := types.QueryInstrumentResponse{
 		Source:      source,
 		Destination: destination,
 		Orders:      orders,
 	}
 
 	return json.Marshal(resp)
-}
-
-type QueryInstrumentsWrapperResponse struct {
-	Instruments []QueryInstrumentsResponse `json:"instruments" yaml:"instruments"`
-}
-
-func (q QueryInstrumentsWrapperResponse) String() string {
-	sb := new(strings.Builder)
-	for _, instrument := range q.Instruments {
-		sb.WriteString(instrument.String())
-	}
-
-	return sb.String()
-}
-
-type QueryInstrumentsResponse struct {
-	Source      string     `json:"source" yaml:"source"`
-	Destination string     `json:"destination" yaml:"destination"`
-	BestPrice   *sdk.Dec   `json:"best_price,omitempty" yaml:"best_price,omitempty"`
-	LastPrice   *sdk.Dec   `json:"last_price,omitempty" yaml:"last_price,omitempty"`
-	LastTraded  *time.Time `json:"last_traded,omitempty" yaml:"last_traded,omitempty"`
-}
-
-//
-func (q QueryInstrumentsResponse) String() string {
-	return fmt.Sprintf("%v => %v", q.Source, q.Destination)
 }
 
 // getBestPrice returns the best priced passive order for source and
@@ -202,23 +128,4 @@ func getBestPrice(ctx sdk.Context, k *Keeper, source, destination string) *sdk.D
 	}
 
 	return bestPrice
-}
-
-func queryInstruments(ctx sdk.Context, k *Keeper) ([]byte, error) {
-	instruments := k.GetAllInstruments(ctx)
-
-	response := make([]QueryInstrumentsResponse, len(instruments))
-	for i, v := range instruments {
-		response[i] = QueryInstrumentsResponse{
-			Source:      v.Source,
-			Destination: v.Destination,
-			LastPrice:   v.LastPrice,
-			BestPrice:   getBestPrice(ctx, k, v.Source, v.Destination),
-			LastTraded:  v.Timestamp,
-		}
-	}
-
-	// Wrap the instruments in an object in anticipation of later expansion
-	instrumentsWrapper := QueryInstrumentsWrapperResponse{response}
-	return json.Marshal(instrumentsWrapper)
 }

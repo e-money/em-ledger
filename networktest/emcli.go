@@ -306,7 +306,7 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
 	//fmt.Println(" *** Output: ", string(bz))
 	return bz, err

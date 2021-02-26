@@ -20,7 +20,7 @@ const (
 	QueryInstrument  = types.QueryInstrument
 	QueryInstruments = types.QueryInstruments
 
-	TimeInForce_GoodTillCancel    = types.TimeInForce_GoodTilCancel
+	TimeInForce_GoodTillCancel    = types.TimeInForce_GoodTillCancel
 	TimeInForce_ImmediateOrCancel = types.TimeInForce_ImmediateOrCancel
 	TimeInForce_FillOrKill        = types.TimeInForce_FillOrKill
 )
@@ -57,10 +57,6 @@ type (
 	Order         = types.Order
 	MarketData    = types.MarketData
 	ExecutionPlan = types.ExecutionPlan
-
-	QueryInstrumentResponse         = keeper.QueryInstrumentResponse
-	QueryInstrumentsResponse        = keeper.QueryInstrumentsResponse
-	QueryInstrumentsWrapperResponse = keeper.QueryInstrumentsWrapperResponse
 
 	MsgAddMarketOrder          = types.MsgAddMarketOrder
 	MsgAddLimitOrder           = types.MsgAddLimitOrder

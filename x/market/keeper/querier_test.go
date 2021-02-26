@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	"github.com/e-money/em-ledger/x/market/types"
 	"strings"
 	"testing"
 	"time"
@@ -44,12 +45,12 @@ func TestQryGetAllInstrumentsWithNonZeroBestPrices(t *testing.T) {
 	require.NoError(t, err)
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := NewQuerier(k)(ctx, []string{types.QueryInstruments}, abci.RequestQuery{})
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
-		var instrLst []QueryInstrumentsResponse
+		var instrLst []types.QueryInstrumentsResponse_Element
 		err = json2.Unmarshal([]byte(instr.String()), &instrLst)
 		require.Nil(t, err, "Unmarshal from instruments response")
 
@@ -101,12 +102,12 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 	require.Len(t, allInstruments, 30)
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := NewQuerier(k)(ctx, []string{types.QueryInstruments}, abci.RequestQuery{})
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
-		var instrLst []QueryInstrumentsResponse
+		var instrLst []types.QueryInstrumentsResponse_Element
 		err = json2.Unmarshal([]byte(instr.String()), &instrLst)
 		require.Nil(t, err, "Unmarshal from instruments response")
 
@@ -152,7 +153,7 @@ func TestQuerier1(t *testing.T) {
 	require.NoError(t, err)
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := NewQuerier(k)(ctx, []string{types.QueryInstruments}, abci.RequestQuery{})
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")

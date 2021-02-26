@@ -4,11 +4,16 @@
 package types
 
 import (
+	context "context"
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
+	grpc1 "github.com/gogo/protobuf/grpc"
 	proto "github.com/gogo/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -77,6 +82,42 @@ func (m *MsgMintTokens) GetAmount() github_com_cosmos_cosmos_sdk_types.Coins {
 	return nil
 }
 
+type MsgMintTokensResponse struct {
+}
+
+func (m *MsgMintTokensResponse) Reset()         { *m = MsgMintTokensResponse{} }
+func (m *MsgMintTokensResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgMintTokensResponse) ProtoMessage()    {}
+func (*MsgMintTokensResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d717a932b74adbb9, []int{1}
+}
+func (m *MsgMintTokensResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgMintTokensResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgMintTokensResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgMintTokensResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgMintTokensResponse.Merge(m, src)
+}
+func (m *MsgMintTokensResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgMintTokensResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgMintTokensResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgMintTokensResponse proto.InternalMessageInfo
+
 type MsgBurnTokens struct {
 	LiquidityProvider string                                   `protobuf:"bytes,1,opt,name=liquidity_provider,json=liquidityProvider,proto3" json:"liquidity_provider,omitempty" yaml:"liquidity_provider"`
 	Amount            github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,2,rep,name=amount,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"amount" yaml:"amount"`
@@ -86,7 +127,7 @@ func (m *MsgBurnTokens) Reset()         { *m = MsgBurnTokens{} }
 func (m *MsgBurnTokens) String() string { return proto.CompactTextString(m) }
 func (*MsgBurnTokens) ProtoMessage()    {}
 func (*MsgBurnTokens) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d717a932b74adbb9, []int{1}
+	return fileDescriptor_d717a932b74adbb9, []int{2}
 }
 func (m *MsgBurnTokens) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -129,9 +170,47 @@ func (m *MsgBurnTokens) GetAmount() github_com_cosmos_cosmos_sdk_types.Coins {
 	return nil
 }
 
+type MsgBurnTokensResponse struct {
+}
+
+func (m *MsgBurnTokensResponse) Reset()         { *m = MsgBurnTokensResponse{} }
+func (m *MsgBurnTokensResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgBurnTokensResponse) ProtoMessage()    {}
+func (*MsgBurnTokensResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d717a932b74adbb9, []int{3}
+}
+func (m *MsgBurnTokensResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgBurnTokensResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgBurnTokensResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgBurnTokensResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgBurnTokensResponse.Merge(m, src)
+}
+func (m *MsgBurnTokensResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgBurnTokensResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgBurnTokensResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgBurnTokensResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgMintTokens)(nil), "em.liquidityprovider.v1beta1.MsgMintTokens")
+	proto.RegisterType((*MsgMintTokensResponse)(nil), "em.liquidityprovider.v1beta1.MsgMintTokensResponse")
 	proto.RegisterType((*MsgBurnTokens)(nil), "em.liquidityprovider.v1beta1.MsgBurnTokens")
+	proto.RegisterType((*MsgBurnTokensResponse)(nil), "em.liquidityprovider.v1beta1.MsgBurnTokensResponse")
 }
 
 func init() {
@@ -139,7 +218,7 @@ func init() {
 }
 
 var fileDescriptor_d717a932b74adbb9 = []byte{
-	// 316 bytes of a gzipped FileDescriptorProto
+	// 378 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x4d, 0xcd, 0xd5, 0xcf,
 	0xc9, 0x2c, 0x2c, 0xcd, 0x4c, 0xc9, 0x2c, 0xa9, 0x2c, 0x28, 0xca, 0x2f, 0xcb, 0x4c, 0x49, 0x2d,
 	0xd2, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34, 0xd4, 0x2f, 0xa9, 0xd0, 0x2b, 0x28, 0xca, 0x2f,
@@ -154,12 +233,132 @@ var fileDescriptor_d717a932b74adbb9 = []byte{
 	0xe7, 0x9c, 0x9f, 0x99, 0xe7, 0xe4, 0x78, 0xe2, 0x9e, 0x3c, 0xc3, 0xa7, 0x7b, 0xf2, 0xbc, 0x10,
 	0x0b, 0x20, 0xda, 0x94, 0x56, 0xdd, 0x97, 0xd7, 0x48, 0xcf, 0x2c, 0xc9, 0x28, 0x4d, 0xd2, 0x4b,
 	0xce, 0xcf, 0xd5, 0x87, 0x7a, 0x07, 0x42, 0xe9, 0x16, 0xa7, 0x64, 0xeb, 0x97, 0x54, 0x16, 0xa4,
-	0x16, 0x83, 0x4d, 0x28, 0x0e, 0x82, 0xda, 0x05, 0xf3, 0x95, 0x53, 0x69, 0x51, 0xde, 0xf0, 0xf1,
-	0x95, 0x53, 0xc0, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38,
-	0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x44, 0x99, 0x21, 0x99,
-	0x95, 0xaa, 0x9b, 0x9b, 0x9f, 0x97, 0x5a, 0xa9, 0x9f, 0x9a, 0xab, 0x9b, 0x93, 0x9a, 0x92, 0x9e,
-	0x5a, 0xa4, 0x5f, 0x81, 0x25, 0x71, 0x81, 0xcd, 0x4f, 0x62, 0x03, 0x27, 0x02, 0x63, 0x40, 0x00,
-	0x00, 0x00, 0xff, 0xff, 0xa7, 0xac, 0x7b, 0xd0, 0x81, 0x02, 0x00, 0x00,
+	0x16, 0x83, 0x4d, 0x28, 0x0e, 0x82, 0xda, 0xa5, 0x24, 0xce, 0x25, 0x8a, 0xe2, 0xa9, 0xa0, 0xd4,
+	0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0x98, 0x77, 0x9d, 0x4a, 0x8b, 0xf2, 0x86, 0x9d, 0x77, 0x11,
+	0x9e, 0x82, 0x79, 0xd7, 0xe8, 0x29, 0x23, 0x17, 0xb3, 0x6f, 0x71, 0xba, 0x50, 0x1e, 0x17, 0x17,
+	0x52, 0x0c, 0x6b, 0xeb, 0xe1, 0x4b, 0x48, 0x7a, 0x28, 0x21, 0x27, 0x65, 0x4c, 0x82, 0x62, 0x98,
+	0xbd, 0x20, 0xfb, 0x90, 0x82, 0x98, 0xb0, 0x7d, 0x08, 0xc5, 0x44, 0xd8, 0x87, 0xe9, 0x4f, 0xa7,
+	0x80, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc2, 0x63,
+	0x39, 0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0x32, 0x43, 0x0a, 0xcc, 0x54,
+	0xdd, 0xdc, 0xfc, 0xbc, 0xd4, 0x4a, 0xfd, 0xd4, 0x5c, 0xdd, 0x9c, 0xd4, 0x94, 0xf4, 0xd4, 0x22,
+	0xfd, 0x0a, 0x2c, 0xd9, 0x0e, 0x1c, 0xc0, 0x49, 0x6c, 0xe0, 0xec, 0x61, 0x0c, 0x08, 0x00, 0x00,
+	0xff, 0xff, 0x27, 0x20, 0x15, 0x37, 0x9b, 0x03, 0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// MsgClient is the client API for Msg service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type MsgClient interface {
+	MintTokens(ctx context.Context, in *MsgMintTokens, opts ...grpc.CallOption) (*MsgMintTokensResponse, error)
+	BurnTokens(ctx context.Context, in *MsgBurnTokens, opts ...grpc.CallOption) (*MsgBurnTokensResponse, error)
+}
+
+type msgClient struct {
+	cc grpc1.ClientConn
+}
+
+func NewMsgClient(cc grpc1.ClientConn) MsgClient {
+	return &msgClient{cc}
+}
+
+func (c *msgClient) MintTokens(ctx context.Context, in *MsgMintTokens, opts ...grpc.CallOption) (*MsgMintTokensResponse, error) {
+	out := new(MsgMintTokensResponse)
+	err := c.cc.Invoke(ctx, "/em.liquidityprovider.v1beta1.Msg/MintTokens", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) BurnTokens(ctx context.Context, in *MsgBurnTokens, opts ...grpc.CallOption) (*MsgBurnTokensResponse, error) {
+	out := new(MsgBurnTokensResponse)
+	err := c.cc.Invoke(ctx, "/em.liquidityprovider.v1beta1.Msg/BurnTokens", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MsgServer is the server API for Msg service.
+type MsgServer interface {
+	MintTokens(context.Context, *MsgMintTokens) (*MsgMintTokensResponse, error)
+	BurnTokens(context.Context, *MsgBurnTokens) (*MsgBurnTokensResponse, error)
+}
+
+// UnimplementedMsgServer can be embedded to have forward compatible implementations.
+type UnimplementedMsgServer struct {
+}
+
+func (*UnimplementedMsgServer) MintTokens(ctx context.Context, req *MsgMintTokens) (*MsgMintTokensResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MintTokens not implemented")
+}
+func (*UnimplementedMsgServer) BurnTokens(ctx context.Context, req *MsgBurnTokens) (*MsgBurnTokensResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BurnTokens not implemented")
+}
+
+func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
+	s.RegisterService(&_Msg_serviceDesc, srv)
+}
+
+func _Msg_MintTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgMintTokens)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).MintTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.liquidityprovider.v1beta1.Msg/MintTokens",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).MintTokens(ctx, req.(*MsgMintTokens))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_BurnTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgBurnTokens)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).BurnTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.liquidityprovider.v1beta1.Msg/BurnTokens",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).BurnTokens(ctx, req.(*MsgBurnTokens))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Msg_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "em.liquidityprovider.v1beta1.Msg",
+	HandlerType: (*MsgServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "MintTokens",
+			Handler:    _Msg_MintTokens_Handler,
+		},
+		{
+			MethodName: "BurnTokens",
+			Handler:    _Msg_BurnTokens_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "em/liquidityprovider/v1beta1/tx.proto",
 }
 
 func (m *MsgMintTokens) Marshal() (dAtA []byte, err error) {
@@ -203,6 +402,29 @@ func (m *MsgMintTokens) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0xa
 	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgMintTokensResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgMintTokensResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgMintTokensResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	return len(dAtA) - i, nil
 }
 
@@ -250,6 +472,29 @@ func (m *MsgBurnTokens) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgBurnTokensResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgBurnTokensResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgBurnTokensResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -280,6 +525,15 @@ func (m *MsgMintTokens) Size() (n int) {
 	return n
 }
 
+func (m *MsgMintTokensResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *MsgBurnTokens) Size() (n int) {
 	if m == nil {
 		return 0
@@ -296,6 +550,15 @@ func (m *MsgBurnTokens) Size() (n int) {
 			n += 1 + l + sovTx(uint64(l))
 		}
 	}
+	return n
+}
+
+func (m *MsgBurnTokensResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -421,6 +684,56 @@ func (m *MsgMintTokens) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *MsgMintTokensResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgMintTokensResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgMintTokensResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *MsgBurnTokens) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -516,6 +829,56 @@ func (m *MsgBurnTokens) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgBurnTokensResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgBurnTokensResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgBurnTokensResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

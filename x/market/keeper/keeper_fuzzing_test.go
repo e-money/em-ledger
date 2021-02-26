@@ -118,7 +118,7 @@ func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller authtyp
 		case 0:
 			o.TimeInForce = types.TimeInForce_FillOrKill
 		case 1:
-			o.TimeInForce = types.TimeInForce_GoodTilCancel
+			o.TimeInForce = types.TimeInForce_GoodTillCancel
 		case 2:
 			o.TimeInForce = types.TimeInForce_ImmediateOrCancel
 		}

@@ -188,7 +188,7 @@ func TestMarketOrderSlippage1(t *testing.T) {
 		sdk.NewCoin("eur", sdk.NewInt(200)),
 		slippage,
 		acc1.GetAddress(),
-		types.TimeInForce_GoodTilCancel,
+		types.TimeInForce_GoodTillCancel,
 		cid(),
 	)
 	require.NoError(t, err)
@@ -208,7 +208,7 @@ func TestMarketOrderSlippage1(t *testing.T) {
 		sdk.NewCoin("eur", sdk.NewInt(200)),
 		slippage,
 		acc1.GetAddress(),
-		types.TimeInForce_GoodTilCancel,
+		types.TimeInForce_GoodTillCancel,
 		cid(),
 	)
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
@@ -518,11 +518,11 @@ func TestDeleteOrder(t *testing.T) {
 
 	cid := cid()
 
-	order1, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("100eur"), coin("120usd"), acc1.GetAddress(), cid)
+	order1, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), acc1.GetAddress(), cid)
 	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
-	order2, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("100eur"), coin("77chf"), acc1.GetAddress(), cid)
+	order2, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("100eur"), coin("77chf"), acc1.GetAddress(), cid)
 	_, err = k.NewOrderSingle(ctx, order2)
 	require.Error(t, err) // Verify that client order ids cannot be duplicated.
 
@@ -540,13 +540,13 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "120usd")
 
 	for i := 0; i < 5; i++ {
-		order, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("5eur"), coin("12usd"), acc1.GetAddress(), cid())
+		order, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("5eur"), coin("12usd"), acc1.GetAddress(), cid())
 		_, err := k.NewOrderSingle(ctx, order)
 		require.NoError(t, err)
 	}
 
 	for i := 0; i < 5; i++ {
-		order, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("7usd"), coin("3chf"), acc2.GetAddress(), cid())
+		order, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("7usd"), coin("3chf"), acc2.GetAddress(), cid())
 		res, err := k.NewOrderSingle(ctx, order)
 		require.True(t, err == nil, res.Log)
 	}
@@ -555,7 +555,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	require.Len(t, allOrders1, 5)
 
 	{
-		order, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("12usd"), coin("5eur"), acc2.GetAddress(), cid())
+		order, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("12usd"), coin("5eur"), acc2.GetAddress(), cid())
 		res, err := k.NewOrderSingle(ctx, order)
 		require.True(t, err == nil, res.Log)
 	}
@@ -601,13 +601,13 @@ func TestCancelReplaceOrder(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	order1cid := cid()
-	order1, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
+	order1, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
 	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	order2cid := cid()
-	order2, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
+	order2, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
 	res, err := k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
 	require.True(t, err == nil, res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
@@ -621,7 +621,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
 	}
 
-	order3, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
+	order3, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
 	// Wrong client order id for previous order submitted.
 	_, err = k.CancelReplaceOrder(ctx, order3, order1cid)
 	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
@@ -651,7 +651,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
 	order4cid := cid()
-	order4, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
+	order4, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
 	res, err = k.CancelReplaceOrder(ctx, order4, order2cid)
 	require.True(t, err == nil, res.Log)
 
@@ -681,14 +681,14 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	acc := createAccount(ctx, ak, bk, randomAddress(), "15000eur")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "11000chf,100000eur")
 
-	order, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
+	order, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
 	_, err := k.NewOrderSingle(ctx, order)
 	require.NoError(t, err)
 
 	{
 		// Partially fill the order above
 		acc2 := createAccount(ctx, ak, bk, randomAddress(), "900000usd")
-		order2, _ := types.NewOrder(types.TimeInForce_GoodTilCancel, coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
+		order2, _ := types.NewOrder(types.TimeInForce_GoodTillCancel, coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
 		_, err = k.NewOrderSingle(ctx, order2)
 		require.NoError(t, err)
 	}
@@ -790,7 +790,7 @@ func TestInvalidInstrument(t *testing.T) {
 		DestinationFilled: sdk.ZeroInt(),
 		Owner:             acc1.GetAddress().String(),
 		ClientOrderID:     "abcddeg",
-		TimeInForce:       types.TimeInForce_GoodTilCancel,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
 	}
 
 	_, err := k.NewOrderSingle(ctx, o)
@@ -1108,7 +1108,7 @@ func TestTimeInForceIO(t *testing.T) {
 		WithAccountNumber(2)
 
 	msg := &types.MsgAddLimitOrder{
-		TimeInForce:   types.TimeInForce_GoodTilCancel,
+		TimeInForce:   types.TimeInForce_GoodTillCancel,
 		Owner:         randomAddress().String(),
 		Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
 		Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
@@ -1222,7 +1222,7 @@ func coins(s string) sdk.Coins {
 }
 
 func order(account authtypes.AccountI, src, dst string) types.Order {
-	o, err := types.NewOrder(types.TimeInForce_GoodTilCancel, coin(src), coin(dst), account.GetAddress(), cid())
+	o, err := types.NewOrder(types.TimeInForce_GoodTillCancel, coin(src), coin(dst), account.GetAddress(), cid())
 	if err != nil {
 		panic(err)
 	}

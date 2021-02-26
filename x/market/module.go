@@ -5,6 +5,7 @@
 package market
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -52,8 +53,7 @@ func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Rout
 }
 
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
-	// todo (Alex)
-	//types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
+	types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
 }
 
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
@@ -95,8 +95,8 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	// todo (Alex)
-	//types.RegisterQueryServer(cfg.QueryServer(), am.accountKeeper)
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {

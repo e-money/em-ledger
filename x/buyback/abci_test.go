@@ -209,7 +209,7 @@ func generateMarketActivity(ctx sdk.Context, marketKeeper *market.Keeper, ak ban
 func order(account authtypes.AccountI, src, dst string) types.Order {
 	s, _ := sdk.ParseCoinNormalized(src)
 	d, _ := sdk.ParseCoinNormalized(dst)
-	o, err := types.NewOrder(types.TimeInForce_GoodTilCancel, s, d, account.GetAddress(), tmrand.Str(10))
+	o, err := types.NewOrder(types.TimeInForce_GoodTillCancel, s, d, account.GetAddress(), tmrand.Str(10))
 	if err != nil {
 		panic(err)
 	}

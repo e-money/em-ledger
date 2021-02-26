@@ -13,8 +13,8 @@ enum TimeInForce {
 
   TIME_IN_FORCE_UNSPECIFIED = 0
       [ (gogoproto.enumvalue_customname) = "Unspecified" ];
-  TIME_IN_FORCE_GOOD_TIL_CANCEL = 1
-      [ (gogoproto.enumvalue_customname) = "GoodTilCancel" ];
+  TIME_IN_FORCE_GOOD_TILL_CANCEL = 1
+      [ (gogoproto.enumvalue_customname) = "GoodTillCancel" ];
   TIME_IN_FORCE_IMMEDIATE_OR_CANCEL = 2
       [ (gogoproto.enumvalue_customname) = "ImmediateOrCancel" ];
   TIME_IN_FORCE_FILL_OR_KILL = 3
@@ -89,5 +89,6 @@ message MarketData {
   string destination = 2;
   string last_price = 3
       [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec" ];
+
   google.protobuf.Timestamp timestamp = 4 [ (gogoproto.stdtime) = true ];
 }

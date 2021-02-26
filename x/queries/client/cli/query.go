@@ -5,7 +5,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,20 +38,18 @@ func GetQuerySpendableBalance() *cobra.Command {
 				return err
 			}
 
-			key, err := sdk.AccAddressFromBech32(args[0])
+			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return err
 			}
 
-			resp, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QuerySpendable, key))
-
-			var bal sdk.Coins
-			err = clientCtx.LegacyAmino.UnmarshalJSON(resp, &bal)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Spendable(cmd.Context(), &types.QuerySpendableRequest{Address: addr.String()})
 			if err != nil {
 				return err
 			}
 
-			return clientCtx.PrintBytes(resp)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -71,18 +68,13 @@ func GetQueryCirculatingSupplyCmd() *cobra.Command {
 				return err
 			}
 
-			resp, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryCirculating))
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Circulating(cmd.Context(), &types.QueryCirculatingRequest{})
 			if err != nil {
 				return err
 			}
 
-			var totalSupply sdk.Coins
-			err = clientCtx.LegacyAmino.UnmarshalJSON(resp, &totalSupply)
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintBytes(resp)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

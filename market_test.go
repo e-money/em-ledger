@@ -144,7 +144,7 @@ var _ = Describe("Market", func() {
 			Expect(gjson.ParseBytes(bz).Get(query).Array()).To(BeEmpty())
 
 			addOrder := &market.MsgAddLimitOrder{
-				TimeInForce:   market.TimeInForce_GoodTilCancel,
+				TimeInForce:   market.TimeInForce_GoodTillCancel,
 				Owner:         acc3.GetAddress(),
 				Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
 				Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
