@@ -5,7 +5,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/e-money/em-ledger/x/issuer/types"
@@ -23,15 +22,13 @@ func GetQueryCmd() *cobra.Command {
 				return err
 			}
 
-			resp, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryIssuers))
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Issuers(cmd.Context(), &types.QueryIssuersRequest{})
 			if err != nil {
 				return err
 			}
 
-			issuers := make(types.Issuers, 0)
-			clientCtx.LegacyAmino.MustUnmarshalJSON(resp, &issuers)
-
-			return clientCtx.PrintBytes(resp)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

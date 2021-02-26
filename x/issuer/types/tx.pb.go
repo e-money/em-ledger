@@ -4,11 +4,16 @@
 package types
 
 import (
+	context "context"
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
+	grpc1 "github.com/gogo/protobuf/grpc"
 	proto "github.com/gogo/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -85,6 +90,42 @@ func (m *MsgIncreaseMintable) GetMintableIncrease() github_com_cosmos_cosmos_sdk
 	return nil
 }
 
+type MsgIncreaseMintableResponse struct {
+}
+
+func (m *MsgIncreaseMintableResponse) Reset()         { *m = MsgIncreaseMintableResponse{} }
+func (m *MsgIncreaseMintableResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgIncreaseMintableResponse) ProtoMessage()    {}
+func (*MsgIncreaseMintableResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3e78b5b527cb893a, []int{1}
+}
+func (m *MsgIncreaseMintableResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgIncreaseMintableResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgIncreaseMintableResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgIncreaseMintableResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgIncreaseMintableResponse.Merge(m, src)
+}
+func (m *MsgIncreaseMintableResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgIncreaseMintableResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgIncreaseMintableResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgIncreaseMintableResponse proto.InternalMessageInfo
+
 type MsgDecreaseMintable struct {
 	Issuer            string                                   `protobuf:"bytes,1,opt,name=issuer,proto3" json:"issuer,omitempty" yaml:"issuer"`
 	LiquidityProvider string                                   `protobuf:"bytes,2,opt,name=liquidity_provider,json=liquidityProvider,proto3" json:"liquidity_provider,omitempty" yaml:"liquidity_provider"`
@@ -95,7 +136,7 @@ func (m *MsgDecreaseMintable) Reset()         { *m = MsgDecreaseMintable{} }
 func (m *MsgDecreaseMintable) String() string { return proto.CompactTextString(m) }
 func (*MsgDecreaseMintable) ProtoMessage()    {}
 func (*MsgDecreaseMintable) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3e78b5b527cb893a, []int{1}
+	return fileDescriptor_3e78b5b527cb893a, []int{2}
 }
 func (m *MsgDecreaseMintable) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -145,6 +186,42 @@ func (m *MsgDecreaseMintable) GetMintableDecrease() github_com_cosmos_cosmos_sdk
 	return nil
 }
 
+type MsgDecreaseMintableResponse struct {
+}
+
+func (m *MsgDecreaseMintableResponse) Reset()         { *m = MsgDecreaseMintableResponse{} }
+func (m *MsgDecreaseMintableResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgDecreaseMintableResponse) ProtoMessage()    {}
+func (*MsgDecreaseMintableResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3e78b5b527cb893a, []int{3}
+}
+func (m *MsgDecreaseMintableResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgDecreaseMintableResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgDecreaseMintableResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgDecreaseMintableResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgDecreaseMintableResponse.Merge(m, src)
+}
+func (m *MsgDecreaseMintableResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgDecreaseMintableResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgDecreaseMintableResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgDecreaseMintableResponse proto.InternalMessageInfo
+
 type MsgRevokeLiquidityProvider struct {
 	Issuer            string `protobuf:"bytes,1,opt,name=issuer,proto3" json:"issuer,omitempty" yaml:"issuer"`
 	LiquidityProvider string `protobuf:"bytes,2,opt,name=liquidity_provider,json=liquidityProvider,proto3" json:"liquidity_provider,omitempty" yaml:"liquidity_provider"`
@@ -154,7 +231,7 @@ func (m *MsgRevokeLiquidityProvider) Reset()         { *m = MsgRevokeLiquidityPr
 func (m *MsgRevokeLiquidityProvider) String() string { return proto.CompactTextString(m) }
 func (*MsgRevokeLiquidityProvider) ProtoMessage()    {}
 func (*MsgRevokeLiquidityProvider) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3e78b5b527cb893a, []int{2}
+	return fileDescriptor_3e78b5b527cb893a, []int{4}
 }
 func (m *MsgRevokeLiquidityProvider) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -197,6 +274,42 @@ func (m *MsgRevokeLiquidityProvider) GetLiquidityProvider() string {
 	return ""
 }
 
+type MsgRevokeLiquidityProviderResponse struct {
+}
+
+func (m *MsgRevokeLiquidityProviderResponse) Reset()         { *m = MsgRevokeLiquidityProviderResponse{} }
+func (m *MsgRevokeLiquidityProviderResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgRevokeLiquidityProviderResponse) ProtoMessage()    {}
+func (*MsgRevokeLiquidityProviderResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3e78b5b527cb893a, []int{5}
+}
+func (m *MsgRevokeLiquidityProviderResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgRevokeLiquidityProviderResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgRevokeLiquidityProviderResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgRevokeLiquidityProviderResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgRevokeLiquidityProviderResponse.Merge(m, src)
+}
+func (m *MsgRevokeLiquidityProviderResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgRevokeLiquidityProviderResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgRevokeLiquidityProviderResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgRevokeLiquidityProviderResponse proto.InternalMessageInfo
+
 type MsgSetInflation struct {
 	Issuer        string                                 `protobuf:"bytes,1,opt,name=issuer,proto3" json:"issuer,omitempty" yaml:"issuer"`
 	Denom         string                                 `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty" yaml:"denom"`
@@ -207,7 +320,7 @@ func (m *MsgSetInflation) Reset()         { *m = MsgSetInflation{} }
 func (m *MsgSetInflation) String() string { return proto.CompactTextString(m) }
 func (*MsgSetInflation) ProtoMessage()    {}
 func (*MsgSetInflation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3e78b5b527cb893a, []int{3}
+	return fileDescriptor_3e78b5b527cb893a, []int{6}
 }
 func (m *MsgSetInflation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -250,46 +363,281 @@ func (m *MsgSetInflation) GetDenom() string {
 	return ""
 }
 
+type MsgSetInflationResponse struct {
+}
+
+func (m *MsgSetInflationResponse) Reset()         { *m = MsgSetInflationResponse{} }
+func (m *MsgSetInflationResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSetInflationResponse) ProtoMessage()    {}
+func (*MsgSetInflationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3e78b5b527cb893a, []int{7}
+}
+func (m *MsgSetInflationResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSetInflationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSetInflationResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSetInflationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSetInflationResponse.Merge(m, src)
+}
+func (m *MsgSetInflationResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSetInflationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSetInflationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSetInflationResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgIncreaseMintable)(nil), "em.issuer.v1beta1.MsgIncreaseMintable")
+	proto.RegisterType((*MsgIncreaseMintableResponse)(nil), "em.issuer.v1beta1.MsgIncreaseMintableResponse")
 	proto.RegisterType((*MsgDecreaseMintable)(nil), "em.issuer.v1beta1.MsgDecreaseMintable")
+	proto.RegisterType((*MsgDecreaseMintableResponse)(nil), "em.issuer.v1beta1.MsgDecreaseMintableResponse")
 	proto.RegisterType((*MsgRevokeLiquidityProvider)(nil), "em.issuer.v1beta1.MsgRevokeLiquidityProvider")
+	proto.RegisterType((*MsgRevokeLiquidityProviderResponse)(nil), "em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse")
 	proto.RegisterType((*MsgSetInflation)(nil), "em.issuer.v1beta1.MsgSetInflation")
+	proto.RegisterType((*MsgSetInflationResponse)(nil), "em.issuer.v1beta1.MsgSetInflationResponse")
 }
 
 func init() { proto.RegisterFile("em/issuer/v1beta1/tx.proto", fileDescriptor_3e78b5b527cb893a) }
 
 var fileDescriptor_3e78b5b527cb893a = []byte{
-	// 457 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x54, 0x41, 0x8b, 0xd3, 0x40,
-	0x18, 0xed, 0x6c, 0xb1, 0xe0, 0xe8, 0xea, 0x36, 0x2a, 0x74, 0x0b, 0x66, 0x96, 0x39, 0x2c, 0x15,
-	0x69, 0x86, 0xd5, 0x9b, 0xc7, 0xba, 0x22, 0x0b, 0x5b, 0x90, 0x88, 0x17, 0x2f, 0xcb, 0x24, 0xf9,
-	0x8c, 0xc3, 0x66, 0x66, 0x6a, 0x66, 0x5a, 0xb6, 0xff, 0xc0, 0xa3, 0x17, 0x0f, 0xfe, 0x05, 0x7f,
-	0xc9, 0x1e, 0xf7, 0xe0, 0x41, 0x3c, 0x44, 0x49, 0xff, 0x41, 0x7e, 0x81, 0x34, 0x93, 0x54, 0x65,
-	0x2f, 0x0a, 0x82, 0xe0, 0x29, 0xe1, 0xbd, 0xef, 0x7b, 0xdf, 0x7b, 0x0f, 0x12, 0x3c, 0x04, 0xc9,
-	0x84, 0x31, 0x73, 0xc8, 0xd9, 0xe2, 0x20, 0x02, 0xcb, 0x0f, 0x98, 0x3d, 0x0b, 0x66, 0xb9, 0xb6,
-	0xda, 0xeb, 0x83, 0x0c, 0x1c, 0x17, 0x34, 0xdc, 0xf0, 0x76, 0xaa, 0x53, 0x5d, 0xb3, 0x6c, 0xfd,
-	0xe6, 0x06, 0x87, 0x7e, 0xac, 0x8d, 0xd4, 0x86, 0x45, 0xdc, 0xc0, 0x46, 0x26, 0xd6, 0x42, 0x39,
-	0x9e, 0x7e, 0xd8, 0xc2, 0xb7, 0xa6, 0x26, 0x3d, 0x52, 0x71, 0x0e, 0xdc, 0xc0, 0x54, 0x28, 0xcb,
-	0xa3, 0x0c, 0xbc, 0x7b, 0xb8, 0xe7, 0xf4, 0x07, 0x68, 0x0f, 0x8d, 0xae, 0x4e, 0xfa, 0x55, 0x41,
-	0xb6, 0x97, 0x5c, 0x66, 0x8f, 0xa8, 0xc3, 0x69, 0xd8, 0x0c, 0x78, 0xc7, 0xd8, 0xcb, 0xc4, 0x9b,
-	0xb9, 0x48, 0x84, 0x5d, 0x9e, 0xcc, 0x72, 0xbd, 0x10, 0x09, 0xe4, 0x83, 0xad, 0x7a, 0xed, 0x6e,
-	0x55, 0x90, 0x5d, 0xb7, 0x76, 0x79, 0x86, 0x86, 0xfd, 0x0d, 0xf8, 0xac, 0xc1, 0xbc, 0xb7, 0x08,
-	0xf7, 0xb8, 0xd4, 0x73, 0x65, 0x07, 0xdd, 0xbd, 0xee, 0xe8, 0xda, 0x83, 0xdd, 0xc0, 0x45, 0x08,
-	0xd6, 0x11, 0xda, 0xb4, 0xc1, 0x63, 0x2d, 0xd4, 0xe4, 0xc5, 0x79, 0x41, 0x3a, 0x65, 0x41, 0x76,
-	0x5a, 0xdb, 0x6d, 0x8c, 0x1f, 0x66, 0x9d, 0x14, 0xfd, 0xf8, 0x95, 0x8c, 0x52, 0x61, 0x5f, 0xcf,
-	0xa3, 0x20, 0xd6, 0x92, 0x35, 0xa5, 0xb8, 0xc7, 0xd8, 0x24, 0xa7, 0xcc, 0x2e, 0x67, 0x60, 0x6a,
-	0x55, 0x13, 0x36, 0xf7, 0xdb, 0x6e, 0x0e, 0xe1, 0xbf, 0xe8, 0xa6, 0x8d, 0xf1, 0x77, 0xba, 0x79,
-	0x8f, 0xf0, 0x70, 0x6a, 0xd2, 0x10, 0x16, 0xfa, 0x14, 0x8e, 0x2f, 0x39, 0xfd, 0x57, 0x15, 0xd1,
-	0x4f, 0x08, 0xdf, 0x9c, 0x9a, 0xf4, 0x39, 0xd8, 0x23, 0xf5, 0x2a, 0xe3, 0x56, 0x68, 0xf5, 0x27,
-	0x66, 0xf6, 0xf1, 0x95, 0x04, 0x94, 0x96, 0xcd, 0xfd, 0x9d, 0xaa, 0x20, 0xd7, 0xdd, 0x64, 0x0d,
-	0xd3, 0xd0, 0xd1, 0x9e, 0xc2, 0x37, 0x44, 0xab, 0x7f, 0x92, 0x73, 0x0b, 0x83, 0x6e, 0xbd, 0xf0,
-	0x74, 0xdd, 0xfa, 0x97, 0x82, 0xec, 0xff, 0x46, 0xa1, 0x87, 0x10, 0x57, 0x05, 0xb9, 0xd3, 0x18,
-	0xf9, 0x45, 0x8d, 0x86, 0xdb, 0x1b, 0x20, 0xe4, 0x16, 0x26, 0x4f, 0xce, 0x4b, 0x1f, 0x5d, 0x94,
-	0x3e, 0xfa, 0x56, 0xfa, 0xe8, 0xdd, 0xca, 0xef, 0x5c, 0xac, 0xfc, 0xce, 0xe7, 0x95, 0xdf, 0x79,
-	0x79, 0xff, 0xa7, 0x4b, 0x30, 0x96, 0x5a, 0xc1, 0x92, 0x81, 0x1c, 0x67, 0x90, 0xa4, 0x90, 0xb3,
-	0xb3, 0xf6, 0x0f, 0x52, 0x9f, 0x8c, 0x7a, 0xf5, 0x47, 0xff, 0xf0, 0x7b, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0xf5, 0xc8, 0x95, 0x77, 0x5b, 0x04, 0x00, 0x00,
+	// 569 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x55, 0x31, 0x6f, 0xd3, 0x40,
+	0x14, 0x8e, 0x1b, 0x51, 0x89, 0xa3, 0x85, 0xc4, 0x80, 0x9a, 0x18, 0xd5, 0xae, 0x4e, 0x28, 0x0a,
+	0xa0, 0x9c, 0xd5, 0x22, 0x16, 0xc6, 0x50, 0x84, 0x2a, 0x35, 0x12, 0x32, 0x62, 0x61, 0xa0, 0x72,
+	0x92, 0x87, 0x39, 0x1a, 0xdf, 0x05, 0xdf, 0x25, 0x6a, 0x26, 0x56, 0x46, 0x16, 0x06, 0xfe, 0x02,
+	0x3f, 0x82, 0xb9, 0x63, 0x07, 0x06, 0xc4, 0x60, 0x50, 0xf2, 0x0f, 0xf2, 0x0b, 0x50, 0x7c, 0x3e,
+	0xd3, 0x26, 0xb1, 0x68, 0x25, 0x24, 0x24, 0xa6, 0xc4, 0xef, 0x7d, 0xf7, 0xbd, 0xef, 0xfb, 0xfc,
+	0x6c, 0x23, 0x0b, 0x42, 0x97, 0x0a, 0x31, 0x80, 0xc8, 0x1d, 0x6e, 0xb7, 0x41, 0xfa, 0xdb, 0xae,
+	0x3c, 0x22, 0xfd, 0x88, 0x4b, 0x6e, 0x96, 0x21, 0x24, 0xaa, 0x47, 0xd2, 0x9e, 0x75, 0x23, 0xe0,
+	0x01, 0x4f, 0xba, 0xee, 0xec, 0x9f, 0x02, 0x5a, 0x76, 0x87, 0x8b, 0x90, 0x0b, 0xb7, 0xed, 0x0b,
+	0xc8, 0x68, 0x3a, 0x9c, 0x32, 0xd5, 0xc7, 0x9f, 0x56, 0xd0, 0xf5, 0x96, 0x08, 0xf6, 0x58, 0x27,
+	0x02, 0x5f, 0x40, 0x8b, 0x32, 0xe9, 0xb7, 0x7b, 0x60, 0xde, 0x41, 0xab, 0x8a, 0xbf, 0x62, 0x6c,
+	0x19, 0xf5, 0xcb, 0xcd, 0xf2, 0x34, 0x76, 0xd6, 0x47, 0x7e, 0xd8, 0x7b, 0x88, 0x55, 0x1d, 0x7b,
+	0x29, 0xc0, 0xdc, 0x47, 0x66, 0x8f, 0xbe, 0x1d, 0xd0, 0x2e, 0x95, 0xa3, 0x83, 0x7e, 0xc4, 0x87,
+	0xb4, 0x0b, 0x51, 0x65, 0x25, 0x39, 0xb6, 0x39, 0x8d, 0x9d, 0xaa, 0x3a, 0xb6, 0x88, 0xc1, 0x5e,
+	0x39, 0x2b, 0x3e, 0x4d, 0x6b, 0xe6, 0x7b, 0x03, 0xad, 0xfa, 0x21, 0x1f, 0x30, 0x59, 0x29, 0x6e,
+	0x15, 0xeb, 0x57, 0x76, 0xaa, 0x44, 0x59, 0x20, 0x33, 0x0b, 0xda, 0x2d, 0x79, 0xc4, 0x29, 0x6b,
+	0x3e, 0x3f, 0x8e, 0x9d, 0xc2, 0x38, 0x76, 0x4a, 0x5a, 0xb6, 0xb6, 0xf1, 0x5b, 0xac, 0xa2, 0xc2,
+	0x9f, 0x7f, 0x38, 0xf5, 0x80, 0xca, 0xd7, 0x83, 0x36, 0xe9, 0xf0, 0xd0, 0x4d, 0x43, 0x51, 0x3f,
+	0x0d, 0xd1, 0x3d, 0x74, 0xe5, 0xa8, 0x0f, 0x22, 0x61, 0x15, 0x5e, 0x3a, 0x1f, 0x6f, 0xa2, 0x5b,
+	0x4b, 0xa2, 0xf1, 0x40, 0xf4, 0x39, 0x13, 0xa0, 0xa3, 0xdb, 0x85, 0xff, 0x22, 0x3a, 0x6d, 0xe3,
+	0x6f, 0x46, 0x37, 0x1f, 0x4d, 0x16, 0xdd, 0x47, 0x03, 0x59, 0x2d, 0x11, 0x78, 0x30, 0xe4, 0x87,
+	0xb0, 0xbf, 0x60, 0xe4, 0x5f, 0x25, 0x88, 0x6f, 0x23, 0x9c, 0x2f, 0x2b, 0x53, 0xff, 0xd5, 0x40,
+	0xd7, 0x5a, 0x22, 0x78, 0x06, 0x72, 0x8f, 0xbd, 0xea, 0xf9, 0x92, 0x72, 0x76, 0x11, 0xc9, 0x35,
+	0x74, 0xa9, 0x0b, 0x8c, 0x87, 0xa9, 0xca, 0xd2, 0x34, 0x76, 0xd6, 0x14, 0x32, 0x29, 0x63, 0x4f,
+	0xb5, 0x4d, 0x86, 0xae, 0x52, 0xcd, 0x7f, 0x10, 0xf9, 0x12, 0x2a, 0xc5, 0xe4, 0xc0, 0x93, 0xd9,
+	0xad, 0xfb, 0x1e, 0x3b, 0xb5, 0x73, 0xdc, 0x95, 0x5d, 0xe8, 0x4c, 0x63, 0xe7, 0x66, 0x2a, 0xe4,
+	0x0c, 0x1b, 0xf6, 0xd6, 0xb3, 0x82, 0x37, 0xbb, 0xae, 0xa2, 0x8d, 0x39, 0x57, 0xda, 0xf1, 0xce,
+	0x97, 0x22, 0x2a, 0xb6, 0x44, 0x60, 0xbe, 0x41, 0xa5, 0x85, 0x37, 0x45, 0x8d, 0x2c, 0xbc, 0x8b,
+	0xc8, 0x92, 0xc7, 0xc6, 0x22, 0xe7, 0xc3, 0xe9, 0x99, 0xb3, 0x59, 0x0b, 0x8f, 0x56, 0xce, 0xac,
+	0x79, 0x5c, 0xde, 0xac, 0xbc, 0x7d, 0x34, 0xdf, 0xa1, 0x8d, 0xbc, 0x5d, 0x6c, 0x2c, 0xa7, 0xca,
+	0x81, 0x5b, 0x0f, 0x2e, 0x04, 0xcf, 0x04, 0xbc, 0x44, 0x6b, 0x67, 0xd6, 0x09, 0x2f, 0xa7, 0x39,
+	0x8d, 0xb1, 0xee, 0xfe, 0x19, 0xa3, 0xf9, 0x9b, 0x8f, 0x8f, 0xc7, 0xb6, 0x71, 0x32, 0xb6, 0x8d,
+	0x9f, 0x63, 0xdb, 0xf8, 0x30, 0xb1, 0x0b, 0x27, 0x13, 0xbb, 0xf0, 0x6d, 0x62, 0x17, 0x5e, 0xdc,
+	0x3b, 0xb5, 0x45, 0xd0, 0x08, 0x39, 0x83, 0x91, 0x0b, 0x61, 0xa3, 0x07, 0xdd, 0x00, 0x22, 0xf7,
+	0x48, 0x7f, 0x81, 0x92, 0x75, 0x6a, 0xaf, 0x26, 0x1f, 0x8d, 0xfb, 0xbf, 0x02, 0x00, 0x00, 0xff,
+	0xff, 0xcc, 0x9b, 0x4e, 0x71, 0x9b, 0x06, 0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// MsgClient is the client API for Msg service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type MsgClient interface {
+	IncreaseMintable(ctx context.Context, in *MsgIncreaseMintable, opts ...grpc.CallOption) (*MsgIncreaseMintableResponse, error)
+	DecreaseMintable(ctx context.Context, in *MsgDecreaseMintable, opts ...grpc.CallOption) (*MsgDecreaseMintableResponse, error)
+	RevokeLiquidityProvider(ctx context.Context, in *MsgRevokeLiquidityProvider, opts ...grpc.CallOption) (*MsgRevokeLiquidityProviderResponse, error)
+	SetInflation(ctx context.Context, in *MsgSetInflation, opts ...grpc.CallOption) (*MsgSetInflationResponse, error)
+}
+
+type msgClient struct {
+	cc grpc1.ClientConn
+}
+
+func NewMsgClient(cc grpc1.ClientConn) MsgClient {
+	return &msgClient{cc}
+}
+
+func (c *msgClient) IncreaseMintable(ctx context.Context, in *MsgIncreaseMintable, opts ...grpc.CallOption) (*MsgIncreaseMintableResponse, error) {
+	out := new(MsgIncreaseMintableResponse)
+	err := c.cc.Invoke(ctx, "/em.issuer.v1beta1.Msg/IncreaseMintable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) DecreaseMintable(ctx context.Context, in *MsgDecreaseMintable, opts ...grpc.CallOption) (*MsgDecreaseMintableResponse, error) {
+	out := new(MsgDecreaseMintableResponse)
+	err := c.cc.Invoke(ctx, "/em.issuer.v1beta1.Msg/DecreaseMintable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) RevokeLiquidityProvider(ctx context.Context, in *MsgRevokeLiquidityProvider, opts ...grpc.CallOption) (*MsgRevokeLiquidityProviderResponse, error) {
+	out := new(MsgRevokeLiquidityProviderResponse)
+	err := c.cc.Invoke(ctx, "/em.issuer.v1beta1.Msg/RevokeLiquidityProvider", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetInflation(ctx context.Context, in *MsgSetInflation, opts ...grpc.CallOption) (*MsgSetInflationResponse, error) {
+	out := new(MsgSetInflationResponse)
+	err := c.cc.Invoke(ctx, "/em.issuer.v1beta1.Msg/SetInflation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MsgServer is the server API for Msg service.
+type MsgServer interface {
+	IncreaseMintable(context.Context, *MsgIncreaseMintable) (*MsgIncreaseMintableResponse, error)
+	DecreaseMintable(context.Context, *MsgDecreaseMintable) (*MsgDecreaseMintableResponse, error)
+	RevokeLiquidityProvider(context.Context, *MsgRevokeLiquidityProvider) (*MsgRevokeLiquidityProviderResponse, error)
+	SetInflation(context.Context, *MsgSetInflation) (*MsgSetInflationResponse, error)
+}
+
+// UnimplementedMsgServer can be embedded to have forward compatible implementations.
+type UnimplementedMsgServer struct {
+}
+
+func (*UnimplementedMsgServer) IncreaseMintable(ctx context.Context, req *MsgIncreaseMintable) (*MsgIncreaseMintableResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncreaseMintable not implemented")
+}
+func (*UnimplementedMsgServer) DecreaseMintable(ctx context.Context, req *MsgDecreaseMintable) (*MsgDecreaseMintableResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecreaseMintable not implemented")
+}
+func (*UnimplementedMsgServer) RevokeLiquidityProvider(ctx context.Context, req *MsgRevokeLiquidityProvider) (*MsgRevokeLiquidityProviderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeLiquidityProvider not implemented")
+}
+func (*UnimplementedMsgServer) SetInflation(ctx context.Context, req *MsgSetInflation) (*MsgSetInflationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetInflation not implemented")
+}
+
+func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
+	s.RegisterService(&_Msg_serviceDesc, srv)
+}
+
+func _Msg_IncreaseMintable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgIncreaseMintable)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).IncreaseMintable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.issuer.v1beta1.Msg/IncreaseMintable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).IncreaseMintable(ctx, req.(*MsgIncreaseMintable))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_DecreaseMintable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgDecreaseMintable)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).DecreaseMintable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.issuer.v1beta1.Msg/DecreaseMintable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).DecreaseMintable(ctx, req.(*MsgDecreaseMintable))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_RevokeLiquidityProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRevokeLiquidityProvider)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RevokeLiquidityProvider(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.issuer.v1beta1.Msg/RevokeLiquidityProvider",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RevokeLiquidityProvider(ctx, req.(*MsgRevokeLiquidityProvider))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SetInflation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetInflation)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetInflation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.issuer.v1beta1.Msg/SetInflation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetInflation(ctx, req.(*MsgSetInflation))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Msg_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "em.issuer.v1beta1.Msg",
+	HandlerType: (*MsgServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "IncreaseMintable",
+			Handler:    _Msg_IncreaseMintable_Handler,
+		},
+		{
+			MethodName: "DecreaseMintable",
+			Handler:    _Msg_DecreaseMintable_Handler,
+		},
+		{
+			MethodName: "RevokeLiquidityProvider",
+			Handler:    _Msg_RevokeLiquidityProvider_Handler,
+		},
+		{
+			MethodName: "SetInflation",
+			Handler:    _Msg_SetInflation_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "em/issuer/v1beta1/tx.proto",
 }
 
 func (m *MsgIncreaseMintable) Marshal() (dAtA []byte, err error) {
@@ -340,6 +688,29 @@ func (m *MsgIncreaseMintable) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0xa
 	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgIncreaseMintableResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgIncreaseMintableResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgIncreaseMintableResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	return len(dAtA) - i, nil
 }
 
@@ -394,6 +765,29 @@ func (m *MsgDecreaseMintable) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgDecreaseMintableResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgDecreaseMintableResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgDecreaseMintableResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func (m *MsgRevokeLiquidityProvider) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -428,6 +822,29 @@ func (m *MsgRevokeLiquidityProvider) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i--
 		dAtA[i] = 0xa
 	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgRevokeLiquidityProviderResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgRevokeLiquidityProviderResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgRevokeLiquidityProviderResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	return len(dAtA) - i, nil
 }
 
@@ -478,6 +895,29 @@ func (m *MsgSetInflation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgSetInflationResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSetInflationResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSetInflationResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -512,6 +952,15 @@ func (m *MsgIncreaseMintable) Size() (n int) {
 	return n
 }
 
+func (m *MsgIncreaseMintableResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *MsgDecreaseMintable) Size() (n int) {
 	if m == nil {
 		return 0
@@ -535,6 +984,15 @@ func (m *MsgDecreaseMintable) Size() (n int) {
 	return n
 }
 
+func (m *MsgDecreaseMintableResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *MsgRevokeLiquidityProvider) Size() (n int) {
 	if m == nil {
 		return 0
@@ -549,6 +1007,15 @@ func (m *MsgRevokeLiquidityProvider) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
+	return n
+}
+
+func (m *MsgRevokeLiquidityProviderResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -568,6 +1035,15 @@ func (m *MsgSetInflation) Size() (n int) {
 	}
 	l = m.InflationRate.Size()
 	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgSetInflationResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -704,6 +1180,56 @@ func (m *MsgIncreaseMintable) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgIncreaseMintableResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgIncreaseMintableResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgIncreaseMintableResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -873,6 +1399,56 @@ func (m *MsgDecreaseMintable) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *MsgDecreaseMintableResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgDecreaseMintableResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgDecreaseMintableResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *MsgRevokeLiquidityProvider) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -966,6 +1542,56 @@ func (m *MsgRevokeLiquidityProvider) Unmarshal(dAtA []byte) error {
 			}
 			m.LiquidityProvider = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgRevokeLiquidityProviderResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgRevokeLiquidityProviderResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgRevokeLiquidityProviderResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -1114,6 +1740,56 @@ func (m *MsgSetInflation) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSetInflationResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSetInflationResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSetInflationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

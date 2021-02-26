@@ -48,11 +48,23 @@
 - [em/issuer/v1beta1/genesis.proto](#em/issuer/v1beta1/genesis.proto)
     - [GenesisState](#em.issuer.v1beta1.GenesisState)
   
+- [em/issuer/v1beta1/query.proto](#em/issuer/v1beta1/query.proto)
+    - [QueryIssuersRequest](#em.issuer.v1beta1.QueryIssuersRequest)
+    - [QueryIssuersResponse](#em.issuer.v1beta1.QueryIssuersResponse)
+  
+    - [Query](#em.issuer.v1beta1.Query)
+  
 - [em/issuer/v1beta1/tx.proto](#em/issuer/v1beta1/tx.proto)
     - [MsgDecreaseMintable](#em.issuer.v1beta1.MsgDecreaseMintable)
+    - [MsgDecreaseMintableResponse](#em.issuer.v1beta1.MsgDecreaseMintableResponse)
     - [MsgIncreaseMintable](#em.issuer.v1beta1.MsgIncreaseMintable)
+    - [MsgIncreaseMintableResponse](#em.issuer.v1beta1.MsgIncreaseMintableResponse)
     - [MsgRevokeLiquidityProvider](#em.issuer.v1beta1.MsgRevokeLiquidityProvider)
+    - [MsgRevokeLiquidityProviderResponse](#em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse)
     - [MsgSetInflation](#em.issuer.v1beta1.MsgSetInflation)
+    - [MsgSetInflationResponse](#em.issuer.v1beta1.MsgSetInflationResponse)
+  
+    - [Msg](#em.issuer.v1beta1.Msg)
   
 - [em/liquidityprovider/v1beta1/genesis.proto](#em/liquidityprovider/v1beta1/genesis.proto)
     - [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc)
@@ -536,6 +548,57 @@
 
 
 
+<a name="em/issuer/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/issuer/v1beta1/query.proto
+
+
+
+<a name="em.issuer.v1beta1.QueryIssuersRequest"></a>
+
+### QueryIssuersRequest
+
+
+
+
+
+
+
+<a name="em.issuer.v1beta1.QueryIssuersResponse"></a>
+
+### QueryIssuersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuers` | [Issuer](#em.issuer.v1beta1.Issuer) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.issuer.v1beta1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `issuers` | [QueryIssuersRequest](#em.issuer.v1beta1.QueryIssuersRequest) | [QueryIssuersResponse](#em.issuer.v1beta1.QueryIssuersResponse) |  | GET|/e-money/issuer/v1beta1/issuers|
+
+ <!-- end services -->
+
+
+
 <a name="em/issuer/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -560,6 +623,16 @@
 
 
 
+<a name="em.issuer.v1beta1.MsgDecreaseMintableResponse"></a>
+
+### MsgDecreaseMintableResponse
+
+
+
+
+
+
+
 <a name="em.issuer.v1beta1.MsgIncreaseMintable"></a>
 
 ### MsgIncreaseMintable
@@ -571,6 +644,16 @@
 | `issuer` | [string](#string) |  |  |
 | `liquidity_provider` | [string](#string) |  |  |
 | `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="em.issuer.v1beta1.MsgIncreaseMintableResponse"></a>
+
+### MsgIncreaseMintableResponse
+
 
 
 
@@ -593,6 +676,16 @@
 
 
 
+<a name="em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse"></a>
+
+### MsgRevokeLiquidityProviderResponse
+
+
+
+
+
+
+
 <a name="em.issuer.v1beta1.MsgSetInflation"></a>
 
 ### MsgSetInflation
@@ -609,11 +702,34 @@
 
 
 
+
+<a name="em.issuer.v1beta1.MsgSetInflationResponse"></a>
+
+### MsgSetInflationResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+
+<a name="em.issuer.v1beta1.Msg"></a>
+
+### Msg
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `IncreaseMintable` | [MsgIncreaseMintable](#em.issuer.v1beta1.MsgIncreaseMintable) | [MsgIncreaseMintableResponse](#em.issuer.v1beta1.MsgIncreaseMintableResponse) |  | |
+| `DecreaseMintable` | [MsgDecreaseMintable](#em.issuer.v1beta1.MsgDecreaseMintable) | [MsgDecreaseMintableResponse](#em.issuer.v1beta1.MsgDecreaseMintableResponse) |  | |
+| `RevokeLiquidityProvider` | [MsgRevokeLiquidityProvider](#em.issuer.v1beta1.MsgRevokeLiquidityProvider) | [MsgRevokeLiquidityProviderResponse](#em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse) |  | |
+| `SetInflation` | [MsgSetInflation](#em.issuer.v1beta1.MsgSetInflation) | [MsgSetInflationResponse](#em.issuer.v1beta1.MsgSetInflationResponse) |  | |
 
  <!-- end services -->
 

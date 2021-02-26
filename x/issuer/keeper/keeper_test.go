@@ -253,8 +253,11 @@ func TestRemoveDenom(t *testing.T) {
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper) {
+	return createTestComponentsWithEncodingConfig(t, MakeTestEncodingConfig())
+}
+
+func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams.EncodingConfig) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper) {
 	t.Helper()
-	encConfig := MakeTestEncodingConfig()
 	var (
 		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
