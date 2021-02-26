@@ -34,7 +34,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&InflationState{})
 }
 
-func NewInflationState(assets ...string) InflationState {
+func NewInflationState(now time.Time, assets ...string) InflationState {
 	if len(assets)%2 != 0 {
 		panic("Unable to parse asset parameters")
 	}
@@ -55,13 +55,14 @@ func NewInflationState(assets ...string) InflationState {
 
 	return InflationState{
 		InflationAssets:   result,
-		LastAppliedTime:   time.Now().UTC(),
+		LastAppliedTime:   now.UTC(),
 		LastAppliedHeight: sdk.ZeroInt(),
 	}
 }
 
 func DefaultInflationState() InflationState {
-	return NewInflationState()
+	// only called once when generating genesis
+	return NewInflationState(time.Now())
 }
 
 // validate params

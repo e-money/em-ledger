@@ -5,7 +5,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
@@ -25,20 +24,13 @@ func GetQueryCmd() *cobra.Command {
 				return err
 			}
 
-			route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInflation)
-			res, _, err := clientCtx.QueryWithData(route, nil)
-
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Inflation(cmd.Context(), &types.QueryInflationRequest{})
 			if err != nil {
 				return err
 			}
 
-			// TODO Consider introducing a more presentation-friendly struct
-			var is types.InflationState
-			if err := clientCtx.LegacyAmino.UnmarshalJSON(res, &is); err != nil {
-				return err
-			}
-
-			return clientCtx.PrintBytes(res)
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

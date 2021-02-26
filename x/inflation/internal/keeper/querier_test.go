@@ -13,7 +13,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func TestNewQuerier(t *testing.T) {
+func TestNewLegacyQuerier(t *testing.T) {
 	input := newTestInput(t)
 	querier := NewQuerier(input.mintKeeper)
 
@@ -29,7 +29,7 @@ func TestNewQuerier(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestQueryInflation(t *testing.T) {
+func TestLegacyQueryInflation(t *testing.T) {
 	input := newTestInput(t)
 
 	var inflation types.InflationState

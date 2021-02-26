@@ -36,6 +36,12 @@
 - [em/inflation/v1beta1/genesis.proto](#em/inflation/v1beta1/genesis.proto)
     - [GenesisState](#em.inflation.v1beta1.GenesisState)
   
+- [em/inflation/v1beta1/query.proto](#em/inflation/v1beta1/query.proto)
+    - [QueryInflationRequest](#em.inflation.v1beta1.QueryInflationRequest)
+    - [QueryInflationResponse](#em.inflation.v1beta1.QueryInflationResponse)
+  
+    - [Query](#em.inflation.v1beta1.Query)
+  
 - [em/issuer/v1beta1/issuer.proto](#em/issuer/v1beta1/issuer.proto)
     - [Issuer](#em.issuer.v1beta1.Issuer)
   
@@ -411,6 +417,57 @@
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/inflation/v1beta1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/inflation/v1beta1/query.proto
+
+
+
+<a name="em.inflation.v1beta1.QueryInflationRequest"></a>
+
+### QueryInflationRequest
+
+
+
+
+
+
+
+<a name="em.inflation.v1beta1.QueryInflationResponse"></a>
+
+### QueryInflationResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `state` | [InflationState](#em.inflation.v1beta1.InflationState) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.inflation.v1beta1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Inflation` | [QueryInflationRequest](#em.inflation.v1beta1.QueryInflationRequest) | [QueryInflationResponse](#em.inflation.v1beta1.QueryInflationResponse) |  | GET|/e-money/inflation/v1beta1/state|
 
  <!-- end services -->
 
