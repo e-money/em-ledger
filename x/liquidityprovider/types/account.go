@@ -64,7 +64,6 @@ func (acc LiquidityProviderAccount) String() string {
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (m LiquidityProviderAccount) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	// todo (Alex)`: add test for unpack nested type
 	var account auth.AccountI
 	if err := unpacker.UnpackAny(m.Account, &account); err != nil {
 		return err

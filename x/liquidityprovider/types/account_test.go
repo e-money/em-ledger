@@ -5,11 +5,14 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/libs/rand"
 	"testing"
 )
 
@@ -54,4 +57,27 @@ func MustParseCoins(coins string) sdk.Coins {
 	}
 
 	return result
+}
+
+func TestMarshalUnmarshal(t *testing.T) {
+	var myAddr sdk.AccAddress = rand.Bytes(sdk.AddrLen)
+	nestedAcc := authtypes.NewBaseAccountWithAddress(myAddr)
+	mintableCoins := sdk.NewCoins(sdk.NewCoin("alx", sdk.NewInt(123)))
+	src, err := NewLiquidityProviderAccount(nestedAcc, mintableCoins)
+	require.NoError(t, err)
+
+	interfaceRegistry := types.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
+	authtypes.RegisterInterfaces(interfaceRegistry)
+	RegisterInterfaces(interfaceRegistry)
+
+	// encode
+	bz, err := marshaler.MarshalBinaryBare(src)
+	require.NoError(t, err)
+	// and decode to type
+	var dest LiquidityProviderAccount
+	err = marshaler.UnmarshalBinaryBare(bz, &dest)
+	require.NoError(t, err)
+	assert.Equal(t, src, &dest)
+	assert.Equal(t, myAddr, dest.GetAddress())
 }
