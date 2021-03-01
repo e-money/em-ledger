@@ -106,9 +106,9 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, gotLiquidityProviderAddr.String(), spec.req.LiquidityProvider)
-			assert.Equal(t, gotIssuer.String(), spec.req.Issuer)
-			assert.Equal(t, gotMintableIncrease, spec.req.MintableIncrease)
+			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr.String())
+			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
+			assert.Equal(t, spec.req.MintableIncrease, gotMintableIncrease)
 		})
 	}
 }
@@ -208,9 +208,9 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, gotLiquidityProviderAddr.String(), spec.req.LiquidityProvider)
-			assert.Equal(t, gotIssuer.String(), spec.req.Issuer)
-			assert.Equal(t, gotMintableDecrease, spec.req.MintableDecrease)
+			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr.String())
+			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
+			assert.Equal(t, spec.req.MintableDecrease, gotMintableDecrease)
 		})
 	}
 }
@@ -329,9 +329,9 @@ func TestSetInflationRate(t *testing.T) {
 				return
 			}
 			require.NoError(t, gotErr)
-			assert.Equal(t, gotIssuer.String(), spec.req.Issuer)
-			assert.Equal(t, gotDenom, spec.req.Denom)
-			assert.Equal(t, gotInflationRate, spec.req.InflationRate)
+			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
+			assert.Equal(t, spec.req.Denom, gotDenom)
+			assert.Equal(t, spec.req.InflationRate, gotInflationRate)
 
 			if len(spec.expEvents) == 0 && len(eventManager.Events()) == 0 {
 				return // not fail when nil != empty

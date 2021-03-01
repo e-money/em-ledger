@@ -29,7 +29,8 @@ message QueryByAccountResponse{
   option (gogoproto.goproto_stringer) = false;
 
   repeated Order orders = 1 [
-    (gogoproto.moretags) = "yaml:\"orders\""
+    (gogoproto.moretags) = "yaml:\"orders\"",
+    (gogoproto.nullable) = true
   ];
 }
 

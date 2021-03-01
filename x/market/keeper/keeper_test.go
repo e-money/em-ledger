@@ -1123,8 +1123,11 @@ func TestTimeInForceIO(t *testing.T) {
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.AccountKeeper, *embank.ProxyKeeper) {
+	return createTestComponentsWithEncoding(t, MakeTestEncodingConfig())
+}
+
+func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.EncodingConfig) (sdk.Context, *Keeper, authkeeper.AccountKeeper, *embank.ProxyKeeper) {
 	t.Helper()
-	encConfig := MakeTestEncodingConfig()
 
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)

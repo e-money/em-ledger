@@ -104,9 +104,9 @@ func TestCreateIssuer(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, gotAuthority.String(), spec.req.Authority)
-			assert.Equal(t, gotIssuer.String(), spec.req.Issuer)
-			assert.Equal(t, gotDenoms, spec.req.Denominations)
+			assert.Equal(t, spec.req.Authority, gotAuthority.String())
+			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
+			assert.Equal(t, spec.req.Denominations, gotDenoms)
 		})
 	}
 }
@@ -199,8 +199,8 @@ func TestDestroyIssuer(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, gotAuthority.String(), spec.req.Authority)
-			assert.Equal(t, gotIssuer.String(), spec.req.Issuer)
+			assert.Equal(t, spec.req.Authority, gotAuthority.String())
+			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
 
 		})
 	}
@@ -278,8 +278,8 @@ func TestSetGasPrices(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, gotAuthority.String(), spec.req.Authority)
-			assert.Equal(t, gotGasPrices, spec.req.GasPrices)
+			assert.Equal(t, spec.req.Authority, gotAuthority.String())
+			assert.Equal(t, spec.req.GasPrices, gotGasPrices)
 		})
 	}
 }
