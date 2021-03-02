@@ -200,7 +200,6 @@ func (pk *ProxyKeeper) IterateAllDenomMetaData(ctx sdk.Context, cb func(banktype
 }
 
 func (pk *ProxyKeeper) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
-	// todo (Alex) : test notifications
 	err := pk.bk.SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
 	if err != nil {
 		return err
@@ -214,7 +213,6 @@ func (pk *ProxyKeeper) SendCoinsFromModuleToModule(ctx sdk.Context, senderModule
 }
 
 func (pk *ProxyKeeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
-	// todo (Alex) : test notifications
 	err := pk.bk.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
 	if err != nil {
 		return err
@@ -224,7 +222,6 @@ func (pk *ProxyKeeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr 
 }
 
 func (pk *ProxyKeeper) DelegateCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
-	// todo (Alex) : test notifications
 	err := pk.bk.DelegateCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
 	if err != nil {
 		return err
@@ -234,7 +231,6 @@ func (pk *ProxyKeeper) DelegateCoinsFromAccountToModule(ctx sdk.Context, senderA
 }
 
 func (pk *ProxyKeeper) UndelegateCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
-	// todo (Alex) : test notifications
 	err := pk.bk.UndelegateCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
 	if err != nil {
 		return err
@@ -252,7 +248,6 @@ func (pk *ProxyKeeper) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coi
 }
 
 func (pk *ProxyKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAddr sdk.AccAddress, amt sdk.Coins) error {
-	// todo (Alex) : test notifications
 	err := pk.bk.DelegateCoins(ctx, delegatorAddr, moduleAccAddr, amt)
 	if err != nil {
 		return err
@@ -262,7 +257,6 @@ func (pk *ProxyKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAd
 }
 
 func (pk *ProxyKeeper) UndelegateCoins(ctx sdk.Context, moduleAccAddr, delegatorAddr sdk.AccAddress, amt sdk.Coins) error {
-	// todo (Alex) : test notifications
 	err := pk.bk.UndelegateCoins(ctx, moduleAccAddr, delegatorAddr, amt)
 	if err != nil {
 		return err

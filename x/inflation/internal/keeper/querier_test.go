@@ -15,7 +15,7 @@ import (
 
 func TestNewLegacyQuerier(t *testing.T) {
 	input := newTestInput(t)
-	querier := NewQuerier(input.mintKeeper, types.ModuleCdc.LegacyAmino)
+	querier := NewQuerier(input.mintKeeper, input.encConfig.Amino)
 
 	query := abci.RequestQuery{
 		Path: "",

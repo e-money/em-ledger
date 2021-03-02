@@ -40,7 +40,6 @@ var _ = Describe("Buyback", func() {
 		Expect(awaitReady()).To(BeTrue())
 	})
 
-	// todo (Alex) : balance at the end does not match expectations
 	It("queries the buyback balance", func() {
 		var js []gjson.Result
 		var bz []byte

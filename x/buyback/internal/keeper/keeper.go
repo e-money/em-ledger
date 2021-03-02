@@ -62,7 +62,6 @@ func (k Keeper) GetStakingTokenDenom(ctx sdk.Context) string {
 }
 
 func (k Keeper) UpdateBuybackMarket(ctx sdk.Context) bool {
-	// todo (Alex) : add test
 	var (
 		lastUpdate time.Time
 		blockTime  = ctx.BlockTime()

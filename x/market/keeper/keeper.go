@@ -653,7 +653,6 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destination
 }
 
 func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
-	// todo (Alex) : add test
 	var orderID uint64
 	store := ctx.KVStore(k.key)
 	bz := store.Get(types.GetOrderIDGeneratorKey())

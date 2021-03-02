@@ -1,0 +1,274 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "em/market/v1beta1/query.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/e-money/market/v1beta1/account/{address}": {
+      "get": {
+        "operationId": "ByAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/em.market.v1beta1.QueryByAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/e-money/market/v1beta1/instrument/{source}/{destination}": {
+      "get": {
+        "operationId": "Instrument",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/em.market.v1beta1.QueryInstrumentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "destination",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/e-money/market/v1beta1/instruments": {
+      "get": {
+        "operationId": "Instruments",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/em.market.v1beta1.QueryInstrumentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "cosmos.base.v1beta1.Coin": {
+      "type": "object",
+      "properties": {
+        "denom": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        }
+      },
+      "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
+    },
+    "em.market.v1beta1.Order": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "time_in_force": {
+          "$ref": "#/definitions/em.market.v1beta1.TimeInForce"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "client_order_id": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+        },
+        "source_remaining": {
+          "type": "string"
+        },
+        "source_filled": {
+          "type": "string"
+        },
+        "destination": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+        },
+        "destination_filled": {
+          "type": "string"
+        }
+      }
+    },
+    "em.market.v1beta1.QueryByAccountResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/em.market.v1beta1.Order"
+          }
+        }
+      }
+    },
+    "em.market.v1beta1.QueryInstrumentResponse": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/em.market.v1beta1.QueryOrderResponse"
+          }
+        }
+      }
+    },
+    "em.market.v1beta1.QueryInstrumentsResponse": {
+      "type": "object",
+      "properties": {
+        "instruments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/em.market.v1beta1.QueryInstrumentsResponse.Element"
+          }
+        }
+      }
+    },
+    "em.market.v1beta1.QueryInstrumentsResponse.Element": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "last_price": {
+          "type": "string"
+        },
+        "best_price": {
+          "type": "string"
+        },
+        "last_traded": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "em.market.v1beta1.QueryOrderResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "source_remaining": {
+          "type": "string"
+        },
+        "client_order_id": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string"
+        }
+      }
+    },
+    "em.market.v1beta1.TimeInForce": {
+      "type": "string",
+      "enum": [
+        "TIME_IN_FORCE_UNSPECIFIED",
+        "TIME_IN_FORCE_GOOD_TILL_CANCEL",
+        "TIME_IN_FORCE_IMMEDIATE_OR_CANCEL",
+        "TIME_IN_FORCE_FILL_OR_KILL"
+      ],
+      "default": "TIME_IN_FORCE_UNSPECIFIED"
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "grpc.gateway.runtime.Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

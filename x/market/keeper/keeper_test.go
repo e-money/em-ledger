@@ -1122,6 +1122,13 @@ func TestTimeInForceIO(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGetNextOrderNumber(t *testing.T) {
+	ctx, k, _, _ := createTestComponents(t)
+	require.Equal(t, uint64(0), k.getNextOrderNumber(ctx)) // starts with 0
+	require.Equal(t, uint64(1), k.getNextOrderNumber(ctx)) // increments counter
+	require.Equal(t, uint64(2), k.getNextOrderNumber(ctx)) // increments counter
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, *Keeper, authkeeper.AccountKeeper, *embank.ProxyKeeper) {
 	return createTestComponentsWithEncoding(t, MakeTestEncodingConfig())
 }
