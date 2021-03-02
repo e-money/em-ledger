@@ -20,7 +20,7 @@ import (
 
 const (
 	// gjson paths
-	QGetInflationEUR = "assets.#(denom==\"eeur\").inflation"
+	QGetInflationEUR = "state.assets.#(denom==\"eeur\").inflation"
 )
 
 var _ = Describe("Authority", func() {
@@ -46,11 +46,11 @@ var _ = Describe("Authority", func() {
 			bz, err := emcli.QueryIssuers()
 			Expect(err).ShouldNot(HaveOccurred())
 
-			var issuers types.Issuers
-			json.Unmarshal(bz, &issuers)
+			var resp types.QueryIssuersResponse // todo (Reviewer): note the response format has changed
+			json.Unmarshal(bz, &resp)
 
-			Expect(issuers).To(HaveLen(1))
-			Expect(issuers[0].Denoms).To(ConsistOf("eeur", "ejpy"))
+			Expect(resp.Issuers).To(HaveLen(1))
+			Expect(resp.Issuers[0].Denoms).To(ConsistOf("eeur", "ejpy"))
 		})
 
 		It("imposter attempts to act as authority", func() {
@@ -125,7 +125,7 @@ var _ = Describe("Authority", func() {
 
 			fmt.Println(string(bz))
 
-			s := gjson.ParseBytes(bz).Get("assets.#(denom==\"caps\").inflation").Str
+			s := gjson.ParseBytes(bz).Get("state.assets.#(denom==\"caps\").inflation").Str
 			inflationCaps, _ := sdk.NewDecFromStr(s)
 			Expect(inflationCaps).To(Equal(sdk.ZeroDec()))
 		})
