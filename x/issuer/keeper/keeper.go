@@ -6,6 +6,7 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"sort"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -22,13 +23,15 @@ const (
 )
 
 type Keeper struct {
+	cdc      codec.BinaryMarshaler
 	storeKey sdk.StoreKey
 	lpKeeper lp.Keeper
 	ik       types.InflationKeeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) Keeper {
 	return Keeper{
+		cdc:      cdc,
 		storeKey: storeKey,
 		lpKeeper: lpk,
 		ik:       ik,
@@ -143,20 +146,21 @@ func (k Keeper) logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) GetIssuers(ctx sdk.Context) (issuers []types.Issuer) {
+func (k Keeper) GetIssuers(ctx sdk.Context) []types.Issuer {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyIssuerList))
 	if bz == nil {
-		return
+		return nil
 	}
 
-	types.ModuleCdc.LegacyAmino.MustUnmarshalBinaryLengthPrefixed(bz, &issuers)
-	return
+	var state types.Issuers
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &state)
+	return state.Issuers
 }
 
 func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store := ctx.KVStore(k.storeKey)
-	bz := types.ModuleCdc.LegacyAmino.MustMarshalBinaryLengthPrefixed(issuers)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&types.Issuers{Issuers: issuers})
 	store.Set([]byte(keyIssuerList), bz)
 }
 

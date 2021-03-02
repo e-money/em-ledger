@@ -10,7 +10,7 @@ import (
 	"github.com/e-money/em-ledger/x/authority/types"
 )
 
-func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms types.RestrictedDenoms, gasPrices sdk.DecCoins) types.GenesisState {
+func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms []types.RestrictedDenom, gasPrices sdk.DecCoins) types.GenesisState {
 	return types.GenesisState{
 		AuthorityKey:     authorityKey.String(),
 		RestrictedDenoms: restrictedDenoms,

@@ -75,14 +75,58 @@ func (m *Issuer) GetDenoms() []string {
 	return nil
 }
 
+type Issuers struct {
+	Issuers []Issuer `protobuf:"bytes,1,rep,name=issuers,proto3" json:"issuers" yaml:"issuers"`
+}
+
+func (m *Issuers) Reset()      { *m = Issuers{} }
+func (*Issuers) ProtoMessage() {}
+func (*Issuers) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b9136bad98a62476, []int{1}
+}
+func (m *Issuers) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Issuers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Issuers.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Issuers) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Issuers.Merge(m, src)
+}
+func (m *Issuers) XXX_Size() int {
+	return m.Size()
+}
+func (m *Issuers) XXX_DiscardUnknown() {
+	xxx_messageInfo_Issuers.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Issuers proto.InternalMessageInfo
+
+func (m *Issuers) GetIssuers() []Issuer {
+	if m != nil {
+		return m.Issuers
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*Issuer)(nil), "em.issuer.v1beta1.Issuer")
+	proto.RegisterType((*Issuers)(nil), "em.issuer.v1beta1.Issuers")
 }
 
 func init() { proto.RegisterFile("em/issuer/v1beta1/issuer.proto", fileDescriptor_b9136bad98a62476) }
 
 var fileDescriptor_b9136bad98a62476 = []byte{
-	// 216 bytes of a gzipped FileDescriptorProto
+	// 264 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x4b, 0xcd, 0xd5, 0xcf,
 	0x2c, 0x2e, 0x2e, 0x4d, 0x2d, 0xd2, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34, 0x84, 0x72, 0xf5,
 	0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x04, 0x53, 0x73, 0xf5, 0xa0, 0x02, 0x50, 0x79, 0x29, 0x91,
@@ -91,12 +135,15 @@ var fileDescriptor_b9136bad98a62476 = []byte{
 	0xa8, 0xc1, 0xe9, 0x24, 0xf4, 0xe9, 0x9e, 0x3c, 0x5f, 0x65, 0x62, 0x6e, 0x8e, 0x95, 0x12, 0x54,
 	0x42, 0x29, 0x08, 0xa6, 0x44, 0x48, 0x93, 0x8b, 0x2d, 0x25, 0x35, 0x2f, 0x3f, 0xb7, 0x58, 0x82,
 	0x49, 0x81, 0x59, 0x83, 0xd3, 0x49, 0xf0, 0xd3, 0x3d, 0x79, 0x5e, 0x88, 0x62, 0x88, 0xb8, 0x52,
-	0x10, 0x54, 0x81, 0x93, 0xeb, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24,
-	0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x44, 0x69,
-	0xa7, 0x67, 0x96, 0x64, 0x94, 0x26, 0xe9, 0x25, 0xe7, 0xe7, 0xea, 0xa7, 0xea, 0xe6, 0xe6, 0xe7,
-	0xa5, 0x56, 0xea, 0xa7, 0xe6, 0xea, 0xe6, 0xa4, 0xa6, 0xa4, 0xa7, 0x16, 0xe9, 0x57, 0xc0, 0x7c,
-	0x58, 0x52, 0x59, 0x90, 0x5a, 0x9c, 0xc4, 0x06, 0x76, 0xb0, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff,
-	0xc0, 0x26, 0xb2, 0x11, 0xfb, 0x00, 0x00, 0x00,
+	0x10, 0x54, 0x81, 0x52, 0x0c, 0x17, 0x3b, 0xc4, 0x8a, 0x62, 0x21, 0x6f, 0x2e, 0x76, 0x88, 0xab,
+	0x40, 0x76, 0x30, 0x6b, 0x70, 0x1b, 0x49, 0xea, 0x61, 0x38, 0x54, 0x0f, 0xa2, 0xd8, 0x49, 0xec,
+	0xc4, 0x3d, 0x79, 0x06, 0x84, 0x13, 0xa0, 0xfa, 0x94, 0x82, 0x60, 0x26, 0x58, 0xb1, 0xcc, 0x58,
+	0x20, 0xcf, 0xe0, 0xe4, 0x7a, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9,
+	0x31, 0x4e, 0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7, 0x72, 0x0c, 0x51, 0xda,
+	0xe9, 0x99, 0x25, 0x19, 0xa5, 0x49, 0x7a, 0xc9, 0xf9, 0xb9, 0xfa, 0xa9, 0xba, 0xb9, 0xf9, 0x79,
+	0xa9, 0x95, 0xfa, 0xa9, 0xb9, 0xba, 0x39, 0xa9, 0x29, 0xe9, 0xa9, 0x45, 0xfa, 0x15, 0xb0, 0xf0,
+	0x2b, 0xa9, 0x2c, 0x48, 0x2d, 0x4e, 0x62, 0x03, 0x07, 0x87, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff,
+	0x29, 0xc0, 0x65, 0xda, 0x59, 0x01, 0x00, 0x00,
 }
 
 func (m *Issuer) Marshal() (dAtA []byte, err error) {
@@ -138,6 +185,43 @@ func (m *Issuer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Issuers) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Issuers) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Issuers) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Issuers) > 0 {
+		for iNdEx := len(m.Issuers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Issuers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintIssuer(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintIssuer(dAtA []byte, offset int, v uint64) int {
 	offset -= sovIssuer(v)
 	base := offset
@@ -162,6 +246,21 @@ func (m *Issuer) Size() (n int) {
 	if len(m.Denoms) > 0 {
 		for _, s := range m.Denoms {
 			l = len(s)
+			n += 1 + l + sovIssuer(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *Issuers) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Issuers) > 0 {
+		for _, e := range m.Issuers {
+			l = e.Size()
 			n += 1 + l + sovIssuer(uint64(l))
 		}
 	}
@@ -266,6 +365,90 @@ func (m *Issuer) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIssuer(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIssuer
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Issuers) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIssuer
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Issuers: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Issuers: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Issuers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIssuer
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthIssuer
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthIssuer
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Issuers = append(m.Issuers, Issuer{})
+			if err := m.Issuers[len(m.Issuers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -9,3 +9,11 @@ message Issuer {
   string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
   repeated string denoms = 2 [ (gogoproto.moretags) = "yaml:\"denoms\"" ];
 }
+
+message Issuers {
+  option (gogoproto.goproto_stringer) = false;
+  repeated Issuer issuers = 1 [
+    (gogoproto.moretags) = "yaml:\"issuers\"",
+    (gogoproto.nullable) = false
+  ];
+}

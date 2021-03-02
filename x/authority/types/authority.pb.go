@@ -5,7 +5,8 @@ package types
 
 import (
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-sdk/types"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"
@@ -24,6 +25,50 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type RestrictedDenoms struct {
+	Denoms []RestrictedDenom `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms" yaml:"denoms"`
+}
+
+func (m *RestrictedDenoms) Reset()         { *m = RestrictedDenoms{} }
+func (m *RestrictedDenoms) String() string { return proto.CompactTextString(m) }
+func (*RestrictedDenoms) ProtoMessage()    {}
+func (*RestrictedDenoms) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d4be3cd12bc5f5ec, []int{0}
+}
+func (m *RestrictedDenoms) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RestrictedDenoms) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RestrictedDenoms.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RestrictedDenoms) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RestrictedDenoms.Merge(m, src)
+}
+func (m *RestrictedDenoms) XXX_Size() int {
+	return m.Size()
+}
+func (m *RestrictedDenoms) XXX_DiscardUnknown() {
+	xxx_messageInfo_RestrictedDenoms.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RestrictedDenoms proto.InternalMessageInfo
+
+func (m *RestrictedDenoms) GetDenoms() []RestrictedDenom {
+	if m != nil {
+		return m.Denoms
+	}
+	return nil
+}
+
 type RestrictedDenom struct {
 	// todo (reviewer) :  moved from /types/
 	// todo (reviewer) : please note the lower case json/yaml attribute names now
@@ -36,7 +81,7 @@ func (m *RestrictedDenom) Reset()         { *m = RestrictedDenom{} }
 func (m *RestrictedDenom) String() string { return proto.CompactTextString(m) }
 func (*RestrictedDenom) ProtoMessage()    {}
 func (*RestrictedDenom) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d4be3cd12bc5f5ec, []int{0}
+	return fileDescriptor_d4be3cd12bc5f5ec, []int{1}
 }
 func (m *RestrictedDenom) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -79,8 +124,99 @@ func (m *RestrictedDenom) GetAllowed() []string {
 	return nil
 }
 
+type Authority struct {
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty" yaml:"address"`
+}
+
+func (m *Authority) Reset()         { *m = Authority{} }
+func (m *Authority) String() string { return proto.CompactTextString(m) }
+func (*Authority) ProtoMessage()    {}
+func (*Authority) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d4be3cd12bc5f5ec, []int{2}
+}
+func (m *Authority) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Authority) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Authority.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Authority) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Authority.Merge(m, src)
+}
+func (m *Authority) XXX_Size() int {
+	return m.Size()
+}
+func (m *Authority) XXX_DiscardUnknown() {
+	xxx_messageInfo_Authority.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Authority proto.InternalMessageInfo
+
+func (m *Authority) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
+type GasPrices struct {
+	Minimum github_com_cosmos_cosmos_sdk_types.DecCoins `protobuf:"bytes,1,rep,name=minimum,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.DecCoins" json:"minimum" yaml:"minimum"`
+}
+
+func (m *GasPrices) Reset()         { *m = GasPrices{} }
+func (m *GasPrices) String() string { return proto.CompactTextString(m) }
+func (*GasPrices) ProtoMessage()    {}
+func (*GasPrices) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d4be3cd12bc5f5ec, []int{3}
+}
+func (m *GasPrices) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GasPrices) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GasPrices.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GasPrices) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GasPrices.Merge(m, src)
+}
+func (m *GasPrices) XXX_Size() int {
+	return m.Size()
+}
+func (m *GasPrices) XXX_DiscardUnknown() {
+	xxx_messageInfo_GasPrices.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GasPrices proto.InternalMessageInfo
+
+func (m *GasPrices) GetMinimum() github_com_cosmos_cosmos_sdk_types.DecCoins {
+	if m != nil {
+		return m.Minimum
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterType((*RestrictedDenoms)(nil), "em.authority.v1beta1.RestrictedDenoms")
 	proto.RegisterType((*RestrictedDenom)(nil), "em.authority.v1beta1.RestrictedDenom")
+	proto.RegisterType((*Authority)(nil), "em.authority.v1beta1.Authority")
+	proto.RegisterType((*GasPrices)(nil), "em.authority.v1beta1.GasPrices")
 }
 
 func init() {
@@ -88,23 +224,68 @@ func init() {
 }
 
 var fileDescriptor_d4be3cd12bc5f5ec = []byte{
-	// 250 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x49, 0xcd, 0xd5, 0x4f,
-	0x2c, 0x2d, 0xc9, 0xc8, 0x2f, 0xca, 0x2c, 0xa9, 0xd4, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34,
-	0x44, 0x88, 0xe8, 0x15, 0x14, 0xe5, 0x97, 0xe4, 0x0b, 0x89, 0xa4, 0xe6, 0xea, 0x21, 0xc4, 0xa0,
-	0xaa, 0xa4, 0x44, 0xd2, 0xf3, 0xd3, 0xf3, 0xc1, 0x0a, 0xf4, 0x41, 0x2c, 0x88, 0x5a, 0x29, 0xb9,
-	0xe4, 0xfc, 0xe2, 0xdc, 0xfc, 0x62, 0xfd, 0xa4, 0xc4, 0xe2, 0x54, 0xb8, 0x81, 0xc9, 0xf9, 0x99,
-	0x79, 0x10, 0x79, 0xa5, 0x74, 0x2e, 0xfe, 0xa0, 0xd4, 0xe2, 0x92, 0xa2, 0xcc, 0xe4, 0x92, 0xd4,
-	0x14, 0x97, 0xd4, 0xbc, 0xfc, 0x5c, 0x21, 0x35, 0x2e, 0xd6, 0x14, 0x10, 0x43, 0x82, 0x51, 0x81,
-	0x51, 0x83, 0xd3, 0x49, 0xe0, 0xd3, 0x3d, 0x79, 0x9e, 0xca, 0xc4, 0xdc, 0x1c, 0x2b, 0x25, 0xb0,
-	0xb0, 0x52, 0x10, 0x44, 0x5a, 0x48, 0x87, 0x8b, 0x3d, 0x31, 0x27, 0x27, 0xbf, 0x3c, 0x35, 0x45,
-	0x82, 0x49, 0x81, 0x59, 0x83, 0xd3, 0x49, 0xe8, 0xd3, 0x3d, 0x79, 0x3e, 0x88, 0x4a, 0xa8, 0x84,
-	0x52, 0x10, 0x4c, 0x89, 0x93, 0xc7, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78,
-	0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x44,
-	0xe9, 0xa5, 0x67, 0x96, 0x64, 0x94, 0x26, 0xe9, 0x25, 0xe7, 0xe7, 0xea, 0xa7, 0xea, 0xe6, 0xe6,
-	0xe7, 0xa5, 0x56, 0xea, 0xa7, 0xe6, 0xea, 0xe6, 0xa4, 0xa6, 0xa4, 0xa7, 0x16, 0xe9, 0x57, 0x20,
-	0x05, 0x48, 0x49, 0x65, 0x41, 0x6a, 0x71, 0x12, 0x1b, 0xd8, 0xe5, 0xc6, 0x80, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0x27, 0x15, 0x52, 0x0f, 0x2d, 0x01, 0x00, 0x00,
+	// 384 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x52, 0xcb, 0xca, 0xd3, 0x40,
+	0x14, 0x4e, 0x2c, 0xb6, 0x64, 0xbc, 0x95, 0x50, 0xa1, 0x14, 0x49, 0xca, 0xa0, 0x52, 0xd0, 0xce,
+	0x50, 0x5d, 0xe9, 0xce, 0x58, 0xd1, 0xa5, 0x04, 0x57, 0xee, 0x72, 0x39, 0xa4, 0x83, 0x99, 0x4c,
+	0xc9, 0x4c, 0xd5, 0x2c, 0x7c, 0x01, 0x57, 0x3e, 0x87, 0x4f, 0xd2, 0x65, 0x97, 0xae, 0xa2, 0xb4,
+	0x6f, 0xd0, 0x27, 0x90, 0x66, 0x26, 0x6d, 0x28, 0xff, 0x6a, 0x0e, 0xe7, 0xbb, 0x9c, 0x99, 0xef,
+	0x0c, 0x7a, 0x0c, 0x9c, 0x46, 0x1b, 0xb5, 0x12, 0x25, 0x53, 0x15, 0xfd, 0xba, 0x88, 0x41, 0x45,
+	0x8b, 0x4b, 0x87, 0xac, 0x4b, 0xa1, 0x84, 0x3b, 0x02, 0x4e, 0x2e, 0x3d, 0xc3, 0x9a, 0x8c, 0x32,
+	0x91, 0x89, 0x86, 0x40, 0x4f, 0x95, 0xe6, 0x4e, 0xbc, 0x44, 0x48, 0x2e, 0x24, 0x8d, 0x23, 0x09,
+	0x67, 0xc3, 0x44, 0xb0, 0x42, 0xe3, 0x78, 0x85, 0x86, 0x21, 0x48, 0x55, 0xb2, 0x44, 0x41, 0xba,
+	0x84, 0x42, 0x70, 0xe9, 0x7e, 0x42, 0xfd, 0xb4, 0xa9, 0xc6, 0xf6, 0xb4, 0x37, 0xbb, 0xf3, 0xe2,
+	0x09, 0xb9, 0x69, 0x20, 0xb9, 0xd2, 0x05, 0x0f, 0xb7, 0xb5, 0x6f, 0x1d, 0x6b, 0xff, 0x5e, 0x15,
+	0xf1, 0xfc, 0x35, 0xd6, 0x16, 0x38, 0x34, 0x5e, 0x38, 0x43, 0x0f, 0xae, 0x14, 0xee, 0x53, 0x74,
+	0xbb, 0x01, 0xc7, 0xf6, 0xd4, 0x9e, 0x39, 0xc1, 0xf0, 0x58, 0xfb, 0x77, 0x3b, 0x62, 0x1c, 0x6a,
+	0xd8, 0x7d, 0x8e, 0x06, 0x51, 0x9e, 0x8b, 0x6f, 0x90, 0x8e, 0x6f, 0x4d, 0x7b, 0x33, 0x27, 0x70,
+	0x8f, 0xb5, 0x7f, 0x5f, 0x33, 0x0d, 0x80, 0xc3, 0x96, 0x82, 0x5f, 0x21, 0xe7, 0x4d, 0x7b, 0xd9,
+	0x46, 0x9a, 0xa6, 0x25, 0x48, 0x69, 0x86, 0x74, 0xa5, 0x1a, 0x38, 0x49, 0x4d, 0xf5, 0xd3, 0x46,
+	0xce, 0xfb, 0x48, 0x7e, 0x2c, 0x59, 0x02, 0xd2, 0xfd, 0x81, 0x06, 0x9c, 0x15, 0x8c, 0x6f, 0xb8,
+	0x09, 0xe2, 0x11, 0xd1, 0x69, 0x92, 0x53, 0x9a, 0xe7, 0x1c, 0x96, 0x90, 0xbc, 0x15, 0xac, 0x08,
+	0xde, 0x99, 0xf7, 0x1b, 0x77, 0x23, 0xc5, 0xbf, 0xff, 0xfa, 0xcf, 0x32, 0xa6, 0x56, 0x9b, 0x98,
+	0x24, 0x82, 0x53, 0xb3, 0x0f, 0x7d, 0xcc, 0x65, 0xfa, 0x85, 0xaa, 0x6a, 0x0d, 0xb2, 0x75, 0x91,
+	0x61, 0x3b, 0x33, 0xf8, 0xb0, 0xdd, 0x7b, 0xf6, 0x6e, 0xef, 0xd9, 0xff, 0xf6, 0x9e, 0xfd, 0xeb,
+	0xe0, 0x59, 0xbb, 0x83, 0x67, 0xfd, 0x39, 0x78, 0xd6, 0x67, 0xd2, 0xf1, 0x83, 0x39, 0x17, 0x05,
+	0x54, 0x14, 0xf8, 0x3c, 0x87, 0x34, 0x83, 0x92, 0x7e, 0xef, 0x7c, 0xa1, 0xc6, 0x3b, 0xee, 0x37,
+	0xbb, 0x7e, 0xf9, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x4d, 0xf8, 0x7a, 0xed, 0x5f, 0x02, 0x00, 0x00,
+}
+
+func (m *RestrictedDenoms) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RestrictedDenoms) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RestrictedDenoms) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denoms) > 0 {
+		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Denoms[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAuthority(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *RestrictedDenom) Marshal() (dAtA []byte, err error) {
@@ -146,6 +327,73 @@ func (m *RestrictedDenom) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Authority) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Authority) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Authority) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Address) > 0 {
+		i -= len(m.Address)
+		copy(dAtA[i:], m.Address)
+		i = encodeVarintAuthority(dAtA, i, uint64(len(m.Address)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GasPrices) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GasPrices) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GasPrices) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Minimum) > 0 {
+		for iNdEx := len(m.Minimum) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Minimum[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAuthority(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintAuthority(dAtA []byte, offset int, v uint64) int {
 	offset -= sovAuthority(v)
 	base := offset
@@ -157,6 +405,21 @@ func encodeVarintAuthority(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *RestrictedDenoms) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Denoms) > 0 {
+		for _, e := range m.Denoms {
+			l = e.Size()
+			n += 1 + l + sovAuthority(uint64(l))
+		}
+	}
+	return n
+}
+
 func (m *RestrictedDenom) Size() (n int) {
 	if m == nil {
 		return 0
@@ -176,11 +439,123 @@ func (m *RestrictedDenom) Size() (n int) {
 	return n
 }
 
+func (m *Authority) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovAuthority(uint64(l))
+	}
+	return n
+}
+
+func (m *GasPrices) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Minimum) > 0 {
+		for _, e := range m.Minimum {
+			l = e.Size()
+			n += 1 + l + sovAuthority(uint64(l))
+		}
+	}
+	return n
+}
+
 func sovAuthority(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozAuthority(x uint64) (n int) {
 	return sovAuthority(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *RestrictedDenoms) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthority
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RestrictedDenoms: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RestrictedDenoms: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthority
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denoms = append(m.Denoms, RestrictedDenom{})
+			if err := m.Denoms[len(m.Denoms)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthority(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *RestrictedDenom) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -274,6 +649,172 @@ func (m *RestrictedDenom) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Allowed = append(m.Allowed, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthority(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Authority) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthority
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Authority: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Authority: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthority
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthority(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GasPrices) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthority
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GasPrices: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GasPrices: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Minimum", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthority
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthority
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Minimum = append(m.Minimum, types.DecCoin{})
+			if err := m.Minimum[len(m.Minimum)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

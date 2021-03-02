@@ -11,12 +11,11 @@ service Msg {
   rpc MintTokens(MsgMintTokens) returns (MsgMintTokensResponse);
 
   rpc BurnTokens(MsgBurnTokens) returns (MsgBurnTokensResponse);
-
 }
 
 message MsgMintTokens {
   string liquidity_provider = 1
-  [(gogoproto.moretags) = "yaml:\"liquidity_provider\""];
+      [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
 
   repeated cosmos.base.v1beta1.Coin amount = 2 [
     (gogoproto.moretags) = "yaml:\"amount\"",
@@ -25,11 +24,11 @@ message MsgMintTokens {
   ];
 }
 
-message MsgMintTokensResponse{}
+message MsgMintTokensResponse {}
 
 message MsgBurnTokens {
   string liquidity_provider = 1
-  [(gogoproto.moretags) = "yaml:\"liquidity_provider\""];
+      [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
 
   repeated cosmos.base.v1beta1.Coin amount = 2 [
     (gogoproto.moretags) = "yaml:\"amount\"",
@@ -38,4 +37,4 @@ message MsgBurnTokens {
   ];
 }
 
-message MsgBurnTokensResponse{}
+message MsgBurnTokensResponse {}

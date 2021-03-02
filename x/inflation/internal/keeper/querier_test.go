@@ -15,7 +15,7 @@ import (
 
 func TestNewLegacyQuerier(t *testing.T) {
 	input := newTestInput(t)
-	querier := NewQuerier(input.mintKeeper)
+	querier := NewQuerier(input.mintKeeper, types.ModuleCdc.LegacyAmino)
 
 	query := abci.RequestQuery{
 		Path: "",
@@ -34,7 +34,7 @@ func TestLegacyQueryInflation(t *testing.T) {
 
 	var inflation types.InflationState
 
-	res, sdkErr := queryInflation(input.ctx, input.mintKeeper)
+	res, sdkErr := queryInflation(input.ctx, input.mintKeeper, input.encConfig.Amino)
 	require.NoError(t, sdkErr)
 
 	err := input.cdc.UnmarshalJSON(res, &inflation)

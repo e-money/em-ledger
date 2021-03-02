@@ -185,7 +185,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, bankkeeper.
 	stakingKeeper := mockStakingKeeper{}
 
 	inflationKeeper := NewKeeper(
-		encConfig.Amino, keyInflation, bankKeeper, accountKeeper, stakingKeeper, "buyback", authtypes.FeeCollectorName)
+		encConfig.Marshaler, keyInflation, bankKeeper, accountKeeper, stakingKeeper, "buyback", authtypes.FeeCollectorName)
 
 	lastAppliedTime := time.Now().Add(-2400 * time.Hour)
 

@@ -301,7 +301,7 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 
 	lpk := liquidityprovider.NewKeeper(ak, bk)
 
-	keeper := NewKeeper(issuerKey, lpk, mockInflationKeeper{})
+	keeper := NewKeeper(encConfig.Marshaler, issuerKey, lpk, mockInflationKeeper{})
 	return ctx, ak, lpk, keeper
 }
 

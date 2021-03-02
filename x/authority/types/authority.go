@@ -8,10 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type RestrictedDenoms []RestrictedDenom
-
 func (rd RestrictedDenoms) Find(denom string) (RestrictedDenom, bool) {
-	for _, d := range rd {
+	for _, d := range rd.Denoms {
 		if d.Denom == denom {
 			return d, true
 		}

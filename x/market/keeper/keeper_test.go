@@ -805,9 +805,9 @@ func TestRestrictedDenominations1(t *testing.T) {
 
 	// Restrict trading of gbp
 	k.authorityk = dummyAuthority{
-		RestrictedDenoms: []types2.RestrictedDenom{
+		RestrictedDenoms: types2.RestrictedDenoms{Denoms: []types2.RestrictedDenom{
 			{"gbp", []string{acc1.GetAddress().String()}},
-		},
+		}},
 	}
 
 	k.initializeFromStore(ctx)
@@ -860,10 +860,10 @@ func TestRestrictedDenominations2(t *testing.T) {
 
 	// Restrict trading of gbp and usd
 	k.authorityk = dummyAuthority{
-		RestrictedDenoms: []types2.RestrictedDenom{
+		RestrictedDenoms: types2.RestrictedDenoms{Denoms: []types2.RestrictedDenom{
 			{"gbp", []string{}},
 			{"usd", []string{acc1.GetAddress().String()}},
-		},
+		}},
 	}
 
 	k.initializeFromStore(ctx)
@@ -1169,7 +1169,7 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 
 	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
 
-	marketKeeper := NewKeeper(encConfig.Amino, keyMarket, keyIndices, ak, wrappedBank, dummyAuthority{})
+	marketKeeper := NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, wrappedBank, dummyAuthority{})
 	return ctx, marketKeeper, ak, wrappedBank
 }
 

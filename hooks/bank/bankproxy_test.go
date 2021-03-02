@@ -23,7 +23,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
+	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
@@ -43,11 +43,11 @@ func TestProxySendCoins(t *testing.T) {
 	)
 
 	bk.rk = restrictedKeeper{
-		RestrictedDenoms: []types2.RestrictedDenom{
+		RestrictedDenoms: emauthtypes.RestrictedDenoms{Denoms: []emauthtypes.RestrictedDenom{
 			{"gbp", []string{}},
 			{"usd", []string{acc1.GetAddress().String()}},
 		},
-	}
+		}}
 
 	var testdata = []struct {
 		denom string
@@ -87,11 +87,11 @@ func TestInputOutputCoins(t *testing.T) {
 	// For simplicity's sake, inputoutput will reject any transaction that includes restricted denominations.
 
 	bk.rk = restrictedKeeper{
-		RestrictedDenoms: []types2.RestrictedDenom{
+		RestrictedDenoms: emauthtypes.RestrictedDenoms{Denoms: []emauthtypes.RestrictedDenom{
 			{"gbp", []string{}},
 			{"usd", []string{acc1.GetAddress().String()}},
 		},
-	}
+		}}
 
 	var testdata = []struct {
 		inputs  []banktypes.Input
@@ -336,8 +336,8 @@ func TestInputOutputCoinsBalanceUpdateNotification(t *testing.T) {
 	}
 }
 
-var allDenomsAllowed = RestrictedKeeperFunc(func(ctx sdk.Context) types2.RestrictedDenoms {
-	return types2.RestrictedDenoms{} // allow all
+var allDenomsAllowed = RestrictedKeeperFunc(func(ctx sdk.Context) emauthtypes.RestrictedDenoms {
+	return emauthtypes.RestrictedDenoms{} // allow all
 })
 
 type senderBankKeeperMock struct {
@@ -403,10 +403,10 @@ func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, 
 }
 
 type restrictedKeeper struct {
-	RestrictedDenoms types2.RestrictedDenoms
+	RestrictedDenoms emauthtypes.RestrictedDenoms
 }
 
-func (rk restrictedKeeper) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
+func (rk restrictedKeeper) GetRestrictedDenoms(sdk.Context) emauthtypes.RestrictedDenoms {
 	return rk.RestrictedDenoms
 }
 

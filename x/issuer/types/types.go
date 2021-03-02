@@ -12,8 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type Issuers []Issuer
-
 func NewIssuer(address sdk.AccAddress, denoms ...string) Issuer {
 	sort.Strings(denoms)
 
@@ -38,7 +36,7 @@ func (i Issuer) IsValid() bool {
 func (i Issuers) String() string {
 	var sb strings.Builder
 
-	for _, issuer := range i {
+	for _, issuer := range i.Issuers {
 		sb.WriteString(fmt.Sprintf("%v : %v\n", issuer.Address, issuer.Denoms))
 	}
 

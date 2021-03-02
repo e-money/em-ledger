@@ -15,7 +15,6 @@ message GenesisState {
 
   repeated RestrictedDenom restricted_denoms = 2 [
     (gogoproto.moretags) = "yaml:\"restricted_denoms\"",
-    (gogoproto.castrepeated) = "RestrictedDenoms",
     (gogoproto.nullable) = false
   ];
 

@@ -33,7 +33,7 @@ import (
 
 type testInput struct {
 	ctx        sdk.Context
-	cdc        *codec.LegacyAmino
+	cdc        codec.Marshaler
 	mintKeeper Keeper
 	encConfig  simappparams.EncodingConfig
 }
@@ -87,7 +87,7 @@ func newTestInput(t *testing.T) testInput {
 	stakingKeeper := mockStakingKeeper{}
 
 	inflationKeeper := NewKeeper(
-		encConfig.Amino, keyInflation, bankKeeper, accountKeeper, stakingKeeper, "buyback", authtypes.FeeCollectorName,
+		encConfig.Marshaler, keyInflation, bankKeeper, accountKeeper, stakingKeeper, "buyback", authtypes.FeeCollectorName,
 	)
 	inflationKeeper.SetState(ctx, types.NewInflationState(time.Now(), "ejpy", "0.05", "echf", "0.10", "eeur", "0.01"))
 
@@ -104,7 +104,7 @@ func newTestInput(t *testing.T) testInput {
 
 	return testInput{
 		ctx:        ctx,
-		cdc:        encConfig.Amino,
+		cdc:        encConfig.Marshaler,
 		mintKeeper: inflationKeeper,
 		encConfig:  encConfig,
 	}

@@ -7,25 +7,24 @@ import "em/market/v1beta1/market.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/market/types";
 
-
 service Msg {
 
   rpc AddLimitOrder(MsgAddLimitOrder) returns (MsgAddLimitOrderResponse);
 
   rpc AddMarketOrder(MsgAddMarketOrder) returns (MsgAddMarketOrderResponse);
   rpc CancelOrder(MsgCancelOrder) returns (MsgCancelOrderResponse);
-  rpc CancelReplaceLimitOrder(MsgCancelReplaceLimitOrder) returns (MsgCancelReplaceLimitOrderResponse);
-
+  rpc CancelReplaceLimitOrder(MsgCancelReplaceLimitOrder)
+      returns (MsgCancelReplaceLimitOrderResponse);
 }
 
 message MsgAddLimitOrder {
-  string owner = 1 [(gogoproto.moretags) = "yaml:\"owner\""];
+  string owner = 1 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
 
   string client_order_id = 2
-  [(gogoproto.moretags) = "yaml:\"client_order_id\""];
+      [ (gogoproto.moretags) = "yaml:\"client_order_id\"" ];
 
   TimeInForce time_in_force = 3
-  [(gogoproto.moretags) = "yaml:\"time_in_force\""];
+      [ (gogoproto.moretags) = "yaml:\"time_in_force\"" ];
 
   cosmos.base.v1beta1.Coin source = 4 [
     (gogoproto.moretags) = "yaml:\"source\"",
@@ -36,18 +35,18 @@ message MsgAddLimitOrder {
     (gogoproto.nullable) = false
   ];
 }
-message MsgAddLimitOrderResponse{}
+message MsgAddLimitOrderResponse {}
 
 message MsgAddMarketOrder {
-  string owner = 1 [(gogoproto.moretags) = "yaml:\"owner\""];
+  string owner = 1 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
 
   string client_order_id = 2
-  [(gogoproto.moretags) = "yaml:\"client_order_id\""];
+      [ (gogoproto.moretags) = "yaml:\"client_order_id\"" ];
 
   TimeInForce time_in_force = 3
-  [(gogoproto.moretags) = "yaml:\"time_in_force\""];
+      [ (gogoproto.moretags) = "yaml:\"time_in_force\"" ];
 
-  string source = 4 [(gogoproto.moretags) = "yaml:\"source\""];
+  string source = 4 [ (gogoproto.moretags) = "yaml:\"source\"" ];
 
   cosmos.base.v1beta1.Coin destination = 5 [
     (gogoproto.moretags) = "yaml:\"destination\"",
@@ -62,18 +61,18 @@ message MsgAddMarketOrder {
   ];
 }
 
-message MsgAddMarketOrderResponse{}
+message MsgAddMarketOrderResponse {}
 
 message MsgCancelOrder {
-  string owner = 1 [(gogoproto.moretags) = "yaml:\"owner\""];
+  string owner = 1 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
   string client_order_id = 2
-  [(gogoproto.moretags) = "yaml:\"client_order_id\""];
+      [ (gogoproto.moretags) = "yaml:\"client_order_id\"" ];
 }
 
-message MsgCancelOrderResponse{}
+message MsgCancelOrderResponse {}
 
 message MsgCancelReplaceLimitOrder {
-  string owner = 1 [(gogoproto.moretags) = "yaml:\"owner\""];
+  string owner = 1 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
 
   string original_client_order_id = 2 [
     (gogoproto.customname) = "OrigClientOrderId",
@@ -95,4 +94,4 @@ message MsgCancelReplaceLimitOrder {
   ];
 }
 
-message MsgCancelReplaceLimitOrderResponse{}
+message MsgCancelReplaceLimitOrderResponse {}

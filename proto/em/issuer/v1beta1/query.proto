@@ -9,7 +9,7 @@ import "em/issuer/v1beta1/issuer.proto";
 option go_package = "github.com/e-money/em-ledger/x/issuer/types";
 
 service Query {
-  rpc issuers(QueryIssuersRequest) returns (QueryIssuersResponse) {
+  rpc Issuers(QueryIssuersRequest) returns (QueryIssuersResponse) {
     option (google.api.http).get = "/e-money/issuer/v1beta1/issuers";
   };
 }
@@ -17,6 +17,8 @@ service Query {
 message QueryIssuersRequest {}
 
 message QueryIssuersResponse {
-  repeated Issuer issuers = 1
-      [ (gogoproto.moretags) = "yaml:\"issuers\"", (gogoproto.nullable) = false ];
+  repeated Issuer issuers = 1 [
+    (gogoproto.moretags) = "yaml:\"issuers\"",
+    (gogoproto.nullable) = false
+  ];
 }

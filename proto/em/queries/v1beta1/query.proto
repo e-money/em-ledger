@@ -17,10 +17,9 @@ service Query {
   };
 }
 
-message QueryCirculatingRequest {
-}
+message QueryCirculatingRequest {}
 
-message QueryCirculatingResponse{
+message QueryCirculatingResponse {
   repeated cosmos.base.v1beta1.Coin total = 1 [
     (gogoproto.moretags) = "yaml:\"total\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
@@ -28,8 +27,8 @@ message QueryCirculatingResponse{
   ];
 }
 
-message QuerySpendableRequest{
-  string address = 1 [(gogoproto.moretags) = "yaml:\"address\""];
+message QuerySpendableRequest {
+  string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
 }
 
 message QuerySpendableResponse {
@@ -39,4 +38,3 @@ message QuerySpendableResponse {
     (gogoproto.nullable) = false
   ];
 }
-

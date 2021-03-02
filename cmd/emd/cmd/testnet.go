@@ -469,7 +469,7 @@ func createInflationGenesis() json.RawMessage {
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
-	gen := authority.NewGenesisState(akey, emauthtypes.RestrictedDenoms{}, sdk.NewDecCoins())
+	gen := authority.NewGenesisState(akey, []emauthtypes.RestrictedDenom{}, sdk.NewDecCoins())
 
 	bz, err := json.Marshal(gen)
 	if err != nil {

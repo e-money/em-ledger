@@ -17,25 +17,23 @@ service Query {
     option (google.api.http).get = "/e-money/market/v1beta1/instruments";
   };
   rpc Instrument(QueryInstrumentRequest) returns (QueryInstrumentResponse) {
-    option (google.api.http).get = "/e-money/market/v1beta1/instrument/{source}/{destination}";
+    option (google.api.http).get =
+        "/e-money/market/v1beta1/instrument/{source}/{destination}";
   };
 }
 
 message QueryByAccountRequest {
-  string address = 1 [(gogoproto.moretags) = "yaml:\"address\""];
+  string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
 }
 
-message QueryByAccountResponse{
+message QueryByAccountResponse {
   option (gogoproto.goproto_stringer) = false;
 
-  repeated Order orders = 1 [
-    (gogoproto.moretags) = "yaml:\"orders\"",
-    (gogoproto.nullable) = true
-  ];
+  repeated Order orders = 1
+      [ (gogoproto.moretags) = "yaml:\"orders\"", (gogoproto.nullable) = true ];
 }
 
-message QueryInstrumentsRequest{
-}
+message QueryInstrumentsRequest {}
 
 message QueryInstrumentsResponse {
   option (gogoproto.goproto_stringer) = false;
@@ -48,18 +46,16 @@ message QueryInstrumentsResponse {
   message Element {
     option (gogoproto.goproto_stringer) = false;
 
-    string source = 1 [(gogoproto.moretags) = "yaml:\"source\""];
+    string source = 1 [ (gogoproto.moretags) = "yaml:\"source\"" ];
 
-    string destination = 2[(gogoproto.moretags) = "yaml:\"destination\""];
+    string destination = 2 [ (gogoproto.moretags) = "yaml:\"destination\"" ];
 
-    string last_price = 3
-    [
+    string last_price = 3 [
       (gogoproto.moretags) = "yaml:\"last_price\"",
       (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"
     ];
 
-    string best_price = 4
-    [
+    string best_price = 4 [
       (gogoproto.moretags) = "yaml:\"best_price\"",
       (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"
     ];
@@ -71,8 +67,7 @@ message QueryInstrumentsResponse {
   }
 }
 
-
-message QueryInstrumentRequest{
+message QueryInstrumentRequest {
   string source = 1;
   string destination = 2;
 }
@@ -80,25 +75,24 @@ message QueryInstrumentRequest{
 message QueryInstrumentResponse {
   option (gogoproto.goproto_stringer) = false;
 
-  string source = 1 [(gogoproto.moretags) = "yaml:\"source\""];
-  string destination = 2[(gogoproto.moretags) = "yaml:\"destination\""];
+  string source = 1 [ (gogoproto.moretags) = "yaml:\"source\"" ];
+  string destination = 2 [ (gogoproto.moretags) = "yaml:\"destination\"" ];
   repeated QueryOrderResponse orders = 3 [
     (gogoproto.moretags) = "yaml:\"orders\"",
     (gogoproto.nullable) = false
   ];
 }
 
-message QueryOrderResponse{
+message QueryOrderResponse {
   option (gogoproto.goproto_stringer) = false;
 
-  uint64 id = 1 [
-    (gogoproto.customname) = "ID",
-    (gogoproto.moretags) = "yaml:\"id\""
-  ];
+  uint64 id = 1
+      [ (gogoproto.customname) = "ID", (gogoproto.moretags) = "yaml:\"id\"" ];
 
-  string owner = 2 [(gogoproto.moretags) = "yaml:\"owner\""];
+  string owner = 2 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
 
-  string source_remaining = 3 [(gogoproto.moretags) = "yaml:\"source_remaining\""];
+  string source_remaining = 3
+      [ (gogoproto.moretags) = "yaml:\"source_remaining\"" ];
 
   string client_order_id = 4 [
     (gogoproto.moretags) = "yaml:\"client_order_id\"",

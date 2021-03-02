@@ -1,17 +1,16 @@
 package keeper
 
 import (
-	"time"
-
-	"github.com/e-money/em-ledger/x/buyback/internal/types"
-	market "github.com/e-money/em-ledger/x/market/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/buyback/internal/types"
+	market "github.com/e-money/em-ledger/x/market/types"
+	ptypes "github.com/gogo/protobuf/types"
+	"time"
 )
 
 type Keeper struct {
-	cdc      *codec.LegacyAmino
+	cdc      codec.BinaryMarshaler
 	storeKey sdk.StoreKey
 
 	marketKeeper   MarketKeeper
@@ -20,7 +19,7 @@ type Keeper struct {
 	bankKeeper     BankKeeper
 }
 
-func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, mk MarketKeeper, ak AccountKeeper, stakingKeeper StakingKeeper, bk BankKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, mk MarketKeeper, ak AccountKeeper, stakingKeeper StakingKeeper, bk BankKeeper) Keeper {
 	return Keeper{
 		cdc:            cdc,
 		storeKey:       key,
@@ -63,29 +62,33 @@ func (k Keeper) GetStakingTokenDenom(ctx sdk.Context) string {
 }
 
 func (k Keeper) UpdateBuybackMarket(ctx sdk.Context) bool {
+	// todo (Alex) : add test
 	var (
-		lastUpdated = &time.Time{}
-		blockTime   = ctx.BlockTime()
+		lastUpdate time.Time
+		blockTime  = ctx.BlockTime()
 	)
 
 	store := ctx.KVStore(k.storeKey)
 	if bz := store.Get(types.GetLastUpdatedKey()); bz != nil {
-		err := k.cdc.UnmarshalBinaryLengthPrefixed(bz, lastUpdated)
+		var state ptypes.Timestamp
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &state)
+		var err error
+		lastUpdate, err = ptypes.TimestampFromProto(&state)
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	updateInterval := k.GetUpdateInterval(ctx)
-	if blockTime.Sub(*lastUpdated) < updateInterval {
+	if blockTime.Sub(lastUpdate) < updateInterval {
 		return false
 	}
-
-	bz, err := k.cdc.MarshalBinaryLengthPrefixed(blockTime)
+	newState, err := ptypes.TimestampProto(blockTime)
 	if err != nil {
 		panic(err)
 	}
 
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(newState)
 	store.Set(types.GetLastUpdatedKey(), bz)
 	return true
 }
@@ -112,13 +115,18 @@ func (k Keeper) GetUpdateInterval(ctx sdk.Context) time.Duration {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetUpdateIntervalKey())
 
-	var updateInterval time.Duration
+	var updateInterval ptypes.Duration
 	k.cdc.MustUnmarshalBinaryBare(bz, &updateInterval)
-	return updateInterval
+	ui, err := ptypes.DurationFromProto(&updateInterval)
+	if err != nil {
+		panic(err.Error())
+	}
+	return ui
 }
 
 func (k Keeper) SetUpdateInterval(ctx sdk.Context, newVal time.Duration) {
 	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshalBinaryBare(newVal)
+
+	bz := k.cdc.MustMarshalBinaryBare(ptypes.DurationProto(newVal))
 	store.Set(types.GetUpdateIntervalKey(), bz)
 }

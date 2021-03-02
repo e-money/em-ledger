@@ -25,7 +25,7 @@ func TestSimple(t *testing.T) {
 		{"othergovtoken", []string{addr2.String()}},
 	}
 
-	rs := RestrictedDenoms(state)
+	rs := RestrictedDenoms{Denoms: state}
 
 	if ngm, found := rs.Find("ngm"); found {
 		require.True(t, ngm.IsAnyAllowed(addr1, addr2))

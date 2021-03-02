@@ -56,7 +56,7 @@ func (k Keeper) Instrument(c context.Context, req *types.QueryInstrumentRequest)
 
 	for it.Valid() {
 		order := new(types.Order)
-		k.cdc.Amino.MustUnmarshalBinaryBare(it.Value(), order)
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
 
 		orders = append(orders, types.QueryOrderResponse{
 			ID:              order.ID,

@@ -276,9 +276,9 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))
 	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
 
-	marketKeeper := market.NewKeeper(encConfig.Amino, keyMarket, keyIndices, ak, bk, mockAuthority{})
+	marketKeeper := market.NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{})
 
-	keeper := NewKeeper(encConfig.Amino, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
+	keeper := NewKeeper(encConfig.Marshaler, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
 	keeper.SetUpdateInterval(ctx, time.Hour)
 
 	// Deposit a working balance on the buyback module account.
@@ -340,5 +340,5 @@ func (mockStakingKeeper) BondDenom(sdk.Context) string {
 }
 
 func (mockAuthority) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
-	return nil
+	return types2.RestrictedDenoms{}
 }

@@ -29,7 +29,7 @@ const (
 type Keeper struct {
 	key        sdk.StoreKey
 	keyIndices sdk.StoreKey
-	cdc        *codec.LegacyAmino
+	cdc        codec.BinaryMarshaler
 	// instruments types.Instruments
 	ak         types.AccountKeeper
 	bk         types.BankKeeper
@@ -41,7 +41,7 @@ type Keeper struct {
 	restrictedDenoms types2.RestrictedDenoms
 }
 
-func NewKeeper(cdc *codec.LegacyAmino, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,
@@ -653,21 +653,18 @@ func (k Keeper) transferTradedAmounts(ctx sdk.Context, sourceFilled, destination
 }
 
 func (k Keeper) getNextOrderNumber(ctx sdk.Context) uint64 {
+	// todo (Alex) : add test
 	var orderID uint64
 	store := ctx.KVStore(k.key)
 	bz := store.Get(types.GetOrderIDGeneratorKey())
 	if bz == nil {
 		orderID = 0
 	} else {
-		err := k.cdc.UnmarshalBinaryLengthPrefixed(bz, &orderID)
-		if err != nil {
-			panic(err)
-		}
+		orderID = sdk.BigEndianToUint64(bz)
 	}
 
-	bz = k.cdc.MustMarshalBinaryLengthPrefixed(orderID + 1)
+	bz = sdk.Uint64ToBigEndian(orderID + 1)
 	store.Set(types.GetOrderIDGeneratorKey(), bz)
-
 	return orderID
 }
 
@@ -685,7 +682,7 @@ func (k Keeper) registerMarketData(ctx sdk.Context, src, dst string) {
 		Destination: dst,
 	}
 
-	bz := k.cdc.MustMarshalBinaryBare(md)
+	bz := k.cdc.MustMarshalBinaryBare(&md)
 	idxStore.Set(key, bz)
 }
 
@@ -697,6 +694,6 @@ func (k Keeper) setMarketData(ctx sdk.Context, src, dst string, price sdk.Dec) {
 	md := types.MarketData{Source: src, Destination: dst, LastPrice: &price, Timestamp: &timestamp}
 	key := types.GetMarketDataKey(src, dst)
 
-	bz := k.cdc.MustMarshalBinaryBare(md)
+	bz := k.cdc.MustMarshalBinaryBare(&md)
 	idxStore.Set(key, bz)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 type Keeper struct {
-	cdc           *codec.LegacyAmino
+	cdc           codec.BinaryMarshaler
 	storeKey      sdk.StoreKey
 	supplyKeeper  types.BankKeeper
 	stakingKeeper types.StakingKeeper
@@ -26,7 +26,7 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc *codec.LegacyAmino, key sdk.StoreKey, bankKeeper types.BankKeeper, accountKeeper types.AccountKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
+	cdc codec.BinaryMarshaler, key sdk.StoreKey, bankKeeper types.BankKeeper, accountKeeper types.AccountKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
 
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the inflation module account has not been set")
@@ -64,7 +64,7 @@ func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 
 func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(is)
+	b := k.cdc.MustMarshalBinaryLengthPrefixed(&is)
 	store.Set(types.MinterKey, b)
 }
 

@@ -175,11 +175,12 @@ func TestManageGasPrices1(t *testing.T) {
 }
 
 func TestManageGasPrices2(t *testing.T) {
-	ctx, keeper, _, gpk := createTestComponents(t)
+	encConfig := MakeTestEncodingConfig()
+	ctx, keeper, _, gpk := createTestComponentWithEncodingConfig(t, encConfig)
 
 	// Manually write gas prices to appstate, circumventing the keeper
 	setGasPrices := func(gp sdk.DecCoins) {
-		bz := types.ModuleCdc.LegacyAmino.MustMarshalBinaryLengthPrefixed(gp)
+		bz := encConfig.Marshaler.MustMarshalBinaryLengthPrefixed(&types.GasPrices{Minimum: gp})
 		store := ctx.KVStore(keeper.storeKey)
 		store.Set([]byte(keyGasPrices), bz)
 	}
@@ -243,7 +244,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
 		lpk = liquidityprovider.NewKeeper(ak, bk)
-		ik  = issuer.NewKeeper(keyIssuer, lpk, mockInflationKeeper{})
+		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{})
 	)
 
 	bk.SetSupply(ctx, banktypes.NewSupply(
@@ -253,7 +254,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		)))
 
 	gpk := new(mockGasPricesKeeper)
-	keeper := NewKeeper(authKey, ik, bk, gpk)
+	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk)
 
 	return ctx, keeper, ik, gpk
 }

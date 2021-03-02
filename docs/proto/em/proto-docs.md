@@ -5,7 +5,10 @@
 ## Table of Contents
 
 - [em/authority/v1beta1/authority.proto](#em/authority/v1beta1/authority.proto)
+    - [Authority](#em.authority.v1beta1.Authority)
+    - [GasPrices](#em.authority.v1beta1.GasPrices)
     - [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom)
+    - [RestrictedDenoms](#em.authority.v1beta1.RestrictedDenoms)
   
 - [em/authority/v1beta1/genesis.proto](#em/authority/v1beta1/genesis.proto)
     - [GenesisState](#em.authority.v1beta1.GenesisState)
@@ -50,6 +53,7 @@
   
 - [em/issuer/v1beta1/issuer.proto](#em/issuer/v1beta1/issuer.proto)
     - [Issuer](#em.issuer.v1beta1.Issuer)
+    - [Issuers](#em.issuer.v1beta1.Issuers)
   
 - [em/issuer/v1beta1/genesis.proto](#em/issuer/v1beta1/genesis.proto)
     - [GenesisState](#em.issuer.v1beta1.GenesisState)
@@ -142,6 +146,36 @@
 
 
 
+<a name="em.authority.v1beta1.Authority"></a>
+
+### Authority
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.authority.v1beta1.GasPrices"></a>
+
+### GasPrices
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `minimum` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
+
+
+
+
+
+
 <a name="em.authority.v1beta1.RestrictedDenom"></a>
 
 ### RestrictedDenom
@@ -152,6 +186,21 @@
 | ----- | ---- | ----- | ----------- |
 | `denom` | [string](#string) |  | todo (reviewer) : moved from /types/ todo (reviewer) : please note the lower case json/yaml attribute names now (convention) |
 | `allowed` | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="em.authority.v1beta1.RestrictedDenoms"></a>
+
+### RestrictedDenoms
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `denoms` | [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom) | repeated |  |
 
 
 
@@ -594,6 +643,21 @@
 
 
 
+
+<a name="em.issuer.v1beta1.Issuers"></a>
+
+### Issuers
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `issuers` | [Issuer](#em.issuer.v1beta1.Issuer) | repeated |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -680,7 +744,7 @@
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `issuers` | [QueryIssuersRequest](#em.issuer.v1beta1.QueryIssuersRequest) | [QueryIssuersResponse](#em.issuer.v1beta1.QueryIssuersResponse) |  | GET|/e-money/issuer/v1beta1/issuers|
+| `Issuers` | [QueryIssuersRequest](#em.issuer.v1beta1.QueryIssuersRequest) | [QueryIssuersResponse](#em.issuer.v1beta1.QueryIssuersResponse) |  | GET|/e-money/issuer/v1beta1/issuers|
 
  <!-- end services -->
 
