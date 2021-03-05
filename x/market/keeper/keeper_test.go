@@ -28,7 +28,7 @@ import (
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	emtypes "github.com/e-money/em-ledger/types"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
+	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
@@ -805,7 +805,7 @@ func TestRestrictedDenominations1(t *testing.T) {
 
 	// Restrict trading of gbp
 	k.authorityk = dummyAuthority{
-		RestrictedDenoms: types2.RestrictedDenoms{Denoms: []types2.RestrictedDenom{
+		RestrictedDenoms: emauthtypes.RestrictedDenoms{Denoms: []emauthtypes.RestrictedDenom{
 			{"gbp", []string{acc1.GetAddress().String()}},
 		}},
 	}
@@ -860,7 +860,7 @@ func TestRestrictedDenominations2(t *testing.T) {
 
 	// Restrict trading of gbp and usd
 	k.authorityk = dummyAuthority{
-		RestrictedDenoms: types2.RestrictedDenoms{Denoms: []types2.RestrictedDenom{
+		RestrictedDenoms: emauthtypes.RestrictedDenoms{Denoms: []emauthtypes.RestrictedDenom{
 			{"gbp", []string{}},
 			{"usd", []string{acc1.GetAddress().String()}},
 		}},
@@ -1169,8 +1169,8 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 			encConfig.Marshaler, keyBank, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
 
-		wrappedBank = embank.Wrap(bk, embank.RestrictedKeeperFunc(func(ctx sdk.Context) types2.RestrictedDenoms {
-			return types2.RestrictedDenoms{} // allow all
+		wrappedBank = embank.Wrap(bk, embank.RestrictedKeeperFunc(func(ctx sdk.Context) emauthtypes.RestrictedDenoms {
+			return emauthtypes.RestrictedDenoms{} // allow all
 		}))
 	)
 
@@ -1208,10 +1208,10 @@ func MakeTestEncodingConfig() simappparams.EncodingConfig {
 }
 
 type dummyAuthority struct {
-	RestrictedDenoms types2.RestrictedDenoms
+	RestrictedDenoms emauthtypes.RestrictedDenoms
 }
 
-func (da dummyAuthority) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
+func (da dummyAuthority) GetRestrictedDenoms(sdk.Context) emauthtypes.RestrictedDenoms {
 	return da.RestrictedDenoms
 }
 

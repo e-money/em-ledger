@@ -23,24 +23,20 @@ func TestQueryIssuers(t *testing.T) {
 	specs := map[string]struct {
 		req        *types.QueryIssuersRequest
 		expIssuers []types.Issuer
-		expErr     bool
 	}{
 		"all good": {
 			req:        &types.QueryIssuersRequest{},
 			expIssuers: myIssuers,
 		},
 		"nil param": {
-			expErr: true,
+			expIssuers: myIssuers,
 		},
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			gotRsp, gotErr := queryClient.Issuers(sdk.WrapSDKContext(ctx), spec.req)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
-			}
 			require.NoError(t, gotErr)
+			require.NotNil(t, gotRsp)
 			assert.Equal(t, spec.expIssuers, gotRsp.Issuers)
 		})
 	}

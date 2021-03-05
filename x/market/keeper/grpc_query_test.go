@@ -69,7 +69,6 @@ func TestInstruments(t *testing.T) {
 
 	specs := map[string]struct {
 		req      *types.QueryInstrumentsRequest
-		expErr   bool
 		expState []types.QueryInstrumentsResponse_Element
 	}{
 		"all good": {
@@ -80,17 +79,17 @@ func TestInstruments(t *testing.T) {
 			},
 		},
 		"nil param": {
-			expErr: true,
+			expState: []types.QueryInstrumentsResponse_Element{
+				{Source: "alx", Destination: "blx"},
+				{Source: "blx", Destination: "alx"},
+			},
 		},
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			gotRsp, gotErr := queryClient.Instruments(sdk.WrapSDKContext(ctx), spec.req)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
-			}
 			require.NoError(t, gotErr)
+			require.NotNil(t, gotRsp)
 			assert.Equal(t, spec.expState, gotRsp.Instruments)
 		})
 	}
