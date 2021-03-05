@@ -7,10 +7,15 @@ package types
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // generic sealed codec to be used throughout this module
 var ModuleCdc *codec.Codec
+
+func init() {
+	authtypes.RegisterAccountTypeCodec(&LiquidityProviderAccount{}, "e-money/LiquidityProviderAccount")
+}
 
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(&LiquidityProviderAccount{}, "e-money/LiquidityProviderAccount", nil)
