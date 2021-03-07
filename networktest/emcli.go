@@ -7,11 +7,13 @@ package networktest
 import (
 	"bytes"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/tidwall/gjson"
 )
@@ -178,6 +180,20 @@ func (cli Emcli) QueryValidators() (gjson.Result, error) {
 	return gjson.ParseBytes(bz), nil
 }
 
+func (cli Emcli) BEP3ListSwaps() (string, error) {
+	args := cli.addQueryFlags("query", "bep3", "swaps")
+	bz, err := execCmdAndCollectResponse(args)
+
+	return string(bz), err
+}
+
+func (cli Emcli) BEP3SupplyOf(denom string) (string, error) {
+	args := cli.addQueryFlags("query", "bep3", "supply", denom)
+	bz, err := execCmdAndCollectResponse(args)
+
+	return string(bz), err
+}
+
 func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "staking", "delegations", account)
 	return execCmdAndCollectResponse(args)
@@ -240,6 +256,31 @@ func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherChainSender, coins string) (string, string, string, error) {
+	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, "300", "--from", creator.name)
+	output, err := execCmdCollectOutput(args, KeyPwd)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	re := regexp.MustCompile("(?i)(Random number: (?P<randomnumber>\\w+)|Timestamp: (?P<timestamp>\\d+)|Random number hash: (?P<randomnumberhash>\\w+))")
+	groups := extractNamedGroups(output, re)
+
+	var (
+		randNumber     = groups["randomnumber"]
+		randNumberHash = groups["randomnumberhash"]
+		timestamp      = groups["timestamp"]
+	)
+
+	return randNumber, randNumberHash, timestamp, nil
+}
+
+func (cli Emcli) BEP3Claim(claimant Key, swapId, secret string) (string, error) {
+	args := cli.addTransactionFlags("tx", "bep3", "claim", swapId, secret, "--from", claimant.name)
+
+	return execCmdCollectOutput(args, KeyPwd)
+}
+
 func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	json := gjson.ParseBytes(bz)
 
@@ -269,8 +310,8 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 		return "", err
 	}
 
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
-	//bz, err := cmd.CombinedOutput()
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// bz, err := cmd.CombinedOutput()
 	var b bytes.Buffer
 	cmd.Stderr = &b
 
@@ -295,9 +336,9 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 		return "", false, err
 	}
 
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
-	//fmt.Println(" *** CombinedOutput", string(bz))
+	// fmt.Println(" *** CombinedOutput", string(bz))
 	if err != nil {
 		return "", false, err
 	}
@@ -308,7 +349,7 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
 	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
-	//fmt.Println(" *** Output: ", string(bz))
+	// fmt.Println(" *** Output: ", string(bz))
 	return bz, err
 }
 
@@ -333,4 +374,21 @@ func (cli Emcli) addNetworkFlags(arguments []string) []string {
 		"--node", cli.node,
 		"--chain-id", cli.chainid,
 	)
+}
+
+func extractNamedGroups(input string, re *regexp.Regexp) map[string]string {
+	groupNames := re.SubexpNames()
+	result := make(map[string]string)
+
+	for _, match := range re.FindAllStringSubmatch(input, -1) {
+		for groupIdx, group := range match {
+			if groupNames[groupIdx] == "" || len(group) == 0 {
+				continue
+			}
+
+			result[groupNames[groupIdx]] = group
+		}
+	}
+
+	return result
 }

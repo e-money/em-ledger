@@ -46,11 +46,11 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
-install:
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
-
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+
+install:
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
 
 build-linux:
 	# Linux images for docker-compose
