@@ -21,7 +21,6 @@ func TestQueryInflation(t *testing.T) {
 
 	specs := map[string]struct {
 		req      *types.QueryInflationRequest
-		expErr   bool
 		expState types.InflationState
 	}{
 		"all good": {
@@ -29,17 +28,14 @@ func TestQueryInflation(t *testing.T) {
 			expState: myState,
 		},
 		"nil param": {
-			expErr: true,
+			expState: myState,
 		},
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			gotRsp, gotErr := queryClient.Inflation(sdk.WrapSDKContext(input.ctx), spec.req)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
-			}
 			require.NoError(t, gotErr)
+			require.NotNil(t, gotRsp)
 			assert.Equal(t, spec.expState, gotRsp.State)
 		})
 	}

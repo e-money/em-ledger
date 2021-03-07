@@ -33,7 +33,6 @@ func TestQueryBalance(t *testing.T) {
 
 	specs := map[string]struct {
 		req        *types.QueryBalanceRequest
-		expErr     bool
 		expBalance sdk.Coins
 	}{
 		"all good": {
@@ -41,17 +40,14 @@ func TestQueryBalance(t *testing.T) {
 			expBalance: myBalance,
 		},
 		"nil param": {
-			expErr: true,
+			expBalance: myBalance,
 		},
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			gotRsp, gotErr := queryClient.Balance(sdk.WrapSDKContext(ctx), spec.req)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
-			}
 			require.NoError(t, gotErr)
+			require.NotNil(t, gotRsp)
 			assert.Equal(t, spec.expBalance, gotRsp.Balance)
 			assert.Equal(t, myModuleAddress, bankMock.lastRecordedReqAddr)
 		})

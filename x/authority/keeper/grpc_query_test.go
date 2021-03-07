@@ -24,24 +24,18 @@ func TestQueryGasPrices(t *testing.T) {
 	queryClient := types.NewQueryClient(queryHelper)
 
 	specs := map[string]struct {
-		req    *types.QueryGasPricesRequest
-		expErr bool
+		req *types.QueryGasPricesRequest
 	}{
 		"all good": {
 			req: &types.QueryGasPricesRequest{},
 		},
-		"nil param": {
-			expErr: true,
-		},
+		"nil param": {},
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			gotRsp, gotErr := queryClient.GasPrices(sdk.WrapSDKContext(ctx), spec.req)
-			if spec.expErr {
-				require.Error(t, gotErr)
-				return
-			}
 			require.NoError(t, gotErr)
+			require.NotNil(t, gotRsp)
 			assert.Equal(t, myGasPrices, gotRsp.MinGasPrices)
 		})
 	}

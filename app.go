@@ -482,7 +482,7 @@ func (app *EMoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 		panic(s)
 	}
 
-	app.currentBatch = app.database.NewBatch()
+	app.currentBatch = app.database.NewBatch() // store in app state as ctx is different in end block
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	ctx = apptypes.WithCurrentBatch(ctx, app.currentBatch)
 

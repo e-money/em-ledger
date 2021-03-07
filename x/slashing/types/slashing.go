@@ -7,7 +7,7 @@ func (a *Penalties) Empty() bool {
 }
 
 func (a *Penalties) Add(validator string, amounts types.Coins) {
-	// todo (reviewer) : merge with duplicates
+	// todo (reviewer) : merge with duplicate denominator
 	for i := range a.Elements {
 		if a.Elements[i].Validator == validator {
 			a.Elements[i].Amounts = a.Elements[i].Amounts.Add(amounts...)
