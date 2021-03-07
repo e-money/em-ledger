@@ -12,11 +12,16 @@ import (
 )
 
 var _ auth.Account = LiquidityProviderAccount{}
+var _ auth.GenesisAccount = LiquidityProviderAccount{}
 
 type LiquidityProviderAccount struct {
 	auth.Account
 
 	Mintable sdk.Coins `json:"mintable" yaml:"mintable"`
+}
+
+func (acc LiquidityProviderAccount) Validate() error {
+	return acc.Validate()
 }
 
 func NewLiquidityProviderAccount(baseAccount auth.Account, mintable sdk.Coins) *LiquidityProviderAccount {
