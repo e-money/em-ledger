@@ -2,7 +2,7 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
-// +build bdd */
+// +build bdd
 
 package emoney_test
 

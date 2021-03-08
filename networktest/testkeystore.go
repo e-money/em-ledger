@@ -27,9 +27,13 @@ type (
 		keybase keyring.Keyring
 
 		Authority,
+		DeputyKey,
 		Key1,
 		Key2,
-		Key3 Key
+		Key3,
+		Key4,
+		Key5,
+		Key6 Key
 
 		MultiKey Key
 
@@ -116,9 +120,13 @@ func NewKeystore() (*KeyStore, error) {
 		keybase:   keybase,
 		path:      path,
 		Authority: newKey("authoritykey", keybase),
+		DeputyKey: newKey("deputykey", keybase),
 		Key1:      newKey("key1", keybase),
 		Key2:      newKey("key2", keybase),
 		Key3:      newKey("key3", keybase),
+		Key4:      newKey("key4", keybase),
+		Key5:      newKey("key5", keybase),
+		Key6:      newKey("key6", keybase),
 		MultiKey:  newKey("multikey", keybase),
 		Validators: []Key{
 			newKey("validator0", keybase),
