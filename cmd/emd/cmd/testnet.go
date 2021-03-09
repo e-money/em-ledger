@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
 	bep3 "github.com/e-money/bep3/module"
 	"math/rand"
 	"net"
@@ -13,7 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	bep3types "github.com/e-money/bep3/module/types"
@@ -521,11 +521,11 @@ func createTestBep3Genesis() json.RawMessage {
 		gen.Params.AssetParams[idx] =
 			bep3types.AssetParam{
 				Denom:  denom,
-				CoinID: idx + 1,
+				CoinID: int64(idx) + 1,
 				SupplyLimit: bep3types.SupplyLimit{
 					Limit:          limit,
 					TimeLimited:    false,
-					TimePeriod:     time.Hour * 24,
+					TimePeriod:     int64(time.Hour*24),
 					TimeBasedLimit: sdk.ZeroInt(),
 				},
 				Active:        true,
@@ -534,16 +534,14 @@ func createTestBep3Genesis() json.RawMessage {
 				MinSwapAmount: sdk.OneInt(),
 				MaxSwapAmount: limit,
 				SwapTimestamp: time.Now().Unix(),
-				SwapTimeSpan:  60 * 60 * 24 * 3, // 3 days
+				SwapTimeSpan:  24*3*3600, // 3 days
 			}
 	}
 
-	js, err := json.Marshal(gen)
-	if err != nil {
-		panic(err)
-	}
+	cdc := codec.NewAminoCodec(codec.NewLegacyAmino())
+	bep3Js := cdc.MustMarshalJSON(gen)
 
-	return js
+	return bep3Js
 }
 
 func getBep3Coins() ([]string, sdk.Coins) {
