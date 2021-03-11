@@ -273,7 +273,7 @@ func NewApp(
 	)
 
 	app.bankKeeper = embank.Wrap(bankkeeper.NewBaseKeeper(
-		appCodec, keys[banktypes.StoreKey], app.accountKeeper, app.GetSubspace(banktypes.ModuleName), app.BlockedAddrs(),
+		appCodec, keys[banktypes.StoreKey], app.accountKeeper, app.GetSubspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
 	), &app.authorityKeeper)
 
 	stakingKeeper := stakingkeeper.NewKeeper(
@@ -510,17 +510,6 @@ func (app *EMoneyApp) ModuleAccountAddrs() map[string]bool {
 	}
 
 	return modAccAddrs
-}
-
-// BlockedAddrs returns all the app's module account addresses that are not
-// allowed to receive external tokens.
-func (app *EMoneyApp) BlockedAddrs() map[string]bool {
-	blockedAddrs := make(map[string]bool)
-	for acc := range maccPerms {
-		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = !allowedReceivingModAcc[acc]
-	}
-
-	return blockedAddrs
 }
 
 // AppCodec returns SimApp's app codec.
