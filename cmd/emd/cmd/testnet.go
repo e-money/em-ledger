@@ -503,7 +503,7 @@ func createTestBep3Genesis() json.RawMessage {
 	bep3Denoms, bep3Coins := getBep3Coins()
 	gen := bep3types.DefaultGenesisState()
 	gen.Params.AssetParams = make([]bep3types.AssetParam, len(bep3Denoms))
-	gen.Supplies = make([]bep3types.AssetSupply, len(bep3Denoms))
+	gen.Supplies.AssetSupplies = make([]bep3types.AssetSupply, len(bep3Denoms))
 
 	// Deterministic randomizer
 	r := rand.New(rand.NewSource(1))
@@ -511,7 +511,7 @@ func createTestBep3Genesis() json.RawMessage {
 	for idx, denom := range bep3Denoms {
 		bep3Coins[idx] = sdk.NewCoin(denom, limit)
 
-		gen.Supplies[idx] = bep3types.AssetSupply{
+		gen.Supplies.AssetSupplies[idx] = bep3types.AssetSupply{
 			IncomingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
 			OutgoingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
 			CurrentSupply:            sdk.NewCoin(denom, limit),
