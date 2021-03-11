@@ -29,7 +29,13 @@ var _ = Describe("BEP3 Swap", func() {
 
 	var swapSecret, swapId string
 
-	It("creates a new testnet", createNewTestnet)
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			fmt.Printf("Failed test in %s\n", CurrentGinkgoTestDescription().TestText)
+			fmt.Printf("Failed test: %s\n", CurrentGinkgoTestDescription().ComponentTexts)
+			fmt.Printf("Failed line: %d\n", CurrentGinkgoTestDescription().LineNumber)
+		}
+	})
 
 	It("Creates a new swap", func() {
 		time.Sleep(5 * time.Second)
