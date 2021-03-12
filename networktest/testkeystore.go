@@ -18,8 +18,21 @@ import (
 	"strings"
 )
 
-const KeyPwd = "pwd12345"
-const Bip39Pwd = ""
+const (
+	KeyPwd           = "pwd12345"
+	Bip39Pwd         = ""
+	DeputyKey        = "deputykey"
+	AuthKey          = "authoritykey"
+	Key1             = "key1"
+	Key2             = "key2"
+	Key3             = "key3"
+	Key4             = "key4"
+	Key5             = "key5"
+	Key6             = "key6"
+	MultiKey         = "multikey"
+	LocalNetReuse    = "localnet_reuse"
+	startForReUseEnv = "REUSE"
+)
 
 type (
 	KeyStore struct {
@@ -115,19 +128,18 @@ func NewKeystore() (*KeyStore, error) {
 
 	initializeKeystore(keybase)
 
-	// TODO This looks kind of horrible. Refactor to something prettier
 	ks := &KeyStore{
 		keybase:   keybase,
 		path:      path,
-		Authority: newKey("authoritykey", keybase),
-		DeputyKey: newKey("deputykey", keybase),
-		Key1:      newKey("key1", keybase),
-		Key2:      newKey("key2", keybase),
-		Key3:      newKey("key3", keybase),
-		Key4:      newKey("key4", keybase),
-		Key5:      newKey("key5", keybase),
-		Key6:      newKey("key6", keybase),
-		MultiKey:  newKey("multikey", keybase),
+		Authority: newKey(AuthKey, keybase),
+		DeputyKey: newKey(DeputyKey, keybase),
+		Key1:      newKey(Key1, keybase),
+		Key2:      newKey(Key2, keybase),
+		Key3:      newKey(Key3, keybase),
+		Key4:      newKey(Key4, keybase),
+		Key5:      newKey(Key5, keybase),
+		Key6:      newKey(Key6, keybase),
+		MultiKey:  newKey(MultiKey, keybase),
 		Validators: []Key{
 			newKey("validator0", keybase),
 			newKey("validator1", keybase),
@@ -201,11 +213,11 @@ func initializeKeystore(kb keyring.Keyring) {
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Printf("Created account %s from mnemonic: %s\n", ac1.GetAddress(), mnemonic1)
+	fmt.Printf("Created auth account %s from mnemonic: %s\n", ac1.GetAddress(), mnemonic1)
 
 	const mnemonic2 = "document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil"
 	ac2, _ := kb.NewAccount("key1", mnemonic2, "", keyDerivationPath, hd.Secp256k1)
-	fmt.Printf("Created account %s from mnemonic: %s\n", ac2.GetAddress(), mnemonic2)
+	fmt.Printf("Created key1 account %s from mnemonic: %s\n", ac2.GetAddress(), mnemonic2)
 
 	const mnemonic3 = "treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich"
 	ac3, _ := kb.NewAccount("key2", mnemonic3, "", keyDerivationPath, hd.Secp256k1)
