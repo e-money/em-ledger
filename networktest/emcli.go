@@ -7,13 +7,12 @@ package networktest
 import (
 	"bytes"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/tidwall/gjson"
 )
@@ -115,6 +114,25 @@ func (cli Emcli) QueryBalance(account string) (balance int, err error) {
 	queryresponse := gjson.ParseBytes(bz)
 
 	v := queryresponse.Get(QGetBalanceEUR)
+	if v.Exists() {
+		balance, _ = strconv.Atoi(v.Str)
+	}
+
+	return
+}
+
+// QueryBalanceDenom retrieve Balance by Denom
+func (cli Emcli) QueryBalanceDenom(account, denom string) (balance int, err error) {
+	args := cli.addQueryFlags("query", "bank", "balances", account)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, err
+	}
+
+	queryresponse := gjson.ParseBytes(bz)
+
+	denomQ := fmt.Sprintf(`balances.#(denom=="%s").amount`, denom)
+	v := queryresponse.Get(denomQ)
 	if v.Exists() {
 		balance, _ = strconv.Atoi(v.Str)
 	}
