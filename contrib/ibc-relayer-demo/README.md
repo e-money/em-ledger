@@ -69,7 +69,7 @@ rly tx relay demo --debug
 * Link `demo` as above
 * Start relayer to listen for messages
 ```shell 
-rly start demo-path --max-msgs 3
+rly start demo --max-msgs 3
 ```
 
 * Find channel
@@ -80,5 +80,5 @@ emd q ibc channel channels
 * Send coins in a different window
 ```shell
 DEST=$(rly chains address ibc-1)
-emd tx ibc-transfer transfer transfer channel-0 $DEST 5samoleans --keyring-backend=file --keyring-dir=./data/ibc-0/keyring --from fred
+emd tx ibc-transfer transfer transfer channel-0 $DEST 5samoleans --keyring-backend=file --keyring-dir=./data/ibc-0/keyring --from fred --chain-id=ibc-0
 ```
