@@ -1,0 +1,77 @@
+#!/bin/bash
+# two-chainz creates two emd chains and configures the relayer to 
+
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+EM_DATA="$(pwd)/data"
+RELAYER_DIR="$(dirname $SCRIPTDIR)"
+RELAYER_CONF="$HOME/.relayer"
+
+# Ensure emd is installed
+if ! [ -x "$(which emd)" ]; then
+  echo "Error: emd is not installed. Try running 'make build'" >&2
+  exit 1
+fi
+
+# Display software version for testers
+echo "EMD VERSION INFO:"
+emd version --long
+
+# Ensure jq is installed
+if [[ ! -x "$(which jq)" ]]; then
+  echo "jq (a tool for parsing json in the command line) is required..."
+  echo "https://stedolan.github.io/jq/download/"
+  exit 1
+fi
+
+# Ensure user understands what will be deleted
+if [[ -d $EM_DATA ]] && [[ ! "$1" == "skip" ]]; then
+  read -p "$(basename $0) will delete \$(pwd)/data and \$HOME/.relayer folders. Do you wish to continue? (y/n): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      exit 1
+  fi
+fi
+
+# Delete data from old runs
+rm -rf $EM_DATA &> /dev/null
+rm -rf $RELAYER_CONF &> /dev/null
+
+# Stop existing emd processes
+killall emd &> /dev/null
+
+set -e
+
+chainid0=ibc-0
+chainid1=ibc-1
+
+echo "Generating EM configurations..."
+mkdir -p $EM_DATA && cd $EM_DATA && cd ../
+"$SCRIPTDIR/one-chain" emd $chainid0 ./data 26657 26656 6060 9090
+"$SCRIPTDIR/one-chain" emd $chainid1 ./data 26557 26556 6061 9091
+
+[ -f $EM_DATA/$chainid0.log ] && echo "$chainid0 initialized. Watch file $EM_DATA/$chainid0.log to see its execution."
+[ -f $EM_DATA/$chainid1.log ] && echo "$chainid1 initialized. Watch file $EM_DATA/$chainid1.log to see its execution."
+
+cd $RELAYER_DIR
+
+# Ensure relayer is installed
+if ! [ -x "$(which rly)" ]; then
+  echo "Error: relayer is not installed. Try running 'make build-em'" >&2
+  exit 1
+fi
+
+echo "Generating rly configurations..."
+rly config init
+rly config add-chains "$SCRIPTDIR/configs/demo/chains"
+
+SEED0=$(jq -r '.mnemonic' $EM_DATA/ibc-0/key_seed.json)
+SEED1=$(jq -r '.mnemonic' $EM_DATA/ibc-1/key_seed.json)
+echo "Key $(rly keys restore ibc-0 testkey "$SEED0") imported from ibc-0 to relayer..."
+echo "Key $(rly keys restore ibc-1 testkey "$SEED1") imported from ibc-1 to relayer..."
+
+rly config add-paths "$SCRIPTDIR/configs/demo/paths"
+
+echo "Creating light clients..."
+sleep 3
+rly light init ibc-0 -f
+rly light init ibc-1 -f
