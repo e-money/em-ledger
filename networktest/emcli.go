@@ -275,7 +275,7 @@ func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
 }
 
 func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherChainSender, coins string) (string, string, string, error) {
-	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, "300", "--from", creator.name)
+	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, "60", "--from", creator.name)
 	output, err := execCmdCollectOutput(args, KeyPwd)
 	if err != nil {
 		return "", "", "", err
