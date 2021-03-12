@@ -115,13 +115,45 @@ func (k Key) Sign(bz []byte) ([]byte, error) {
 	return signed, err
 }
 
-func NewKeystore() (*KeyStore, error) {
-	path, err := ioutil.TempDir("", "")
-	if err != nil {
-		return nil, err
+// NewKeystore creates a keystore considering reusableLocation as the fixed
+// location and reusableIsUp on whether to persist the keystore on disk.
+func NewKeystore(reusableLocation, reusableIsUp bool) (*KeyStore, error) {
+	var (
+		path string
+		err error
+	)
+
+	// random tmp path
+	if !reusableIsUp && !reusableLocation {
+		path, err = ioutil.TempDir("", "")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		path = "/tmp/" + LocalNetReuse
 	}
 
-	keybase, err := keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, path, nil)
+	// persist keystore at fixed location.
+	if !reusableIsUp && reusableLocation {
+		if err := os.RemoveAll(path); err != nil {
+			panic(err)
+		}
+		if err := os.Mkdir(path, 0700); err != nil {
+			panic(err)
+		}
+	}
+
+	var keybase keyring.Keyring
+	if !reusableIsUp {
+		keybase, err = keyring.New(
+			sdk.KeyringServiceName(), keyring.BackendTest, path, nil,
+		)
+	} else {
+		// in memory, do not rewrite running setup
+		keybase, err = keyring.New(
+			sdk.KeyringServiceName(), keyring.BackendMemory, path, nil,
+		)
+	}
 	if err != nil {
 		return nil, err
 	}

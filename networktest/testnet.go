@@ -9,6 +9,7 @@ package networktest
 import (
 	"bufio"
 	"fmt"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/sjson"
 )
 
@@ -60,13 +60,20 @@ func locateExecutable(name string) (path string) {
 	return
 }
 
+// NewTestnet launches a new testnet with random or fixed location and chain id
+// or syncs with an existing one with chain ID: LocalNetReuse
 func NewTestnet() Testnet {
-	ks, err := NewKeystore()
+	reusableIsUp := reusableNetUp()
+	launchReusable := os.Getenv(startForReUseEnv) == "1"
+	ks, err := NewKeystore(launchReusable, reusableIsUp)
 	if err != nil {
 		panic(err)
 	}
 
-	chainID := fmt.Sprintf("localnet-%s", tmrand.Str(6))
+	chainID := LocalNetReuse
+	if !launchReusable && !reusableIsUp {
+		chainID = fmt.Sprintf("localnet-%s", tmrand.Str(6))
+	}
 
 	return Testnet{
 		Keystore: ks,
@@ -75,6 +82,10 @@ func NewTestnet() Testnet {
 }
 
 func (t *Testnet) Setup() error {
+	if reusableNetUp() {
+		return nil
+	}
+
 	err := compileBinaries()
 	if err != nil {
 		return err
@@ -111,6 +122,9 @@ func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (
 }
 
 func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
+	if reusableNetUp() {
+		return func()bool { return true }, nil
+	}
 	err := dockerComposeDown()
 	if err != nil {
 		return nil, err
@@ -137,6 +151,9 @@ func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, erro
 }
 
 func (t Testnet) Teardown() error {
+	if reusableNetUp() {
+		return nil
+	}
 	return dockerComposeDown()
 }
 
@@ -166,7 +183,13 @@ func (t Testnet) ChainID() string {
 
 func (t Testnet) makeTestnet() error {
 	numNodes := 4
-	_, err := execCmdAndWait(EMD,
+
+	if reusableNetUp() {
+		return nil
+	}
+
+	_, err := execCmdAndWait(
+		EMD,
 		"testnet",
 		t.Keystore.Authority.name,
 		"--chain-id", t.chainID,
@@ -186,6 +209,19 @@ func (t Testnet) makeTestnet() error {
 	t.Keystore.addDeputyKey()
 
 	return nil
+}
+
+func reusableNetUp() bool {
+	status, err := exec.Command(EMCLI, "status").CombinedOutput()
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(string(status), LocalNetReuse) {
+		return true
+	}
+
+	return false
 }
 
 func (t *Testnet) updateGenesis() {
@@ -240,7 +276,6 @@ func compileBinaries() error {
 }
 
 func dockerComposeUp() (func() bool, error) {
-	// todo (reviewer): new zap logger produces different and coloured output
 	wait, scanner := createOutputScanner("committed state", 30*time.Second)
 	return wait, execCmdAndRun(dockerComposePath, []string{"up", "--no-color"}, scanner)
 }
