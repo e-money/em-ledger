@@ -18,6 +18,11 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+const (
+	trxAmount = 5
+	denom 	  = "ungm"
+)
+
 var _ = Describe("BEP3 Swap", func() {
 	var (
 		emcli = testnet.NewEmcli()
@@ -41,7 +46,11 @@ var _ = Describe("BEP3 Swap", func() {
 		time.Sleep(5 * time.Second)
 
 		// key1 has sent 5000ungm to key2 on another chain. The deputy creates the swap on the e-money chain.
-		secretNumber, randomNumberHash, _, err := emcli.BEP3Create(deputy, key1.GetAddress(), "0xotherchainrecipient", "0xotherchainsender", "5000ungm")
+		secretNumber, randomNumberHash, _, err := emcli.BEP3Create(
+			deputy, key1.GetAddress(),
+			"0xotherchainrecipient",
+			"0xotherchainsender",
+			fmt.Sprintf("%d%s", trxAmount, denom))
 		swapSecret = secretNumber
 
 		Expect(err).ToNot(HaveOccurred())
@@ -50,7 +59,7 @@ var _ = Describe("BEP3 Swap", func() {
 		fmt.Println(" --- List swaps output\n", list)
 		Expect(err).ToNot(HaveOccurred())
 
-		swapList := gjson.Parse(list)
+		swapList := gjson.Parse(list).Get("swaps.augmented_atomic_swaps")
 		Expect(swapList.IsArray()).To(BeTrue())
 		Expect(swapList.Array()).To(HaveLen(1))
 
@@ -78,11 +87,10 @@ var _ = Describe("BEP3 Swap", func() {
 		// Check state before claiming swap
 		totalSupply, err := emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())
-		ungmSupplyBefore := gjson.ParseBytes(totalSupply).Get("#(denom==\"ungm\").amount").Int()
+		ungmSupplyBefore := gjson.ParseBytes(totalSupply).Get(`supply.#(denom=="ungm").amount`).Int()
 
-		accountBalance, err := emcli.QueryAccountJson(key1.GetAddress())
+		ungmBalanceBefore, err := emcli.QueryBalanceDenom(key1.GetAddress(), denom)
 		Expect(err).ToNot(HaveOccurred())
-		ungmBalanceBefore := gjson.ParseBytes(accountBalance).Get("value.coins.#(denom==\"ungm\").amount").Int()
 
 		// Claim swap
 		_, err = emcli.BEP3Claim(key2, swapId, swapSecret)
@@ -92,21 +100,22 @@ var _ = Describe("BEP3 Swap", func() {
 
 		totalSupply, err = emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())
-		ungmSupplyAfter := gjson.ParseBytes(totalSupply).Get("#(denom==\"ungm\").amount").Int()
-		Expect(ungmSupplyAfter).To(Equal(ungmSupplyBefore + 5000))
+		ungmSupplyAfter := gjson.ParseBytes(totalSupply).Get(`supply.#(denom=="ungm").amount`).Int()
+		Expect(ungmSupplyAfter).To(Equal(ungmSupplyBefore + trxAmount))
 
-		accountBalance, err = emcli.QueryAccountJson(key1.GetAddress())
+		ungmBalanceAfter, err := emcli.QueryBalanceDenom(key1.GetAddress(), denom)
 		Expect(err).ToNot(HaveOccurred())
-		ungmBalanceAfter := gjson.ParseBytes(accountBalance).Get("value.coins.#(denom==\"ungm\").amount").Int()
 
-		Expect(ungmBalanceAfter).To(Equal(ungmBalanceBefore + 5000))
+		Expect(ungmBalanceAfter).To(Equal(ungmBalanceBefore + trxAmount))
 	})
 
 	It("Allows a swap to expire", func() {
-		const swapStatusQuery = "#(sender_other_chain==\"0x001\").status"
-		const swapIdQuery = "#(sender_other_chain==\"0x001\").id"
+		const swapStatusQuery = "swaps.augmented_atomic_swaps.#(sender_other_chain==\"0x001\").status"
+		const swapIdQuery = "swaps.augmented_atomic_swaps.#(sender_other_chain==\"0x001\").id"
 
-		secretNumber, _, _, err := emcli.BEP3Create(deputy, key1.GetAddress(), "0x002", "0x001", "1000ungm")
+		secretNumber, _, _, err := emcli.BEP3Create(deputy,
+			key1.GetAddress(), "0x002", "0x001",
+			fmt.Sprintf("%d%s",trxAmount,denom))
 		Expect(err).ToNot(HaveOccurred())
 
 		list, _ := emcli.BEP3ListSwaps()
@@ -114,7 +123,7 @@ var _ = Describe("BEP3 Swap", func() {
 		id := gjson.Parse(list).Get(swapIdQuery).Str
 		Expect(gjson.Parse(list).Get(swapStatusQuery).Str).To(Equal("Open"))
 
-		time.Sleep(6 * time.Second) // Swap expires after 5 seconds
+		time.Sleep(61 * time.Second) // Swap expires after 60 seconds
 
 		// Verify state
 		list, _ = emcli.BEP3ListSwaps()
