@@ -490,6 +490,7 @@ func getDeputyAccount() keyring.Info {
 	if err != nil {
 		panic(err)
 	}
+	// emoney1lagqmceycrfpkyu7y6ayrk6jyvru5mkrezacpw
 	fmt.Printf("deputy address: %s\n", deputyAccount.GetAddress().String())
 
 	return deputyAccount
@@ -514,7 +515,7 @@ func createTestBep3Genesis() json.RawMessage {
 		gen.Supplies.AssetSupplies[idx] = bep3types.AssetSupply{
 			IncomingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
 			OutgoingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
-			CurrentSupply:            sdk.NewCoin(denom, limit),
+			CurrentSupply:            sdk.NewCoin(denom, limit.QuoRaw(2)),
 			TimeLimitedCurrentSupply: sdk.NewCoin(denom, sdk.ZeroInt()),
 			TimeElapsed:              0,
 		}
