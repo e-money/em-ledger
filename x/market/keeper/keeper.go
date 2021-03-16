@@ -279,10 +279,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, stepSourceFilled.RoundInt())
 			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
 			if err != nil {
-				panic(err)
+				fmt.Println(nextDestinationFilledCoin, nextSourceFilledCoin)
+			} else {
+				types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
 			}
-
-			types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
 
 			if passiveOrder.IsFilled() {
 				k.deleteOrder(ctx, passiveOrder)
