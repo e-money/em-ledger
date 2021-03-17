@@ -12,20 +12,20 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-var _ codec.JSONMarshaler = (*JsonMarshaller)(nil)
+var _ codec.JSONMarshaler = (*ProtoJsonMarshaller)(nil)
 
-// JsonMarshaller that omits empty values
-type JsonMarshaller struct {
+// ProtoJsonMarshaller that omits empty values
+type ProtoJsonMarshaller struct {
 	interfaceRegistry types.InterfaceRegistry
 }
 
-func NewMarshaller(ctx client.Context) *JsonMarshaller {
-	return &JsonMarshaller{interfaceRegistry: ctx.InterfaceRegistry}
+func NewMarshaller(ctx client.Context) *ProtoJsonMarshaller {
+	return &ProtoJsonMarshaller{interfaceRegistry: ctx.InterfaceRegistry}
 }
 
 // MarshalJSON implements JSONMarshaler.MarshalJSON method,
 // it marshals to JSON using proto codec.
-func (pc *JsonMarshaller) MarshalJSON(o proto.Message) ([]byte, error) {
+func (pc *ProtoJsonMarshaller) MarshalJSON(o proto.Message) ([]byte, error) {
 	m, ok := o.(codec.ProtoMarshaler)
 	if !ok {
 		return nil, fmt.Errorf("cannot protobuf JSON encode unsupported type: %T", o)
@@ -36,7 +36,7 @@ func (pc *JsonMarshaller) MarshalJSON(o proto.Message) ([]byte, error) {
 
 // MustMarshalJSON implements JSONMarshaler.MustMarshalJSON method,
 // it executes MarshalJSON except it panics upon failure.
-func (pc *JsonMarshaller) MustMarshalJSON(o proto.Message) []byte {
+func (pc *ProtoJsonMarshaller) MustMarshalJSON(o proto.Message) []byte {
 	bz, err := pc.MarshalJSON(o)
 	if err != nil {
 		panic(err)
@@ -45,19 +45,19 @@ func (pc *JsonMarshaller) MustMarshalJSON(o proto.Message) []byte {
 	return bz
 }
 
-func (j JsonMarshaller) MarshalInterfaceJSON(i proto.Message) ([]byte, error) {
+func (j ProtoJsonMarshaller) MarshalInterfaceJSON(i proto.Message) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (j JsonMarshaller) UnmarshalInterfaceJSON(bz []byte, ptr interface{}) error {
+func (j ProtoJsonMarshaller) UnmarshalInterfaceJSON(bz []byte, ptr interface{}) error {
 	panic("not implemented")
 }
 
-func (j JsonMarshaller) UnmarshalJSON(bz []byte, ptr proto.Message) error {
+func (j ProtoJsonMarshaller) UnmarshalJSON(bz []byte, ptr proto.Message) error {
 	panic("not implemented")
 }
 
-func (j JsonMarshaller) MustUnmarshalJSON(bz []byte, ptr proto.Message) {
+func (j ProtoJsonMarshaller) MustUnmarshalJSON(bz []byte, ptr proto.Message) {
 	panic("not implemented")
 }
 
@@ -65,6 +65,7 @@ func (j JsonMarshaller) MustUnmarshalJSON(bz []byte, ptr proto.Message) {
 // bytes of a message.
 func ProtoMarshalJSON(msg proto.Message, resolver jsonpb.AnyResolver) ([]byte, error) {
 	// copied from sdk with EmitDefaults: false
+	// Prints json without empty fields. This reduces the noise and is closer to the previous impl
 
 	// We use the OrigName because camel casing fields just doesn't make sense.
 	// EmitDefaults is also often the more expected behavior for CLI users
