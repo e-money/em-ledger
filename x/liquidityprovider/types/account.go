@@ -15,6 +15,7 @@ import (
 )
 
 var _ auth.AccountI = &LiquidityProviderAccount{}
+var _ auth.GenesisAccount = &LiquidityProviderAccount{}
 
 func NewLiquidityProviderAccount(account auth.AccountI, mintable sdk.Coins) (*LiquidityProviderAccount, error) {
 	msg, ok := account.(proto.Message)
@@ -29,6 +30,19 @@ func NewLiquidityProviderAccount(account auth.AccountI, mintable sdk.Coins) (*Li
 		Account:  any,
 		Mintable: mintable,
 	}, nil
+}
+
+func (acc LiquidityProviderAccount) Validate() error {
+	if err := acc.Mintable.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "mintable")
+	}
+	type validatable interface {
+		Validate() error
+	}
+	if a, ok := acc.GetNestedAccount().(validatable); ok {
+		return a.Validate()
+	}
+	return nil
 }
 
 func (acc *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
