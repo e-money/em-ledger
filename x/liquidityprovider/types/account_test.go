@@ -81,3 +81,47 @@ func TestMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, src, &dest)
 	assert.Equal(t, myAddr, dest.GetAddress())
 }
+func TestValidate(t *testing.T) {
+	var (
+		randomAddress sdk.AccAddress = rand.Bytes(sdk.AddrLen)
+		randomPubKey                 = ed25519.GenPrivKey().PubKey()
+	)
+
+	specs := map[string]struct {
+		srcAccount  authtypes.AccountI
+		srcMintable sdk.Coins
+		expErr      bool
+	}{
+		"all good": {
+			srcAccount:  authtypes.NewBaseAccountWithAddress(randomAddress),
+			srcMintable: sdk.Coins{sdk.NewCoin("foo", sdk.OneInt())},
+		},
+		"empty coins allowed": {
+			srcAccount:  authtypes.NewBaseAccountWithAddress(randomAddress),
+			srcMintable: sdk.Coins{},
+		},
+		"invalid coin rejected": {
+			srcAccount:  authtypes.NewBaseAccountWithAddress(randomAddress),
+			srcMintable: sdk.Coins{sdk.Coin{Denom: "invalid@#$^", Amount: sdk.OneInt()}},
+			expErr:      true,
+		},
+		"invalid account rejected: non matching pubkey": {
+			srcAccount:  authtypes.NewBaseAccount(randomAddress, randomPubKey, 1, 1),
+			srcMintable: sdk.Coins{sdk.NewCoin("foo", sdk.OneInt())},
+			expErr:      true,
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			lp, err := NewLiquidityProviderAccount(spec.srcAccount, spec.srcMintable)
+			require.NoError(t, err)
+			gotErr := lp.Validate()
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+		})
+	}
+
+}
