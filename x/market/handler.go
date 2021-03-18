@@ -63,7 +63,7 @@ func handleMsgCancelOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelOrder) 
 }
 
 func handleMsgCancelReplaceLimitOrder(ctx sdk.Context, k *Keeper, msg types.MsgCancelReplaceLimitOrder) (*sdk.Result, error) {
-	order, err := types.NewOrder(TimeInForce_GoodTillCancel, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
+	order, err := types.NewOrder(TimeInForce_GoodTilCancel, msg.Source, msg.Destination, msg.Owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err
 	}
