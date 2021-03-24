@@ -206,7 +206,6 @@ func (t Testnet) makeTestnet() error {
 	}
 
 	t.Keystore.addValidatorKeys(WorkingDir, numNodes)
-	t.Keystore.addDeputyKey()
 
 	return nil
 }

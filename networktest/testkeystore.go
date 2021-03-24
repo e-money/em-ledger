@@ -247,6 +247,11 @@ func initializeKeystore(kb keyring.Keyring) {
 	}
 	fmt.Printf("Created auth account %s from mnemonic: %s\n", ac1.GetAddress(), mnemonic1)
 
+	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
+	// create the deputy account
+	deputyAccount, _ := kb.NewAccount("deputykey", mn, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("deputy address: %s\nmnemonic: %s\n", deputyAccount.GetAddress().String(), mn)
+
 	const mnemonic2 = "document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil"
 	ac2, _ := kb.NewAccount("key1", mnemonic2, "", keyDerivationPath, hd.Secp256k1)
 	fmt.Printf("Created key1 account %s from mnemonic: %s\n", ac2.GetAddress(), mnemonic2)
