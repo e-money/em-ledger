@@ -136,6 +136,8 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)
 
 	appConfig := srvconfig.DefaultConfig()
+	appConfig.API.Enable = true
+	appConfig.API.Swagger = true
 	appConfig.MinGasPrices = minGasPrices
 	appConfig.API.Enable = true
 	appConfig.Telemetry.Enabled = true
@@ -269,7 +271,8 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		genAccounts = append(genAccounts, testAccounts...)
 		genBalances = append(genBalances, testAccountBalances...)
 	}
-	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators, authorityKey); err != nil {
+	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances,
+		genFiles, numValidators, authorityKey); err != nil {
 		return err
 	}
 
@@ -578,20 +581,13 @@ func addPredefinedTestAccounts(keystorepath string) (authtypes.GenesisAccounts, 
 		sdk.NewCoin("esek", sdk.NewInt(3500000000000)),
 	)
 
-	accts := make(authtypes.GenesisAccounts, len(allKeys)+1)
-	balances := make([]banktypes.Balance, len(allKeys)+1)
+	accts := make(authtypes.GenesisAccounts, len(allKeys))
+	balances := make([]banktypes.Balance, len(allKeys))
 	for i, k := range allKeys {
 		fmt.Printf("Creating genesis account for key %v - %s.\n", k.GetName(), k.GetAddress().String())
 		accts[i] = authtypes.NewBaseAccount(k.GetAddress(), nil, 0, 0)
 		balances[i] = banktypes.Balance{Address: k.GetAddress().String(), Coins: coins.Sort()}
 	}
-
-	// Add bep3 deputy
-	depAddr := getDeputyAccount().GetAddress()
-
-	_, depCoins := getBep3Coins()
-	accts[len(allKeys)] = authtypes.NewBaseAccount(depAddr, nil, 0, 0)
-	balances[len(allKeys)] = banktypes.Balance{Address: depAddr.String(), Coins: depCoins.Sort()}
 
 	return accts, balances
 }
