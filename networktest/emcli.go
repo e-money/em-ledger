@@ -274,8 +274,8 @@ func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherChainSender, coins string) (string, string, string, error) {
-	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, "60", "--from", creator.name)
+func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherChainSender, coins string, TTL int) (string, string, string, error) {
+	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, fmt.Sprint(TTL), "--from", creator.name)
 	output, err := execCmdCollectOutput(args, KeyPwd)
 	if err != nil {
 		return "", "", "", err
@@ -328,7 +328,7 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 		return "", err
 	}
 
-	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	// bz, err := cmd.CombinedOutput()
 	var b bytes.Buffer
 	cmd.Stderr = &b
@@ -367,7 +367,7 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
 	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
-	// fmt.Println(" *** Output: ", string(bz))
+	fmt.Println(" *** Output: ", string(bz))
 	return bz, err
 }
 
