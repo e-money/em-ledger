@@ -20,7 +20,8 @@ const (
 type (
 	Keeper               = keeper.Keeper
 	StakingKeeper        = keeper.StakingKeeper
-	QueryBalanceResponse = keeper.QueryBalanceResponse
+	QueryBalanceResponse = types.QueryBalanceResponse
+	GenesisState         = types.GenesisState
 )
 
 var (

@@ -6,14 +6,13 @@ package rest
 
 import (
 	"fmt"
-	"net/http"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	"net/http"
 )
 
-func queryInflationHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func queryInflationHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInflation)
 

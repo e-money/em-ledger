@@ -13,9 +13,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func TestNewQuerier(t *testing.T) {
+func TestNewLegacyQuerier(t *testing.T) {
 	input := newTestInput(t)
-	querier := NewQuerier(input.mintKeeper)
+	querier := NewQuerier(input.mintKeeper, input.encConfig.Amino)
 
 	query := abci.RequestQuery{
 		Path: "",
@@ -29,12 +29,12 @@ func TestNewQuerier(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestQueryInflation(t *testing.T) {
+func TestLegacyQueryInflation(t *testing.T) {
 	input := newTestInput(t)
 
 	var inflation types.InflationState
 
-	res, sdkErr := queryInflation(input.ctx, input.mintKeeper)
+	res, sdkErr := queryInflation(input.ctx, input.mintKeeper, input.encConfig.Amino)
 	require.NoError(t, sdkErr)
 
 	err := input.cdc.UnmarshalJSON(res, &inflation)

@@ -19,13 +19,10 @@ const (
 
 type (
 	Keeper = keeper.Keeper
-
-	QueryGasPricesResponse = keeper.QueryGasPricesResponse
 )
 
 var (
 	ModuleCdc       = types.ModuleCdc
-	RegisterCodec   = types.RegisterCodec
 	NewKeeper       = keeper.NewKeeper
 	BeginBlocker    = keeper.BeginBlocker
 	GetGasPricesCmd = cli.GetGasPricesCmd

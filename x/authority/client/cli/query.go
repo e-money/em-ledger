@@ -5,21 +5,13 @@
 package cli
 
 import (
-	"encoding/json"
-	"fmt"
-
-	"github.com/e-money/em-ledger/x/authority/keeper"
-	"github.com/e-money/em-ledger/x/authority/types"
-
-	"github.com/spf13/cobra"
-
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/e-money/em-ledger/x/authority/types"
+	"github.com/spf13/cobra"
 )
 
-func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Querying commands for the authority module",
@@ -29,34 +21,32 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		GetGasPricesCmd(cdc),
+		GetGasPricesCmd(),
 	)
 
 	return cmd
 }
 
-func GetGasPricesCmd(cdc *codec.Codec) *cobra.Command {
+func GetGasPricesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gas-prices",
 		Short: "Query the current minimum gas prices",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryGasPrices))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			resp := new(keeper.QueryGasPricesResponse)
-			err = json.Unmarshal(bz, resp)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.GasPrices(cmd.Context(), &types.QueryGasPricesRequest{})
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(resp)
+			return clientCtx.PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(cmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

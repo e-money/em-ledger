@@ -2,21 +2,19 @@ package rest
 
 import (
 	"fmt"
-	"net/http"
-
-	"github.com/gorilla/mux"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/e-money/em-ledger/x/queries/types"
+	"github.com/gorilla/mux"
+	"net/http"
 )
 
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+func RegisterRoutes(cliCtx client.Context, r *mux.Router) {
 	registerQueryRoutes(cliCtx, r)
 }
 
-func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
+func registerQueryRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc(
 		"/bank/spendable/{address}",
 		spendableBalanceHandlerFn(cliCtx),
@@ -28,7 +26,7 @@ func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	).Methods("GET")
 }
 
-func circulatingSupplyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func circulatingSupplyHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cliCtx.Height = 0
 
@@ -43,7 +41,7 @@ func circulatingSupplyHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func spendableBalanceHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func spendableBalanceHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cliCtx.Height = 0
 		vars := mux.Vars(r)

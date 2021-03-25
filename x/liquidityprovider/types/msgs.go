@@ -10,20 +10,8 @@ import (
 )
 
 var (
-	_ sdk.Msg = MsgMintTokens{}
-	_ sdk.Msg = MsgBurnTokens{}
-)
-
-type (
-	MsgMintTokens struct {
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-		Amount            sdk.Coins      `json:"amount" yaml:"amount"`
-	}
-
-	MsgBurnTokens struct {
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-		Amount            sdk.Coins      `json:"amount" yaml:"amount"`
-	}
+	_ sdk.Msg = &MsgMintTokens{}
+	_ sdk.Msg = &MsgBurnTokens{}
 )
 
 func (msg MsgBurnTokens) Route() string { return RouterKey }
@@ -31,9 +19,8 @@ func (msg MsgBurnTokens) Route() string { return RouterKey }
 func (msg MsgBurnTokens) Type() string { return "burn_tokens" }
 
 func (msg MsgBurnTokens) ValidateBasic() error {
-	if msg.LiquidityProvider.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.LiquidityProvider.String())
-		//return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
+	if _, err := sdk.AccAddressFromBech32(msg.LiquidityProvider); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid liquidity provider address (%s)", err)
 	}
 
 	if !msg.Amount.IsValid() {
@@ -45,11 +32,15 @@ func (msg MsgBurnTokens) ValidateBasic() error {
 }
 
 func (msg MsgBurnTokens) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgBurnTokens) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.LiquidityProvider}
+	from, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgMintTokens) Route() string { return RouterKey }
@@ -57,9 +48,8 @@ func (msg MsgMintTokens) Route() string { return RouterKey }
 func (msg MsgMintTokens) Type() string { return "mint_tokens" }
 
 func (msg MsgMintTokens) ValidateBasic() error {
-	if msg.LiquidityProvider.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.LiquidityProvider.String())
-		//return sdk.ErrInvalidAddress(msg.LiquidityProvider.String())
+	if _, err := sdk.AccAddressFromBech32(msg.LiquidityProvider); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid liquidity provider address (%s)", err)
 	}
 
 	if !msg.Amount.IsValid() {
@@ -71,9 +61,13 @@ func (msg MsgMintTokens) ValidateBasic() error {
 }
 
 func (msg MsgMintTokens) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgMintTokens) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.LiquidityProvider}
+	from, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }

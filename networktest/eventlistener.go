@@ -9,7 +9,6 @@ package networktest
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -82,44 +81,8 @@ func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error)
 	return res, nil
 }
 
-func (el EventListener) AwaitInflationMinting() error {
-	eventFn, err := el.awaitQuery("inflation.inflation = 'true'")
-	if err != nil {
-		return err
-	}
-
-	event := eventFn()
-
-	fmt.Println(" *** Events fired:")
-	for k, v := range event.Events {
-		fmt.Println(k)
-		if strings.HasPrefix(k, "inflation") {
-			fmt.Println(v)
-		}
-	}
-
-	return nil
-}
-
-func (el EventListener) SubscribeTransfers() error {
-	stopTime := time.Now().Add(30 * time.Second)
-
-	return el.subscribeQuery("transfer.recipient CONTAINS 'emoney'",
-		func(event ct.ResultEvent) bool {
-			fmt.Println(" *** Events fired:")
-			for k, v := range event.Events {
-				fmt.Println(k)
-				if strings.HasPrefix(k, "transfer") {
-					fmt.Println(v)
-				}
-			}
-
-			return time.Now().Before(stopTime)
-		})
-}
-
 func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {
-	eventFn, err := el.awaitQuery("penalty_payout.address CONTAINS 'emoney'")
+	eventFn, err := el.awaitQuery("tm.event='NewBlock' AND penalty_payout.address CONTAINS 'emoney'")
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +94,8 @@ func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {
 }
 
 func (el EventListener) AwaitSlash() (func() *abcitypes.Event, error) {
-	eventFn, err := el.awaitQuery("slash.reason = 'missing_signature'")
+	// todo (reviewer): please note the new query format. See https://docs.cosmos.network/master/core/events.html#subscribing-to-events
+	eventFn, err := el.awaitQuery("tm.event='NewBlock' AND slash.reason='missing_signature'")
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +124,7 @@ func (el EventListener) AwaitSlash() (func() *abcitypes.Event, error) {
 }
 
 func (el EventListener) AwaitValidatorSetChange() (func() *types.EventDataValidatorSetUpdates, error) {
-	eventFn, err := el.awaitQuery("tm.event = 'ValidatorSetUpdates'")
+	eventFn, err := el.awaitQuery("tm.event='ValidatorSetUpdates'")
 	if err != nil {
 		return nil, err
 	}

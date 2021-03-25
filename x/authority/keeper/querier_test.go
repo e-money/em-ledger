@@ -8,7 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestName(t *testing.T) {
+func TestLegacyQuerier(t *testing.T) {
 	authority := mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	gp, _ := sdk.ParseDecCoins("0.400000000000000000echf,0.400000000000000000eeur")
 

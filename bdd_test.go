@@ -4,28 +4,32 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/version"
-
-	apptypes "github.com/e-money/em-ledger/types"
-
-	nt "github.com/e-money/em-ledger/networktest"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/config"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+
+	nt "github.com/e-money/em-ledger/networktest"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/inflation"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
 )
 
 var (
 	testnet = func() nt.Testnet {
 		version.Name = "e-money" // Used by the keyring library.
-		version.ClientName = "emcli"
-		version.ServerName = "emd"
+		version.AppName = "emd"
 
 		apptypes.ConfigureSDK()
 		return nt.NewTestnet()
@@ -59,4 +63,40 @@ func TestSuite(t *testing.T) {
 	config.DefaultReporterConfig.SlowSpecThreshold = time.Hour.Seconds()
 
 	RunSpecs(t, "em-ledger integration tests")
+}
+
+func setGenesisTime(genesis []byte, genesisTime time.Time) []byte {
+	bz, err := sjson.SetBytes(genesis, "genesis_time", genesisTime.Format(time.RFC3339))
+	if err != nil {
+		panic(err)
+	}
+
+	return bz
+}
+
+func setInflation(genesis []byte, denom string, newInflation sdk.Dec) []byte {
+	inflationJsonGen := gjson.GetBytes(genesis, "app_state.inflation")
+	inflationGen := new(inflation.GenesisState)
+	err := json.Unmarshal([]byte(inflationJsonGen.String()), inflationGen)
+	if err != nil {
+		panic(err)
+	}
+
+	for index, asset := range inflationGen.InflationState.InflationAssets {
+		if asset.Denom == denom {
+			inflationGen.InflationState.InflationAssets[index].Inflation = newInflation
+		}
+	}
+
+	updatedInflation, err := json.Marshal(inflationGen)
+	if err != nil {
+		panic(err)
+	}
+
+	bz, err := sjson.SetRawBytes(genesis, "app_state.inflation", updatedInflation)
+	if err != nil {
+		panic(err)
+	}
+
+	return bz
 }

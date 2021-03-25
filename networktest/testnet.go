@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -164,18 +165,24 @@ func (t Testnet) ChainID() string {
 }
 
 func (t Testnet) makeTestnet() error {
-	output, err := execCmdAndWait(EMD,
+	numNodes := 4
+	_, err := execCmdAndWait(EMD,
 		"testnet",
-		t.chainID,
 		t.Keystore.Authority.name,
+		"--chain-id", t.chainID,
 		"-o", WorkingDir,
-		"--keyaccounts", t.Keystore.path)
+		"--keyring-backend", "test",
+		"--starting-ip-address", "192.168.10.2",
+		"--keyaccounts", t.Keystore.path,
+		"--commit-timeout", "1500ms",
+		"--v", strconv.Itoa(numNodes),
+		"--minimum-gas-prices", "")
 
 	if err != nil {
 		return err
 	}
 
-	t.Keystore.addValidatorKeys(output)
+	t.Keystore.addValidatorKeys(WorkingDir, numNodes)
 	return nil
 }
 
@@ -204,12 +211,10 @@ func (t *Testnet) updateGenesis() {
 	// Tighten slashing conditions.
 	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.min_signed_per_window", "0.3")
 
-	window := (10 * time.Second).Nanoseconds()
-	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window_duration", fmt.Sprint(window))
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.signed_blocks_window", (10 * time.Second).Nanoseconds())
 
 	// Reduce jail time to be able to test unjailing
-	unjail := (5 * time.Second).Nanoseconds()
-	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", fmt.Sprint(unjail))
+	bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.downtime_jail_duration", "5s")
 
 	// Start inflation before testnet start in order to have some rewards for NGM stakers.
 	inflationLastApplied := time.Now().Add(-2 * time.Hour).UTC().Format(time.RFC3339)
@@ -233,7 +238,8 @@ func compileBinaries() error {
 }
 
 func dockerComposeUp() (func() bool, error) {
-	wait, scanner := createOutputScanner("] Committed state", 30*time.Second)
+	// todo (reviewer): new zap logger produces different and coloured output
+	wait, scanner := createOutputScanner("committed state", 30*time.Second)
 	return wait, execCmdAndRun(dockerComposePath, []string{"up", "--no-color"}, scanner)
 }
 
@@ -256,8 +262,7 @@ func execCmdAndWait(name string, arguments ...string) (string, error) {
 	cmd := exec.Command(name, arguments...)
 
 	// TODO Look into ways of not always setting this.
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "BUILD_TAGS=fast_consensus")
+	// todo (reviewer): dropped "fast_consensus" build tag
 
 	var output strings.Builder
 	captureOutput := func(s string) {

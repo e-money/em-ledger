@@ -6,6 +6,7 @@ package types
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func TestNewParams1(t *testing.T) {
-	is := NewInflationState("caps", "0.04", "kredits", "0.0")
+	is := NewInflationState(time.Now(), "caps", "0.04", "kredits", "0.0")
 	assert.NoError(t, ValidateInflationState(is))
 	assert.Len(t, is.InflationAssets, 2)
 
@@ -23,8 +24,8 @@ func TestNewParams1(t *testing.T) {
 
 func TestValidation(t *testing.T) {
 	inflationStates := [...]InflationState{
-		NewInflationState("caps", "-0.04"),
-		NewInflationState("caps", "0.04", "CAPS", "0.10"),
+		NewInflationState(time.Now(), "caps", "-0.04"),
+		NewInflationState(time.Now(), "caps", "0.04", "CAPS", "0.10"),
 	}
 
 	for _, is := range inflationStates {
@@ -34,7 +35,7 @@ func TestValidation(t *testing.T) {
 }
 
 func TestFindAndChangeAssetByDenom(t *testing.T) {
-	is := NewInflationState("caps", "0.04", "kredits", "0.0")
+	is := NewInflationState(time.Now(), "caps", "0.04", "kredits", "0.0")
 
 	kroner := is.FindByDenom("kroner")
 	assert.Nil(t, kroner)

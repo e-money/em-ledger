@@ -12,46 +12,10 @@ import (
 const ClientOrderIDMaxLength = 32
 
 var (
-	_ sdk.Msg = MsgAddLimitOrder{}
-	_ sdk.Msg = MsgAddMarketOrder{}
-	_ sdk.Msg = MsgCancelOrder{}
-	_ sdk.Msg = MsgCancelReplaceLimitOrder{}
-)
-
-type (
-	// MsgAddLimitOrder represents a message to add a limit order.
-	MsgAddLimitOrder struct {
-		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
-		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
-		Source        sdk.Coin       `json:"source" yaml:"source"`
-		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
-	}
-
-	// MsgAddMarketOrder represents a message to add a market order.
-	MsgAddMarketOrder struct {
-		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
-		TimeInForce   string         `json:"time_in_force" yaml:"time_in_force"`
-		Source        string         `json:"source" yaml:"source"`
-		Destination   sdk.Coin       `json:"destination" yaml:"destination"`
-		MaxSlippage   sdk.Dec        `json:"maximum_slippage" yaml:"maximum_slippage"`
-	}
-
-	// MsgCancelOrder represents a message to cancel an existing order.
-	MsgCancelOrder struct {
-		Owner         sdk.AccAddress `json:"owner" yaml:"owner"`
-		ClientOrderId string         `json:"client_order_id" yaml:"client_order_id"`
-	}
-
-	// MsgCancelReplaceLimitOrder represents a message to cancel an existing order and replace it with a limit order.
-	MsgCancelReplaceLimitOrder struct {
-		Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
-		OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
-		NewClientOrderId  string         `json:"new_client_order_id" yaml:"new_client_order_id"`
-		Source            sdk.Coin       `json:"source" yaml:"source"`
-		Destination       sdk.Coin       `json:"destination" yaml:"destination"`
-	}
+	_ sdk.Msg = &MsgAddLimitOrder{}
+	_ sdk.Msg = &MsgAddMarketOrder{}
+	_ sdk.Msg = &MsgCancelOrder{}
+	_ sdk.Msg = &MsgCancelReplaceLimitOrder{}
 )
 
 func (m MsgAddMarketOrder) Route() string {
@@ -67,8 +31,8 @@ func (m MsgAddMarketOrder) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrInvalidSlippage, "Cannot be negative")
 	}
 
-	if m.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address (%s)", err)
 	}
 
 	if !m.Destination.IsValid() {
@@ -89,11 +53,15 @@ func (m MsgAddMarketOrder) ValidateBasic() error {
 }
 
 func (m MsgAddMarketOrder) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 func (m MsgAddMarketOrder) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	from, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (m MsgCancelReplaceLimitOrder) Route() string {
@@ -105,8 +73,8 @@ func (m MsgCancelReplaceLimitOrder) Type() string {
 }
 
 func (m MsgCancelReplaceLimitOrder) ValidateBasic() error {
-	if m.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address (%s)", err)
 	}
 
 	if !m.Destination.IsValid() {
@@ -130,11 +98,15 @@ func (m MsgCancelReplaceLimitOrder) ValidateBasic() error {
 }
 
 func (m MsgCancelReplaceLimitOrder) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 func (m MsgCancelReplaceLimitOrder) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	from, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (m MsgCancelOrder) Route() string {
@@ -146,19 +118,23 @@ func (m MsgCancelOrder) Type() string {
 }
 
 func (m MsgCancelOrder) ValidateBasic() error {
-	if m.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address (%s)", err)
 	}
 
 	return validateClientOrderID(m.ClientOrderId)
 }
 
 func (m MsgCancelOrder) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 func (m MsgCancelOrder) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	from, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (m MsgAddLimitOrder) Route() string {
@@ -170,8 +146,8 @@ func (m MsgAddLimitOrder) Type() string {
 }
 
 func (m MsgAddLimitOrder) ValidateBasic() error {
-	if m.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing owner address")
+	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address (%s)", err)
 	}
 
 	if !m.Destination.IsValid() {
@@ -190,11 +166,15 @@ func (m MsgAddLimitOrder) ValidateBasic() error {
 }
 
 func (m MsgAddLimitOrder) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 func (m MsgAddLimitOrder) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	from, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func validateClientOrderID(id string) error {

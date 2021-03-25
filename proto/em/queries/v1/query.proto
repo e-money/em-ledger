@@ -1,0 +1,40 @@
+syntax = "proto3";
+package em.queries.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/queries/types";
+
+service Query {
+  rpc Circulating(QueryCirculatingRequest) returns (QueryCirculatingResponse) {
+    option (google.api.http).get = "/e-money/bank/v1/circulating";
+  };
+  rpc Spendable(QuerySpendableRequest) returns (QuerySpendableResponse) {
+    option (google.api.http).get = "/e-money/bank/v1/spendable/{address}";
+  };
+}
+
+message QueryCirculatingRequest {}
+
+message QueryCirculatingResponse {
+  repeated cosmos.base.v1beta1.Coin total = 1 [
+    (gogoproto.moretags) = "yaml:\"total\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message QuerySpendableRequest {
+  string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
+}
+
+message QuerySpendableResponse {
+  repeated cosmos.base.v1beta1.Coin balance = 1 [
+    (gogoproto.moretags) = "yaml:\"balance\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false
+  ];
+}

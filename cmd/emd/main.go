@@ -1,105 +1,23 @@
-// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
-//
-// Please contact partners@e-money.com for licensing related questions.
-
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	"github.com/tendermint/tendermint/types"
-
-	"github.com/cosmos/cosmos-sdk/baseapp"
-	app "github.com/e-money/em-ledger"
-	apptypes "github.com/e-money/em-ledger/types"
-
-	tmtypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/libs/log"
-	db "github.com/tendermint/tm-db"
-
 	"github.com/cosmos/cosmos-sdk/server"
-	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	emoney "github.com/e-money/em-ledger"
+	"github.com/e-money/em-ledger/cmd/emd/cmd"
+	"os"
 )
 
-var configureConsensus = func() {
-	viper.Set("consensus.create_empty_blocks_interval", "60s")
-	viper.Set("consensus.create_empty_blocks", false)
-	viper.Set("consensus.timeout_commit", "500ms")
-	viper.Set("consensus.timeout_propose", "2s")
-	viper.Set("consensus.peer_gossip_sleep_duration", "25ms")
-}
-
 func main() {
-	cobra.EnableCommandSorting = false
+	rootCmd, _ := cmd.NewRootCmd()
 
-	apptypes.ConfigureSDK()
-	cdc := app.MakeCodec()
+	if err := svrcmd.Execute(rootCmd, emoney.DefaultNodeHome); err != nil {
+		switch e := err.(type) {
+		case server.ErrorCode:
+			os.Exit(e.Code)
 
-	ctx := server.NewDefaultContext()
-	// Add application to logging configuration
-	logLevel := ctx.Config.BaseConfig.LogLevel
-	ctx.Config.BaseConfig.LogLevel = fmt.Sprintf("emz:info,x/inflation:info,x/liquidityprovider:info,%v", logLevel)
-
-	configureConsensus()
-	viper.Set("p2p.flush_throttle_timeout", "25ms")
-
-	rootCmd := &cobra.Command{
-		Use:               "emd",
-		Short:             "e-money validator node",
-		PersistentPreRunE: persistentPreRunEFn(ctx),
-	}
-
-	rootCmd.AddCommand(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome))
-	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(MigrateGenesisCmd(cdc, os.Stdout))
-	rootCmd.AddCommand(testnetCmd(ctx, cdc, app.ModuleBasics))
-
-	server.AddCommands(ctx, cdc, rootCmd, newAppCreator(ctx), newAppExporter(ctx))
-
-	executor := cli.PrepareBaseCmd(rootCmd, "EMD", app.DefaultNodeHome)
-	err := executor.Execute()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func newAppCreator(ctx *server.Context) func(log.Logger, db.DB, io.Writer) tmtypes.Application {
-	return func(logger log.Logger, db db.DB, _ io.Writer) tmtypes.Application {
-		pruningOpts, err := server.GetPruningOptionsFromFlags()
-		if err != nil {
-			panic(err)
+		default:
+			os.Exit(1)
 		}
-
-		return app.NewApp(logger, db, ctx,
-			baseapp.SetPruning(pruningOpts),
-			baseapp.SetHaltHeight(uint64(viper.GetInt(server.FlagHaltHeight))),
-			baseapp.SetHaltTime(uint64(viper.GetInt(server.FlagHaltTime))),
-		)
-	}
-}
-
-func newAppExporter(ctx *server.Context) server.AppExporter {
-	return func(logger log.Logger, db db.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
-	) (json.RawMessage, []types.GenesisValidator, error) {
-
-		if height != -1 {
-			a := app.NewApp(logger, db, ctx)
-			err := a.LoadHeight(height)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			return a.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
-		}
-
-		a := app.NewApp(logger, db, ctx)
-		return a.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 }

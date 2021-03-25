@@ -4,7 +4,7 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	"fmt"
@@ -33,19 +33,20 @@ var _ = Describe("Local Testnet", func() {
 			fmt.Println("Key store passwords", defaultPassword)
 			fmt.Println("Local net chain-id", chainid)
 			fmt.Println("Node address", node)
-			fmt.Println("Lite client interface available at http://localhost:1317/swagger-ui/")
+			// todo (reviewer) : rest server must be enabled in config/app.toml
+			//fmt.Println("Lite client interface available at http://localhost:1317/swagger-ui/")
 
 			fmt.Println("Command-line flags for testnet:")
 			fmt.Printf("--home %v --node %v --chain-id %v\n", keystore, node, chainid)
 
 			fmt.Println("\n -- Example commands:")
-			fmt.Printf("./build/emcli keys list --home %v --keyring-backend test\n\n", keystore)
-			fmt.Printf("./build/emcli q staking validators --home %v --node %v --chain-id %v\n\n", keystore, node, chainid)
-			fmt.Printf("./build/emcli q account %v --node %v\n\n", acc1.GetAddress(), node)
+			fmt.Printf("./build/emd  keys list --home %v --keyring-backend test\n\n", keystore)
+			fmt.Printf("./build/emd  q staking validators --home %v --node %v --chain-id %v\n\n", keystore, node, chainid)
+			fmt.Printf("./build/emd  q account %v --node %v\n\n", acc1.GetAddress(), node)
 
-			fmt.Printf("./build/emcli tx market add-limit 50000eeur 45000echf orderid1 --from %v --node %v --chain-id %v --home %v --yes --keyring-backend test\n\n", acc1.GetAddress(), node, chainid, keystore)
+			fmt.Printf("./build/emd  tx market add-limit 50000eeur 45000echf orderid1 --from %v --node %v --chain-id %v --home %v --yes --keyring-backend test\n\n", acc1.GetAddress(), node, chainid, keystore)
 
-			fmt.Printf("./build/emcli q market instrument eeur echf --node %v\n\n", node)
+			fmt.Printf("./build/emd  q market instrument eeur echf --node %v\n\n", node)
 
 			fmt.Println(" -- Run this command for a pre-configured local environment:")
 			fmt.Printf("EM_NODE=%v EM_HOME=%v EM_KEYRING_BACKEND=test EM_CHAIN_ID=%v sh\n", node, keystore, chainid)

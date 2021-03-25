@@ -2,10 +2,13 @@ package queries
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 type AccountKeeper interface {
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account
-	IterateAccounts(ctx sdk.Context, process func(exported.Account) bool)
+	IterateAccounts(ctx sdk.Context, process func(authtypes.AccountI) bool)
+}
+
+type BankKeeper interface {
+	SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 }

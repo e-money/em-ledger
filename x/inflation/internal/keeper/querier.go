@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -14,12 +15,12 @@ import (
 )
 
 // NewQuerier returns an inflation Querier handler.
-func NewQuerier(k Keeper) sdk.Querier {
+func NewQuerier(k Keeper, legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
 	return func(ctx sdk.Context, path []string, _ abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 
 		case types.QueryInflation:
-			return queryInflation(ctx, k)
+			return queryInflation(ctx, k, legacyQuerierCdc)
 
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized inflation query endpoint: %s", path[0])
@@ -27,9 +28,9 @@ func NewQuerier(k Keeper) sdk.Querier {
 	}
 }
 
-func queryInflation(ctx sdk.Context, k Keeper) ([]byte, error) {
+func queryInflation(ctx sdk.Context, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	inflationState := k.GetState(ctx)
 
 	// TODO Introduce a more presentation-friendly response type
-	return types.ModuleCdc.MarshalJSON(inflationState)
+	return legacyQuerierCdc.MarshalJSON(inflationState)
 }

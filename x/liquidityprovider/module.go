@@ -6,20 +6,19 @@ package liquidityprovider
 
 import (
 	"encoding/json"
-
-	"github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
-	"github.com/e-money/em-ledger/x/liquidityprovider/types"
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-
+	"github.com/e-money/em-ledger/x/liquidityprovider/client/cli"
 	"github.com/e-money/em-ledger/x/liquidityprovider/keeper"
+	"github.com/e-money/em-ledger/x/liquidityprovider/types"
+	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
@@ -27,124 +26,99 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-// app module basics object
 type AppModuleBasic struct{}
 
-var _ module.AppModuleBasic = AppModuleBasic{}
-
-// module name
-func (AppModuleBasic) Name() string {
-	return ModuleName
+type AppModule struct {
+	AppModuleBasic
+	keeper Keeper
 }
 
-// register module codec
-func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+func (amb AppModuleBasic) Name() string { return ModuleName }
+
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
-// default genesis state
-func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	cdc := codec.New()
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
 	return cdc.MustMarshalJSON(defaultGenesisState())
 }
 
-// module validate genesis
-func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	//var data GenesisState
-	//err := ModuleCdc.UnmarshalJSON(bz, &data)
-	//if err != nil {
-	//	return err
-	//}
-	//return ValidateGenesis(data)
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+	var data types.GenesisState
+	if err := cdc.UnmarshalJSON(bz, &data); err != nil {
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
+	}
 	return nil
 }
 
-// register rest routes
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	//rest.RegisterRoutes(ctx, rtr)
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
 }
 
-// get the root tx command of this module
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
 }
 
-// get the root query command of this module
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	//return cli.GetQueryCmd(cdc)
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	return cli.GetTxCmd()
+}
+
+func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 	return nil
 }
 
-//___________________________
-// app module
-type AppModule struct {
-	AppModuleBasic
-	keeper keeper.Keeper
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	types.RegisterInterfaces(registry)
 }
 
-// NewAppModule creates a new AppModule object
 func NewAppModule(k keeper.Keeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
+		keeper: k,
 	}
 }
 
-// module name
-func (AppModule) Name() string {
-	return ModuleName
-}
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState types.GenesisState
+	cdc.MustUnmarshalJSON(data, &genesisState)
 
-// register invariants
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
-
-// module message route name
-func (AppModule) Route() string { return types.ModuleName }
-
-// module handler
-func (am AppModule) NewHandler() sdk.Handler {
-	return newHandler(am.keeper)
-}
-
-// module querier route name
-func (AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// module querier
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	//return NewQuerier(am.keeper)
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
-		return []byte{}, nil
+	if err := InitGenesis(ctx, am.keeper, genesisState); err != nil {
+		panic(err.Error())
 	}
+
+	return []abci.ValidatorUpdate{}
 }
 
-// module init-genesis
-func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) (_ []abci.ValidatorUpdate) {
-	var genesisState genesisState
-	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, genesisState)
-
-	return
-}
-
-// module export genesis
-func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
 	allLPs := am.keeper.GetAllLiquidityProviderAccounts(ctx)
 
-	genAccs := make([]GenesisAcc, len(allLPs))
+	genAccs := make([]types.GenesisAcc, len(allLPs))
 	for i, lp := range allLPs {
-		genAccs[i] = GenesisAcc{lp.GetAddress(), lp.Mintable}
+		genAccs[i] = types.GenesisAcc{
+			Account:  lp.GetAddress().String(),
+			Mintable: lp.Mintable,
+		}
 	}
 
-	gs := genesisState{genAccs}
-	return ModuleCdc.MustMarshalJSON(&gs)
+	gs := types.GenesisState{Accounts: genAccs}
+	return cdc.MustMarshalJSON(&gs)
 }
 
-// module begin-block
-func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) RegisterInvariants(sdk.InvariantRegistry) {}
 
-// module end-block
+func (am AppModule) Route() sdk.Route {
+	return sdk.NewRoute(types.RouterKey, newHandler(am.keeper))
+}
+
+func (am AppModule) QuerierRoute() string { return types.ModuleName }
+
+func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+	return nil
+}
+
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+}
+
+func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
