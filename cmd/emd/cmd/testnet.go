@@ -6,20 +6,17 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/codec"
 	bep3 "github.com/e-money/bep3/module"
+	bep3types "github.com/e-money/bep3/module/types"
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/buyback"
+	"github.com/e-money/em-ledger/x/inflation"
 	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	bep3types "github.com/e-money/bep3/module/types"
-	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/buyback"
-	"github.com/e-money/em-ledger/x/inflation"
 
 	"github.com/spf13/cobra"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -31,7 +28,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"	
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
@@ -136,8 +135,6 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)
 
 	appConfig := srvconfig.DefaultConfig()
-	appConfig.API.Enable = true
-	appConfig.API.Swagger = true
 	appConfig.MinGasPrices = minGasPrices
 	appConfig.API.Enable = true
 	appConfig.Telemetry.Enabled = true
@@ -271,8 +268,7 @@ func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmcon
 		genAccounts = append(genAccounts, testAccounts...)
 		genBalances = append(genBalances, testAccountBalances...)
 	}
-	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances,
-		genFiles, numValidators, authorityKey); err != nil {
+	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators, authorityKey); err != nil {
 		return err
 	}
 
@@ -293,6 +289,7 @@ func initGenFiles(
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
 	genFiles []string, numValidators int, authorityKey sdk.AccAddress,
 ) error {
+
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
 	appGenState["authority"] = createAuthorityGenesis(authorityKey)
 	appGenState["inflation"] = createInflationGenesis()
@@ -344,6 +341,7 @@ func collectGenFiles(
 	nodeIDs []string, valPubKeys []cryptotypes.PubKey, numValidators int,
 	outputDir, nodeDirPrefix, nodeDaemonHome string, genBalIterator banktypes.GenesisBalancesIterator,
 ) error {
+
 	var appState json.RawMessage
 	genTime := tmtime.Now()
 

@@ -4,149 +4,149 @@
 
 ## Table of Contents
 
-- [em/authority/v1beta1/authority.proto](#em/authority/v1beta1/authority.proto)
-    - [Authority](#em.authority.v1beta1.Authority)
-    - [GasPrices](#em.authority.v1beta1.GasPrices)
-    - [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom)
-    - [RestrictedDenoms](#em.authority.v1beta1.RestrictedDenoms)
+- [em/authority/v1/authority.proto](#em/authority/v1/authority.proto)
+    - [Authority](#em.authority.v1.Authority)
+    - [GasPrices](#em.authority.v1.GasPrices)
+    - [RestrictedDenom](#em.authority.v1.RestrictedDenom)
+    - [RestrictedDenoms](#em.authority.v1.RestrictedDenoms)
   
-- [em/authority/v1beta1/genesis.proto](#em/authority/v1beta1/genesis.proto)
-    - [GenesisState](#em.authority.v1beta1.GenesisState)
+- [em/authority/v1/genesis.proto](#em/authority/v1/genesis.proto)
+    - [GenesisState](#em.authority.v1.GenesisState)
   
-- [em/authority/v1beta1/query.proto](#em/authority/v1beta1/query.proto)
-    - [QueryGasPricesRequest](#em.authority.v1beta1.QueryGasPricesRequest)
-    - [QueryGasPricesResponse](#em.authority.v1beta1.QueryGasPricesResponse)
+- [em/authority/v1/query.proto](#em/authority/v1/query.proto)
+    - [QueryGasPricesRequest](#em.authority.v1.QueryGasPricesRequest)
+    - [QueryGasPricesResponse](#em.authority.v1.QueryGasPricesResponse)
   
-    - [Query](#em.authority.v1beta1.Query)
+    - [Query](#em.authority.v1.Query)
   
-- [em/authority/v1beta1/tx.proto](#em/authority/v1beta1/tx.proto)
-    - [MsgCreateIssuer](#em.authority.v1beta1.MsgCreateIssuer)
-    - [MsgCreateIssuerResponse](#em.authority.v1beta1.MsgCreateIssuerResponse)
-    - [MsgDestroyIssuer](#em.authority.v1beta1.MsgDestroyIssuer)
-    - [MsgDestroyIssuerResponse](#em.authority.v1beta1.MsgDestroyIssuerResponse)
-    - [MsgSetGasPrices](#em.authority.v1beta1.MsgSetGasPrices)
-    - [MsgSetGasPricesResponse](#em.authority.v1beta1.MsgSetGasPricesResponse)
+- [em/authority/v1/tx.proto](#em/authority/v1/tx.proto)
+    - [MsgCreateIssuer](#em.authority.v1.MsgCreateIssuer)
+    - [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse)
+    - [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer)
+    - [MsgDestroyIssuerResponse](#em.authority.v1.MsgDestroyIssuerResponse)
+    - [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices)
+    - [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse)
   
-    - [Msg](#em.authority.v1beta1.Msg)
+    - [Msg](#em.authority.v1.Msg)
   
-- [em/buyback/v1beta1/genesis.proto](#em/buyback/v1beta1/genesis.proto)
-    - [GenesisState](#em.buyback.v1beta1.GenesisState)
+- [em/buyback/v1/genesis.proto](#em/buyback/v1/genesis.proto)
+    - [GenesisState](#em.buyback.v1.GenesisState)
   
-- [em/buyback/v1beta1/query.proto](#em/buyback/v1beta1/query.proto)
-    - [QueryBalanceRequest](#em.buyback.v1beta1.QueryBalanceRequest)
-    - [QueryBalanceResponse](#em.buyback.v1beta1.QueryBalanceResponse)
+- [em/buyback/v1/query.proto](#em/buyback/v1/query.proto)
+    - [QueryBalanceRequest](#em.buyback.v1.QueryBalanceRequest)
+    - [QueryBalanceResponse](#em.buyback.v1.QueryBalanceResponse)
   
-    - [Query](#em.buyback.v1beta1.Query)
+    - [Query](#em.buyback.v1.Query)
   
-- [em/inflation/v1beta1/inflation.proto](#em/inflation/v1beta1/inflation.proto)
-    - [InflationAsset](#em.inflation.v1beta1.InflationAsset)
-    - [InflationState](#em.inflation.v1beta1.InflationState)
+- [em/inflation/v1/inflation.proto](#em/inflation/v1/inflation.proto)
+    - [InflationAsset](#em.inflation.v1.InflationAsset)
+    - [InflationState](#em.inflation.v1.InflationState)
   
-- [em/inflation/v1beta1/genesis.proto](#em/inflation/v1beta1/genesis.proto)
-    - [GenesisState](#em.inflation.v1beta1.GenesisState)
+- [em/inflation/v1/genesis.proto](#em/inflation/v1/genesis.proto)
+    - [GenesisState](#em.inflation.v1.GenesisState)
   
-- [em/inflation/v1beta1/query.proto](#em/inflation/v1beta1/query.proto)
-    - [QueryInflationRequest](#em.inflation.v1beta1.QueryInflationRequest)
-    - [QueryInflationResponse](#em.inflation.v1beta1.QueryInflationResponse)
+- [em/inflation/v1/query.proto](#em/inflation/v1/query.proto)
+    - [QueryInflationRequest](#em.inflation.v1.QueryInflationRequest)
+    - [QueryInflationResponse](#em.inflation.v1.QueryInflationResponse)
   
-    - [Query](#em.inflation.v1beta1.Query)
+    - [Query](#em.inflation.v1.Query)
   
-- [em/issuer/v1beta1/issuer.proto](#em/issuer/v1beta1/issuer.proto)
-    - [Issuer](#em.issuer.v1beta1.Issuer)
-    - [Issuers](#em.issuer.v1beta1.Issuers)
+- [em/issuer/v1/issuer.proto](#em/issuer/v1/issuer.proto)
+    - [Issuer](#em.issuer.v1.Issuer)
+    - [Issuers](#em.issuer.v1.Issuers)
   
-- [em/issuer/v1beta1/genesis.proto](#em/issuer/v1beta1/genesis.proto)
-    - [GenesisState](#em.issuer.v1beta1.GenesisState)
+- [em/issuer/v1/genesis.proto](#em/issuer/v1/genesis.proto)
+    - [GenesisState](#em.issuer.v1.GenesisState)
   
-- [em/issuer/v1beta1/query.proto](#em/issuer/v1beta1/query.proto)
-    - [QueryIssuersRequest](#em.issuer.v1beta1.QueryIssuersRequest)
-    - [QueryIssuersResponse](#em.issuer.v1beta1.QueryIssuersResponse)
+- [em/issuer/v1/query.proto](#em/issuer/v1/query.proto)
+    - [QueryIssuersRequest](#em.issuer.v1.QueryIssuersRequest)
+    - [QueryIssuersResponse](#em.issuer.v1.QueryIssuersResponse)
   
-    - [Query](#em.issuer.v1beta1.Query)
+    - [Query](#em.issuer.v1.Query)
   
-- [em/issuer/v1beta1/tx.proto](#em/issuer/v1beta1/tx.proto)
-    - [MsgDecreaseMintable](#em.issuer.v1beta1.MsgDecreaseMintable)
-    - [MsgDecreaseMintableResponse](#em.issuer.v1beta1.MsgDecreaseMintableResponse)
-    - [MsgIncreaseMintable](#em.issuer.v1beta1.MsgIncreaseMintable)
-    - [MsgIncreaseMintableResponse](#em.issuer.v1beta1.MsgIncreaseMintableResponse)
-    - [MsgRevokeLiquidityProvider](#em.issuer.v1beta1.MsgRevokeLiquidityProvider)
-    - [MsgRevokeLiquidityProviderResponse](#em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse)
-    - [MsgSetInflation](#em.issuer.v1beta1.MsgSetInflation)
-    - [MsgSetInflationResponse](#em.issuer.v1beta1.MsgSetInflationResponse)
+- [em/issuer/v1/tx.proto](#em/issuer/v1/tx.proto)
+    - [MsgDecreaseMintable](#em.issuer.v1.MsgDecreaseMintable)
+    - [MsgDecreaseMintableResponse](#em.issuer.v1.MsgDecreaseMintableResponse)
+    - [MsgIncreaseMintable](#em.issuer.v1.MsgIncreaseMintable)
+    - [MsgIncreaseMintableResponse](#em.issuer.v1.MsgIncreaseMintableResponse)
+    - [MsgRevokeLiquidityProvider](#em.issuer.v1.MsgRevokeLiquidityProvider)
+    - [MsgRevokeLiquidityProviderResponse](#em.issuer.v1.MsgRevokeLiquidityProviderResponse)
+    - [MsgSetInflation](#em.issuer.v1.MsgSetInflation)
+    - [MsgSetInflationResponse](#em.issuer.v1.MsgSetInflationResponse)
   
-    - [Msg](#em.issuer.v1beta1.Msg)
+    - [Msg](#em.issuer.v1.Msg)
   
-- [em/liquidityprovider/v1beta1/genesis.proto](#em/liquidityprovider/v1beta1/genesis.proto)
-    - [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc)
-    - [GenesisState](#em.liquidityprovider.v1beta1.GenesisState)
+- [em/liquidityprovider/v1/genesis.proto](#em/liquidityprovider/v1/genesis.proto)
+    - [GenesisAcc](#em.liquidityprovider.v1.GenesisAcc)
+    - [GenesisState](#em.liquidityprovider.v1.GenesisState)
   
-- [em/liquidityprovider/v1beta1/liquidityprovider.proto](#em/liquidityprovider/v1beta1/liquidityprovider.proto)
-    - [LiquidityProviderAccount](#em.liquidityprovider.v1beta1.LiquidityProviderAccount)
+- [em/liquidityprovider/v1/liquidityprovider.proto](#em/liquidityprovider/v1/liquidityprovider.proto)
+    - [LiquidityProviderAccount](#em.liquidityprovider.v1.LiquidityProviderAccount)
   
-- [em/liquidityprovider/v1beta1/tx.proto](#em/liquidityprovider/v1beta1/tx.proto)
-    - [MsgBurnTokens](#em.liquidityprovider.v1beta1.MsgBurnTokens)
-    - [MsgBurnTokensResponse](#em.liquidityprovider.v1beta1.MsgBurnTokensResponse)
-    - [MsgMintTokens](#em.liquidityprovider.v1beta1.MsgMintTokens)
-    - [MsgMintTokensResponse](#em.liquidityprovider.v1beta1.MsgMintTokensResponse)
+- [em/liquidityprovider/v1/tx.proto](#em/liquidityprovider/v1/tx.proto)
+    - [MsgBurnTokens](#em.liquidityprovider.v1.MsgBurnTokens)
+    - [MsgBurnTokensResponse](#em.liquidityprovider.v1.MsgBurnTokensResponse)
+    - [MsgMintTokens](#em.liquidityprovider.v1.MsgMintTokens)
+    - [MsgMintTokensResponse](#em.liquidityprovider.v1.MsgMintTokensResponse)
   
-    - [Msg](#em.liquidityprovider.v1beta1.Msg)
+    - [Msg](#em.liquidityprovider.v1.Msg)
   
-- [em/market/v1beta1/market.proto](#em/market/v1beta1/market.proto)
-    - [ExecutionPlan](#em.market.v1beta1.ExecutionPlan)
-    - [Instrument](#em.market.v1beta1.Instrument)
-    - [MarketData](#em.market.v1beta1.MarketData)
-    - [Order](#em.market.v1beta1.Order)
+- [em/market/v1/market.proto](#em/market/v1/market.proto)
+    - [ExecutionPlan](#em.market.v1.ExecutionPlan)
+    - [Instrument](#em.market.v1.Instrument)
+    - [MarketData](#em.market.v1.MarketData)
+    - [Order](#em.market.v1.Order)
   
-    - [TimeInForce](#em.market.v1beta1.TimeInForce)
+    - [TimeInForce](#em.market.v1.TimeInForce)
   
-- [em/market/v1beta1/query.proto](#em/market/v1beta1/query.proto)
-    - [QueryByAccountRequest](#em.market.v1beta1.QueryByAccountRequest)
-    - [QueryByAccountResponse](#em.market.v1beta1.QueryByAccountResponse)
-    - [QueryInstrumentRequest](#em.market.v1beta1.QueryInstrumentRequest)
-    - [QueryInstrumentResponse](#em.market.v1beta1.QueryInstrumentResponse)
-    - [QueryInstrumentsRequest](#em.market.v1beta1.QueryInstrumentsRequest)
-    - [QueryInstrumentsResponse](#em.market.v1beta1.QueryInstrumentsResponse)
-    - [QueryInstrumentsResponse.Element](#em.market.v1beta1.QueryInstrumentsResponse.Element)
-    - [QueryOrderResponse](#em.market.v1beta1.QueryOrderResponse)
+- [em/market/v1/query.proto](#em/market/v1/query.proto)
+    - [QueryByAccountRequest](#em.market.v1.QueryByAccountRequest)
+    - [QueryByAccountResponse](#em.market.v1.QueryByAccountResponse)
+    - [QueryInstrumentRequest](#em.market.v1.QueryInstrumentRequest)
+    - [QueryInstrumentResponse](#em.market.v1.QueryInstrumentResponse)
+    - [QueryInstrumentsRequest](#em.market.v1.QueryInstrumentsRequest)
+    - [QueryInstrumentsResponse](#em.market.v1.QueryInstrumentsResponse)
+    - [QueryInstrumentsResponse.Element](#em.market.v1.QueryInstrumentsResponse.Element)
+    - [QueryOrderResponse](#em.market.v1.QueryOrderResponse)
   
-    - [Query](#em.market.v1beta1.Query)
+    - [Query](#em.market.v1.Query)
   
-- [em/market/v1beta1/tx.proto](#em/market/v1beta1/tx.proto)
-    - [MsgAddLimitOrder](#em.market.v1beta1.MsgAddLimitOrder)
-    - [MsgAddLimitOrderResponse](#em.market.v1beta1.MsgAddLimitOrderResponse)
-    - [MsgAddMarketOrder](#em.market.v1beta1.MsgAddMarketOrder)
-    - [MsgAddMarketOrderResponse](#em.market.v1beta1.MsgAddMarketOrderResponse)
-    - [MsgCancelOrder](#em.market.v1beta1.MsgCancelOrder)
-    - [MsgCancelOrderResponse](#em.market.v1beta1.MsgCancelOrderResponse)
-    - [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder)
-    - [MsgCancelReplaceLimitOrderResponse](#em.market.v1beta1.MsgCancelReplaceLimitOrderResponse)
+- [em/market/v1/tx.proto](#em/market/v1/tx.proto)
+    - [MsgAddLimitOrder](#em.market.v1.MsgAddLimitOrder)
+    - [MsgAddLimitOrderResponse](#em.market.v1.MsgAddLimitOrderResponse)
+    - [MsgAddMarketOrder](#em.market.v1.MsgAddMarketOrder)
+    - [MsgAddMarketOrderResponse](#em.market.v1.MsgAddMarketOrderResponse)
+    - [MsgCancelOrder](#em.market.v1.MsgCancelOrder)
+    - [MsgCancelOrderResponse](#em.market.v1.MsgCancelOrderResponse)
+    - [MsgCancelReplaceLimitOrder](#em.market.v1.MsgCancelReplaceLimitOrder)
+    - [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse)
   
-    - [Msg](#em.market.v1beta1.Msg)
+    - [Msg](#em.market.v1.Msg)
   
-- [em/queries/v1beta1/query.proto](#em/queries/v1beta1/query.proto)
-    - [QueryCirculatingRequest](#em.queries.v1beta1.QueryCirculatingRequest)
-    - [QueryCirculatingResponse](#em.queries.v1beta1.QueryCirculatingResponse)
-    - [QuerySpendableRequest](#em.queries.v1beta1.QuerySpendableRequest)
-    - [QuerySpendableResponse](#em.queries.v1beta1.QuerySpendableResponse)
+- [em/queries/v1/query.proto](#em/queries/v1/query.proto)
+    - [QueryCirculatingRequest](#em.queries.v1.QueryCirculatingRequest)
+    - [QueryCirculatingResponse](#em.queries.v1.QueryCirculatingResponse)
+    - [QuerySpendableRequest](#em.queries.v1.QuerySpendableRequest)
+    - [QuerySpendableResponse](#em.queries.v1.QuerySpendableResponse)
   
-    - [Query](#em.queries.v1beta1.Query)
+    - [Query](#em.queries.v1.Query)
   
-- [em/slashing/v1beta1/slashing.proto](#em/slashing/v1beta1/slashing.proto)
-    - [Penalties](#em.slashing.v1beta1.Penalties)
-    - [Penalty](#em.slashing.v1beta1.Penalty)
+- [em/slashing/v1/slashing.proto](#em/slashing/v1/slashing.proto)
+    - [Penalties](#em.slashing.v1.Penalties)
+    - [Penalty](#em.slashing.v1.Penalty)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="em/authority/v1beta1/authority.proto"></a>
+<a name="em/authority/v1/authority.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/authority/v1beta1/authority.proto
+## em/authority/v1/authority.proto
 
 
 
-<a name="em.authority.v1beta1.Authority"></a>
+<a name="em.authority.v1.Authority"></a>
 
 ### Authority
 
@@ -161,7 +161,7 @@
 
 
 
-<a name="em.authority.v1beta1.GasPrices"></a>
+<a name="em.authority.v1.GasPrices"></a>
 
 ### GasPrices
 
@@ -176,7 +176,7 @@
 
 
 
-<a name="em.authority.v1beta1.RestrictedDenom"></a>
+<a name="em.authority.v1.RestrictedDenom"></a>
 
 ### RestrictedDenom
 
@@ -192,7 +192,7 @@
 
 
 
-<a name="em.authority.v1beta1.RestrictedDenoms"></a>
+<a name="em.authority.v1.RestrictedDenoms"></a>
 
 ### RestrictedDenoms
 
@@ -200,7 +200,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `denoms` | [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom) | repeated |  |
+| `denoms` | [RestrictedDenom](#em.authority.v1.RestrictedDenom) | repeated |  |
 
 
 
@@ -216,14 +216,14 @@
 
 
 
-<a name="em/authority/v1beta1/genesis.proto"></a>
+<a name="em/authority/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/authority/v1beta1/genesis.proto
+## em/authority/v1/genesis.proto
 
 
 
-<a name="em.authority.v1beta1.GenesisState"></a>
+<a name="em.authority.v1.GenesisState"></a>
 
 ### GenesisState
 
@@ -232,7 +232,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
-| `restricted_denoms` | [RestrictedDenom](#em.authority.v1beta1.RestrictedDenom) | repeated |  |
+| `restricted_denoms` | [RestrictedDenom](#em.authority.v1.RestrictedDenom) | repeated |  |
 | `min_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
 
 
@@ -249,14 +249,14 @@
 
 
 
-<a name="em/authority/v1beta1/query.proto"></a>
+<a name="em/authority/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/authority/v1beta1/query.proto
+## em/authority/v1/query.proto
 
 
 
-<a name="em.authority.v1beta1.QueryGasPricesRequest"></a>
+<a name="em.authority.v1.QueryGasPricesRequest"></a>
 
 ### QueryGasPricesRequest
 
@@ -266,7 +266,7 @@
 
 
 
-<a name="em.authority.v1beta1.QueryGasPricesResponse"></a>
+<a name="em.authority.v1.QueryGasPricesResponse"></a>
 
 ### QueryGasPricesResponse
 
@@ -287,27 +287,27 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.authority.v1beta1.Query"></a>
+<a name="em.authority.v1.Query"></a>
 
 ### Query
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `GasPrices` | [QueryGasPricesRequest](#em.authority.v1beta1.QueryGasPricesRequest) | [QueryGasPricesResponse](#em.authority.v1beta1.QueryGasPricesResponse) |  | GET|/e-money/authority/v1beta1/gasprices|
+| `GasPrices` | [QueryGasPricesRequest](#em.authority.v1.QueryGasPricesRequest) | [QueryGasPricesResponse](#em.authority.v1.QueryGasPricesResponse) |  | GET|/e-money/authority/v1/gasprices|
 
  <!-- end services -->
 
 
 
-<a name="em/authority/v1beta1/tx.proto"></a>
+<a name="em/authority/v1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/authority/v1beta1/tx.proto
+## em/authority/v1/tx.proto
 
 
 
-<a name="em.authority.v1beta1.MsgCreateIssuer"></a>
+<a name="em.authority.v1.MsgCreateIssuer"></a>
 
 ### MsgCreateIssuer
 
@@ -324,7 +324,7 @@
 
 
 
-<a name="em.authority.v1beta1.MsgCreateIssuerResponse"></a>
+<a name="em.authority.v1.MsgCreateIssuerResponse"></a>
 
 ### MsgCreateIssuerResponse
 
@@ -334,7 +334,7 @@
 
 
 
-<a name="em.authority.v1beta1.MsgDestroyIssuer"></a>
+<a name="em.authority.v1.MsgDestroyIssuer"></a>
 
 ### MsgDestroyIssuer
 
@@ -350,7 +350,7 @@
 
 
 
-<a name="em.authority.v1beta1.MsgDestroyIssuerResponse"></a>
+<a name="em.authority.v1.MsgDestroyIssuerResponse"></a>
 
 ### MsgDestroyIssuerResponse
 
@@ -360,7 +360,7 @@
 
 
 
-<a name="em.authority.v1beta1.MsgSetGasPrices"></a>
+<a name="em.authority.v1.MsgSetGasPrices"></a>
 
 ### MsgSetGasPrices
 
@@ -376,7 +376,7 @@
 
 
 
-<a name="em.authority.v1beta1.MsgSetGasPricesResponse"></a>
+<a name="em.authority.v1.MsgSetGasPricesResponse"></a>
 
 ### MsgSetGasPricesResponse
 
@@ -392,29 +392,29 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.authority.v1beta1.Msg"></a>
+<a name="em.authority.v1.Msg"></a>
 
 ### Msg
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `CreateIssuer` | [MsgCreateIssuer](#em.authority.v1beta1.MsgCreateIssuer) | [MsgCreateIssuerResponse](#em.authority.v1beta1.MsgCreateIssuerResponse) |  | |
-| `DestroyIssuer` | [MsgDestroyIssuer](#em.authority.v1beta1.MsgDestroyIssuer) | [MsgDestroyIssuerResponse](#em.authority.v1beta1.MsgDestroyIssuerResponse) |  | |
-| `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1beta1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1beta1.MsgSetGasPricesResponse) |  | |
+| `CreateIssuer` | [MsgCreateIssuer](#em.authority.v1.MsgCreateIssuer) | [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse) |  | |
+| `DestroyIssuer` | [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer) | [MsgDestroyIssuerResponse](#em.authority.v1.MsgDestroyIssuerResponse) |  | |
+| `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse) |  | |
 
  <!-- end services -->
 
 
 
-<a name="em/buyback/v1beta1/genesis.proto"></a>
+<a name="em/buyback/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/buyback/v1beta1/genesis.proto
+## em/buyback/v1/genesis.proto
 
 
 
-<a name="em.buyback.v1beta1.GenesisState"></a>
+<a name="em.buyback.v1.GenesisState"></a>
 
 ### GenesisState
 
@@ -438,14 +438,14 @@
 
 
 
-<a name="em/buyback/v1beta1/query.proto"></a>
+<a name="em/buyback/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/buyback/v1beta1/query.proto
+## em/buyback/v1/query.proto
 
 
 
-<a name="em.buyback.v1beta1.QueryBalanceRequest"></a>
+<a name="em.buyback.v1.QueryBalanceRequest"></a>
 
 ### QueryBalanceRequest
 
@@ -455,7 +455,7 @@
 
 
 
-<a name="em.buyback.v1beta1.QueryBalanceResponse"></a>
+<a name="em.buyback.v1.QueryBalanceResponse"></a>
 
 ### QueryBalanceResponse
 
@@ -476,27 +476,27 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.buyback.v1beta1.Query"></a>
+<a name="em.buyback.v1.Query"></a>
 
 ### Query
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Balance` | [QueryBalanceRequest](#em.buyback.v1beta1.QueryBalanceRequest) | [QueryBalanceResponse](#em.buyback.v1beta1.QueryBalanceResponse) | Query for the current buyback balance | GET|/e-money/buyback/v1beta1/balance|
+| `Balance` | [QueryBalanceRequest](#em.buyback.v1.QueryBalanceRequest) | [QueryBalanceResponse](#em.buyback.v1.QueryBalanceResponse) | Query for the current buyback balance | GET|/e-money/buyback/v1/balance|
 
  <!-- end services -->
 
 
 
-<a name="em/inflation/v1beta1/inflation.proto"></a>
+<a name="em/inflation/v1/inflation.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/inflation/v1beta1/inflation.proto
+## em/inflation/v1/inflation.proto
 
 
 
-<a name="em.inflation.v1beta1.InflationAsset"></a>
+<a name="em.inflation.v1.InflationAsset"></a>
 
 ### InflationAsset
 
@@ -513,7 +513,7 @@
 
 
 
-<a name="em.inflation.v1beta1.InflationState"></a>
+<a name="em.inflation.v1.InflationState"></a>
 
 ### InflationState
 
@@ -523,7 +523,7 @@
 | ----- | ---- | ----- | ----------- |
 | `last_applied` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 | `last_applied_height` | [string](#string) |  |  |
-| `assets` | [InflationAsset](#em.inflation.v1beta1.InflationAsset) | repeated |  |
+| `assets` | [InflationAsset](#em.inflation.v1.InflationAsset) | repeated |  |
 
 
 
@@ -539,14 +539,14 @@
 
 
 
-<a name="em/inflation/v1beta1/genesis.proto"></a>
+<a name="em/inflation/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/inflation/v1beta1/genesis.proto
+## em/inflation/v1/genesis.proto
 
 
 
-<a name="em.inflation.v1beta1.GenesisState"></a>
+<a name="em.inflation.v1.GenesisState"></a>
 
 ### GenesisState
 
@@ -554,7 +554,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `assets` | [InflationState](#em.inflation.v1beta1.InflationState) |  | todo (reviewer): yaml naming is a bit inconsistent. state contains assets |
+| `assets` | [InflationState](#em.inflation.v1.InflationState) |  | todo (reviewer): yaml naming is a bit inconsistent. state contains assets |
 
 
 
@@ -570,14 +570,14 @@
 
 
 
-<a name="em/inflation/v1beta1/query.proto"></a>
+<a name="em/inflation/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/inflation/v1beta1/query.proto
+## em/inflation/v1/query.proto
 
 
 
-<a name="em.inflation.v1beta1.QueryInflationRequest"></a>
+<a name="em.inflation.v1.QueryInflationRequest"></a>
 
 ### QueryInflationRequest
 
@@ -587,7 +587,7 @@
 
 
 
-<a name="em.inflation.v1beta1.QueryInflationResponse"></a>
+<a name="em.inflation.v1.QueryInflationResponse"></a>
 
 ### QueryInflationResponse
 
@@ -595,7 +595,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `state` | [InflationState](#em.inflation.v1beta1.InflationState) |  |  |
+| `state` | [InflationState](#em.inflation.v1.InflationState) |  |  |
 
 
 
@@ -608,27 +608,27 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.inflation.v1beta1.Query"></a>
+<a name="em.inflation.v1.Query"></a>
 
 ### Query
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Inflation` | [QueryInflationRequest](#em.inflation.v1beta1.QueryInflationRequest) | [QueryInflationResponse](#em.inflation.v1beta1.QueryInflationResponse) |  | GET|/e-money/inflation/v1beta1/state|
+| `Inflation` | [QueryInflationRequest](#em.inflation.v1.QueryInflationRequest) | [QueryInflationResponse](#em.inflation.v1.QueryInflationResponse) |  | GET|/e-money/inflation/v1/state|
 
  <!-- end services -->
 
 
 
-<a name="em/issuer/v1beta1/issuer.proto"></a>
+<a name="em/issuer/v1/issuer.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/issuer/v1beta1/issuer.proto
+## em/issuer/v1/issuer.proto
 
 
 
-<a name="em.issuer.v1beta1.Issuer"></a>
+<a name="em.issuer.v1.Issuer"></a>
 
 ### Issuer
 
@@ -644,7 +644,7 @@
 
 
 
-<a name="em.issuer.v1beta1.Issuers"></a>
+<a name="em.issuer.v1.Issuers"></a>
 
 ### Issuers
 
@@ -652,7 +652,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `issuers` | [Issuer](#em.issuer.v1beta1.Issuer) | repeated |  |
+| `issuers` | [Issuer](#em.issuer.v1.Issuer) | repeated |  |
 
 
 
@@ -668,14 +668,14 @@
 
 
 
-<a name="em/issuer/v1beta1/genesis.proto"></a>
+<a name="em/issuer/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/issuer/v1beta1/genesis.proto
+## em/issuer/v1/genesis.proto
 
 
 
-<a name="em.issuer.v1beta1.GenesisState"></a>
+<a name="em.issuer.v1.GenesisState"></a>
 
 ### GenesisState
 
@@ -683,7 +683,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `issuers` | [Issuer](#em.issuer.v1beta1.Issuer) | repeated |  |
+| `issuers` | [Issuer](#em.issuer.v1.Issuer) | repeated |  |
 
 
 
@@ -699,14 +699,14 @@
 
 
 
-<a name="em/issuer/v1beta1/query.proto"></a>
+<a name="em/issuer/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/issuer/v1beta1/query.proto
+## em/issuer/v1/query.proto
 
 
 
-<a name="em.issuer.v1beta1.QueryIssuersRequest"></a>
+<a name="em.issuer.v1.QueryIssuersRequest"></a>
 
 ### QueryIssuersRequest
 
@@ -716,7 +716,7 @@
 
 
 
-<a name="em.issuer.v1beta1.QueryIssuersResponse"></a>
+<a name="em.issuer.v1.QueryIssuersResponse"></a>
 
 ### QueryIssuersResponse
 
@@ -724,7 +724,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `issuers` | [Issuer](#em.issuer.v1beta1.Issuer) | repeated |  |
+| `issuers` | [Issuer](#em.issuer.v1.Issuer) | repeated |  |
 
 
 
@@ -737,27 +737,27 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.issuer.v1beta1.Query"></a>
+<a name="em.issuer.v1.Query"></a>
 
 ### Query
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Issuers` | [QueryIssuersRequest](#em.issuer.v1beta1.QueryIssuersRequest) | [QueryIssuersResponse](#em.issuer.v1beta1.QueryIssuersResponse) |  | GET|/e-money/issuer/v1beta1/issuers|
+| `Issuers` | [QueryIssuersRequest](#em.issuer.v1.QueryIssuersRequest) | [QueryIssuersResponse](#em.issuer.v1.QueryIssuersResponse) |  | GET|/e-money/issuer/v1/issuers|
 
  <!-- end services -->
 
 
 
-<a name="em/issuer/v1beta1/tx.proto"></a>
+<a name="em/issuer/v1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/issuer/v1beta1/tx.proto
+## em/issuer/v1/tx.proto
 
 
 
-<a name="em.issuer.v1beta1.MsgDecreaseMintable"></a>
+<a name="em.issuer.v1.MsgDecreaseMintable"></a>
 
 ### MsgDecreaseMintable
 
@@ -774,7 +774,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgDecreaseMintableResponse"></a>
+<a name="em.issuer.v1.MsgDecreaseMintableResponse"></a>
 
 ### MsgDecreaseMintableResponse
 
@@ -784,7 +784,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgIncreaseMintable"></a>
+<a name="em.issuer.v1.MsgIncreaseMintable"></a>
 
 ### MsgIncreaseMintable
 
@@ -801,7 +801,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgIncreaseMintableResponse"></a>
+<a name="em.issuer.v1.MsgIncreaseMintableResponse"></a>
 
 ### MsgIncreaseMintableResponse
 
@@ -811,7 +811,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgRevokeLiquidityProvider"></a>
+<a name="em.issuer.v1.MsgRevokeLiquidityProvider"></a>
 
 ### MsgRevokeLiquidityProvider
 
@@ -827,7 +827,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse"></a>
+<a name="em.issuer.v1.MsgRevokeLiquidityProviderResponse"></a>
 
 ### MsgRevokeLiquidityProviderResponse
 
@@ -837,7 +837,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgSetInflation"></a>
+<a name="em.issuer.v1.MsgSetInflation"></a>
 
 ### MsgSetInflation
 
@@ -854,7 +854,7 @@
 
 
 
-<a name="em.issuer.v1beta1.MsgSetInflationResponse"></a>
+<a name="em.issuer.v1.MsgSetInflationResponse"></a>
 
 ### MsgSetInflationResponse
 
@@ -870,30 +870,30 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.issuer.v1beta1.Msg"></a>
+<a name="em.issuer.v1.Msg"></a>
 
 ### Msg
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `IncreaseMintable` | [MsgIncreaseMintable](#em.issuer.v1beta1.MsgIncreaseMintable) | [MsgIncreaseMintableResponse](#em.issuer.v1beta1.MsgIncreaseMintableResponse) |  | |
-| `DecreaseMintable` | [MsgDecreaseMintable](#em.issuer.v1beta1.MsgDecreaseMintable) | [MsgDecreaseMintableResponse](#em.issuer.v1beta1.MsgDecreaseMintableResponse) |  | |
-| `RevokeLiquidityProvider` | [MsgRevokeLiquidityProvider](#em.issuer.v1beta1.MsgRevokeLiquidityProvider) | [MsgRevokeLiquidityProviderResponse](#em.issuer.v1beta1.MsgRevokeLiquidityProviderResponse) |  | |
-| `SetInflation` | [MsgSetInflation](#em.issuer.v1beta1.MsgSetInflation) | [MsgSetInflationResponse](#em.issuer.v1beta1.MsgSetInflationResponse) |  | |
+| `IncreaseMintable` | [MsgIncreaseMintable](#em.issuer.v1.MsgIncreaseMintable) | [MsgIncreaseMintableResponse](#em.issuer.v1.MsgIncreaseMintableResponse) |  | |
+| `DecreaseMintable` | [MsgDecreaseMintable](#em.issuer.v1.MsgDecreaseMintable) | [MsgDecreaseMintableResponse](#em.issuer.v1.MsgDecreaseMintableResponse) |  | |
+| `RevokeLiquidityProvider` | [MsgRevokeLiquidityProvider](#em.issuer.v1.MsgRevokeLiquidityProvider) | [MsgRevokeLiquidityProviderResponse](#em.issuer.v1.MsgRevokeLiquidityProviderResponse) |  | |
+| `SetInflation` | [MsgSetInflation](#em.issuer.v1.MsgSetInflation) | [MsgSetInflationResponse](#em.issuer.v1.MsgSetInflationResponse) |  | |
 
  <!-- end services -->
 
 
 
-<a name="em/liquidityprovider/v1beta1/genesis.proto"></a>
+<a name="em/liquidityprovider/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/liquidityprovider/v1beta1/genesis.proto
+## em/liquidityprovider/v1/genesis.proto
 
 
 
-<a name="em.liquidityprovider.v1beta1.GenesisAcc"></a>
+<a name="em.liquidityprovider.v1.GenesisAcc"></a>
 
 ### GenesisAcc
 
@@ -909,7 +909,7 @@
 
 
 
-<a name="em.liquidityprovider.v1beta1.GenesisState"></a>
+<a name="em.liquidityprovider.v1.GenesisState"></a>
 
 ### GenesisState
 
@@ -917,7 +917,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `accounts` | [GenesisAcc](#em.liquidityprovider.v1beta1.GenesisAcc) | repeated |  |
+| `accounts` | [GenesisAcc](#em.liquidityprovider.v1.GenesisAcc) | repeated |  |
 
 
 
@@ -933,14 +933,14 @@
 
 
 
-<a name="em/liquidityprovider/v1beta1/liquidityprovider.proto"></a>
+<a name="em/liquidityprovider/v1/liquidityprovider.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/liquidityprovider/v1beta1/liquidityprovider.proto
+## em/liquidityprovider/v1/liquidityprovider.proto
 
 
 
-<a name="em.liquidityprovider.v1beta1.LiquidityProviderAccount"></a>
+<a name="em.liquidityprovider.v1.LiquidityProviderAccount"></a>
 
 ### LiquidityProviderAccount
 
@@ -965,14 +965,14 @@
 
 
 
-<a name="em/liquidityprovider/v1beta1/tx.proto"></a>
+<a name="em/liquidityprovider/v1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/liquidityprovider/v1beta1/tx.proto
+## em/liquidityprovider/v1/tx.proto
 
 
 
-<a name="em.liquidityprovider.v1beta1.MsgBurnTokens"></a>
+<a name="em.liquidityprovider.v1.MsgBurnTokens"></a>
 
 ### MsgBurnTokens
 
@@ -988,7 +988,7 @@
 
 
 
-<a name="em.liquidityprovider.v1beta1.MsgBurnTokensResponse"></a>
+<a name="em.liquidityprovider.v1.MsgBurnTokensResponse"></a>
 
 ### MsgBurnTokensResponse
 
@@ -998,7 +998,7 @@
 
 
 
-<a name="em.liquidityprovider.v1beta1.MsgMintTokens"></a>
+<a name="em.liquidityprovider.v1.MsgMintTokens"></a>
 
 ### MsgMintTokens
 
@@ -1014,7 +1014,7 @@
 
 
 
-<a name="em.liquidityprovider.v1beta1.MsgMintTokensResponse"></a>
+<a name="em.liquidityprovider.v1.MsgMintTokensResponse"></a>
 
 ### MsgMintTokensResponse
 
@@ -1030,28 +1030,28 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.liquidityprovider.v1beta1.Msg"></a>
+<a name="em.liquidityprovider.v1.Msg"></a>
 
 ### Msg
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `MintTokens` | [MsgMintTokens](#em.liquidityprovider.v1beta1.MsgMintTokens) | [MsgMintTokensResponse](#em.liquidityprovider.v1beta1.MsgMintTokensResponse) |  | |
-| `BurnTokens` | [MsgBurnTokens](#em.liquidityprovider.v1beta1.MsgBurnTokens) | [MsgBurnTokensResponse](#em.liquidityprovider.v1beta1.MsgBurnTokensResponse) |  | |
+| `MintTokens` | [MsgMintTokens](#em.liquidityprovider.v1.MsgMintTokens) | [MsgMintTokensResponse](#em.liquidityprovider.v1.MsgMintTokensResponse) |  | |
+| `BurnTokens` | [MsgBurnTokens](#em.liquidityprovider.v1.MsgBurnTokens) | [MsgBurnTokensResponse](#em.liquidityprovider.v1.MsgBurnTokensResponse) |  | |
 
  <!-- end services -->
 
 
 
-<a name="em/market/v1beta1/market.proto"></a>
+<a name="em/market/v1/market.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/market/v1beta1/market.proto
+## em/market/v1/market.proto
 
 
 
-<a name="em.market.v1beta1.ExecutionPlan"></a>
+<a name="em.market.v1.ExecutionPlan"></a>
 
 ### ExecutionPlan
 
@@ -1060,15 +1060,15 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `price` | [string](#string) |  |  |
-| `first_order` | [Order](#em.market.v1beta1.Order) |  |  |
-| `second_order` | [Order](#em.market.v1beta1.Order) |  |  |
+| `first_order` | [Order](#em.market.v1.Order) |  |  |
+| `second_order` | [Order](#em.market.v1.Order) |  |  |
 
 
 
 
 
 
-<a name="em.market.v1beta1.Instrument"></a>
+<a name="em.market.v1.Instrument"></a>
 
 ### Instrument
 
@@ -1084,7 +1084,7 @@
 
 
 
-<a name="em.market.v1beta1.MarketData"></a>
+<a name="em.market.v1.MarketData"></a>
 
 ### MarketData
 
@@ -1102,7 +1102,7 @@
 
 
 
-<a name="em.market.v1beta1.Order"></a>
+<a name="em.market.v1.Order"></a>
 
 ### Order
 
@@ -1111,7 +1111,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `order_id` | [uint64](#uint64) |  |  |
-| `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
 | `owner` | [string](#string) |  |  |
 | `client_order_id` | [string](#string) |  |  |
 | `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
@@ -1127,7 +1127,7 @@
  <!-- end messages -->
 
 
-<a name="em.market.v1beta1.TimeInForce"></a>
+<a name="em.market.v1.TimeInForce"></a>
 
 ### TimeInForce
 
@@ -1148,14 +1148,14 @@
 
 
 
-<a name="em/market/v1beta1/query.proto"></a>
+<a name="em/market/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/market/v1beta1/query.proto
+## em/market/v1/query.proto
 
 
 
-<a name="em.market.v1beta1.QueryByAccountRequest"></a>
+<a name="em.market.v1.QueryByAccountRequest"></a>
 
 ### QueryByAccountRequest
 
@@ -1170,7 +1170,7 @@
 
 
 
-<a name="em.market.v1beta1.QueryByAccountResponse"></a>
+<a name="em.market.v1.QueryByAccountResponse"></a>
 
 ### QueryByAccountResponse
 
@@ -1178,14 +1178,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `orders` | [Order](#em.market.v1beta1.Order) | repeated |  |
+| `orders` | [Order](#em.market.v1.Order) | repeated |  |
 
 
 
 
 
 
-<a name="em.market.v1beta1.QueryInstrumentRequest"></a>
+<a name="em.market.v1.QueryInstrumentRequest"></a>
 
 ### QueryInstrumentRequest
 
@@ -1201,7 +1201,7 @@
 
 
 
-<a name="em.market.v1beta1.QueryInstrumentResponse"></a>
+<a name="em.market.v1.QueryInstrumentResponse"></a>
 
 ### QueryInstrumentResponse
 
@@ -1211,14 +1211,14 @@
 | ----- | ---- | ----- | ----------- |
 | `source` | [string](#string) |  |  |
 | `destination` | [string](#string) |  |  |
-| `orders` | [QueryOrderResponse](#em.market.v1beta1.QueryOrderResponse) | repeated |  |
+| `orders` | [QueryOrderResponse](#em.market.v1.QueryOrderResponse) | repeated |  |
 
 
 
 
 
 
-<a name="em.market.v1beta1.QueryInstrumentsRequest"></a>
+<a name="em.market.v1.QueryInstrumentsRequest"></a>
 
 ### QueryInstrumentsRequest
 
@@ -1228,7 +1228,7 @@
 
 
 
-<a name="em.market.v1beta1.QueryInstrumentsResponse"></a>
+<a name="em.market.v1.QueryInstrumentsResponse"></a>
 
 ### QueryInstrumentsResponse
 
@@ -1236,14 +1236,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `instruments` | [QueryInstrumentsResponse.Element](#em.market.v1beta1.QueryInstrumentsResponse.Element) | repeated |  |
+| `instruments` | [QueryInstrumentsResponse.Element](#em.market.v1.QueryInstrumentsResponse.Element) | repeated |  |
 
 
 
 
 
 
-<a name="em.market.v1beta1.QueryInstrumentsResponse.Element"></a>
+<a name="em.market.v1.QueryInstrumentsResponse.Element"></a>
 
 ### QueryInstrumentsResponse.Element
 
@@ -1262,7 +1262,7 @@
 
 
 
-<a name="em.market.v1beta1.QueryOrderResponse"></a>
+<a name="em.market.v1.QueryOrderResponse"></a>
 
 ### QueryOrderResponse
 
@@ -1287,29 +1287,29 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.market.v1beta1.Query"></a>
+<a name="em.market.v1.Query"></a>
 
 ### Query
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `ByAccount` | [QueryByAccountRequest](#em.market.v1beta1.QueryByAccountRequest) | [QueryByAccountResponse](#em.market.v1beta1.QueryByAccountResponse) |  | GET|/e-money/market/v1beta1/account/{address}|
-| `Instruments` | [QueryInstrumentsRequest](#em.market.v1beta1.QueryInstrumentsRequest) | [QueryInstrumentsResponse](#em.market.v1beta1.QueryInstrumentsResponse) |  | GET|/e-money/market/v1beta1/instruments|
-| `Instrument` | [QueryInstrumentRequest](#em.market.v1beta1.QueryInstrumentRequest) | [QueryInstrumentResponse](#em.market.v1beta1.QueryInstrumentResponse) |  | GET|/e-money/market/v1beta1/instrument/{source}/{destination}|
+| `ByAccount` | [QueryByAccountRequest](#em.market.v1.QueryByAccountRequest) | [QueryByAccountResponse](#em.market.v1.QueryByAccountResponse) |  | GET|/e-money/market/v1/account/{address}|
+| `Instruments` | [QueryInstrumentsRequest](#em.market.v1.QueryInstrumentsRequest) | [QueryInstrumentsResponse](#em.market.v1.QueryInstrumentsResponse) |  | GET|/e-money/market/v1/instruments|
+| `Instrument` | [QueryInstrumentRequest](#em.market.v1.QueryInstrumentRequest) | [QueryInstrumentResponse](#em.market.v1.QueryInstrumentResponse) |  | GET|/e-money/market/v1/instrument/{source}/{destination}|
 
  <!-- end services -->
 
 
 
-<a name="em/market/v1beta1/tx.proto"></a>
+<a name="em/market/v1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/market/v1beta1/tx.proto
+## em/market/v1/tx.proto
 
 
 
-<a name="em.market.v1beta1.MsgAddLimitOrder"></a>
+<a name="em.market.v1.MsgAddLimitOrder"></a>
 
 ### MsgAddLimitOrder
 
@@ -1319,7 +1319,7 @@
 | ----- | ---- | ----- | ----------- |
 | `owner` | [string](#string) |  |  |
 | `client_order_id` | [string](#string) |  |  |
-| `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
 | `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 
@@ -1328,7 +1328,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgAddLimitOrderResponse"></a>
+<a name="em.market.v1.MsgAddLimitOrderResponse"></a>
 
 ### MsgAddLimitOrderResponse
 
@@ -1338,7 +1338,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgAddMarketOrder"></a>
+<a name="em.market.v1.MsgAddMarketOrder"></a>
 
 ### MsgAddMarketOrder
 
@@ -1348,7 +1348,7 @@
 | ----- | ---- | ----- | ----------- |
 | `owner` | [string](#string) |  |  |
 | `client_order_id` | [string](#string) |  |  |
-| `time_in_force` | [TimeInForce](#em.market.v1beta1.TimeInForce) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
 | `source` | [string](#string) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `maximum_slippage` | [string](#string) |  |  |
@@ -1358,7 +1358,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgAddMarketOrderResponse"></a>
+<a name="em.market.v1.MsgAddMarketOrderResponse"></a>
 
 ### MsgAddMarketOrderResponse
 
@@ -1368,7 +1368,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgCancelOrder"></a>
+<a name="em.market.v1.MsgCancelOrder"></a>
 
 ### MsgCancelOrder
 
@@ -1384,7 +1384,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgCancelOrderResponse"></a>
+<a name="em.market.v1.MsgCancelOrderResponse"></a>
 
 ### MsgCancelOrderResponse
 
@@ -1394,7 +1394,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgCancelReplaceLimitOrder"></a>
+<a name="em.market.v1.MsgCancelReplaceLimitOrder"></a>
 
 ### MsgCancelReplaceLimitOrder
 
@@ -1413,7 +1413,7 @@
 
 
 
-<a name="em.market.v1beta1.MsgCancelReplaceLimitOrderResponse"></a>
+<a name="em.market.v1.MsgCancelReplaceLimitOrderResponse"></a>
 
 ### MsgCancelReplaceLimitOrderResponse
 
@@ -1429,30 +1429,30 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.market.v1beta1.Msg"></a>
+<a name="em.market.v1.Msg"></a>
 
 ### Msg
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `AddLimitOrder` | [MsgAddLimitOrder](#em.market.v1beta1.MsgAddLimitOrder) | [MsgAddLimitOrderResponse](#em.market.v1beta1.MsgAddLimitOrderResponse) |  | |
-| `AddMarketOrder` | [MsgAddMarketOrder](#em.market.v1beta1.MsgAddMarketOrder) | [MsgAddMarketOrderResponse](#em.market.v1beta1.MsgAddMarketOrderResponse) |  | |
-| `CancelOrder` | [MsgCancelOrder](#em.market.v1beta1.MsgCancelOrder) | [MsgCancelOrderResponse](#em.market.v1beta1.MsgCancelOrderResponse) |  | |
-| `CancelReplaceLimitOrder` | [MsgCancelReplaceLimitOrder](#em.market.v1beta1.MsgCancelReplaceLimitOrder) | [MsgCancelReplaceLimitOrderResponse](#em.market.v1beta1.MsgCancelReplaceLimitOrderResponse) |  | |
+| `AddLimitOrder` | [MsgAddLimitOrder](#em.market.v1.MsgAddLimitOrder) | [MsgAddLimitOrderResponse](#em.market.v1.MsgAddLimitOrderResponse) |  | |
+| `AddMarketOrder` | [MsgAddMarketOrder](#em.market.v1.MsgAddMarketOrder) | [MsgAddMarketOrderResponse](#em.market.v1.MsgAddMarketOrderResponse) |  | |
+| `CancelOrder` | [MsgCancelOrder](#em.market.v1.MsgCancelOrder) | [MsgCancelOrderResponse](#em.market.v1.MsgCancelOrderResponse) |  | |
+| `CancelReplaceLimitOrder` | [MsgCancelReplaceLimitOrder](#em.market.v1.MsgCancelReplaceLimitOrder) | [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse) |  | |
 
  <!-- end services -->
 
 
 
-<a name="em/queries/v1beta1/query.proto"></a>
+<a name="em/queries/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/queries/v1beta1/query.proto
+## em/queries/v1/query.proto
 
 
 
-<a name="em.queries.v1beta1.QueryCirculatingRequest"></a>
+<a name="em.queries.v1.QueryCirculatingRequest"></a>
 
 ### QueryCirculatingRequest
 
@@ -1462,7 +1462,7 @@
 
 
 
-<a name="em.queries.v1beta1.QueryCirculatingResponse"></a>
+<a name="em.queries.v1.QueryCirculatingResponse"></a>
 
 ### QueryCirculatingResponse
 
@@ -1477,7 +1477,7 @@
 
 
 
-<a name="em.queries.v1beta1.QuerySpendableRequest"></a>
+<a name="em.queries.v1.QuerySpendableRequest"></a>
 
 ### QuerySpendableRequest
 
@@ -1492,7 +1492,7 @@
 
 
 
-<a name="em.queries.v1beta1.QuerySpendableResponse"></a>
+<a name="em.queries.v1.QuerySpendableResponse"></a>
 
 ### QuerySpendableResponse
 
@@ -1513,28 +1513,28 @@
  <!-- end HasExtensions -->
 
 
-<a name="em.queries.v1beta1.Query"></a>
+<a name="em.queries.v1.Query"></a>
 
 ### Query
 
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Circulating` | [QueryCirculatingRequest](#em.queries.v1beta1.QueryCirculatingRequest) | [QueryCirculatingResponse](#em.queries.v1beta1.QueryCirculatingResponse) |  | GET|/e-money/bank/v1beta1/circulating|
-| `Spendable` | [QuerySpendableRequest](#em.queries.v1beta1.QuerySpendableRequest) | [QuerySpendableResponse](#em.queries.v1beta1.QuerySpendableResponse) |  | GET|/e-money/bank/v1beta1/spendable/{address}|
+| `Circulating` | [QueryCirculatingRequest](#em.queries.v1.QueryCirculatingRequest) | [QueryCirculatingResponse](#em.queries.v1.QueryCirculatingResponse) |  | GET|/e-money/bank/v1/circulating|
+| `Spendable` | [QuerySpendableRequest](#em.queries.v1.QuerySpendableRequest) | [QuerySpendableResponse](#em.queries.v1.QuerySpendableResponse) |  | GET|/e-money/bank/v1/spendable/{address}|
 
  <!-- end services -->
 
 
 
-<a name="em/slashing/v1beta1/slashing.proto"></a>
+<a name="em/slashing/v1/slashing.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## em/slashing/v1beta1/slashing.proto
+## em/slashing/v1/slashing.proto
 
 
 
-<a name="em.slashing.v1beta1.Penalties"></a>
+<a name="em.slashing.v1.Penalties"></a>
 
 ### Penalties
 
@@ -1542,14 +1542,14 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `elements` | [Penalty](#em.slashing.v1beta1.Penalty) | repeated |  |
+| `elements` | [Penalty](#em.slashing.v1.Penalty) | repeated |  |
 
 
 
 
 
 
-<a name="em.slashing.v1beta1.Penalty"></a>
+<a name="em.slashing.v1.Penalty"></a>
 
 ### Penalty
 

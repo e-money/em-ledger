@@ -50,11 +50,6 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
 }
 
-func TestGetMaccPerms(t *testing.T) {
-	dup := GetMaccPerms()
-	require.Equal(t, maccPerms, dup, "duplicated module account permissions differed from actual module account permissions")
-}
-
 // EmptyAppOptions is a stub implementing AppOptions
 type EmptyAppOptions struct{}
 

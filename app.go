@@ -160,7 +160,6 @@ var (
 		emdistr.ModuleName: true,
 	}
 )
-
 var (
 	_ simapp.App              = (*EMoneyApp)(nil)
 	_ servertypes.Application = (*EMoneyApp)(nil)
@@ -312,9 +311,9 @@ func NewApp(
 	govRouter := govtypes.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
 		// todo (reviewer): check which modules should be enabled
-		// AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
-		// AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
-		// AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper)).
+		//AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
+		//AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
+		//AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper)).
 		AddRoute(ibchost.RouterKey, ibcclient.NewClientUpdateProposalHandler(app.ibcKeeper.ClientKeeper))
 	app.govKeeper = govkeeper.NewKeeper(
 		appCodec, keys[govtypes.StoreKey], app.GetSubspace(govtypes.ModuleName), app.accountKeeper, app.bankKeeper,
@@ -326,6 +325,7 @@ func NewApp(
 		appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
 		app.ibcKeeper.ChannelKeeper, &app.ibcKeeper.PortKeeper,
 		app.accountKeeper, app.bankKeeper, scopedTransferKeeper,
+	
 	)
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 
@@ -347,11 +347,11 @@ func NewApp(
 	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app)
 	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper, app.authorityKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
-	app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
+    app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
-	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -380,7 +380,7 @@ func NewApp(
 		market.NewAppModule(app.marketKeeper),
 		buyback.NewAppModule(app.buybackKeeper, app.bankKeeper),
 		inflation.NewAppModule(app.inflationKeeper),
-		bep3.NewAppModule(app.bep3Keeper, app.accountKeeper, app.bankKeeper),
+        bep3.NewAppModule(app.bep3Keeper, app.accountKeeper, app.bankKeeper),
 		queries.NewAppModule(app.accountKeeper, app.bankKeeper),
 	)
 
@@ -390,7 +390,7 @@ func NewApp(
 		upgradetypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
 		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
-		bep3.ModuleName,
+        bep3.ModuleName,
 	)
 
 	// todo (reviewer): check which modules make sense
@@ -407,7 +407,7 @@ func NewApp(
 		emslashing.ModuleName, govtypes.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
 		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName, inflation.ModuleName,
-		bep3.ModuleName,
+        bep3.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
@@ -604,15 +604,6 @@ func RegisterSwaggerAPI(ctx client.Context, rtr *mux.Router) {
 
 	staticServer := http.FileServer(statikFS)
 	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
-}
-
-// GetMaccPerms returns a copy of the module account permissions
-func GetMaccPerms() map[string][]string {
-	dupMaccPerms := make(map[string][]string)
-	for k, v := range maccPerms {
-		dupMaccPerms[k] = v
-	}
-	return dupMaccPerms
 }
 
 // GetMaccs returns a copy of the module accounts

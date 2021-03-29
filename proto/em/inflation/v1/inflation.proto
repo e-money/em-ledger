@@ -1,0 +1,43 @@
+syntax = "proto3";
+package em.inflation.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/inflation/internal/types";
+
+message InflationAsset {
+  string denom = 1 [ (gogoproto.moretags) = "yaml:\"denom\"" ];
+  string inflation = 2 [
+    (gogoproto.moretags) = "yaml:\"inflation\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+  string accum = 3 [
+    (gogoproto.moretags) = "yaml:\"accum\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message InflationState {
+  option (gogoproto.goproto_stringer) = false;
+
+  google.protobuf.Timestamp last_applied = 1 [
+    (gogoproto.customname) = "LastAppliedTime",
+    (gogoproto.moretags) = "yaml:\"last_applied\"",
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false
+  ];
+  string last_applied_height = 2 [
+    (gogoproto.moretags) = "yaml:\"last_applied_height\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  repeated InflationAsset assets = 3 [
+    (gogoproto.customname) = "InflationAssets",
+    (gogoproto.moretags) = "yaml:\"assets\"",
+    (gogoproto.nullable) = false
+  ];
+}
