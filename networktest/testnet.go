@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"fmt"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"os"
@@ -263,6 +264,46 @@ func (t *Testnet) updateGenesis() {
 	t.genesis = bz
 
 	writeGenesisFiles(bz)
+}
+
+func GetHeight() (int64, error) {
+	status, err := exec.Command(EMCLI, "status").CombinedOutput()
+	if err != nil {
+		return -1, err
+	}
+
+	height := gjson.ParseBytes(status).Get("SyncInfo.latest_block_height").Int()
+
+	return height, nil
+}
+
+// WaitForHeightWithTimeout waits till the chain reaches the requested height
+// or times out whichever occurs first.
+func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, error) {
+	// Half a sec + emd invoke + result processing
+	ticker := time.NewTicker(500 * time.Millisecond)
+	timeout := time.After(t)
+
+	var blockHeight int64 = -1
+
+	for {
+		select {
+		case <-timeout:
+			ticker.Stop()
+			return blockHeight, fmt.Errorf(
+				"timeout at height %d, before reaching height:%d",
+				blockHeight,
+				requestedHeight)
+		case <-ticker.C:
+			height, err := GetHeight()
+			if err != nil {
+				return -1, err
+			}
+			if height >= requestedHeight {
+				return height, nil
+			}
+		}
+	}
 }
 
 func compileBinaries() error {

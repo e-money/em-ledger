@@ -168,3 +168,16 @@ var _ = Describe("BEP3 Swap", func() {
 		Expect(swapList.Array()).NotTo(HaveLen(0))
 	})
 })
+
+func incChainHeight(height int64) int64 {
+	// Will not exhaust it in most cases
+	var timeOutDur = 8 *time.Second
+
+	newHeight, err := networktest.WaitForHeightWithTimeout(
+		height+1, timeOutDur,
+	)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(newHeight > height).To(Equal(true))
+
+	return newHeight
+}
