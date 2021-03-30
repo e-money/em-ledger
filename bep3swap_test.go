@@ -99,6 +99,7 @@ var _ = Describe("BEP3 Swap", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		// Check updated state
+		time.Sleep(5*time.Second)
 
 		totalSupplyAfter, err := emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())
