@@ -79,7 +79,7 @@ func TestRandomBlockTimes(t *testing.T) {
 // Simulate an entire years worth of compounded inflation when calculated each minute
 func TestMultipleCoinsAccrual(t *testing.T) {
 	currentTime := time.Now().UTC()
-	state := NewInflationState("credit", "0.001", "buck", "0.03")
+	state := NewInflationState(currentTime, "credit", "0.001", "buck", "0.03")
 
 	supply := sdk.NewCoins(
 		sdk.NewCoin("buck", sdk.NewInt(1000000000)),

@@ -17,11 +17,12 @@ import (
 )
 
 const (
-	EMCLI = "./build/emcli"
+	// todo (reviewer) : emcli was merged into emd:
+	EMCLI = "./build/emd"
 
 	// gjson paths
-	QGetMintableEUR = "value.mintable.#(denom==\"eeur\").amount"
-	QGetBalanceEUR  = "value.Account.value.coins.#(denom==\"eeur\").amount"
+	QGetMintableEUR = "mintable.#(denom==\"eeur\").amount"
+	QGetBalanceEUR  = "balances.#(denom==\"eeur\").amount"
 )
 
 type Emcli struct {
@@ -39,7 +40,7 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 }
 
 func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "send", from.name, to.GetAddress(), amount)
+	args := cli.addTransactionFlags("tx", "bank", "send", from.name, to.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -102,19 +103,34 @@ func (cli Emcli) QueryRewards(delegator string) (gjson.Result, error) {
 }
 
 // NOTE Hardcoded to eeur for now.
-func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error) {
-	args := cli.addQueryFlags("query", "account", account)
+func (cli Emcli) QueryBalance(account string) (balance int, err error) {
+	args := cli.addQueryFlags("query", "bank", "balances", account)
 	bz, err := execCmdAndCollectResponse(args)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 
 	queryresponse := gjson.ParseBytes(bz)
 
 	v := queryresponse.Get(QGetBalanceEUR)
-	balance, _ = strconv.Atoi(v.Str)
+	if v.Exists() {
+		balance, _ = strconv.Atoi(v.Str)
+	}
 
-	v = queryresponse.Get(QGetMintableEUR)
+	return
+}
+
+// NOTE Hardcoded to eeur for now.
+func (cli Emcli) QueryAccount(account string) (mintable int, err error) {
+	args := cli.addQueryFlags("query", "account", account)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, err
+	}
+
+	queryresponse := gjson.ParseBytes(bz)
+
+	v := queryresponse.Get(QGetMintableEUR)
 	if v.Exists() {
 		mintable, _ = strconv.Atoi(v.Str)
 	}
@@ -123,7 +139,7 @@ func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error)
 }
 
 func (cli Emcli) QueryTotalSupply() ([]byte, error) {
-	args := cli.addQueryFlags("query", "supply", "total")
+	args := cli.addQueryFlags("query", "bank", "total")
 	return execCmdAndCollectResponse(args)
 }
 
@@ -229,8 +245,11 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 
 	txhashjson := json.Get("txhash")
 	logs := json.Get("logs")
+	code := json.Get("code")
 
-	if !txhashjson.Exists() || !logs.Exists() {
+	// todo (reviewer) : emd command returns `exit 0` although the TX has failed with `signature verification failed`
+	// any non zero `code` in response json is a failure code
+	if !txhashjson.Exists() || !logs.Exists() || code.Int() != 0 {
 		return "", false, fmt.Errorf("tx appears to have failed %v", string(bz))
 	}
 
@@ -287,13 +306,14 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
 	//fmt.Println(" *** Output: ", string(bz))
 	return bz, err
 }
 
 func (cli Emcli) addQueryFlags(arguments ...string) []string {
+	arguments = append(arguments, "--output", "json")
 	return cli.addNetworkFlags(arguments)
 }
 
@@ -301,6 +321,7 @@ func (cli Emcli) addTransactionFlags(arguments ...string) []string {
 	arguments = append(arguments,
 		"--home", cli.keystore.path,
 		"--keyring-backend", "test",
+		"--broadcast-mode", "block",
 		"--yes",
 	)
 
@@ -311,6 +332,5 @@ func (cli Emcli) addNetworkFlags(arguments []string) []string {
 	return append(arguments,
 		"--node", cli.node,
 		"--chain-id", cli.chainid,
-		"--output", "json",
 	)
 }

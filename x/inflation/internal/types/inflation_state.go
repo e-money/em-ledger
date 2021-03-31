@@ -9,10 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // Parameter store keys
@@ -22,33 +20,21 @@ var (
 	KeyInflationAssets   = []byte("InflationAssets")
 )
 
-type InflationAsset struct {
-	Denom     string  `json:"denom" yaml:"denom"`
-	Inflation sdk.Dec `json:"inflation" yaml:"inflation"`
-	Accum     sdk.Dec `json:"accum" yaml:"accum"`
-}
-
 type InflationAssets = []InflationAsset
 
-type InflationState struct {
-	LastAppliedTime   time.Time       `json:"last_applied" yaml:"last_applied"`
-	LastAppliedHeight sdk.Int         `json:"last_applied_height" yaml:"last_applied_height"`
-	InflationAssets   InflationAssets `json:"assets" yaml:"assets"`
-}
-
-func (is InflationState) ParamSetPairs() subspace.ParamSetPairs {
-	return params.ParamSetPairs{
-		params.NewParamSetPair(KeyLastAppliedTime, &is.LastAppliedTime, nil),
-		params.NewParamSetPair(KeyLastAppliedHeight, &is.LastAppliedHeight, nil),
-		params.NewParamSetPair(KeyInflationAssets, &is.InflationAssets, nil),
+func (is InflationState) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(KeyLastAppliedTime, &is.LastAppliedTime, nil),
+		paramtypes.NewParamSetPair(KeyLastAppliedHeight, &is.LastAppliedHeight, nil),
+		paramtypes.NewParamSetPair(KeyInflationAssets, &is.InflationAssets, nil),
 	}
 }
 
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterParamSet(&InflationState{})
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&InflationState{})
 }
 
-func NewInflationState(assets ...string) InflationState {
+func NewInflationState(now time.Time, assets ...string) InflationState {
 	if len(assets)%2 != 0 {
 		panic("Unable to parse asset parameters")
 	}
@@ -69,13 +55,14 @@ func NewInflationState(assets ...string) InflationState {
 
 	return InflationState{
 		InflationAssets:   result,
-		LastAppliedTime:   time.Now().UTC(),
+		LastAppliedTime:   now.UTC(),
 		LastAppliedHeight: sdk.ZeroInt(),
 	}
 }
 
 func DefaultInflationState() InflationState {
-	return NewInflationState()
+	// only called once when generating genesis
+	return NewInflationState(time.Now())
 }
 
 // validate params

@@ -5,24 +5,49 @@
 package distribution
 
 import (
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/supply"
+	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	apptypes "github.com/e-money/em-ledger/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
+	"time"
 )
 
 var (
 	previousProposerKey = []byte("emdistr/previousproposer")
 )
 
+// todo (reviewer) : using the same name as sdk module to prevent adding both.
+const ModuleName = distrtypes.ModuleName
+
+type AccountKeeper interface {
+	GetModuleAddress(name string) sdk.AccAddress
+}
+
+type DistributionKeeper interface {
+	AllocateTokens(
+		ctx sdk.Context, sumPreviousPrecommitPower, totalPreviousPower int64,
+		previousProposer sdk.ConsAddress, previousVotes []abci.VoteInfo,
+	)
+}
+
 // Adapted from cosmos-sdk/x/distribution/abci.go
 // A custom version was needed to keep the address of the previousProposer out of the consensus-state.
 
 // set the proposer for determining distribution during endblock
 // and distribute rewards for the previous block
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, sk supply.Keeper, db db.DB, batch db.Batch) {
+// todo (reviewer): the logic in the this function was not modified. Please ensure that it still is what you need.
+func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB) {
+	defer telemetry.ModuleMeasureSince(ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
+
+	batch := apptypes.GetCurrentBatch(ctx)
+	if batch == nil {
+		panic("batch object not found") // todo (reviewer): panic in begin blocker is not handled downstream and will crash the node.
+	}
+
 	// determine the total power signing the block
 	var previousTotalPower, sumPreviousPrecommitPower int64
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
@@ -33,6 +58,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 	}
 
 	previousProposer, err := db.Get(previousProposerKey)
+	// todo (reviewer) : a panic in the begin blocker will crash the node. It is not "recovered" anywhere downstream
 	if err != nil {
 		panic(err)
 	}
@@ -40,8 +66,8 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k distr.Keeper, s
 	// TODO this is Tendermint-dependent
 	// ref https://github.com/cosmos/cosmos-sdk/issues/3095
 	if ctx.BlockHeight() > 1 {
-		feeCollector := sk.GetModuleAccount(ctx, auth.FeeCollectorName)
-		coins := feeCollector.GetCoins()
+		feeCollector := ak.GetModuleAddress(auth.FeeCollectorName)
+		coins := bk.GetAllBalances(ctx, feeCollector)
 
 		// Only call AllocateTokens if there are in fact tokens to allocate.
 		if !coins.IsZero() {

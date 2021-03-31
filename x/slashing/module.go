@@ -1,25 +1,29 @@
-// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
-//
-// Please contact partners@e-money.com for licensing related questions.
-
 package slashing
 
 import (
+	"context"
 	"encoding/json"
-
-	"github.com/e-money/em-ledger/x/slashing/client/cli"
-	"github.com/e-money/em-ledger/x/slashing/client/rest"
+	"fmt"
+	sdkslashing "github.com/cosmos/cosmos-sdk/x/slashing"
+	"github.com/e-money/em-ledger/x/slashing/keeper"
 	"github.com/e-money/em-ledger/x/slashing/types"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/slashing/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/slashing/client/rest"
+	sdkslashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
+	sdkslashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	sdkstakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 )
 
 var (
@@ -27,116 +31,144 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-// app module basics object
-type AppModuleBasic struct{}
+// AppModuleBasic defines the basic application module used by the slashing module.
+type AppModuleBasic struct {
+	cdc codec.Marshaler
+}
 
 var _ module.AppModuleBasic = AppModuleBasic{}
 
-// module name
+// Name returns the slashing module's name.
 func (AppModuleBasic) Name() string {
 	return types.ModuleName
 }
 
-// register module codec
-func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	RegisterCodec(cdc)
+// RegisterLegacyAminoCodec registers the slashing module's types for the given codec.
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	sdkslashingtypes.RegisterLegacyAminoCodec(cdc)
 }
 
-// default genesis state
-func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
+// RegisterInterfaces registers the module's interface types
+func (b AppModuleBasic) RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	sdkslashingtypes.RegisterInterfaces(registry)
 }
 
-// module validate genesis
-func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var data GenesisState
-	err := ModuleCdc.UnmarshalJSON(bz, &data)
-	if err != nil {
-		return err
+// DefaultGenesis returns default genesis state as raw bytes for the slashing
+// module.
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+	genesis := &sdkslashingtypes.GenesisState{
+		Params:       types.DefaultParams(),
+		SigningInfos: []sdkslashingtypes.SigningInfo{},
+		MissedBlocks: []sdkslashingtypes.ValidatorMissedBlocks{},
 	}
-	return ValidateGenesis(data)
+	return cdc.MustMarshalJSON(genesis)
 }
 
-// register rest routes
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	rest.RegisterRoutes(ctx, rtr)
+// ValidateGenesis performs genesis state validation for the slashing module.
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+	var data sdkslashingtypes.GenesisState
+	if err := cdc.UnmarshalJSON(bz, &data); err != nil {
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", sdkslashingtypes.ModuleName, err)
+	}
+
+	return sdkslashingtypes.ValidateGenesis(data)
 }
 
-// get the root tx command of this module
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+// RegisterRESTRoutes registers the REST routes for the slashing module.
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	rest.RegisterHandlers(clientCtx, rtr)
 }
 
-// get the root query command of this module
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(StoreKey, cdc)
+// RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the slashig module.
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	sdkslashingtypes.RegisterQueryHandlerClient(context.Background(), mux, sdkslashingtypes.NewQueryClient(clientCtx))
 }
 
-//___________________________
-// app module
+// GetTxCmd returns the root tx command for the slashing module.
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	return cli.NewTxCmd()
+}
+
+// GetQueryCmd returns no root query command for the slashing module.
+func (AppModuleBasic) GetQueryCmd() *cobra.Command {
+	return cli.GetQueryCmd()
+}
+
+//____________________________________________________________________________
+
+// AppModule implements an application module for the slashing module.
 type AppModule struct {
 	AppModuleBasic
-	keeper        Keeper
-	stakingKeeper types.StakingKeeper
+
+	keeper        keeper.Keeper
+	accountKeeper sdkslashingtypes.AccountKeeper
+	bankKeeper    sdkslashingtypes.BankKeeper
+	stakingKeeper sdkstakingkeeper.Keeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(keeper Keeper, stakingKeeper types.StakingKeeper) AppModule {
+func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, ak sdkslashingtypes.AccountKeeper, bk sdkslashingtypes.BankKeeper, sk sdkstakingkeeper.Keeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
+		AppModuleBasic: AppModuleBasic{cdc: cdc},
 		keeper:         keeper,
-		stakingKeeper:  stakingKeeper,
+		accountKeeper:  ak,
+		bankKeeper:     bk,
+		stakingKeeper:  sk,
 	}
 }
 
-// module name
+// Name returns the slashing module's name.
 func (AppModule) Name() string {
-	return ModuleName
+	return types.ModuleName
 }
 
-// register invariants
+// RegisterInvariants registers the slashing module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// module message route name
-func (AppModule) Route() string {
-	return RouterKey
+// Route returns the message routing key for the slashing module.
+func (am AppModule) Route() sdk.Route {
+	return sdk.NewRoute(types.RouterKey, sdkslashing.NewHandler(am.keeper.Keeper))
 }
 
-// module handler
-func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
-}
-
-// module querier route name
+// QuerierRoute returns the slashing module's querier route name.
 func (AppModule) QuerierRoute() string {
-	return QuerierRoute
+	return types.QuerierRoute
 }
 
-// module querier
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
+// LegacyQuerierHandler returns the slashing module sdk.Querier.
+func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+	return sdkslashingkeeper.NewQuerier(am.keeper.Keeper, legacyQuerierCdc)
 }
 
-// module init-genesis
-func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState GenesisState
-	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, am.stakingKeeper, genesisState)
+// RegisterServices registers module services.
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	sdkslashingtypes.RegisterMsgServer(cfg.MsgServer(), sdkslashingkeeper.NewMsgServerImpl(am.keeper.Keeper))
+	sdkslashingtypes.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+}
+
+// InitGenesis performs genesis initialization for the slashing module. It returns
+// no validator updates.
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState sdkslashingtypes.GenesisState
+	cdc.MustUnmarshalJSON(data, &genesisState)
+	sdkslashing.InitGenesis(ctx, am.keeper.Keeper, am.stakingKeeper, &genesisState)
 	return []abci.ValidatorUpdate{}
 }
 
-// module export genesis
-func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	gs := ExportGenesis(ctx, am.keeper)
-	return ModuleCdc.MustMarshalJSON(gs)
+// ExportGenesis returns the exported genesis state as raw bytes for the slashing
+// module.
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+	gs := sdkslashing.ExportGenesis(ctx, am.keeper.Keeper)
+	return cdc.MustMarshalJSON(gs)
 }
 
-// module begin-block
+// BeginBlock returns the begin blocker for the slashing module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	ctx.Logger().Error("Slashing module's BeginBlock is not used. Please invoke BeginBlocker directly instead.")
+	keeper.BeginBlocker(ctx, req, am.keeper)
 }
 
-// module end-block
+// EndBlock returns the end blocker for the slashing module. It returns no validator
+// updates.
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }

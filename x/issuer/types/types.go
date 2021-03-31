@@ -12,24 +12,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type Issuers []Issuer
-
-type Issuer struct {
-	Address sdk.AccAddress `json:"address" yaml:"address"`
-	Denoms  []string       `json:"denoms" yaml:"denoms"`
-}
-
 func NewIssuer(address sdk.AccAddress, denoms ...string) Issuer {
 	sort.Strings(denoms)
 
 	return Issuer{
-		Address: address,
+		Address: address.String(),
 		Denoms:  denoms,
 	}
 }
 
 func (i Issuer) IsValid() bool {
-	if i.Address == nil {
+	if len(i.Address) == 0 {
 		return false
 	}
 
@@ -43,8 +36,8 @@ func (i Issuer) IsValid() bool {
 func (i Issuers) String() string {
 	var sb strings.Builder
 
-	for _, issuer := range i {
-		sb.WriteString(fmt.Sprintf("%v : %v\n", issuer.Address.String(), issuer.Denoms))
+	for _, issuer := range i.Issuers {
+		sb.WriteString(fmt.Sprintf("%v : %v\n", issuer.Address, issuer.Denoms))
 	}
 
 	return sb.String()

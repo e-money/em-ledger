@@ -4,21 +4,20 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
-	"time"
-
 	nt "github.com/e-money/em-ledger/networktest"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/tidwall/sjson"
+	"time"
 )
 
 var _ = Describe("Staking", func() {
 	const (
 		QueryNgmRewards            = "total.#(denom==\"ungm\")"
-		QueryJailedValidatorsCount = "#(jailed==true)#"
+		QueryJailedValidatorsCount = "validators.#(jailed==true)#"
 	)
 
 	Describe("Authority manages issuers", func() {
@@ -30,7 +29,16 @@ var _ = Describe("Staking", func() {
 				Validator2Key = testnet.Keystore.Validators[2]
 			)
 
-			It("creates a new testnet", createNewTestnet)
+			It("creates a new testnet", func() {
+				awaitReady, err := testnet.RestartWithModifications(
+					// increase slash fraction so that amount is > 0
+					func(bz []byte) []byte {
+						bz, _ = sjson.SetBytes(bz, "app_state.slashing.params.slash_fraction_downtime", "0.100000000000000000")
+						return bz
+					})
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(awaitReady()).To(BeTrue())
+			})
 
 			It("kill validator 2 and get jailed", func() {
 				listener, err := nt.NewEventListener()
@@ -52,6 +60,9 @@ var _ = Describe("Staking", func() {
 
 				Expect(slash()).ToNot(BeNil())
 				Expect(payoutEvent()).To(BeTrue())
+
+				// Allow for a few blocks
+				time.Sleep(5 * time.Second)
 
 				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())

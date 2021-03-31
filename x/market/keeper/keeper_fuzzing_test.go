@@ -6,13 +6,13 @@ package keeper
 
 import (
 	"fmt"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"math/rand"
 	"runtime/debug"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/stretchr/testify/require"
 )
@@ -41,15 +41,15 @@ func TestFuzzing1(t *testing.T) {
 		}
 	}()
 
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
 	var (
-		acc1 = createAccount(ctx, ak, "acc1", "1000000000eur")
-		acc2 = createAccount(ctx, ak, "acc2", "1000000000usd")
-		acc3 = createAccount(ctx, ak, "acc3", "1000000000chf")
+		acc1 = createAccount(ctx, ak, bk, randomAddress(), "1000000000eur")
+		acc2 = createAccount(ctx, ak, bk, randomAddress(), "1000000000usd")
+		acc3 = createAccount(ctx, ak, bk, randomAddress(), "1000000000chf")
 	)
 
-	totalSupply := snapshotAccounts(ctx, ak)
+	totalSupply := snapshotAccounts(ctx, bk)
 
 	basepriceEURUSD := sdk.ZeroDec()
 	for basepriceEURUSD.IsZero() {
@@ -65,7 +65,7 @@ func TestFuzzing1(t *testing.T) {
 	testdata := []struct {
 		src, dst string
 		price    sdk.Dec
-		seller   exported.Account
+		seller   authtypes.AccountI
 	}{
 		{"eur", "usd", basepriceEURUSD, acc1},
 		{"usd", "eur", ONE.Quo(basepriceEURUSD), acc2},
@@ -94,11 +94,11 @@ func TestFuzzing1(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	//dumpEvents(ctx.EventManager().Events())
-	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, ak)).IsZero())
+	//dumpEvents(ctx.EventManager().ABCIEvents())
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
 }
 
-func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller exported.Account, r *rand.Rand) (res []types.Order) {
+func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller authtypes.AccountI, r *rand.Rand) (res []types.Order) {
 	priceGen := priceGenerator(basePrice, r)
 
 	for i := 0; i < 500; i++ {
@@ -118,7 +118,7 @@ func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller exporte
 		case 0:
 			o.TimeInForce = types.TimeInForce_FillOrKill
 		case 1:
-			o.TimeInForce = types.TimeInForce_GoodTilCancel
+			o.TimeInForce = types.TimeInForce_GoodTillCancel
 		case 2:
 			o.TimeInForce = types.TimeInForce_ImmediateOrCancel
 		}

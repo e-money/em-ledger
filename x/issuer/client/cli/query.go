@@ -5,35 +5,32 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/e-money/em-ledger/x/issuer/types"
-
 	"github.com/spf13/cobra"
 )
 
-func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	issuerQueryCmd := &cobra.Command{
+func GetQueryCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "issuers",
 		Short: "List issuers",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			resp, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryIssuers))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			issuers := make(types.Issuers, 0)
-			cdc.MustUnmarshalJSON(resp, &issuers)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Issuers(cmd.Context(), &types.QueryIssuersRequest{})
+			if err != nil {
+				return err
+			}
 
-			return cliCtx.PrintOutput(issuers)
+			return clientCtx.PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(issuerQueryCmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

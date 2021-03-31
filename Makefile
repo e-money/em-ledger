@@ -39,21 +39,18 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # process linker flags
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
-          -X github.com/cosmos/cosmos-sdk/version.ServerName=emd \
-          -X github.com/cosmos/cosmos-sdk/version.ClientName=emcli \
-          -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
-          -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-          -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
+		  -X github.com/cosmos/cosmos-sdk/version.AppName=emd \
+		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emcli
 
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
-	go build -mod=readonly $(BUILD_FLAGS) -o build/emcli$(BIN_PREFIX) ./cmd/emcli
 
 build-linux:
 	# Linux images for docker-compose
@@ -74,7 +71,7 @@ test:
 	go test -mod=readonly ./...
 
 bdd-test:
-	go test -mod=readonly -v -p 1 --tags="bdd" bdd_test.go staking_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go capacity_test.go market_test.go buyback_test.go
+	go test -mod=readonly -v -p 1 --tags="bdd" bdd_test.go restricted_denom_test.go multisigauthority_test.go authority_test.go  market_test.go buyback_test.go capacity_test.go staking_test.go
 
 local-testnet:
 	go test -mod=readonly -v --tags="bdd" bdd_test.go localnet_test.go
@@ -92,5 +89,35 @@ license:
 	GO111MODULE=off go get github.com/google/addlicense/
 	addlicense -f LICENSE .
 
-
 .PHONY: build build-linux clean test bdd-test build-docker license
+
+###############################################################################
+###                                Protobuf                                 ###
+###############################################################################
+DOCKER := $(shell which docker)
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+
+proto-all: proto-format proto-lint proto-gen proto-swagger-gen
+
+proto-gen:
+	@echo "Generating Protobuf files"
+	$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen sh ./scripts/protocgen.sh
+
+proto-format:
+	@echo "Formatting Protobuf files"
+	$(DOCKER) run --rm -v $(CURDIR):/workspace \
+	--workdir /workspace tendermintdev/docker-build-proto \
+	find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+
+proto-swagger-gen:
+	@./scripts/protoc-swagger-gen.sh
+
+proto-lint:
+	@$(DOCKER_BUF) lint --error-format=json
+
+proto-check-breaking:
+	@$(DOCKER_BUF) breaking --against-input $(HTTPS_GIT)#branch=master
+
+.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking
+
+

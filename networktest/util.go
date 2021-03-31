@@ -7,9 +7,16 @@
 package networktest
 
 import (
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	emoney "github.com/e-money/em-ledger"
+	"github.com/spf13/pflag"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -53,47 +60,42 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 	return
 }
 
-func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) types.StdTx {
-	memo := "+memo"
-	fee := auth.NewStdFee(100000, mustParseCoins(feestring))
+func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) signing.Tx {
+	for i, m := range msgs {
+		if err := m.ValidateBasic(); err != nil {
+			panic(fmt.Sprintf("invalid msg at pos %d: %#v", i, m))
+		}
+	}
+	encodingConfig := emoney.MakeEncodingConfig()
 
-	sig, err := key.Sign(
-		auth.StdSignBytes(
-			chainid,
-			accnum,
-			sequence,
-			fee,
-			msgs,
-			memo),
-	)
+	clientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithLegacyAmino(encodingConfig.Amino).
+		WithInput(os.Stdin).
+		WithAccountRetriever(authtypes.AccountRetriever{}).
+		WithBroadcastMode(flags.BroadcastBlock).
+		WithHomeDir(emoney.DefaultNodeHome).
+		WithChainID(chainid).
+		WithFrom(key.address.String()).
+		WithKeyring(key.keybase)
 
+	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
+	txf := tx.NewFactoryCLI(clientCtx, flagSet).
+		WithMemo("+memo").
+		WithFees(feestring).
+		WithSequence(sequence).
+		WithAccountNumber(accnum)
+
+	txb, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
-		panic(err)
+		panic("failed to build tx: " + err.Error())
 	}
-
-	signature := auth.StdSignature{
-		PubKey:    key.pubkey,
-		Signature: sig,
-	}
-
-	tx := auth.NewStdTx(msgs, fee, []auth.StdSignature{signature}, memo)
-	return tx
-}
-
-func mustParseCoins(coins string) sdk.Coins {
-	cs, err := sdk.ParseCoins(coins)
+	err = tx.Sign(txf, key.name, txb, false)
 	if err != nil {
-		panic(err)
+		panic("failed to sign tx: " + err.Error())
 	}
 
-	return cs
-}
-
-func mustParseCoin(coin string) sdk.Coin {
-	c, err := sdk.ParseCoin(coin)
-	if err != nil {
-		panic(err)
-	}
-
-	return c
+	return txb.GetTx()
 }

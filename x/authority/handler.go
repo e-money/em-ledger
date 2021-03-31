@@ -6,38 +6,32 @@ package authority
 
 import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/authority/keeper"
 
 	"github.com/e-money/em-ledger/x/authority/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func newHandler(keeper Keeper) sdk.Handler {
+func newHandler(k Keeper) sdk.Handler {
+	msgServer := keeper.NewMsgServerImpl(k)
+
 	return func(ctx sdk.Context, msg sdk.Msg) (result *sdk.Result, err error) {
-		//defer func() {
-		//	if r := recover(); r != nil {
-		//		switch o := r.(type) {
-		//		case sdk.Result:
-		//			result = o
-		//		case sdk.Error:
-		//			result = o.Result()
-		//		default:
-		//			panic(r)
-		//		}
-		//	}
-		//}()
-		//
-		//if err := msg.ValidateBasic(); err != nil {
-		//	return sdk.ErrUnknownRequest(err.Error()).Result()
-		//}
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case types.MsgCreateIssuer:
-			return keeper.CreateIssuer(ctx, msg.Authority, msg.Issuer, msg.Denominations)
-		case types.MsgDestroyIssuer:
-			return keeper.DestroyIssuer(ctx, msg.Authority, msg.Issuer)
-		case types.MsgSetGasPrices:
-			return keeper.SetGasPrices(ctx, msg.Authority, msg.GasPrices)
+		case *types.MsgCreateIssuer:
+			res, err := msgServer.CreateIssuer(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
+		case *types.MsgDestroyIssuer:
+			res, err := msgServer.DestroyIssuer(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
+		case *types.MsgSetGasPrices:
+			res, err := msgServer.SetGasPrices(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg)
 		}

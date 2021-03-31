@@ -6,7 +6,6 @@ package keeper
 
 import (
 	"fmt"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -16,26 +15,27 @@ import (
 )
 
 type Keeper struct {
-	cdc           *codec.Codec
+	cdc           codec.BinaryMarshaler
 	storeKey      sdk.StoreKey
-	supplyKeeper  types.SupplyKeeper
+	supplyKeeper  types.BankKeeper
 	stakingKeeper types.StakingKeeper
+	accountKeeper types.AccountKeeper
 
 	cointokenDestination,
 	stakingtokenDestination string
 }
 
 func NewKeeper(
-	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
+	cdc codec.BinaryMarshaler, key sdk.StoreKey, bankKeeper types.BankKeeper, accountKeeper types.AccountKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
 
-	if addr := supplyKeeper.GetModuleAddress(types.ModuleName); addr == nil {
+	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the inflation module account has not been set")
 	}
 
 	return Keeper{
 		cdc:           cdc,
 		storeKey:      key,
-		supplyKeeper:  supplyKeeper,
+		supplyKeeper:  bankKeeper,
 		stakingKeeper: stakingKeeper,
 
 		cointokenDestination:    coinTokenDestination,
@@ -64,7 +64,7 @@ func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 
 func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(is)
+	b := k.cdc.MustMarshalBinaryLengthPrefixed(&is)
 	store.Set(types.MinterKey, b)
 }
 
@@ -78,7 +78,7 @@ func (k Keeper) SetInflation(ctx sdk.Context, newInflation sdk.Dec, denom string
 	asset.Inflation = newInflation
 	k.SetState(ctx, state)
 
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) GetStakingDenomination(ctx sdk.Context) string {
@@ -103,7 +103,7 @@ func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) (*sdk.Result, error)
 	}
 
 	k.SetState(ctx, state)
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {

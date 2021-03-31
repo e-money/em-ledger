@@ -10,8 +10,9 @@
 BINARY=/emoney/${BINARY:-emd-linux}
 ID=${ID:-0}
 LOG=${LOG:-emd.log}
-LOGLEVEL=${LOGLEVEL:-emz:info,x/inflation:info,x/liquidityprovider:info,main:info,state:info,*:error}
-
+# LOGLEVEL=${LOGLEVEL:-emz:info,x/inflation:info,x/liquidityprovider:info,main:info,state:info,*:error}
+# TODO (reviewer) : the SDK uses the zap logger now. without fine grained configuration options. There should be an open issue in the repo already
+LOGLEVEL=info
 ##
 ## Assert linux binary
 ##
@@ -31,9 +32,9 @@ fi
 export EMDHOME="/emoney/node${ID}"
 
 if [ -d "`dirname ${EMDHOME}/${LOG}`" ]; then
-  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} | tee "${EMDHOME}/${LOG}"
+  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --trace --pruning=nothing | tee "${EMDHOME}/${LOG}"
 else
-  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL}
+  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --trace --pruning=nothing
 fi
 
 chmod 777 -R /emoney

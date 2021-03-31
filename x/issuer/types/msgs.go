@@ -10,35 +10,10 @@ import (
 )
 
 var (
-	_ sdk.Msg = MsgIncreaseMintable{}
-	_ sdk.Msg = MsgDecreaseMintable{}
-	_ sdk.Msg = MsgRevokeLiquidityProvider{}
-	_ sdk.Msg = MsgSetInflation{}
-)
-
-type (
-	MsgIncreaseMintable struct {
-		Issuer            sdk.AccAddress `json:"issuer" yaml:"issuer"`
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-		MintableIncrease  sdk.Coins      `json:"amount" yaml:"amount"`
-	}
-
-	MsgDecreaseMintable struct {
-		Issuer            sdk.AccAddress `json:"issuer" yaml:"issuer"`
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-		MintableDecrease  sdk.Coins      `json:"amount" yaml:"amount"`
-	}
-
-	MsgRevokeLiquidityProvider struct {
-		Issuer            sdk.AccAddress `json:"issuer" yaml:"issuer"`
-		LiquidityProvider sdk.AccAddress `json:"liquidity_provider" yaml:"liquidity_provider"`
-	}
-
-	MsgSetInflation struct {
-		Issuer        sdk.AccAddress `json:"issuer" yaml:"issuer"`
-		Denom         string         `json:"denom" yaml:"denom"`
-		InflationRate sdk.Dec        `json:"inflation_rate" yaml:"inflation_rate"`
-	}
+	_ sdk.Msg = &MsgIncreaseMintable{}
+	_ sdk.Msg = &MsgDecreaseMintable{}
+	_ sdk.Msg = &MsgRevokeLiquidityProvider{}
+	_ sdk.Msg = &MsgSetInflation{}
 )
 
 func (msg MsgSetInflation) Route() string { return ModuleName }
@@ -51,20 +26,23 @@ func (msg MsgSetInflation) ValidateBasic() error {
 		//return ErrNegativeInflation()
 	}
 
-	if msg.Issuer.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid issuer address (%s)", err)
 	}
 
 	return nil
 }
 
 func (msg MsgSetInflation) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgSetInflation) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Issuer}
+	from, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgRevokeLiquidityProvider) Route() string { return ModuleName }
@@ -72,25 +50,27 @@ func (msg MsgRevokeLiquidityProvider) Route() string { return ModuleName }
 func (msg MsgRevokeLiquidityProvider) Type() string { return "revoke_liquidity_provider" }
 
 func (msg MsgRevokeLiquidityProvider) ValidateBasic() error {
-	if msg.LiquidityProvider.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing liquidity provider address")
-		//return sdk.ErrInvalidAddress("missing liquidity provider address")
+	if _, err := sdk.AccAddressFromBech32(msg.LiquidityProvider); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid liquidity provider address (%s)", err)
 	}
 
-	if msg.Issuer.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid issuer address (%s)", err)
 	}
 
 	return nil
 }
 
 func (msg MsgRevokeLiquidityProvider) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgRevokeLiquidityProvider) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Issuer}
+	from, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgDecreaseMintable) Route() string { return ModuleName }
@@ -98,14 +78,12 @@ func (msg MsgDecreaseMintable) Route() string { return ModuleName }
 func (msg MsgDecreaseMintable) Type() string { return "decrease_mintable" }
 
 func (msg MsgDecreaseMintable) ValidateBasic() error {
-	if msg.LiquidityProvider.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing liquidity provider address")
-		//return sdk.ErrInvalidAddress("missing liquidity provider address")
+	if _, err := sdk.AccAddressFromBech32(msg.LiquidityProvider); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid liquidity provider address (%s)", err)
 	}
 
-	if msg.Issuer.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid issuer address (%s)", err)
 	}
 
 	if !msg.MintableDecrease.IsValid() {
@@ -117,11 +95,15 @@ func (msg MsgDecreaseMintable) ValidateBasic() error {
 }
 
 func (msg MsgDecreaseMintable) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgDecreaseMintable) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Issuer}
+	from, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
 
 func (msg MsgIncreaseMintable) Route() string { return ModuleName }
@@ -129,28 +111,29 @@ func (msg MsgIncreaseMintable) Route() string { return ModuleName }
 func (msg MsgIncreaseMintable) Type() string { return "increase_mintable" }
 
 func (msg MsgIncreaseMintable) ValidateBasic() error {
-	if msg.LiquidityProvider.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing liquidity provider address")
-		//return sdk.ErrInvalidAddress("missing liquidity provider address")
+	if _, err := sdk.AccAddressFromBech32(msg.LiquidityProvider); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid liquidity provider address (%s)", err)
 	}
 
-	if msg.Issuer.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing issuer address")
-		//return sdk.ErrInvalidAddress("missing issuer address")
+	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid issuer address (%s)", err)
 	}
 
 	if !msg.MintableIncrease.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "mintable increase is invalid: "+msg.MintableIncrease.String())
-		//return sdk.ErrInvalidCoins("mintable increase is invalid: " + msg.MintableIncrease.String())
 	}
 
 	return nil
 }
 
 func (msg MsgIncreaseMintable) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgIncreaseMintable) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Issuer}
+	from, err := sdk.AccAddressFromBech32(msg.Issuer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
