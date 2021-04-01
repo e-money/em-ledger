@@ -146,20 +146,16 @@ var _ = Describe("BEP3 Swap", func() {
 			// Claim swap
 			_, err = emcli.BEP3Claim(key2, swapId, swapSecret)
 			Expect(err).ToNot(HaveOccurred())
+
 			height = incChainHeight(height)
 
 			// Check updated state
 			totalSupplyAfter, err := emcli.QueryTotalSupply()
 			Expect(err).ToNot(HaveOccurred())
-			fmt.Println("supply before str:", string(totalSupply))
-			fmt.Println(
-				"supply after str:", string(totalSupplyAfter),
-			)
-			fmt.Println("supply before int:", ungmSupplyBefore)
+
+			fmt.Println("supply before:", ungmSupplyBefore)
 			ungmSupplyAfter := gjson.ParseBytes(totalSupplyAfter).Get(`supply.#(denom=="ungm").amount`).Int()
 			fmt.Println("supply after:", ungmSupplyAfter)
-			ungmSupplyAfter2 := gjson.ParseBytes(totalSupplyAfter).Get(`supply.#(denom=="ungm").amount`).Uint()
-			fmt.Println("supply after:", ungmSupplyAfter2)
 			Expect(ungmSupplyAfter).To(Equal(ungmSupplyBefore + trxAmount))
 
 			ungmBalanceAfter, err := emcli.QueryBalanceDenom(
