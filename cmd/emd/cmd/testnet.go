@@ -11,7 +11,6 @@ import (
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/buyback"
 	"github.com/e-money/em-ledger/x/inflation"
-	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
@@ -28,7 +27,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/codec"	
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -507,8 +506,6 @@ func createTestBep3Genesis() json.RawMessage {
 	gen.Params.AssetParams = make([]bep3types.AssetParam, len(bep3Denoms))
 	gen.Supplies.AssetSupplies = make([]bep3types.AssetSupply, len(bep3Denoms))
 
-	// Deterministic randomizer
-	r := rand.New(rand.NewSource(1))
 	limit := sdk.NewInt(int64(bep3.MaxSupplyLimit))
 	for idx, denom := range bep3Denoms {
 		bep3Coins[idx] = sdk.NewCoin(denom, limit)
@@ -532,7 +529,7 @@ func createTestBep3Genesis() json.RawMessage {
 				},
 				Active:        true,
 				DeputyAddress: depBech32Addr,
-				FixedFee:      bep3.GenRandFixedFee(r),
+				FixedFee:      sdk.NewInt(bep3types.DeputyFee),
 				MinSwapAmount: sdk.OneInt(),
 				MaxSwapAmount: limit,
 				SwapTimestamp: time.Now().Unix(),
