@@ -17,7 +17,6 @@ import (
 	emoney "github.com/e-money/em-ledger"
 	"github.com/spf13/pflag"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -31,9 +30,7 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 	scanOnce := sync.Once{}
 
 	scanner = func(s string) {
-		if strings.Contains(s, substring) {
-			scanOnce.Do(mutex.Unlock)
-		}
+		scanOnce.Do(mutex.Unlock)
 	}
 
 	// Bridge mutex to a regular channel
