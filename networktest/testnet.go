@@ -297,7 +297,8 @@ func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, er
 		case <-ticker.C:
 			height, err := GetHeight()
 			if err != nil {
-				return -1, err
+				fmt.Print(".")
+				continue
 			}
 			if height >= requestedHeight {
 				return height, nil
