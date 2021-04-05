@@ -533,7 +533,7 @@ func createTestBep3Genesis() json.RawMessage {
 				MinSwapAmount: sdk.OneInt(),
 				MaxSwapAmount: limit,
 				SwapTimestamp: time.Now().Unix(),
-				SwapTimeSpan:  24*3*3600, // 3 days
+				SwapTimeSpanMin:  24*3*60, // 3 days in minutes
 			}
 	}
 
