@@ -324,8 +324,6 @@ func dockerComposeUp() (func() bool, error) {
 	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
-}
-
 func dockerComposeDown() error {
 	_, err := execCmdAndWait(dockerComposePath, "kill")
 	return err
