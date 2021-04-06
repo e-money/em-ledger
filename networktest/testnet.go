@@ -105,7 +105,7 @@ func (t *Testnet) Setup() error {
 func writeGenesisFiles(newGenesisFile []byte) error {
 	return filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
 		if fileinfo.Name() == "genesis.json" {
-			err := ioutil.WriteFile(path, newGenesisFile, 0o644)
+			err := ioutil.WriteFile(path, newGenesisFile, 0644)
 			if err != nil {
 				return err
 			}
@@ -159,11 +159,11 @@ func (t Testnet) Teardown() error {
 }
 
 func (t Testnet) KillValidator(index int) (string, error) {
-	return execCmdAndWait(dockerPath, "kill", fmt.Sprintf("emdnode%v", index))
+	return execCmdAndWait(dockerComposePath, "kill", fmt.Sprintf("emdnode%v", index))
 }
 
 func (t Testnet) ResurrectValidator(index int) (string, error) {
-	return execCmdAndWait(dockerPath, "start", fmt.Sprintf("emdnode%v", index))
+	return execCmdAndWait(dockerComposePath, "start", fmt.Sprintf("emdnode%v", index))
 }
 
 func (t Testnet) GetValidatorLogs(index int) (string, error) {
@@ -201,6 +201,7 @@ func (t Testnet) makeTestnet() error {
 		"--commit-timeout", "1500ms",
 		"--v", strconv.Itoa(numNodes),
 		"--minimum-gas-prices", "")
+
 	if err != nil {
 		return err
 	}
@@ -263,6 +264,14 @@ func (t *Testnet) updateGenesis() {
 	t.genesis = bz
 
 	writeGenesisFiles(bz)
+}
+
+func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error) {
+	newHeight, err := WaitForHeightWithTimeout(
+		height+1, sleepDur,
+	)
+
+	return newHeight, err
 }
 
 func GetHeight() (int64, error) {
