@@ -22,6 +22,7 @@ func GetCurrentBatch(ctx sdk.Context) db.Batch {
 	}
 	return nil
 }
+
 func WithCurrentBatch(ctx sdk.Context, batch db.Batch) sdk.Context {
 	return ctx.WithValue(database, batch)
 }

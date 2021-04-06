@@ -7,13 +7,13 @@ package networktest
 import (
 	"bytes"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tidwall/gjson"
 )
 
@@ -328,8 +328,8 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 		return "", err
 	}
 
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
-	//bz, err := cmd.CombinedOutput()
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// bz, err := cmd.CombinedOutput()
 	var b bytes.Buffer
 	cmd.Stderr = &b
 
@@ -354,9 +354,9 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 		return "", false, err
 	}
 
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
-	//fmt.Println(" *** CombinedOutput", string(bz))
+	// fmt.Println(" *** CombinedOutput", string(bz))
 	if err != nil {
 		return "", false, err
 	}

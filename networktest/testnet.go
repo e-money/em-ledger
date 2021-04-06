@@ -9,8 +9,6 @@ package networktest
 import (
 	"bufio"
 	"fmt"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -105,7 +105,7 @@ func (t *Testnet) Setup() error {
 func writeGenesisFiles(newGenesisFile []byte) error {
 	return filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
 		if fileinfo.Name() == "genesis.json" {
-			err := ioutil.WriteFile(path, newGenesisFile, 0644)
+			err := ioutil.WriteFile(path, newGenesisFile, 0o644)
 			if err != nil {
 				return err
 			}
@@ -124,7 +124,7 @@ func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (
 
 func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
 	if reusableNetUp() {
-		return func()bool { return true }, nil
+		return func() bool { return true }, nil
 	}
 	err := dockerComposeDown()
 	if err != nil {
@@ -201,7 +201,6 @@ func (t Testnet) makeTestnet() error {
 		"--commit-timeout", "1500ms",
 		"--v", strconv.Itoa(numNodes),
 		"--minimum-gas-prices", "")
-
 	if err != nil {
 		return err
 	}
@@ -317,7 +316,7 @@ func compileBinaries() error {
 
 func dockerComposeUp() (func() bool, error) {
 	wait := func() bool {
-		_, err := WaitForHeightWithTimeout(1, 30 * time.Second)
+		_, err := WaitForHeightWithTimeout(1, 30*time.Second)
 		return err == nil
 	}
 	_, scanner := createOutputScanner("committed state", 30*time.Second)

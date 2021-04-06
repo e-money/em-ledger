@@ -8,6 +8,10 @@ package networktest
 
 import (
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -16,9 +20,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	emoney "github.com/e-money/em-ledger"
 	"github.com/spf13/pflag"
-	"os"
-	"sync"
-	"time"
 )
 
 // Create a scanner function with built-in timeout. The returned wait function blocks until the

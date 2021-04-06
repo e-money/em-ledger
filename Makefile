@@ -48,6 +48,17 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+lint:
+	golangci-lint run
+
+# go get mvdan.cc/gofumpt
+fmt:
+	gofumpt -w **/*.go
+
+# go get go get github.com/daixiang0/gci
+imp:
+	gci -w **/*.go
+
 
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd

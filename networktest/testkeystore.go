@@ -7,15 +7,16 @@ package networktest
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -120,7 +121,7 @@ func (k Key) Sign(bz []byte) ([]byte, error) {
 func NewKeystore(reusableLocation, reusableIsUp bool) (*KeyStore, error) {
 	var (
 		path string
-		err error
+		err  error
 	)
 
 	// random tmp path
@@ -138,7 +139,7 @@ func NewKeystore(reusableLocation, reusableIsUp bool) (*KeyStore, error) {
 		if err := os.RemoveAll(path); err != nil {
 			panic(err)
 		}
-		if err := os.Mkdir(path, 0700); err != nil {
+		if err := os.Mkdir(path, 0o700); err != nil {
 			panic(err)
 		}
 	}
