@@ -12,12 +12,12 @@ import (
 func TestDenoms(t *testing.T) {
 	assert.True(t, ValidateDenom("eeur"))
 	// todo (reviewer): the regexp pattern for valid denoms was changed for IBC to `[a-zA-Z][a-zA-Z0-9/]{2,127}`
-	//assert.False(t, ValidateDenom("EEUR"))
+	// assert.False(t, ValidateDenom("EEUR"))
 	assert.False(t, ValidateDenom("123456"))
 }
 
 func TestParseDenominations(t *testing.T) {
-	var testdata = []struct {
+	testdata := []struct {
 		denoms string
 		valid  bool
 		count  int

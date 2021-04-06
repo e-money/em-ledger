@@ -19,6 +19,7 @@ import (
 	"time"
 
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -60,13 +61,20 @@ func locateExecutable(name string) (path string) {
 	return
 }
 
+// NewTestnet launches a new testnet with random or fixed location and chain id
+// or syncs with an existing one with chain ID: LocalNetReuse
 func NewTestnet() Testnet {
-	ks, err := NewKeystore()
+	reusableIsUp := reusableNetUp()
+	launchReusable := os.Getenv(startForReUseEnv) == "1"
+	ks, err := NewKeystore(launchReusable, reusableIsUp)
 	if err != nil {
 		panic(err)
 	}
 
-	chainID := fmt.Sprintf("localnet-%s", tmrand.Str(6))
+	chainID := LocalNetReuse
+	if !launchReusable && !reusableIsUp {
+		chainID = fmt.Sprintf("localnet-%s", tmrand.Str(6))
+	}
 
 	return Testnet{
 		Keystore: ks,
@@ -75,6 +83,10 @@ func NewTestnet() Testnet {
 }
 
 func (t *Testnet) Setup() error {
+	if reusableNetUp() {
+		return nil
+	}
+
 	err := compileBinaries()
 	if err != nil {
 		return err
@@ -111,6 +123,9 @@ func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (
 }
 
 func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
+	if reusableNetUp() {
+		return func() bool { return true }, nil
+	}
 	err := dockerComposeDown()
 	if err != nil {
 		return nil, err
@@ -137,15 +152,18 @@ func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, erro
 }
 
 func (t Testnet) Teardown() error {
+	if reusableNetUp() {
+		return nil
+	}
 	return dockerComposeDown()
 }
 
 func (t Testnet) KillValidator(index int) (string, error) {
-	return execCmdAndWait(dockerPath, "kill", fmt.Sprintf("emdnode%v", index))
+	return execCmdAndWait(dockerComposePath, "kill", fmt.Sprintf("emdnode%v", index))
 }
 
 func (t Testnet) ResurrectValidator(index int) (string, error) {
-	return execCmdAndWait(dockerPath, "start", fmt.Sprintf("emdnode%v", index))
+	return execCmdAndWait(dockerComposePath, "start", fmt.Sprintf("emdnode%v", index))
 }
 
 func (t Testnet) GetValidatorLogs(index int) (string, error) {
@@ -166,7 +184,13 @@ func (t Testnet) ChainID() string {
 
 func (t Testnet) makeTestnet() error {
 	numNodes := 4
-	_, err := execCmdAndWait(EMD,
+
+	if reusableNetUp() {
+		return nil
+	}
+
+	_, err := execCmdAndWait(
+		EMD,
 		"testnet",
 		t.Keystore.Authority.name,
 		"--chain-id", t.chainID,
@@ -184,6 +208,19 @@ func (t Testnet) makeTestnet() error {
 
 	t.Keystore.addValidatorKeys(WorkingDir, numNodes)
 	return nil
+}
+
+func reusableNetUp() bool {
+	status, err := exec.Command(EMCLI, "status").CombinedOutput()
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(string(status), LocalNetReuse) {
+		return true
+	}
+
+	return false
 }
 
 func (t *Testnet) updateGenesis() {
@@ -229,6 +266,55 @@ func (t *Testnet) updateGenesis() {
 	writeGenesisFiles(bz)
 }
 
+func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error) {
+	newHeight, err := WaitForHeightWithTimeout(
+		height+1, sleepDur,
+	)
+
+	return newHeight, err
+}
+
+func GetHeight() (int64, error) {
+	status, err := exec.Command(EMCLI, "status").CombinedOutput()
+	if err != nil {
+		return -1, err
+	}
+
+	height := gjson.ParseBytes(status).Get("SyncInfo.latest_block_height").Int()
+
+	return height, nil
+}
+
+// WaitForHeightWithTimeout waits till the chain reaches the requested height
+// or times out whichever occurs first.
+func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, error) {
+	// Half a sec + emd invoke + result processing
+	ticker := time.NewTicker(500 * time.Millisecond)
+	timeout := time.After(t)
+
+	var blockHeight int64 = -1
+
+	for {
+		select {
+		case <-timeout:
+			ticker.Stop()
+			return blockHeight, fmt.Errorf(
+				"timeout at height %d, before reaching height:%d",
+				blockHeight,
+				requestedHeight)
+		case <-ticker.C:
+			height, err := GetHeight()
+			if err != nil {
+				fmt.Print(".")
+				continue
+			}
+			if height >= requestedHeight {
+				return height, nil
+			}
+		}
+	}
+}
+
 func compileBinaries() error {
 	_, err := execCmdAndWait(makePath, "clean", "build-all")
 	if err != nil {
@@ -238,9 +324,12 @@ func compileBinaries() error {
 }
 
 func dockerComposeUp() (func() bool, error) {
-	// todo (reviewer): new zap logger produces different and coloured output
-	wait, scanner := createOutputScanner("committed state", 30*time.Second)
-	return wait, execCmdAndRun(dockerComposePath, []string{"up", "--no-color"}, scanner)
+	wait := func() bool {
+		_, err := WaitForHeightWithTimeout(1, 30*time.Second)
+		return err == nil
+	}
+	_, scanner := createOutputScanner("committed state", 30*time.Second)
+	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
 func dockerComposeDown() error {

@@ -8,6 +8,10 @@ package networktest
 
 import (
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -16,10 +20,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	emoney "github.com/e-money/em-ledger"
 	"github.com/spf13/pflag"
-	"os"
-	"strings"
-	"sync"
-	"time"
 )
 
 // Create a scanner function with built-in timeout. The returned wait function blocks until the
@@ -31,9 +31,7 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 	scanOnce := sync.Once{}
 
 	scanner = func(s string) {
-		if strings.Contains(s, substring) {
-			scanOnce.Do(mutex.Unlock)
-		}
+		scanOnce.Do(mutex.Unlock)
 	}
 
 	// Bridge mutex to a regular channel

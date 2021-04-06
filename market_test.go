@@ -56,6 +56,13 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Crashing validator can catch up", func() {
+			var (
+				height int64
+				err    error
+			)
+			height, err = networktest.GetHeight()
+			Expect(err).ToNot(HaveOccurred())
+
 			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
@@ -97,7 +104,8 @@ var _ = Describe("Market", func() {
 			}
 
 			// Wait and while and attempt to discover consensus failure in the logs of the resurrected validator
-			time.Sleep(8 * time.Second)
+			height, err = networktest.IncChainWithExpiration(height, 8 *time.Second)
+			Expect(err).ToNot(HaveOccurred())
 
 			log, err := testnet.GetValidatorLogs(2)
 			Expect(err).ToNot(HaveOccurred())

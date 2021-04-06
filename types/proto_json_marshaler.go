@@ -3,11 +3,10 @@ package types
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
-
 	"github.com/cosmos/cosmos-sdk/codec/types"
-
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 )

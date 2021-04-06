@@ -7,19 +7,33 @@ package networktest
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
-const KeyPwd = "pwd12345"
-const Bip39Pwd = ""
+const (
+	KeyPwd           = "pwd12345"
+	Bip39Pwd         = ""
+	DeputyKey        = "deputykey"
+	AuthKey          = "authoritykey"
+	Key1             = "key1"
+	Key2             = "key2"
+	Key3             = "key3"
+	Key4             = "key4"
+	Key5             = "key5"
+	Key6             = "key6"
+	MultiKey         = "multikey"
+	LocalNetReuse    = "localnet_reuse"
+	startForReUseEnv = "REUSE"
+)
 
 type (
 	KeyStore struct {
@@ -27,9 +41,13 @@ type (
 		keybase keyring.Keyring
 
 		Authority,
+		DeputyKey,
 		Key1,
 		Key2,
-		Key3 Key
+		Key3,
+		Key4,
+		Key5,
+		Key6 Key
 
 		MultiKey Key
 
@@ -98,28 +116,63 @@ func (k Key) Sign(bz []byte) ([]byte, error) {
 	return signed, err
 }
 
-func NewKeystore() (*KeyStore, error) {
-	path, err := ioutil.TempDir("", "")
-	if err != nil {
-		return nil, err
+// NewKeystore creates a keystore considering reusableLocation as the fixed
+// location and reusableIsUp on whether to persist the keystore on disk.
+func NewKeystore(reusableLocation, reusableIsUp bool) (*KeyStore, error) {
+	var (
+		path string
+		err  error
+	)
+
+	// random tmp path
+	if !reusableIsUp && !reusableLocation {
+		path, err = ioutil.TempDir("", "")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		path = "/tmp/" + LocalNetReuse
 	}
 
-	keybase, err := keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, path, nil)
+	// persist keystore at fixed location.
+	if !reusableIsUp && reusableLocation {
+		if err := os.RemoveAll(path); err != nil {
+			panic(err)
+		}
+		if err := os.Mkdir(path, 0o700); err != nil {
+			panic(err)
+		}
+	}
+
+	var keybase keyring.Keyring
+	if !reusableIsUp {
+		keybase, err = keyring.New(
+			sdk.KeyringServiceName(), keyring.BackendTest, path, nil,
+		)
+	} else {
+		// in memory, do not rewrite running setup
+		keybase, err = keyring.New(
+			sdk.KeyringServiceName(), keyring.BackendMemory, path, nil,
+		)
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	initializeKeystore(keybase)
 
-	// TODO This looks kind of horrible. Refactor to something prettier
 	ks := &KeyStore{
 		keybase:   keybase,
 		path:      path,
-		Authority: newKey("authoritykey", keybase),
-		Key1:      newKey("key1", keybase),
-		Key2:      newKey("key2", keybase),
-		Key3:      newKey("key3", keybase),
-		MultiKey:  newKey("multikey", keybase),
+		Authority: newKey(AuthKey, keybase),
+		DeputyKey: newKey(DeputyKey, keybase),
+		Key1:      newKey(Key1, keybase),
+		Key2:      newKey(Key2, keybase),
+		Key3:      newKey(Key3, keybase),
+		Key4:      newKey(Key4, keybase),
+		Key5:      newKey(Key5, keybase),
+		Key6:      newKey(Key6, keybase),
+		MultiKey:  newKey(MultiKey, keybase),
 		Validators: []Key{
 			newKey("validator0", keybase),
 			newKey("validator1", keybase),
@@ -153,6 +206,16 @@ func (ks KeyStore) String() string {
 	return sb.String()
 }
 
+func (ks KeyStore) addDeputyKey() {
+	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
+	// create the deputy account
+	deputyAccount, err := ks.keybase.NewAccount("deputykey", mn, "", sdk.FullFundraiserPath, hd.Secp256k1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("deputy address: %s\nmnemonic: %s\n", deputyAccount.GetAddress().String(), mn)
+}
+
 func (ks KeyStore) addValidatorKeys(workDir string, numberNodes int) {
 	for i := 0; i < numberNodes; i++ {
 		fileName := filepath.Join(workDir, fmt.Sprintf("node%d", i), "key_seed.json")
@@ -178,23 +241,41 @@ func (ks KeyStore) addValidatorKeys(workDir string, numberNodes int) {
 func initializeKeystore(kb keyring.Keyring) {
 	keyDerivationPath := sdk.FullFundraiserPath
 
-	_, err := kb.NewAccount("authoritykey",
-		"play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty",
-		KeyPwd, keyDerivationPath, hd.Secp256k1)
+	const mnemonic1 = "then nuclear favorite advance plate glare shallow enhance replace embody list dose quick scale service sentence hover announce advance nephew phrase order useful this"
+	ac1, err := kb.NewAccount("authoritykey", mnemonic1, "", keyDerivationPath, hd.Secp256k1)
 	if err != nil {
 		panic(err.Error())
 	}
-	_, _ = kb.NewAccount("key1",
-		"document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil",
-		KeyPwd, keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created auth account %s from mnemonic: %s\n", ac1.GetAddress(), mnemonic1)
 
-	_, _ = kb.NewAccount("key2",
-		"treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich",
-		KeyPwd, keyDerivationPath, hd.Secp256k1)
+	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
+	// create the deputy account
+	deputyAccount, _ := kb.NewAccount("deputykey", mn, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("deputy address: %s\nmnemonic: %s\n", deputyAccount.GetAddress().String(), mn)
 
-	_, _ = kb.NewAccount("key3",
-		"rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel",
-		KeyPwd, keyDerivationPath, hd.Secp256k1)
+	const mnemonic2 = "document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil"
+	ac2, _ := kb.NewAccount("key1", mnemonic2, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created key1 account %s from mnemonic: %s\n", ac2.GetAddress(), mnemonic2)
+
+	const mnemonic3 = "treat ocean valid motor life marble syrup lady nephew grain cherry remember lion boil flock outside cupboard column dad rare build nut hip ostrich"
+	ac3, _ := kb.NewAccount("key2", mnemonic3, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac3.GetAddress(), mnemonic3)
+
+	const mnemonic4 = "rice short length buddy zero snake picture enough steak admit balance garage exit crazy cloud this sweet virus can aunt embrace picnic stick wheel"
+	ac4, _ := kb.NewAccount("key3", mnemonic4, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac4.GetAddress(), mnemonic4)
+
+	const mnemonic5 = "census museum crew rude tower vapor mule rib weasel faith page cushion rain inherit much cram that blanket occur region track hub zero topple"
+	ac5, _ := kb.NewAccount("key4", mnemonic5, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac5.GetAddress(), mnemonic5)
+
+	const mnemonic6 = "flavor print loyal canyon expand salmon century field say frequent human dinosaur frame claim bridge affair web way direct win become merry crash frequent"
+	ac6, _ := kb.NewAccount("key5", mnemonic6, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac6.GetAddress(), mnemonic6)
+
+	const mnemonic7 = "very health column only surface project output absent outdoor siren reject era legend legal twelve setup roast lion rare tunnel devote style random food"
+	ac7, _ := kb.NewAccount("key6", mnemonic7, "", keyDerivationPath, hd.Secp256k1)
+	fmt.Printf("Created account %s from mnemonic: %s\n", ac7.GetAddress(), mnemonic7)
 
 	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
 	pks := make([]cryptotypes.PubKey, 3)

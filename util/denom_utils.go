@@ -14,8 +14,8 @@ import (
 func ValidateDenom(denom string) bool {
 	err := sdk.ValidateDenom(denom)
 	return err == nil
-
 }
+
 func ParseDenominations(denoms string) ([]string, error) {
 	res := make([]string, 0)
 	for _, denom := range strings.Split(denoms, ",") {
