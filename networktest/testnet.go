@@ -274,8 +274,19 @@ func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error)
 	return newHeight, err
 }
 
+func ChainBlockHash() (string, error) {
+	status, err := chainStatus()
+	if err != nil {
+		return "", err
+	}
+
+	blockHash := gjson.ParseBytes(status).Get("SyncInfo.latest_block_hash").Str
+
+	return blockHash, nil
+}
+
 func GetHeight() (int64, error) {
-	status, err := exec.Command(EMCLI, "status").CombinedOutput()
+	status, err := chainStatus()
 	if err != nil {
 		return -1, err
 	}
@@ -283,6 +294,10 @@ func GetHeight() (int64, error) {
 	height := gjson.ParseBytes(status).Get("SyncInfo.latest_block_height").Int()
 
 	return height, nil
+}
+
+func chainStatus() ([]byte, error) {
+	return exec.Command(EMCLI, "status").CombinedOutput()
 }
 
 // WaitForHeightWithTimeout waits till the chain reaches the requested height

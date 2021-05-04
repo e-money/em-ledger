@@ -103,16 +103,24 @@ var _ = Describe("Market", func() {
 				Expect(success).To(BeTrue())
 			}
 
+			height, err = networktest.IncChainWithExpiration(height, 1 *time.Second)
+			Expect(err).ToNot(HaveOccurred())
+
+			aBlockHash, err := networktest.ChainBlockHash()
+			Expect(err).ToNot(HaveOccurred())
+			fmt.Printf("Looking for emdnode2 to participate in %s block commit\n",aBlockHash)
+			blockCommitted := fmt.Sprintf("SIGNED_MSG_TYPE_PRECOMMIT +2/3:%s", aBlockHash)
+
 			// Wait and while and attempt to discover consensus failure in the logs of the resurrected validator
-			height, err = networktest.IncChainWithExpiration(height, 8 *time.Second)
+			// +10 block to allow node2 to catch up
+			height, err = networktest.IncChainWithExpiration(height+10, 30 *time.Second)
 			Expect(err).ToNot(HaveOccurred())
 
 			log, err := testnet.GetValidatorLogs(2)
 			Expect(err).ToNot(HaveOccurred())
-			if strings.Contains(log, "Wrong Block.Header.AppHash") ||
-				strings.Contains(log, "panic") {
-				Fail(fmt.Sprintf("Validator 2 does not appear to have re-established consensus:\n%v", log))
-				// prevent false positives by creating a clean state `docker rm -f emdnode2` before running this.
+			if !strings.Contains(log, blockCommitted) {
+				Fail(fmt.Sprintf("Validator 2 has not caught up with block %s:\n%s",
+					aBlockHash, log))
 			}
 		})
 

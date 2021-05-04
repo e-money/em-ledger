@@ -11,6 +11,12 @@ services:
     environment:
       - ID=0
       - LOG=${LOG:-emd.log}
+    logging:
+      options:
+        # 10 Megabytes max for log
+        max-size: "10m"
+        # keep 2 rotated log files
+        max-file: "2"
 #      - LOGLEVEL=*:info
     volumes:
       - ./build:/emoney:Z
@@ -27,6 +33,12 @@ services:
     environment:
       - ID=1
       - LOG=${LOG:-emd.log}
+    logging:
+      options:
+        # 10 Megabytes max for log
+        max-size: "10m"
+        # keep 2 rotated log files
+        max-file: "2"
 #      - LOGLEVEL=*:info
     volumes:
       - ./build:/emoney:Z
@@ -40,6 +52,12 @@ services:
     environment:
       - ID=2
       - LOG=${LOG:-emd.log}
+    logging:
+      options:
+        # 10 Megabytes max for log
+        max-size: "10m"
+        # keep 2 rotated log files
+        max-file: "2"
 #      - LOGLEVEL=*:info
     ports:
       - "26661-26662:26656-26657"
@@ -56,6 +74,12 @@ services:
     environment:
       - ID=3
       - LOG=${LOG:-emd.log}
+    logging:
+      options:
+        # 10 Megabytes max for log
+        max-size: "10m"
+        # keep 2 rotated log files
+        max-file: "2"
 #      - LOGLEVEL=*:info
     ports:
       - "26663-26664:26656-26657"
