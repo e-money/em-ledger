@@ -179,7 +179,7 @@ var _ = Describe("BEP3 Swap", func() {
 			secretNumber, _, _, err := emcli.BEP3Create(
 				deputy,
 				key1.GetAddress(), "0x002", "0x001",
-				fmt.Sprintf("%d%s", trxAmount, denom), 5,
+				fmt.Sprintf("%d%s", trxAmount, denom), 1,
 			)
 			Expect(err).ToNot(HaveOccurred())
 			height = incChainHeight(height)
@@ -189,7 +189,9 @@ var _ = Describe("BEP3 Swap", func() {
 			id := gjson.Parse(list).Get(swapIdQuery).Str
 			Expect(gjson.Parse(list).Get(swapStatusQuery).Str).To(Equal("Open"))
 
-			time.Sleep(6 * time.Second) // Swap expires after 60 seconds
+			fmt.Println("Sleeping 61 seconds to expire swap...")
+			time.Sleep(61 * time.Second) // Swap expires after 60 seconds
+			height = incChainHeight(height)
 
 			// Verify state
 			list, _ = emcli.BEP3ListSwaps()
