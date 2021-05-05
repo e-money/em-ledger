@@ -1119,6 +1119,7 @@
 | `source_filled` | [string](#string) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination_filled` | [string](#string) |  |  |
+| `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 
@@ -1275,6 +1276,7 @@
 | `source_remaining` | [string](#string) |  |  |
 | `client_order_id` | [string](#string) |  |  |
 | `price` | [string](#string) |  |  |
+| `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 

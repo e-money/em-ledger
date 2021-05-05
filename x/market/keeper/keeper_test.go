@@ -39,6 +39,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 )
 
 func init() {
@@ -59,6 +60,7 @@ func TestBasicTrade(t *testing.T) {
 	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order1)
 	require.NoError(t, err)
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
+	require.Equal(t, ctx.BlockTime(), order1.Created)
 
 	// Ensure that the instrument was registered
 	instruments := k.GetInstruments(ctx)
@@ -102,6 +104,16 @@ func TestBasicTrade(t *testing.T) {
 	// require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
+}
+
+func TestCreationTime1(t *testing.T) {
+	ctx, _, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
+
+	src1, dst1 := "eur", "usd"
+	order1 := order(acc1, "100"+src1, "120"+dst1)
+	require.Equal(t, ctx.BlockTime(), order1.Created)
 }
 
 func TestBasicTrade2(t *testing.T) {
@@ -236,8 +248,17 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 
 	// Create a market for eur
 	o = order(acc2, "100eur", "100gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	res, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
+	require.Equal(
+		t, "accept",
+		string(res.Events[0].Attributes[0].GetValue()),
+	)
+
+	require.Equal(
+		t, ctx.BlockTime().Format(time.RFC3339),
+		string(res.Events[0].Attributes[len(res.Events[0].Attributes)-1].GetValue()),
+	)
 
 	// Create a fill or kill order that cannot be satisfied by the current market
 	result, err := k.NewMarketOrderWithSlippage(
@@ -289,7 +310,9 @@ func TestFillOrKillLimitOrder1(t *testing.T) {
 
 	// Test that the order book looks as expected
 	require.Empty(t, k.GetOrdersByOwner(ctx, acc1.GetAddress()))
-	require.Len(t, k.GetOrdersByOwner(ctx, acc2.GetAddress()), 1)
+	acc2Orders := k.GetOrdersByOwner(ctx, acc2.GetAddress())
+	require.Len(t, acc2Orders, 1)
+	require.Equal(t, acc2Orders[0].Created, ctx.BlockTime())
 }
 
 func TestImmediateOrCancel(t *testing.T) {
@@ -310,6 +333,7 @@ func TestImmediateOrCancel(t *testing.T) {
 	cid := o.ClientOrderID
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
+	require.Equal(t, o.Created, ctx.BlockTime())
 
 	// Verify that order is not in book
 	order := k.GetOrderByOwnerAndClientOrderId(ctx, acc1.GetAddress().String(), cid)
@@ -1160,6 +1184,7 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 	require.Nil(t, err)
 
 	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+	ctx.WithBlockTime(time.Now())
 	var (
 		pk = paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
 		ak = authkeeper.NewAccountKeeper(

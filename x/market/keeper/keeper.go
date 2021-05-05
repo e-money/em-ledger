@@ -134,6 +134,8 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+	aggressiveOrder.Created = ctx.BlockTime()
+
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())

@@ -104,4 +104,10 @@ message QueryOrderResponse {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];
+
+  google.protobuf.Timestamp created = 6 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
 }

@@ -7,6 +7,7 @@ package types
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -26,6 +27,7 @@ const (
 	AttributeKeyDestination       = "destination"
 	AttributeKeyDestinationFilled = "destination_filled"
 	AttributeKeyAggressive        = "aggressive"
+	AttributeKeyCreated           = "created"
 )
 
 func EmitAcceptEvent(ctx sdk.Context, order Order) {
@@ -37,6 +39,7 @@ func EmitAcceptEvent(ctx sdk.Context, order Order) {
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeyDestination, order.Destination.String()),
+			sdk.NewAttribute(AttributeKeyCreated, order.Created.Format(time.RFC3339)),
 		),
 	)
 }

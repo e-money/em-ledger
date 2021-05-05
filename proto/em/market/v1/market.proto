@@ -71,6 +71,12 @@ message Order {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable) = false
   ];
+
+  google.protobuf.Timestamp created = 10 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
 }
 
 message ExecutionPlan {
