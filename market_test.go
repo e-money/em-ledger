@@ -108,17 +108,16 @@ var _ = Describe("Market", func() {
 
 			aBlockHash, err := networktest.ChainBlockHash()
 			Expect(err).ToNot(HaveOccurred())
-			fmt.Printf("Looking for emdnode2 to participate in %s block commit\n",aBlockHash)
-			blockCommitted := fmt.Sprintf("SIGNED_MSG_TYPE_PRECOMMIT +2/3:%s", aBlockHash)
+			fmt.Printf("Waiting a few blocks for emdnode2 log to register %s block\n",aBlockHash)
 
 			// Wait and while and attempt to discover consensus failure in the logs of the resurrected validator
-			// +10 block to allow node2 to catch up
-			height, err = networktest.IncChainWithExpiration(height+10, 30 *time.Second)
+			// allow node2 log to catch up by waiting a few blocks
+			height, err = networktest.IncChainWithExpiration(height+14, 40 *time.Second)
 			Expect(err).ToNot(HaveOccurred())
 
 			log, err := testnet.GetValidatorLogs(2)
 			Expect(err).ToNot(HaveOccurred())
-			if !strings.Contains(log, blockCommitted) {
+			if !strings.Contains(log, aBlockHash) {
 				Fail(fmt.Sprintf("Validator 2 has not caught up with block %s:\n%s",
 					aBlockHash, log))
 			}
