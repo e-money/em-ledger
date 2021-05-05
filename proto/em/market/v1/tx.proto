@@ -4,6 +4,7 @@ package em.market.v1;
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "em/market/v1/market.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/market/types";
 
@@ -34,6 +35,12 @@ message MsgAddLimitOrder {
     (gogoproto.moretags) = "yaml:\"destination\"",
     (gogoproto.nullable) = false
   ];
+
+  google.protobuf.Timestamp created = 6 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
 }
 message MsgAddLimitOrderResponse {}
 
@@ -58,6 +65,12 @@ message MsgAddMarketOrder {
     (gogoproto.moretags) = "yaml:\"maximum_slippage\"",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
+  ];
+
+  google.protobuf.Timestamp created = 7 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
   ];
 }
 
@@ -91,6 +104,12 @@ message MsgCancelReplaceLimitOrder {
   cosmos.base.v1beta1.Coin destination = 5 [
     (gogoproto.moretags) = "yaml:\"destination\"",
     (gogoproto.nullable) = false
+  ];
+
+  google.protobuf.Timestamp created = 6 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
   ];
 }
 

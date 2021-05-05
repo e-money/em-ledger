@@ -1324,6 +1324,7 @@
 | `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
 | `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 
@@ -1354,6 +1355,7 @@
 | `source` | [string](#string) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `maximum_slippage` | [string](#string) |  |  |
+| `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 
@@ -1409,6 +1411,7 @@
 | `new_client_order_id` | [string](#string) |  |  |
 | `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 

@@ -39,6 +39,9 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 	if err != nil {
 		return nil, err
 	}
+
+	msg.Created = order.Created
+
 	for _, e := range result.Events {
 		ctx.EventManager().EmitEvent(sdk.Event(e))
 	}
@@ -59,6 +62,7 @@ func (m msgServer) AddMarketOrder(c context.Context, msg *types.MsgAddMarketOrde
 	for _, e := range result.Events {
 		ctx.EventManager().EmitEvent(sdk.Event(e))
 	}
+
 	return &types.MsgAddMarketOrderResponse{}, nil
 }
 
@@ -90,6 +94,8 @@ func (m msgServer) CancelReplaceLimitOrder(c context.Context, msg *types.MsgCanc
 	if err != nil {
 		return nil, err
 	}
+
+	msg.Created = order.Created
 
 	result, err := m.k.CancelReplaceOrder(ctx, order, msg.OrigClientOrderId)
 	if err != nil {
