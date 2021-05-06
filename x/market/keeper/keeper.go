@@ -125,7 +125,7 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
 
 	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
-	order, err := types.NewOrder(timeInForce, slippageSource, dst, owner, clientOrderId)
+	order, err := types.NewOrder(ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId)
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +134,6 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
-	aggressiveOrder.Created = ctx.BlockTime()
-
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())

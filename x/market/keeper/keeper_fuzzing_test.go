@@ -78,7 +78,9 @@ func TestFuzzing1(t *testing.T) {
 	allOrders := make([]types.Order, 0)
 
 	for _, instr := range testdata {
-		allOrders = append(allOrders, generateOrders(instr.src, instr.dst, instr.price, instr.seller, r)...)
+		allOrders = append(
+			allOrders, generateOrders(
+				ctx.BlockTime(), instr.src, instr.dst, instr.price,	instr.seller, r)...)
 	}
 
 	r.Shuffle(len(allOrders), func(i, j int) {
@@ -98,7 +100,12 @@ func TestFuzzing1(t *testing.T) {
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
 }
 
-func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller authtypes.AccountI, r *rand.Rand) (res []types.Order) {
+func generateOrders(
+	createdTm time.Time,
+	srcDenom, dstDenom string,
+	basePrice sdk.Dec,
+	seller authtypes.AccountI,
+	r *rand.Rand) (res []types.Order) {
 	priceGen := priceGenerator(basePrice, r)
 
 	for i := 0; i < 500; i++ {
@@ -112,7 +119,7 @@ func generateOrders(srcDenom, dstDenom string, basePrice sdk.Dec, seller authtyp
 			continue
 		}
 
-		o := order(seller, source.String(), destination.String())
+		o := order(createdTm, seller, source.String(), destination.String())
 
 		switch r.Intn(3) {
 		case 0:
