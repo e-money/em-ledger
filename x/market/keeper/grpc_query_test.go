@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestQueryByAccount(t *testing.T) {
@@ -19,18 +20,34 @@ func TestQueryByAccount(t *testing.T) {
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, enc.InterfaceRegistry)
 	types.RegisterQueryServer(queryHelper, k)
 	queryClient := types.NewQueryClient(queryHelper)
-	o, err := types.NewOrder(types.TimeInForce_GoodTillCancel, sdk.NewCoin("alx", sdk.OneInt()), sdk.NewCoin("blx", sdk.OneInt()), myAddress, "myOrderID")
+	o, err := types.NewOrder(
+		ctx.BlockTime(),
+		types.TimeInForce_GoodTillCancel,
+		sdk.NewCoin("alx", sdk.OneInt()),
+		sdk.NewCoin("blx", sdk.OneInt()),
+		myAddress, "myOrderID",
+	)
 	require.NoError(t, err)
 	k.setOrder(ctx, &o)
+
+	expectedPlusOne := o
+	expectedPlusOne.Created = expectedPlusOne.Created.Add(1*time.Second)
 
 	specs := map[string]struct {
 		req      *types.QueryByAccountRequest
 		expErr   bool
 		expState []*types.Order
+		// Ensure date is set correctly
+		createdPlusOne bool
 	}{
 		"all good": {
 			req:      &types.QueryByAccountRequest{Address: myAddress.String()},
 			expState: []*types.Order{&o},
+		},
+		"created plus a sec": {
+			req:      &types.QueryByAccountRequest{Address: myAddress.String()},
+			expState: []*types.Order{&expectedPlusOne},
+			createdPlusOne: true,
 		},
 		"empty address": {
 			req:    &types.QueryByAccountRequest{Address: ""},
@@ -52,6 +69,13 @@ func TestQueryByAccount(t *testing.T) {
 				return
 			}
 			require.NoError(t, gotErr)
+
+			if spec.createdPlusOne {
+				assert.NotEqual(t, spec.expState, gotRsp.Orders)
+				// set equal
+				gotRsp.Orders[0].Created = gotRsp.Orders[0].Created.Add(1*time.Second)
+			}
+
 			assert.Equal(t, spec.expState, gotRsp.Orders)
 		})
 	}
@@ -104,8 +128,14 @@ func TestInstrument(t *testing.T) {
 
 	acc := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
-	o := order(acc, "100usd", "100chf")
+	o := order(ctx.BlockTime(), acc, "100usd", "100chf")
 	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	oPlusOne := order(
+		ctx.BlockTime().Add(time.Second), acc, "100usd", "100gbp",
+	)
+	_, err = k.NewOrderSingle(ctx, oPlusOne)
 	require.NoError(t, err)
 
 	specs := map[string]struct {
@@ -123,6 +153,23 @@ func TestInstrument(t *testing.T) {
 						Owner:           acc.GetAddress().String(),
 						SourceRemaining: "100",
 						Price:           sdk.NewDec(1),
+						Created:         ctx.BlockTime(),
+					},
+				},
+			},
+		},
+		"created plus a sec": {
+			req: &types.QueryInstrumentRequest{Source: "usd", Destination: "gbp"},
+			expState: &types.QueryInstrumentResponse{
+				Source:      "usd",
+				Destination: "gbp",
+				Orders: []types.QueryOrderResponse{
+					{
+						ID:              1,
+						Owner:           acc.GetAddress().String(),
+						SourceRemaining: "100",
+						Price:           sdk.NewDec(1),
+						Created:         ctx.BlockTime().Add(1 * time.Second),
 					},
 				},
 			},

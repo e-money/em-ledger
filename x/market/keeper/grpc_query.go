@@ -63,6 +63,7 @@ func (k Keeper) Instrument(c context.Context, req *types.QueryInstrumentRequest)
 			Owner:           order.Owner,
 			SourceRemaining: order.SourceRemaining.String(),
 			Price:           order.Price(),
+			Created:         order.Created,
 		})
 
 		it.Next()

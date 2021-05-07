@@ -14,7 +14,8 @@ import (
 
 func TestSerialization(t *testing.T) {
 	// Verify that non-public fields survive de-/serialization
-	order1, _ := NewOrder(TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), []byte("acc1"), "A")
+	tm := time.Now()
+	order1, _ := NewOrder(tm, TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), []byte("acc1"), "A")
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
 	order1.SourceFilled = sdk.NewInt(10)
@@ -36,6 +37,7 @@ func TestSerialization(t *testing.T) {
 	require.True(t, order2.SourceRemaining.Int64() > 0)
 	require.True(t, order2.DestinationFilled.Int64() > 0)
 	require.True(t, order2.SourceFilled.Int64() > 0)
+	require.True(t, order2.Created.Equal(tm))
 
 	require.Equal(t, uint64(3123), order2.ID)
 	require.Equal(t, order1.ID, order2.ID)
@@ -48,19 +50,20 @@ func TestSerialization(t *testing.T) {
 	require.Equal(t, order1.DestinationFilled, order2.DestinationFilled)
 
 	require.Equal(t, order1.TimeInForce, order2.TimeInForce)
+	require.True(t, order1.Created.Equal(order2.Created))
 }
 
 func TestInvalidOrder(t *testing.T) {
 	// 0 amount source
-	_, err := NewOrder(TimeInForce_GoodTillCancel, coin("0eur"), coin("120usd"), []byte("acc"), "A")
+	_, err := NewOrder(time.Now(), TimeInForce_GoodTillCancel, coin("0eur"), coin("120usd"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	// 0 amount destination
-	_, err = NewOrder(TimeInForce_GoodTillCancel, coin("120eur"), coin("0usd"), []byte("acc"), "A")
+	_, err = NewOrder(time.Now(), TimeInForce_GoodTillCancel, coin("120eur"), coin("0usd"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	// Same denomination
-	_, err = NewOrder(TimeInForce_GoodTillCancel, coin("1000eur"), coin("850eur"), []byte("acc"), "A")
+	_, err = NewOrder(time.Now(), TimeInForce_GoodTillCancel, coin("1000eur"), coin("850eur"), []byte("acc"), "A")
 	require.Error(t, err)
 
 	c := sdk.Coin{
@@ -69,7 +72,7 @@ func TestInvalidOrder(t *testing.T) {
 	}
 
 	// Negative source
-	_, err = NewOrder(TimeInForce_GoodTillCancel, c, coin("120usd"), []byte("acc"), "B")
+	_, err = NewOrder(time.Now(), TimeInForce_GoodTillCancel, c, coin("120usd"), []byte("acc"), "B")
 	require.Error(t, err)
 }
 

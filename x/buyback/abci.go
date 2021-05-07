@@ -40,6 +40,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 		}
 
 		order, err := markettypes.NewOrder(
+			ctx.BlockTime(),
 			markettypes.TimeInForce_GoodTillCancel,
 			balance,
 			sdk.NewCoin(stakingDenom, destinationAmount),

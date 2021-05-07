@@ -143,6 +143,10 @@
         },
         "destination_filled": {
           "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -224,6 +228,10 @@
         },
         "price": {
           "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

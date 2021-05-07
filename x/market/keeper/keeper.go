@@ -125,7 +125,7 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
 
 	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
-	order, err := types.NewOrder(timeInForce, slippageSource, dst, owner, clientOrderId)
+	order, err := types.NewOrder(ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId)
 	if err != nil {
 		return nil, err
 	}

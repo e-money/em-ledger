@@ -30,7 +30,7 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 
-	order, err := types.NewOrder(msg.TimeInForce, msg.Source, msg.Destination, owner, msg.ClientOrderId)
+	order, err := types.NewOrder(ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner, msg.ClientOrderId)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +39,7 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, e := range result.Events {
 		ctx.EventManager().EmitEvent(sdk.Event(e))
 	}
@@ -59,6 +60,7 @@ func (m msgServer) AddMarketOrder(c context.Context, msg *types.MsgAddMarketOrde
 	for _, e := range result.Events {
 		ctx.EventManager().EmitEvent(sdk.Event(e))
 	}
+
 	return &types.MsgAddMarketOrderResponse{}, nil
 }
 
@@ -86,7 +88,7 @@ func (m msgServer) CancelReplaceLimitOrder(c context.Context, msg *types.MsgCanc
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
-	order, err := types.NewOrder(types.TimeInForce_GoodTillCancel, msg.Source, msg.Destination, owner, msg.NewClientOrderId)
+	order, err := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, msg.Source, msg.Destination, owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err
 	}

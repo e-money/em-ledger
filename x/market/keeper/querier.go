@@ -66,8 +66,10 @@ func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQ
 	orders := k.GetOrdersByOwner(ctx, account)
 	// orders := make(OrderResponses, 0)
 
-	// TODO Determine suitable ordering or leave undefined
-	// sort.Sort(orders)
+	sort.Slice(
+		orders, func(i, j int) bool {
+			return orders[i].ID < orders[i].ID
+		})
 
 	resp := types.QueryByAccountResponse{Orders: orders}
 	return json.Marshal(resp)
@@ -102,6 +104,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 			Owner:           order.Owner,
 			SourceRemaining: order.SourceRemaining.String(),
 			Price:           order.Price(),
+			Created:         order.Created,
 		})
 
 		it.Next()
