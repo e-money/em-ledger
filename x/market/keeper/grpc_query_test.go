@@ -31,7 +31,7 @@ func TestQueryByAccount(t *testing.T) {
 	k.setOrder(ctx, &o)
 
 	expectedPlusOne := o
-	expectedPlusOne.Created.Add(1*time.Second)
+	expectedPlusOne.Created = expectedPlusOne.Created.Add(1*time.Second)
 
 	specs := map[string]struct {
 		req      *types.QueryByAccountRequest
@@ -47,6 +47,7 @@ func TestQueryByAccount(t *testing.T) {
 		"created plus a sec": {
 			req:      &types.QueryByAccountRequest{Address: myAddress.String()},
 			expState: []*types.Order{&expectedPlusOne},
+			createdPlusOne: true,
 		},
 		"empty address": {
 			req:    &types.QueryByAccountRequest{Address: ""},
@@ -72,7 +73,7 @@ func TestQueryByAccount(t *testing.T) {
 			if spec.createdPlusOne {
 				assert.NotEqual(t, spec.expState, gotRsp.Orders)
 				// set equal
-				gotRsp.Orders[0].Created.Add(1*time.Second)
+				gotRsp.Orders[0].Created = gotRsp.Orders[0].Created.Add(1*time.Second)
 			}
 
 			assert.Equal(t, spec.expState, gotRsp.Orders)
