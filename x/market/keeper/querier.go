@@ -68,7 +68,7 @@ func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQ
 
 	sort.Slice(
 		orders, func(i, j int) bool {
-			return orders[i].Created.Before(orders[j].Created)
+			return orders[i].ID < orders[i].ID
 		})
 
 	resp := types.QueryByAccountResponse{Orders: orders}
