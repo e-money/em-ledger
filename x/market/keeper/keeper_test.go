@@ -1144,6 +1144,23 @@ func TestTimeInForceIO(t *testing.T) {
 	require.NoError(t, err)
 	_, err = clientCtx.TxConfig.TxJSONDecoder()(txBz)
 	require.NoError(t, err)
+
+	msgCRL := &types.MsgCancelReplaceLimitOrder{
+		TimeInForce:   types.TimeInForce_FillOrKill,
+		Owner:         msg.Owner,
+		Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
+		Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
+		OrigClientOrderId: "foobar",
+		NewClientOrderId:  "newOrder",
+	}
+
+	txb, err = clienttx.BuildUnsignedTx(txf, msgCRL)
+	require.NoError(t, err)
+	txBz, err = encodingConfig.TxConfig.TxJSONEncoder()(txb.GetTx())
+	require.NoError(t, err)
+	_, err = clientCtx.TxConfig.TxJSONDecoder()(txBz)
+	require.NoError(t, err)
+
 }
 
 func TestGetNextOrderNumber(t *testing.T) {

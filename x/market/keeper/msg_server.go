@@ -88,7 +88,7 @@ func (m msgServer) CancelReplaceLimitOrder(c context.Context, msg *types.MsgCanc
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
-	order, err := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, msg.Source, msg.Destination, owner, msg.NewClientOrderId)
+	order, err := types.NewOrder(ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner, msg.NewClientOrderId)
 	if err != nil {
 		return nil, err
 	}

@@ -85,11 +85,14 @@ message MsgCancelReplaceLimitOrder {
     (gogoproto.moretags) = "yaml:\"new_client_order_id\""
   ];
 
-  cosmos.base.v1beta1.Coin source = 4 [
+  TimeInForce time_in_force = 4
+  [ (gogoproto.moretags) = "yaml:\"time_in_force\"" ];
+
+  cosmos.base.v1beta1.Coin source = 5 [
     (gogoproto.moretags) = "yaml:\"source\"",
     (gogoproto.nullable) = false
   ];
-  cosmos.base.v1beta1.Coin destination = 5 [
+  cosmos.base.v1beta1.Coin destination = 6 [
     (gogoproto.moretags) = "yaml:\"destination\"",
     (gogoproto.nullable) = false
   ];
