@@ -120,6 +120,8 @@
     - [MsgCancelOrderResponse](#em.market.v1.MsgCancelOrderResponse)
     - [MsgCancelReplaceLimitOrder](#em.market.v1.MsgCancelReplaceLimitOrder)
     - [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse)
+    - [MsgCancelReplaceMarketOrder](#em.market.v1.MsgCancelReplaceMarketOrder)
+    - [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse)
   
     - [Msg](#em.market.v1.Msg)
   
@@ -1425,6 +1427,37 @@
 
 
 
+
+<a name="em.market.v1.MsgCancelReplaceMarketOrder"></a>
+
+### MsgCancelReplaceMarketOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `owner` | [string](#string) |  |  |
+| `original_client_order_id` | [string](#string) |  |  |
+| `new_client_order_id` | [string](#string) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
+| `source` | [string](#string) |  |  |
+| `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `maximum_slippage` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1.MsgCancelReplaceMarketOrderResponse"></a>
+
+### MsgCancelReplaceMarketOrderResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -1443,6 +1476,7 @@
 | `AddMarketOrder` | [MsgAddMarketOrder](#em.market.v1.MsgAddMarketOrder) | [MsgAddMarketOrderResponse](#em.market.v1.MsgAddMarketOrderResponse) |  | |
 | `CancelOrder` | [MsgCancelOrder](#em.market.v1.MsgCancelOrder) | [MsgCancelOrderResponse](#em.market.v1.MsgCancelOrderResponse) |  | |
 | `CancelReplaceLimitOrder` | [MsgCancelReplaceLimitOrder](#em.market.v1.MsgCancelReplaceLimitOrder) | [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse) |  | |
+| `CancelReplaceMarketOrder` | [MsgCancelReplaceMarketOrder](#em.market.v1.MsgCancelReplaceMarketOrder) | [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse) |  | |
 
  <!-- end services -->
 

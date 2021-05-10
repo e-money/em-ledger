@@ -226,6 +226,65 @@ func TestMarketOrderSlippage1(t *testing.T) {
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
+func TestCancelReplaceMarketOrderSlippage1(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "500gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+	var o types.Order
+	var err error
+
+	// Establish market price by executing a 1:1 trade
+	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Sell eur at various prices
+	o = order(ctx.BlockTime(), acc2, "50eur", "50gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc2, "50eur", "75gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc2, "50eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Make a market order that allows slippage
+
+	clientID := cid()
+	slippage := sdk.NewDecWithPrec(1, 2)
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(200)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		clientID,
+	)
+	require.NoError(t, err)
+
+	mcrm := &types.MsgCancelReplaceMarketOrder{
+		Owner:             acc1.GetAddress().String(),
+		OrigClientOrderId: clientID,
+		NewClientOrderId:  cid(),
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Source:            "gbp",
+		Destination:       sdk.NewCoin("eur", sdk.NewInt(100)),
+		MaxSlippage:       sdk.NewDecWithPrec(50, 2),
+	}
+	_, err = k.CancelReplaceMarketOrder(ctx, mcrm)
+	require.NoError(t, err)
+}
+
 func TestFillOrKillMarketOrder1(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
@@ -617,7 +676,7 @@ func TestCancelOrders1(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestCancelReplaceOrder(t *testing.T) {
+func TestKeeperCancelReplaceLimitOrder(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "20000eur")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "45000usd")
@@ -632,7 +691,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	order2cid := cid()
 	order2, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
-	res, err := k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
+	res, err := k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
 	require.True(t, err == nil, res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
@@ -647,12 +706,12 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	order3, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
 	// Wrong client order id for previous order submitted.
-	_, err = k.CancelReplaceOrder(ctx, order3, order1cid)
+	_, err = k.CancelReplaceLimitOrder(ctx, order3, order1cid)
 	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
 
 	// Changing instrument of order
 	gasMeter = sdk.NewGasMeter(math.MaxUint64)
-	_, err = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
 	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
@@ -676,7 +735,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
 	order4cid := cid()
 	order4, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
-	res, err = k.CancelReplaceOrder(ctx, order4, order2cid)
+	res, err = k.CancelReplaceLimitOrder(ctx, order4, order2cid)
 	require.True(t, err == nil, res.Log)
 
 	{
@@ -694,7 +753,90 @@ func TestCancelReplaceOrder(t *testing.T) {
 	require.True(t, err == nil, res.Log)
 
 	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
-	_, err = k.CancelReplaceOrder(ctx, order6, order4cid)
+	_, err = k.CancelReplaceLimitOrder(ctx, order6, order4cid)
+	require.True(t, types.ErrNoSourceRemaining.Is(err))
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
+}
+
+func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "20000eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "45000usd")
+
+	totalSupply := snapshotAccounts(ctx, bk)
+
+	order1cid := cid()
+	order1, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
+	_, err := k.NewOrderSingle(ctx, order1)
+	require.NoError(t, err)
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+	order2cid := cid()
+	order2, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
+	res, err := k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
+	require.True(t, err == nil, res.Log)
+	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order2cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("5000eur"), orders[0].Source)
+		require.Equal(t, coin("17000usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
+	}
+
+	order3, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
+	// Wrong client order id for previous order submitted.
+	_, err = k.CancelReplaceLimitOrder(ctx, order3, order1cid)
+	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
+
+	// Changing instrument of order
+	gasMeter = sdk.NewGasMeter(math.MaxUint64)
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
+	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
+
+	o := order(ctx.BlockTime(), acc2, "2600usd", "300eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
+	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
+
+	require.Equal(t, int64(300), bal2.AmountOf("eur").Int64())
+	require.Equal(t, int64(1020), bal1.AmountOf("usd").Int64())
+
+	filled := sdk.ZeroInt()
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
+	}
+
+	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
+	order4cid := cid()
+	order4, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
+	res, err = k.CancelReplaceLimitOrder(ctx, order4, order2cid)
+	require.True(t, err == nil, res.Log)
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order4cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("10000eur"), orders[0].Source)
+		require.Equal(t, coin("35050usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
+	}
+
+	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
+	order5 := order(ctx.BlockTime(), acc2, "42000usd", "8000eur")
+	k.NewOrderSingle(ctx, order5)
+	require.True(t, err == nil, res.Log)
+
+	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
+	_, err = k.CancelReplaceLimitOrder(ctx, order6, order4cid)
 	require.True(t, types.ErrNoSourceRemaining.Is(err))
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())

@@ -24,7 +24,12 @@ const (
 	gasPriceNewOrder           = uint64(25000)
 	gasPriceCancelReplaceOrder = uint64(25000)
 	gasPriceCancelOrder        = uint64(12500)
+
+	gasCancelReplaceLimitOrder = "CancelReplaceMarketOrder"
+	gasCancelReplaceMarketOrder = "CancelReplaceMarketOrder"
 )
+
+var _ marketKeeper = &Keeper{}
 
 type Keeper struct {
 	key        sdk.StoreKey
@@ -377,7 +382,7 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
-func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
+func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -401,12 +406,7 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	k.deleteOrder(ctx, origOrder)
 	types.EmitExpireEvent(ctx, *origOrder)
 
-	// Adjust remaining according to how much of the replaced order was filled:
-	newOrder.SourceFilled = origOrder.SourceFilled
-	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
-	newOrder.DestinationFilled = origOrder.DestinationFilled
-
-	newOrder.TimeInForce = origOrder.TimeInForce
+	setRemainingLimit(origOrder, &newOrder)
 
 	resAdd, err := k.NewOrderSingle(ctx, newOrder)
 	if err != nil {
@@ -414,6 +414,79 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 	}
 
 	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
+	return &sdk.Result{Events: evts}, nil
+}
+
+func setRemainingLimit(origOrder *types.Order, newOrder *types.Order) {
+	// Adjust remaining according to how much of the replaced order was filled:
+	newOrder.SourceFilled = origOrder.SourceFilled
+	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
+	newOrder.DestinationFilled = origOrder.DestinationFilled
+
+	newOrder.TimeInForce = origOrder.TimeInForce
+}
+
+func setRemainingMarket(origOrder *types.Order, newOrder *types.Order) {
+	// Adjust remaining according to how much of the replaced order was filled:
+	newOrder.SourceFilled = origOrder.SourceFilled
+	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
+	newOrder.DestinationFilled = origOrder.DestinationFilled
+
+	newOrder.TimeInForce = origOrder.TimeInForce
+}
+
+func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error) {
+	// Use a fixed gas amount
+	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, gasCancelReplaceMarketOrder)
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
+
+	if origOrder == nil {
+		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, msg.OrigClientOrderId)
+	}
+
+	// Verify that instrument is the same.
+	if origOrder.Source.Denom != msg.Source || origOrder.Destination.Denom != msg.Destination.Denom {
+		return nil, sdkerrors.Wrap(
+			types.ErrOrderInstrumentChanged, fmt.Sprintf(
+				"source %s != %s Or dest %s != %s", origOrder.Source, msg.Source,
+				origOrder.Destination.Denom, msg.Destination.Denom,
+			),
+		)
+	}
+
+	// Has the previous order already achieved the goal on the source side?
+	if origOrder.DestinationFilled.GTE(msg.Destination.Amount) {
+		return nil, sdkerrors.Wrap(
+			types.ErrNoSourceRemaining, fmt.Sprintf(
+				"has already been filled filled:%s >= %s",
+				origOrder.Destination.Amount.String(), msg.Destination.Amount.String()),
+			)
+	}
+
+	k.deleteOrder(ctx, origOrder)
+	types.EmitExpireEvent(ctx, *origOrder)
+
+	ownerAddr, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
+	}
+
+	destinationFilled := origOrder.DestinationFilled
+	dstRemaining := msg.Destination.Amount.Sub(destinationFilled)
+	remDstCoin := sdk.NewCoin(msg.Destination.Denom, dstRemaining)
+
+	resAdd, err := k.NewMarketOrderWithSlippage(
+		ctx, msg.Source, remDstCoin, msg.MaxSlippage, ownerAddr,
+		msg.TimeInForce, msg.NewClientOrderId,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
+
 	return &sdk.Result{Events: evts}, nil
 }
 
