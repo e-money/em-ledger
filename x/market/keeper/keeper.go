@@ -24,9 +24,6 @@ const (
 	gasPriceNewOrder           = uint64(25000)
 	gasPriceCancelReplaceOrder = uint64(25000)
 	gasPriceCancelOrder        = uint64(12500)
-
-	gasCancelReplaceLimitOrder = "CancelReplaceMarketOrder"
-	gasCancelReplaceMarketOrder = "CancelReplaceMarketOrder"
 )
 
 var _ marketKeeper = &Keeper{}
@@ -406,7 +403,12 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 	k.deleteOrder(ctx, origOrder)
 	types.EmitExpireEvent(ctx, *origOrder)
 
-	setRemainingLimit(origOrder, &newOrder)
+	// Adjust remaining according to how much of the replaced order was filled:
+	newOrder.SourceFilled = origOrder.SourceFilled
+	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
+	newOrder.DestinationFilled = origOrder.DestinationFilled
+
+	newOrder.TimeInForce = origOrder.TimeInForce
 
 	resAdd, err := k.NewOrderSingle(ctx, newOrder)
 	if err != nil {
@@ -417,27 +419,9 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 	return &sdk.Result{Events: evts}, nil
 }
 
-func setRemainingLimit(origOrder *types.Order, newOrder *types.Order) {
-	// Adjust remaining according to how much of the replaced order was filled:
-	newOrder.SourceFilled = origOrder.SourceFilled
-	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
-	newOrder.DestinationFilled = origOrder.DestinationFilled
-
-	newOrder.TimeInForce = origOrder.TimeInForce
-}
-
-func setRemainingMarket(origOrder *types.Order, newOrder *types.Order) {
-	// Adjust remaining according to how much of the replaced order was filled:
-	newOrder.SourceFilled = origOrder.SourceFilled
-	newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
-	newOrder.DestinationFilled = origOrder.DestinationFilled
-
-	newOrder.TimeInForce = origOrder.TimeInForce
-}
-
 func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error) {
 	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, gasCancelReplaceMarketOrder)
+	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceMarketOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
