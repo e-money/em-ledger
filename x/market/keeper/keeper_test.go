@@ -226,7 +226,7 @@ func TestMarketOrderSlippage1(t *testing.T) {
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
-func TestCancelReplaceMarketOrderSlippage1(t *testing.T) {
+func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "500gbp")
@@ -244,45 +244,159 @@ func TestCancelReplaceMarketOrderSlippage1(t *testing.T) {
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
-	// Sell eur at various prices
-	o = order(ctx.BlockTime(), acc2, "50eur", "50gbp")
-	_, err = k.NewOrderSingle(ctx, o)
-	require.NoError(t, err)
-
-	o = order(ctx.BlockTime(), acc2, "50eur", "75gbp")
-	_, err = k.NewOrderSingle(ctx, o)
-	require.NoError(t, err)
-
-	o = order(ctx.BlockTime(), acc2, "50eur", "100gbp")
-	_, err = k.NewOrderSingle(ctx, o)
-	require.NoError(t, err)
-
 	// Make a market order that allows slippage
-
 	clientID := cid()
-	slippage := sdk.NewDecWithPrec(1, 2)
+	slippage := sdk.NewDecWithPrec(100, 2)
 	_, err = k.NewMarketOrderWithSlippage(
 		ctx,
 		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
+		sdk.NewCoin("eur", sdk.NewInt(100)),
 		slippage,
 		acc1.GetAddress(),
 		types.TimeInForce_GoodTillCancel,
 		clientID,
 	)
 	require.NoError(t, err)
+	foundOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.NotNil(t, foundOrder, "Market order should exist")
+	// 100% slippage to double source
+	require.True(t, foundOrder.Source.IsEqual(sdk.NewCoin("gbp", sdk.NewInt(200))))
 
+	// Gave 1 gbp and gained a eur
+	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
+
+	newClientID := cid()
 	mcrm := &types.MsgCancelReplaceMarketOrder{
 		Owner:             acc1.GetAddress().String(),
 		OrigClientOrderId: clientID,
-		NewClientOrderId:  cid(),
+		NewClientOrderId:  newClientID,
 		TimeInForce:       types.TimeInForce_GoodTillCancel,
 		Source:            "gbp",
 		Destination:       sdk.NewCoin("eur", sdk.NewInt(100)),
-		MaxSlippage:       sdk.NewDecWithPrec(50, 2),
+		MaxSlippage:       sdk.NewDecWithPrec(0, 2),
 	}
 	_, err = k.CancelReplaceMarketOrder(ctx, mcrm)
 	require.NoError(t, err)
+
+	expOrder := &types.Order{
+		ID:                3,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Owner:             acc1.GetAddress().String(),
+		ClientOrderID:     newClientID,
+		// Zero slippage same amount
+		Source:            sdk.NewCoin(mcrm.Source, sdk.NewInt(100)),
+		SourceRemaining:   sdk.NewInt(100),
+		SourceFilled:      sdk.ZeroInt(),
+		Destination:       mcrm.Destination,
+		DestinationFilled: sdk.ZeroInt(),
+		Created:           ctx.BlockTime(),
+	}
+	require.NoError(t, err)
+
+	origOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.Nil(t, origOrder, "Original market order should not exist")
+
+	foundOrder = k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), newClientID,
+	)
+	require.Equal(t, expOrder, foundOrder)
+
+	// no impact
+	acc1Bal = bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
+}
+
+func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "100gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "100eur")
+
+	var o types.Order
+	var err error
+
+	// Establish market price by executing a 2:1 trade
+	o = order(ctx.BlockTime(), acc2, "20eur", "10gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc1, "10gbp", "20eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+	acc1b := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("20eur,90gbp").String(), acc1b.String())
+
+	// Make a market order that allows slippage
+	clientID := cid()
+	slippage := sdk.NewDecWithPrec(0, 2)
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(10)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		clientID,
+	)
+	require.NoError(t, err)
+	acc1b = bk.GetAllBalances(ctx, acc1.GetAddress())
+
+	// Gave 1 gbp and gained a eur
+	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("20eur,90gbp").String(), acc1Bal.String())
+
+	foundOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.NotNil(t, foundOrder, "Market order should exist")
+	// 0% slippage same as ratio (1eur/2gbp) * 10 => 5gbp
+	require.True(t, foundOrder.Source.IsEqual(sdk.NewCoin("gbp", sdk.NewInt(5))))
+
+	newClientID := cid()
+	mcrm := &types.MsgCancelReplaceMarketOrder{
+		Owner:             acc1.GetAddress().String(),
+		OrigClientOrderId: clientID,
+		NewClientOrderId:  newClientID,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Source:            "gbp",
+		Destination:       sdk.NewCoin("eur", sdk.NewInt(10)),
+		MaxSlippage:       sdk.NewDecWithPrec(100, 2),
+	}
+	_, err = k.CancelReplaceMarketOrder(ctx, mcrm)
+	require.NoError(t, err)
+	expOrder := &types.Order{
+		ID:                3,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Owner:             acc1.GetAddress().String(),
+		ClientOrderID:     newClientID,
+		// 100 % slippage should result 2 * (1/2) => 10 gbp -> 10 eur
+		Source:            sdk.NewCoin(mcrm.Source, sdk.NewInt(10)),
+		SourceRemaining:   sdk.NewInt(10),
+		SourceFilled:      sdk.ZeroInt(),
+		Destination:       mcrm.Destination,
+		DestinationFilled: sdk.ZeroInt(),
+		Created:           ctx.BlockTime(),
+	}
+	require.NoError(t, err)
+
+	origOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.Nil(t, origOrder, "Original market order should not exist")
+
+	foundOrder = k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), newClientID,
+	)
+	require.Equal(t, expOrder, foundOrder)
+
+	// no impact
+	acc1Bal = bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("20eur,90gbp").String(), acc1Bal.String())
 }
 
 func TestFillOrKillMarketOrder1(t *testing.T) {
