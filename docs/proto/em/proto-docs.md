@@ -122,6 +122,9 @@
     - [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse)
     - [MsgCancelReplaceMarketOrder](#em.market.v1.MsgCancelReplaceMarketOrder)
     - [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse)
+    - [TxParam](#em.market.v1.TxParam)
+  
+    - [TxMessageType](#em.market.v1.TxMessageType)
   
     - [Msg](#em.market.v1.Msg)
   
@@ -1458,7 +1461,40 @@
 
 
 
+
+<a name="em.market.v1.TxParam"></a>
+
+### TxParam
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `trx_fee` | [string](#string) |  | default fee for a market transaction. |
+| `liquid_trx_fee` | [string](#string) |  | Valid liquidity adding orders are free or adjusted to a minimum nominal/fee |
+| `liquidity_rebate_minutes_span` | [int64](#int64) |  | Minutes interval for the liquidity rebate to apply. For the liquidity rebate to apply, the running transaction should occur x minutes after the signers' last liquid trx. |
+
+
+
+
+
  <!-- end messages -->
+
+
+<a name="em.market.v1.TxMessageType"></a>
+
+### TxMessageType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEFAULT_TX_MSG | 0 | Tx fallback for fees etc. |
+| ADD_LIMIT_ORDER | 1 |  |
+| ADD_MARKET_ORDER | 2 |  |
+| CANCEL_REPLACE_LIMIT_ORDER | 3 |  |
+| CANCEL_REPLACE_MARKET_ORDER | 4 |  |
+| CANCEL_ORDER | 5 |  |
+
 
  <!-- end enums -->
 
