@@ -7,6 +7,7 @@ package keeper
 import (
 	"fmt"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"math"
 	"sync"
@@ -37,19 +38,30 @@ type Keeper struct {
 	bk         types.BankKeeper
 	authorityk types.RestrictedKeeper
 
+	paramSubspace paramtypes.Subspace
+
 	// accountOrders types.Orders
 	appstateInit *sync.Once
 
 	restrictedDenoms types2.RestrictedDenoms
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
+func NewKeeper(
+	cdc codec.BinaryMarshaler,
+	key sdk.StoreKey,
+	keyIndices sdk.StoreKey,
+	authKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
+	authorityKeeper types.RestrictedKeeper,
+	params paramtypes.Subspace,
+) *Keeper {
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,
 		keyIndices: keyIndices,
 		ak:         authKeeper,
 		bk:         bankKeeper,
+		paramSubspace: params,
 
 		appstateInit: new(sync.Once),
 
@@ -135,10 +147,30 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 	return k.NewOrderSingle(ctx, order)
 }
 
-func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+func postOrderSingle(
+	ctx sdk.Context,
+	order types.Order,
+	messageType types.TxMessageType, commitTrade func(),
+) {
+	// recover -> save recError
+
+	// if !rebate applies
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	// else !rebate applies and out of gas error
+	// panic(recError)
+
+	// else apply full or partial rebate
+	// check partial rebate and whether panic still applied
+
+	commitTrade()
+}
+
+func (k *Keeper) NewOrderSingle(
+	ctx sdk.Context, aggressiveOrder types.Order, messageType types.TxMessageType,
+) (*sdk.Result, error) {
 
 	// Set this to true to roll back any state changes made by the aggressive order. Used for FillOrKill orders.
 	KillOrder := false
@@ -149,7 +181,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			return
 		}
 
-		commitTrade()
+		postOrderSingle(ctx, aggressiveOrder, messageType, commitTrade)
 	}()
 
 	if err := aggressiveOrder.IsValid(); err != nil {
