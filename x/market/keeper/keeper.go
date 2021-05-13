@@ -149,10 +149,11 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 		return nil, err
 	}
 
-	return k.NewOrderSingle(ctx, order)
+	// treat ReplaceMarketOrder and AddMarketOrders costing same gas
+	return k.NewOrderSingle(ctx, order, types.TxMessageType_AddMarketOrder)
 }
 
-func postOrderSingle(
+func postOrder(
 	ctx sdk.Context,
 	order types.Order,
 	messageType types.TxMessageType, commitTrade func(),
@@ -170,24 +171,20 @@ func postOrderSingle(
 	// else apply full or partial rebate
 	// check partial rebate and whether panic still applied
 
+	// Roll back any state changes made by the aggressive FillOrKill order.
+	if order.TimeInForce == types.TimeInForce_FillOrKill {
+		return
+	}
+
 	commitTrade()
 }
 
 func (k *Keeper) NewOrderSingle(
 	ctx sdk.Context, aggressiveOrder types.Order, messageType types.TxMessageType,
 ) (*sdk.Result, error) {
-
-	// Set this to true to roll back any state changes made by the aggressive order. Used for FillOrKill orders.
-	KillOrder := false
 	ctx, commitTrade := ctx.CacheContext()
 
-	defer func() {
-		if KillOrder {
-			return
-		}
-
-		postOrderSingle(ctx, aggressiveOrder, messageType, commitTrade)
-	}()
+	defer postOrder(ctx, aggressiveOrder, messageType, commitTrade)
 
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return nil, err
@@ -363,7 +360,6 @@ func (k *Keeper) NewOrderSingle(
 			addToBook = false
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		case types.TimeInForce_FillOrKill:
-			KillOrder = true
 			ctx = ctx.WithEventManager(sdk.NewEventManager())
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		}
@@ -420,7 +416,7 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 
 func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
 	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
+	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceLimitOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner, origClientOrderId)
@@ -449,7 +445,7 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 
 	newOrder.TimeInForce = origOrder.TimeInForce
 
-	resAdd, err := k.NewOrderSingle(ctx, newOrder)
+	resAdd, err := k.NewOrderSingle(ctx, newOrder, types.TxMessageType_CancelReplaceLimitOrder)
 	if err != nil {
 		return nil, err
 	}

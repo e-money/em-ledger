@@ -58,7 +58,8 @@ func TestBasicTrade(t *testing.T) {
 	gasmeter := sdk.NewGasMeter(math.MaxUint64)
 	src1, dst1 := "eur", "usd"
 	order1 := order(ctx.BlockTime(), acc1, "100"+src1, "120"+dst1)
-	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order1)
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order1,
+		types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
 	require.Equal(t, ctx.BlockTime(), order1.Created)
@@ -73,7 +74,8 @@ func TestBasicTrade(t *testing.T) {
 	gasmeter = sdk.NewGasMeter(math.MaxUint64)
 	src2, dst2 := dst1, src1
 	order2 := order(ctx.BlockTime(), acc2, "60"+src2, "50"+dst2)
-	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order2)
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order2,
+		types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Ensure that the trade has been correctly registered in market data.
@@ -126,11 +128,11 @@ func TestBasicTrade2(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	order1 := order(ctx.BlockTime(), acc1, "888eur", "1121usd")
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1,	types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order2 := order(ctx.BlockTime(), acc2, "1120usd", "890eur")
-	res, err := k.NewOrderSingle(ctx, order2)
+	res, err := k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
@@ -146,16 +148,16 @@ func TestBasicTrade3(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	order1 := order(ctx.BlockTime(), acc2, "888850eur", "22807162chf")
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1,	types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order2 := order(ctx.BlockTime(), acc3, "12chf", "4usd")
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order3 := order(ctx.BlockTime(), acc1, "227156usd", "24971eur")
 
-	_, err = k.NewOrderSingle(ctx, order3)
+	_, err = k.NewOrderSingle(ctx, order3, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
@@ -172,24 +174,24 @@ func TestMarketOrderSlippage1(t *testing.T) {
 
 	// Establish market price by executing a 1:1 trade
 	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
 	require.NoError(t, err)
 
 	// Sell eur at various prices
 	o = order(ctx.BlockTime(), acc2, "50eur", "50gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc2, "50eur", "75gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc2, "50eur", "100gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
 	require.NoError(t, err)
 
 	// Make a market order that allows slippage
@@ -238,11 +240,11 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 
 	// Establish market price by executing a 1:1 trade
 	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Make a market order that allows slippage
@@ -323,11 +325,11 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 
 	// Establish market price by executing a 2:1 trade
 	o = order(ctx.BlockTime(), acc2, "20eur", "10gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "10gbp", "20eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 	acc1b := bk.GetAllBalances(ctx, acc1.GetAddress())
 	require.Equal(t, coins("20eur,90gbp").String(), acc1b.String())
@@ -413,16 +415,16 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 
 	// Establish market price by executing a 1:1 trade
 	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Create a market for eur
 	o = order(ctx.BlockTime(), acc2, "100eur", "100gbp")
-	res, err := k.NewOrderSingle(ctx, o)
+	res, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 	require.Equal(
 		t, "accept",
@@ -467,12 +469,12 @@ func TestFillOrKillLimitOrder1(t *testing.T) {
 
 	// Create a tiny market for eur
 	o := order(ctx.BlockTime(), acc2, "100eur", "100gbp")
-	_, err := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order2 := order(ctx.BlockTime(), acc1, "200gbp", "200eur")
 	order2.TimeInForce = types.TimeInForce_FillOrKill
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Order must fail completely due to not being fillable
@@ -499,13 +501,13 @@ func TestImmediateOrCancel(t *testing.T) {
 	var err error
 
 	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "2gbp", "2eur")
 	o.TimeInForce = types.TimeInForce_ImmediateOrCancel
 	cid := o.ClientOrderID
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 	require.Equal(t, o.Created, ctx.BlockTime())
 
@@ -526,7 +528,10 @@ func TestInsufficientGas(t *testing.T) {
 	gasMeter := sdk.NewGasMeter(gasPriceNewOrder - 5000)
 
 	require.Panics(t, func() {
-		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
+		k.NewOrderSingle(
+			ctx.WithGasMeter(gasMeter), order1,
+			types.TxMessageType_AddLimitOrder,
+		)
 	})
 }
 
@@ -540,18 +545,18 @@ func TestMultipleOrders(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	// Add two orders that draw on the same balance.
-	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"))
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"), types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
-	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"))
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"), types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// require.Len(t, k.instruments, 2)
 
-	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"))
+	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"), types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
-	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"))
+	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"), types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
@@ -568,7 +573,10 @@ func TestCancelZeroRemainingOrders(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
 	acc := createAccount(ctx, ak, bk, randomAddress(), "10000eur")
-	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc, "10000eur", "11000usd"))
+	_, err := k.NewOrderSingle(
+		ctx, order(ctx.BlockTime(), acc, "10000eur", "11000usd"),
+		types.TxMessageType_AddLimitOrder,
+	)
 	require.NoError(t, err)
 
 	err = bk.SendCoins(ctx, acc.GetAddress(), sdk.AccAddress([]byte("void")), coins("10000eur"))
@@ -588,7 +596,7 @@ func TestInsufficientBalance1(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	o := order(ctx.BlockTime(), acc1, "300eur", "360usd")
-	_, err := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Modify account balance to be below order source
@@ -596,7 +604,7 @@ func TestInsufficientBalance1(t *testing.T) {
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc2, "360usd", "300eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -616,11 +624,11 @@ func Test2(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
-	_, err := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc2, "121usd", "100eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// require.Empty(t, k.instruments)
@@ -638,16 +646,16 @@ func TestAllInstruments(t *testing.T) {
 	acc3 := createAccount(ctx, ak, bk, randomAddress(), "2200chf")
 
 	// Add two orders that draw on the same balance.
-	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"))
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"), types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
-	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"))
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"), types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
-	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"))
+	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"), types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
-	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"))
+	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"), types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
@@ -691,12 +699,12 @@ func Test3(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
-	k.NewOrderSingle(ctx, o)
+	k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	for i := 0; i < 4; i++ {
 		o = order(ctx.BlockTime(), acc2, "30usd", "25eur")
-		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
+		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o, types.TxMessageType_AddLimitOrder)
 	}
 	require.Equal(t, 4*gasPriceNewOrder, gasMeter.GasConsumed())
 
@@ -717,11 +725,11 @@ func TestDeleteOrder(t *testing.T) {
 	cid := cid()
 
 	order1, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), acc1.GetAddress(), cid)
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order2, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("100eur"), coin("77chf"), acc1.GetAddress(), cid)
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.Error(t, err) // Verify that client order ids cannot be duplicated.
 
 	// require.Len(t, k.instruments, 1) // Ensure that the eur->chf pair was not added.
@@ -739,13 +747,13 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		order, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5eur"), coin("12usd"), acc1.GetAddress(), cid())
-		_, err := k.NewOrderSingle(ctx, order)
+		_, err := k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 	}
 
 	for i := 0; i < 5; i++ {
 		order, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("7usd"), coin("3chf"), acc2.GetAddress(), cid())
-		res, err := k.NewOrderSingle(ctx, order)
+		res, err := k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
 		require.True(t, err == nil, res.Log)
 	}
 
@@ -754,7 +762,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 
 	{
 		order, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("12usd"), coin("5eur"), acc2.GetAddress(), cid())
-		res, err := k.NewOrderSingle(ctx, order)
+		res, err := k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
 		require.True(t, err == nil, res.Log)
 	}
 
@@ -800,7 +808,7 @@ func TestKeeperCancelReplaceLimitOrder(t *testing.T) {
 
 	order1cid := cid()
 	order1, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
@@ -831,7 +839,7 @@ func TestKeeperCancelReplaceLimitOrder(t *testing.T) {
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	o := order(ctx.BlockTime(), acc2, "2600usd", "300eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -864,7 +872,7 @@ func TestKeeperCancelReplaceLimitOrder(t *testing.T) {
 
 	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
 	order5 := order(ctx.BlockTime(), acc2, "42000usd", "8000eur")
-	k.NewOrderSingle(ctx, order5)
+	k.NewOrderSingle(ctx, order5, types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
 	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
@@ -883,7 +891,7 @@ func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
 
 	order1cid := cid()
 	order1, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
@@ -914,7 +922,7 @@ func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
 	o := order(ctx.BlockTime(), acc2, "2600usd", "300eur")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -947,7 +955,7 @@ func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
 
 	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
 	order5 := order(ctx.BlockTime(), acc2, "42000usd", "8000eur")
-	k.NewOrderSingle(ctx, order5)
+	k.NewOrderSingle(ctx, order5, types.TxMessageType_AddLimitOrder)
 	require.True(t, err == nil, res.Log)
 
 	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
@@ -963,14 +971,14 @@ func TestOrdersChangeWithAccountBalance(t *testing.T) {
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "11000chf,100000eur")
 
 	order, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("1000usd"), acc.GetAddress(), cid())
-	_, err := k.NewOrderSingle(ctx, order)
+	_, err := k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	{
 		// Partially fill the order above
 		acc2 := createAccount(ctx, ak, bk, randomAddress(), "900000usd")
 		order2, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("400usd"), coin("4000eur"), acc2.GetAddress(), cid())
-		_, err = k.NewOrderSingle(ctx, order2)
+		_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 	}
 
@@ -1013,7 +1021,7 @@ func TestUnknownAsset(t *testing.T) {
 
 	// Make an order with a destination that is not known by the supply module
 	o := order(ctx.BlockTime(), acc1, "1000eur", "1200nok")
-	_, err := k1.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
+	_, err := k1.NewOrderSingle(ctx.WithGasMeter(gasMeter), o, types.TxMessageType_AddLimitOrder)
 	require.True(t, types.ErrUnknownAsset.Is(err))
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 }
@@ -1026,11 +1034,11 @@ func TestLoadFromStore(t *testing.T) {
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "7400usd")
 
 	o := order(ctx.BlockTime(), acc1, "1000eur", "1200usd")
-	_, err := k1.NewOrderSingle(ctx, o)
+	_, err := k1.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc2, "5000usd", "3500chf")
-	_, err = k1.NewOrderSingle(ctx, o)
+	_, err = k1.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	_, k2, _, _ := createTestComponents(t)
@@ -1054,7 +1062,10 @@ func TestVestingAccount(t *testing.T) {
 	vestingAcc := vestingtypes.NewDelayedVestingAccount(account.(*authtypes.BaseAccount), amount, math.MaxInt64)
 	ak.SetAccount(ctx, vestingAcc)
 
-	_, err := keeper.NewOrderSingle(ctx, order(ctx.BlockTime(), vestingAcc, "5000eur", "4700chf"))
+	_, err := keeper.NewOrderSingle(
+		ctx, order(ctx.BlockTime(), vestingAcc, "5000eur", "4700chf"),
+		types.TxMessageType_AddLimitOrder,
+	)
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
@@ -1074,7 +1085,7 @@ func TestInvalidInstrument(t *testing.T) {
 		TimeInForce:       types.TimeInForce_GoodTillCancel,
 	}
 
-	_, err := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.True(t, types.ErrInvalidInstrument.Is(err))
 }
 
@@ -1095,38 +1106,38 @@ func TestRestrictedDenominations1(t *testing.T) {
 
 	{ // Verify that acc2 can't create a passive gbp order
 		o := order(ctx.BlockTime(), acc2, "500gbp", "542eur")
-		_, err := k.NewOrderSingle(ctx, o)
+		_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 		// require.Empty(t, k.instruments)
 
 		o = order(ctx.BlockTime(), acc2, "542usd", "500gbp")
-		_, err = k.NewOrderSingle(ctx, o)
+		_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 		// require.Empty(t, k.instruments)
 	}
 
 	{ // Verify that acc1 can create a passive gbp order
 		o := order(ctx.BlockTime(), acc1, "542eur", "500gbp")
-		_, err := k.NewOrderSingle(ctx, o)
+		_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 		// require.Len(t, k.instruments, 1)
 
 		o = order(ctx.BlockTime(), acc1, "200gbp", "333usd")
-		_, err = k.NewOrderSingle(ctx, o)
+		_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 		// require.Len(t, k.instruments, 2)
 	}
 
 	{ // Verify that acc2 managed to sell its gbp to a passive order
 		o := order(ctx.BlockTime(), acc2, "500gbp", "542eur")
-		_, err := k.NewOrderSingle(ctx, o)
+		_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 
 		balance := bk.GetAllBalances(ctx, acc2.GetAddress())
 		require.Equal(t, "542", balance.AmountOf("eur").String())
 
 		o = order(ctx.BlockTime(), acc2, "333usd", "200gbp")
-		_, err = k.NewOrderSingle(ctx, o)
+		_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err)
 		balance = bk.GetAllBalances(ctx, acc2.GetAddress())
 		require.Equal(t, "900", balance.AmountOf("gbp").String())
@@ -1152,13 +1163,13 @@ func TestRestrictedDenominations2(t *testing.T) {
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	// Ensure that no orders can be created, even though acc1 is allowed to create usd orders
 	o := order(ctx.BlockTime(), acc1, "542usd", "500gbp")
-	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 	// require.Empty(t, k.instruments)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 
 	o = order(ctx.BlockTime(), acc1, "500gbp", "542usd")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 	// require.Empty(t, k.instruments)
 }
@@ -1172,26 +1183,26 @@ func TestSyntheticInstruments1(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	o := order(ctx.BlockTime(), acc1, "1000eur", "1114usd")
-	_, err := k.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "500eur", "542chf")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc3, "1000chf", "1028usd")
-	_, err = k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	o = order(ctx.BlockTime(), acc2, "5000usd", "4485eur")
-	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
-	require.NoError(t, err)
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o, types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err, types.TxMessageType_AddLimitOrder)
 	require.Equal(t, gasMeter.GasConsumed(), gasPriceNewOrder) // Matches several orders, but should pay only the fixed fee
 
 	// Ensure acc2 received at least some euro
 	acc2Balance := bk.GetAllBalances(ctx, acc2.GetAddress())
-	require.True(t, acc2Balance.AmountOf("eur").IsPositive())
+	require.True(t, acc2Balance.AmountOf("eur").IsPositive(), types.TxMessageType_AddLimitOrder)
 
 	// Ensure acc2 did not receive any CHF, which is used in the synthetic instrument
 	require.True(t, acc2Balance.AmountOf("chf").IsZero())
@@ -1208,9 +1219,15 @@ func TestNonMatchingOrders(t *testing.T) {
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "100000usd")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "240000eur")
 
-	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "20000usd", "20000eur"))
+	_, err := k.NewOrderSingle(
+		ctx, order(ctx.BlockTime(), acc1, "20000usd", "20000eur"),
+		types.TxMessageType_AddLimitOrder,
+	)
 	require.NoError(t, err)
-	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "20000eur", "50000usd"))
+	_, err = k.NewOrderSingle(
+		ctx, order(ctx.BlockTime(), acc2, "20000eur", "50000usd"),
+		types.TxMessageType_AddLimitOrder,
+	)
 	require.NoError(t, err)
 
 	acc1Orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
@@ -1249,13 +1266,16 @@ func TestSyntheticInstruments2(t *testing.T) {
 	}
 
 	for _, o := range passiveOrders {
-		res, err := k.NewOrderSingle(ctx, o)
+		res, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddLimitOrder)
 		require.NoError(t, err, res.Log)
 	}
 
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	monsterOrder := order(ctx.BlockTime(), acc3, "3700000eur", "4000000usd")
-	res, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), monsterOrder)
+	res, err := k.NewOrderSingle(
+		ctx.WithGasMeter(gasMeter), monsterOrder,
+		types.TxMessageType_AddLimitOrder,
+	)
 	require.NoError(t, err, res.Log)
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 
@@ -1279,11 +1299,11 @@ func TestDestinationCapacity(t *testing.T) {
 	order1.SourceFilled = sdk.NewInt(618000000)
 	order1.DestinationFilled = sdk.NewInt(645161290)
 
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order2 := order(ctx.BlockTime(), acc2, "471096868463eur", "500182000000usd")
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 }
 
@@ -1301,15 +1321,15 @@ func TestDestinationCapacity2(t *testing.T) {
 	order1.SourceFilled = sdk.NewInt(618000000)
 	order1.DestinationFilled = sdk.NewInt(645161290)
 
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	order2 := order(ctx.BlockTime(), acc3, "130000000000chf", "800000000usd")
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	aggressiveOrder := order(ctx.BlockTime(), acc2, "471096868463eur", "120000000000chf")
-	_, err = k.NewOrderSingle(ctx, aggressiveOrder)
+	_, err = k.NewOrderSingle(ctx, aggressiveOrder, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 }
 
@@ -1319,17 +1339,17 @@ func TestPreventPhantomLiquidity(t *testing.T) {
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "10000eur")
 
 	order1 := order(ctx.BlockTime(), acc1, "8000eur", "9000usd")
-	_, err := k.NewOrderSingle(ctx, order1)
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Cannot sell more than the balance in the same instrument
 	order2 := order(ctx.BlockTime(), acc1, "8000eur", "9000usd")
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx, order2, types.TxMessageType_AddLimitOrder)
 	require.Error(t, err)
 
 	// Can sell the balance in another instrument
 	order3 := order(ctx.BlockTime(), acc1, "8000eur", "6000chf")
-	_, err = k.NewOrderSingle(ctx, order3)
+	_, err = k.NewOrderSingle(ctx, order3, types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 }
 
@@ -1358,7 +1378,7 @@ func TestListInstruments(t *testing.T) {
 				)
 
 				order := order(ctx.BlockTime(), acc, s, d)
-				_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order)
+				_, err := k.NewOrderSingle(ctx.WithGasMeter(gasmeter), order, types.TxMessageType_AddLimitOrder)
 				require.NoError(t, err)
 			}
 		}
@@ -1435,12 +1455,12 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 	t.Helper()
 
 	var (
-		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
+		keyMarket  = sdk.NewKVStoreKey(types.StoreKey)
 		keyIndices = sdk.NewKVStoreKey(types.StoreKeyIdx)
 		keyAuthCap = sdk.NewKVStoreKey("authCapKey")
-		keyParams  = sdk.NewKVStoreKey("params")
-		keyBank    = sdk.NewKVStoreKey(banktypes.ModuleName)
-		tkeyParams = sdk.NewTransientStoreKey("transient_params")
+		keyParams  = sdk.NewKVStoreKey(paramstypes.StoreKey)
+		keyBank    = sdk.NewKVStoreKey(banktypes.StoreKey)
+		tkeyParams = sdk.NewTransientStoreKey(paramstypes.TStoreKey)
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{}
@@ -1484,7 +1504,6 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 
 	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
 
-	marketKeeper := NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, wrappedBank, dummyAuthority{})
 	return ctx, marketKeeper, ak, wrappedBank
 }
 

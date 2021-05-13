@@ -88,7 +88,7 @@ func TestFuzzing1(t *testing.T) {
 	})
 
 	for _, order := range allOrders {
-		_, err := k.NewOrderSingle(ctx, order)
+		_, err := k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
 		if order.IsFilled() {
 			fmt.Println("Order is filled on creation. Ignoring.", order)
 			continue

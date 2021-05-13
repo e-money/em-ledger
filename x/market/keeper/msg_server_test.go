@@ -23,7 +23,7 @@ func TestAddLimitOrder(t *testing.T) {
 
 	specs := map[string]struct {
 		req       *types.MsgAddLimitOrder
-		mockFn    func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, aggressiveOrder types.Order, msgType types.TxMessageType) (*sdk.Result, error)
 		expErr    bool
 		expEvents sdk.Events
 		expOrder  types.Order
@@ -36,7 +36,7 @@ func TestAddLimitOrder(t *testing.T) {
 				Source:        sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
-			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order, msgType types.TxMessageType) (*sdk.Result, error) {
 				gotOrder = aggressiveOrder
 				return &sdk.Result{
 					Events: []abcitypes.Event{{
@@ -87,7 +87,7 @@ func TestAddLimitOrder(t *testing.T) {
 				Source:        sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
-			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order, messageType types.TxMessageType) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -510,7 +510,7 @@ func TestCancelReplaceMarketOrder(t *testing.T) {
 
 type marketKeeperMock struct {
 	NewMarketOrderWithSlippageFn func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error)
-	NewOrderSingleFn             func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
+	NewOrderSingleFn             func(ctx sdk.Context, aggressiveOrder types.Order, messageType types.TxMessageType) (*sdk.Result, error)
 	CancelOrderFn                func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
 	CancelReplaceLimitOrderFn    func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
 	CancelReplaceMarketOrderFn   func(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error)
@@ -523,11 +523,11 @@ func (m marketKeeperMock) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom s
 	return m.NewMarketOrderWithSlippageFn(ctx, srcDenom, dst, maxSlippage, owner, timeInForce, clientOrderId)
 }
 
-func (m marketKeeperMock) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+func (m marketKeeperMock) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order, msgType types.TxMessageType) (*sdk.Result, error) {
 	if m.NewOrderSingleFn == nil {
 		panic("not expected to be called")
 	}
-	return m.NewOrderSingleFn(ctx, aggressiveOrder)
+	return m.NewOrderSingleFn(ctx, aggressiveOrder, msgType)
 }
 
 func (m marketKeeperMock) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {

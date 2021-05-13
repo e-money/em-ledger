@@ -37,7 +37,7 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 		return nil, err
 	}
 
-	result, err := m.k.NewOrderSingle(ctx, order, )
+	result, err := m.k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
 	if err != nil {
 		return nil, err
 	}
