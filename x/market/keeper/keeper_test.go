@@ -26,6 +26,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	emtypes "github.com/e-money/em-ledger/types"
 	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
@@ -1452,6 +1453,7 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 	ms.MountStoreWithDB(keyAuthCap, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyBank, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
@@ -1470,7 +1472,15 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 		wrappedBank = embank.Wrap(bk, embank.RestrictedKeeperFunc(func(ctx sdk.Context) emauthtypes.RestrictedDenoms {
 			return emauthtypes.RestrictedDenoms{} // allow all
 		}))
+
+		marketKeeper = NewKeeper(
+			encConfig.Marshaler, keyMarket, keyIndices, ak, wrappedBank,
+			dummyAuthority{},
+			pk.Subspace(types.ModuleName),
+		)
 	)
+
+	marketKeeper.InitParamsStore(ctx)
 
 	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
 

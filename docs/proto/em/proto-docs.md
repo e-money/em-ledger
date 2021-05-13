@@ -122,7 +122,7 @@
     - [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse)
     - [MsgCancelReplaceMarketOrder](#em.market.v1.MsgCancelReplaceMarketOrder)
     - [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse)
-    - [TxParam](#em.market.v1.TxParam)
+    - [TxParams](#em.market.v1.TxParams)
   
     - [TxMessageType](#em.market.v1.TxMessageType)
   
@@ -1462,16 +1462,16 @@
 
 
 
-<a name="em.market.v1.TxParam"></a>
+<a name="em.market.v1.TxParams"></a>
 
-### TxParam
+### TxParams
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `trx_fee` | [string](#string) |  | default fee for a market transaction. |
-| `liquid_trx_fee` | [string](#string) |  | Valid liquidity adding orders are free or adjusted to a minimum nominal/fee |
+| `trx_fee` | [uint64](#uint64) |  | default fee for a market transaction. |
+| `liquid_trx_fee` | [uint64](#uint64) |  | Valid liquidity adding orders are free or adjusted to a minimum nominal/fee |
 | `liquidity_rebate_minutes_span` | [int64](#int64) |  | Minutes interval for the liquidity rebate to apply. For the liquidity rebate to apply, the running transaction should occur x minutes after the signers' last liquid trx. |
 
 

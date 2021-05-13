@@ -38,7 +38,7 @@ type Keeper struct {
 	bk         types.BankKeeper
 	authorityk types.RestrictedKeeper
 
-	paramSubspace paramtypes.Subspace
+	paramStore paramtypes.Subspace
 
 	// accountOrders types.Orders
 	appstateInit *sync.Once
@@ -53,15 +53,20 @@ func NewKeeper(
 	authKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	authorityKeeper types.RestrictedKeeper,
-	params paramtypes.Subspace,
+	paramStore paramtypes.Subspace,
 ) *Keeper {
+	// set params map
+	if !paramStore.HasKeyTable() {
+		paramStore = paramStore.WithKeyTable(types.ParamKeyTable())
+	}
+
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,
 		keyIndices: keyIndices,
 		ak:         authKeeper,
 		bk:         bankKeeper,
-		paramSubspace: params,
+		paramStore: paramStore,
 
 		appstateInit: new(sync.Once),
 
@@ -377,6 +382,8 @@ func (k *Keeper) NewOrderSingle(
 
 func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 	k.appstateInit.Do(func() {
+		k.InitParamsStore(ctx)
+
 		// Load the restricted denominations from the authority module
 		k.restrictedDenoms = k.authorityk.GetRestrictedDenoms(ctx)
 

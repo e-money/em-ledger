@@ -43,24 +43,16 @@ enum TxMessageType {
   [ (gogoproto.enumvalue_customname) = "CancelOrder" ];
 }
 
-message TxParam {
+message TxParams {
   // default fee for a market transaction.
-  string trx_fee = 1 [
-    (gogoproto.moretags) = "yaml:\"trx_fee\"",
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
+  uint64 trx_fee = 1 [(gogoproto.moretags) = "yaml:\"trx_fee\""];
 
   // Valid liquidity adding orders are free or adjusted to a minimum nominal/fee
-  string liquid_trx_fee = 2 [
-    (gogoproto.moretags) = "yaml:\"liquid_trx_fee\"",
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
+  uint64 liquid_trx_fee = 2 [(gogoproto.moretags) = "yaml:\"liquid_trx_fee\""];
 
-  // Minutes interval for the liquidity rebate to apply. For the liquidity
-  // rebate to apply, the running transaction should occur x minutes
-  // after the signers' last liquid trx.
+  // Minutes interval for eligible liquidity transactions to qualify for
+  // the rebate. For the rebate to apply, the running transaction
+  // should occur x minutes after the signers' last liquid trx.
   int64 liquidity_rebate_minutes_span = 3 [
     (gogoproto.moretags) = "yaml:\"liquidity_rebate_minutes_span\""
   ];
