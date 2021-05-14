@@ -13,6 +13,7 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -141,10 +142,10 @@ func TestBuyback3(t *testing.T) {
 		acc1 = createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "5000000pesos")
 		acc2 = createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
 	)
-	_, err := market.NewOrderSingle(ctx, order(acc1, "4000000pesos", "1ungm"))
+	_, err := market.NewOrderSingle(ctx, order(acc1, "4000000pesos", "1ungm"), types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
-	_, err = market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
+	_, err = market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"), types.TxMessageType_AddLimitOrder)
 	require.NoError(t, err)
 
 	// Attempt to create a position using the meager pesos balance of the module
@@ -200,10 +201,10 @@ func generateMarketActivity(ctx sdk.Context, marketKeeper *market.Keeper, ak ban
 		acc2 = createAccount(ctx, ak, bk, randomAddress(), "150000eur,290000chf")
 	)
 
-	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
-	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
-	marketKeeper.NewOrderSingle(ctx, order(acc2, "10000eur", "5000ungm"))
-	marketKeeper.NewOrderSingle(ctx, order(acc2, "20000chf", "5000ungm"))
+	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"), types.TxMessageType_AddLimitOrder)
+	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"), types.TxMessageType_AddLimitOrder)
+	marketKeeper.NewOrderSingle(ctx, order(acc2, "10000eur", "5000ungm"), types.TxMessageType_AddLimitOrder)
+	marketKeeper.NewOrderSingle(ctx, order(acc2, "20000chf", "5000ungm"), types.TxMessageType_AddLimitOrder)
 }
 
 func order(account authtypes.AccountI, src, dst string) types.Order {
@@ -231,7 +232,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	encConfig := MakeTestEncodingConfig()
 
 	var (
-		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
+		keyMarket  = sdk.NewKVStoreKey(types.StoreKey)
 		keyIndices = sdk.NewKVStoreKey(types.StoreKeyIdx)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
@@ -239,7 +240,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 		buybackKey = sdk.NewKVStoreKey("buyback")
 		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
 
-		tkeyParams = sdk.NewTransientStoreKey("transient_params")
+		tkeyParams = sdk.NewTransientStoreKey(paramstypes.TStoreKey)
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
@@ -255,6 +256,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	ms.MountStoreWithDB(keyIndices, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(buybackKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(t, err)
@@ -276,7 +278,10 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))
 	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
 
-	marketKeeper := market.NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{})
+	marketKeeper := market.NewKeeper(
+		encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{},
+		pk.Subspace(types.ModuleName),
+	)
 
 	keeper := NewKeeper(encConfig.Marshaler, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
 	keeper.SetUpdateInterval(ctx, time.Hour)
