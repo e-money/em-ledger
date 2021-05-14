@@ -344,7 +344,7 @@ func NewApp(
 	app.lpKeeper = liquidityprovider.NewKeeper(app.accountKeeper, app.bankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper)
 	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app)
-	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper, app.authorityKeeper, app.paramsKeeper.Subspace(market.ModuleName))
+	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper, app.authorityKeeper, app.GetSubspace(market.ModuleName))
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
 	app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
 
