@@ -70,6 +70,13 @@ func (p TxParams) Validate() error {
 		return err
 	}
 
+	if p.TrxFee < p.LiquidTrxFee {
+		return fmt.Errorf(
+			"standard fee:%d is less than liquid trx fee:%d", p.TrxFee,
+			p.LiquidTrxFee,
+		)
+	}
+
 	return validateTimeSpan(p.LiquidityRebateMinutesSpan)
 }
 

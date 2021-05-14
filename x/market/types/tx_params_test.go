@@ -24,6 +24,8 @@ func Test_ParamsEqual(t *testing.T) {
 func TestValidateParams(t *testing.T) {
 	require.NoError(t, DefaultTxParams().Validate())
 	require.NoError(t, NewTxParams(1, 0, 5).Validate())
+	require.NoError(t, NewTxParams(1, 1, 5).Validate())
+	require.Error(t, NewTxParams(1, 2, 5).Validate())
 	require.Error(t, NewTxParams(0, 0, 5).Validate())
 	require.Error(t, NewTxParams(0, 0, -1).Validate())
 }
