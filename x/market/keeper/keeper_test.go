@@ -1042,6 +1042,7 @@ func TestLoadFromStore(t *testing.T) {
 	require.NoError(t, err)
 
 	_, k2, _, _ := createTestComponents(t)
+	k2.paramStore = k1.paramStore
 
 	k2.key = k1.key
 	// Create new keeper and let it inherit the store of the previous keeper
