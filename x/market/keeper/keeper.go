@@ -180,6 +180,8 @@ func (k *Keeper) createMarketOrder(
 }
 
 func calcRebate(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas {
+	// TODO is destination sufficient to evaluate the total filling impact
+	// for limit/market orders?
 	if dstFilled.Equal(sdk.ZeroInt()) {
 		// 0% fill -> 100% rebate
 		return liquidFee
@@ -194,68 +196,86 @@ func calcRebate(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas
 	return rebatePct.Mul(rebate.ToDec()).RoundInt().Uint64()
 }
 
-func (k *Keeper) calcOrderGas(
+func (k *Keeper) calcReplacementGas(
 	ctx sdk.Context, dstFilled, dstAmount sdk.Int,
 	messageType types.TxMessageType, lastOrderTm time.Time,
 ) sdk.Gas {
 	var stdTrxFee uint64
 	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
 
-	// Standard trx fee
-	if messageType == types.TxMessageType_CancelOrder {
-		return stdTrxFee
-	}
-
-	var qualificationMin int64
-	k.paramStore.Get(ctx, types.KeyTrxFee, &qualificationMin)
-
 	var liquidTrxFee uint64
 	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
 
 	switch messageType {
-	case types.TxMessageType_AddLimitOrder,
-	types.TxMessageType_AddMarketOrder:
-
-		return calcRebate(dstFilled, dstAmount, stdTrxFee, liquidTrxFee)
-
 	case types.TxMessageType_CancelReplaceLimitOrder,
 		types.TxMessageType_CancelReplaceMarketOrder:
 
+		var qualificationMin int64
+		k.paramStore.Get(ctx, types.KeyLiquidityRebateMinutesSpan, &qualificationMin)
+
+		lastOrderTmMinutes := ctx.BlockTime().Sub(lastOrderTm).Minutes()
+
 		if lastOrderTm.Equal(time.Unix(0, 0)) ||
-		ctx.BlockTime().Sub(lastOrderTm).Minutes() >= float64(qualificationMin) {
+		 lastOrderTmMinutes >= float64(qualificationMin) {
 			return calcRebate(dstFilled, dstAmount, stdTrxFee, liquidTrxFee)
 		}
-
-	default:
-		// mis/uncategorized trx
-		return stdTrxFee
 	}
 
+	// mis/uncategorized trx
 	return stdTrxFee
 }
 
+// calcNewOrderGas applies to New orders.
+func (k *Keeper) calcNewOrderGas(
+	ctx sdk.Context,
+	order types.Order,
+	messageType types.TxMessageType,
+) sdk.Gas {
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	if order.IsFilled() {
+		return stdTrxFee
+	}
+
+	switch messageType {
+	case types.TxMessageType_AddLimitOrder,
+		types.TxMessageType_AddMarketOrder:
+
+		var liquidTrxFee uint64
+		k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+		return calcRebate(order.DestinationFilled, order.Destination.Amount,
+			stdTrxFee, liquidTrxFee)
+	}
+
+	// mis/uncategorized trx
+	return stdTrxFee
+}
+
+// SpendNewOrderGas applies to Cancel, New non-replacement orders.
 func (k *Keeper) SpendNewOrderGas(
-	ctx sdk.Context, orderGasMeter sdk.GasMeter, owner sdk.AccAddress,
-	order types.Order, messageType types.TxMessageType,
+	ctx sdk.Context,
+	orderGasMeter sdk.GasMeter,
+	order types.Order,
+	messageType types.TxMessageType,
 ) {
-	orderGas := k.calcOrderGas(
-		ctx, order.DestinationFilled, order.Destination.Amount, messageType,
-		time.Time{},
-	)
+	orderGas := k.calcNewOrderGas(ctx, order, messageType)
 	orderGasMeter.ConsumeGas(orderGas, messageType.String())
 }
 
+// postOrder does not affect replacement orders' gas consumption.
 func (k *Keeper) postOrder(
 	ctx sdk.Context,
 	orderGasMeter sdk.GasMeter,
-	owner sdk.AccAddress,
 	order types.Order,
 	messageType types.TxMessageType, commitTrade func(),
 ) {
-	if messageType != types.TxMessageType_AddLimitOrder &&
+	if messageType != types.TxMessageType_CancelReplaceLimitOrder &&
 		messageType != types.TxMessageType_CancelReplaceMarketOrder {
 
-		k.SpendNewOrderGas(ctx, orderGasMeter, owner, order, messageType)
+		// Cancel && New Orders
+		k.SpendNewOrderGas(ctx, orderGasMeter, order, messageType)
 	}
 
 	// Roll back any state changes made by the aggressive FillOrKill order.
@@ -275,12 +295,7 @@ func (k *Keeper) NewOrderSingle(
 	// impostor meter that would not panic
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	owner, err := sdk.AccAddressFromBech32(aggressiveOrder.Owner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
-	}
-
-	defer k.postOrder(ctx, trxGasMeter, owner, aggressiveOrder, messageType, commitTrade)
+	defer k.postOrder(ctx, trxGasMeter, aggressiveOrder, messageType, commitTrade)
 
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return nil, err
@@ -290,6 +305,10 @@ func (k *Keeper) NewOrderSingle(
 		return nil, sdkerrors.Wrapf(types.ErrInvalidPrice, "Order price is invalid: %s -> %s", aggressiveOrder.Source, aggressiveOrder.Destination)
 	}
 
+	owner, err := sdk.AccAddressFromBech32(aggressiveOrder.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
+	}
 	spendableCoins := k.bk.SpendableCoins(ctx, owner)
 
 	// Verify account balance
@@ -544,7 +563,7 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 		return nil, err
 	}
 
-	orderGas := k.calcOrderGas(
+	orderGas := k.calcReplacementGas(
 		ctx, newOrder.DestinationFilled, newOrder.Destination.Amount,
 		types.TxMessageType_CancelReplaceLimitOrder,
 		origOrder.Created,
@@ -614,7 +633,7 @@ func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelR
 		return nil, err
 	}
 
-	orderGas := k.calcOrderGas(
+	orderGas := k.calcReplacementGas(
 		ctx, destinationFilled, msg.Destination.Amount, types.TxMessageType_CancelReplaceMarketOrder,
 		origOrder.Created,
 	)
@@ -645,9 +664,14 @@ func (k *Keeper) GetOrderByOwnerAndClientOrderId(ctx sdk.Context, owner, clientO
 }
 
 func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
-	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(gasPriceCancelOrder, "CancelOrder")
+	trxGasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	// Use a fixed gas amount
+	trxGasMeter.ConsumeGas(stdTrxFee, "CancelOrder")
 
 	// orders := k.accountOrders.GetAllOrders(owner)
 	order := k.GetOrderByOwnerAndClientOrderId(ctx, owner.String(), clientOrderId)

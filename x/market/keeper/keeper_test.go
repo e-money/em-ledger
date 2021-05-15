@@ -535,6 +535,137 @@ func TestInsufficientGas(t *testing.T) {
 	})
 }
 
+func TestLiquidNewLimit0Gas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	src1, dst1 := "eur", "usd"
+	order1 := order(ctx.BlockTime(), acc1, "100"+src1, "120"+dst1)
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1,
+		types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+}
+
+func TestLiquidNewMarket0Gas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	order1 := order(ctx.BlockTime(), acc1, "100gbp", "120eur")
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1,
+		types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	order2 := order(ctx.BlockTime(), acc2, "120eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2,
+		types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	slippage := sdk.NewDecWithPrec(50, 2)
+	cid := cid()
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(200)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		cid,
+	)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+}
+
+func TestCancelNewLimitFullGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	src1, dst1 := "eur", "usd"
+	order1 := order(ctx.BlockTime(), acc1, "100"+src1, "120"+dst1)
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1,
+		types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	order := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+	require.Len(t, order, 1)
+
+	cid := order[0].ClientOrderID
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	_, err = k.CancelOrder(ctx, acc1.GetAddress(), cid)
+	require.NoError(t, err)
+	require.Equal(t, stdTrxFee, ctx.GasMeter().GasConsumed())
+}
+
+func TestCancelNewMarketFullGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	order1 := order(ctx.BlockTime(), acc1, "100gbp", "120eur")
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1,
+		types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	order2 := order(ctx.BlockTime(), acc2, "120eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2,
+		types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	slippage := sdk.NewDecWithPrec(50, 2)
+	cid := cid()
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(200)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		cid,
+	)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	_, err = k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), cid)
+	require.NoError(t, err)
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+}
+
 func TestMultipleOrders(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
