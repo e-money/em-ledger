@@ -179,11 +179,11 @@ func (k *Keeper) createMarketOrder(
 	return k.NewOrderSingle(ctx, order, msgType)
 }
 
-// getOrderGas calculates the gas for an order. The liquid fee applies to liquid
-// unfilled orders. If an order is not liquid the full fee applies. If filled
-// partially then the difference between the full fee - liquid fee is applied
-// proportionally.
-func getOrderGas(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas {
+// calcOrderGas calculates the gas for an order. The liquid fee applies to
+// liquid unfilled orders. If an order is not liquid the full fee applies. If
+// filled partially then the difference between the full fee - liquid fee is
+// applied proportionally.
+func calcOrderGas(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas {
 	// TODO is destination sufficient to evaluate the total filling impact
 	// for limit/market orders?
 	if dstFilled.Equal(sdk.ZeroInt()) {
@@ -217,11 +217,11 @@ func (k *Keeper) getReplacedOrderGas(
 		var qualificationMin int64
 		k.paramStore.Get(ctx, types.KeyLiquidityRebateMinutesSpan, &qualificationMin)
 
-		lastOrderTmMinutes := ctx.BlockTime().Sub(lastOrderTm).Minutes()
-
-		if lastOrderTm.Equal(time.Unix(0, 0)) ||
-		 lastOrderTmMinutes >= float64(qualificationMin) {
-			return getOrderGas(dstFilled, dstAmount, stdTrxFee, liquidTrxFee)
+		// check at least LiquidityRebateMinutesSpan elapsed from replaced
+		// order
+		if lastOrderTm.IsZero() ||
+			ctx.BlockTime().Sub(lastOrderTm).Minutes() >= float64(qualificationMin) {
+			return calcOrderGas(dstFilled, dstAmount, stdTrxFee, liquidTrxFee)
 		}
 	}
 
@@ -248,7 +248,7 @@ func (k *Keeper) getNewOrderGas(
 		var liquidTrxFee uint64
 		k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
 
-		return getOrderGas(order.DestinationFilled, order.Destination.Amount,
+		return calcOrderGas(order.DestinationFilled, order.Destination.Amount,
 			stdTrxFee, liquidTrxFee)
 	}
 
@@ -521,10 +521,21 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
+func postReplaceOrder(orderGasMeter sdk.GasMeter, gas *sdk.Gas, desc string) {
+
+	orderGasMeter.ConsumeGas(*gas, desc)
+}
+
 func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
-	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceLimitOrder")
+	orderGasMeter := ctx.GasMeter()
+
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	desc := types.TxMessageType_CancelReplaceMarketOrder.String()
+	orderGas := new(sdk.Gas)
+	k.paramStore.Get(ctx, types.KeyTrxFee, orderGas)
+
+	defer postReplaceOrder(orderGasMeter, orderGas, desc)
 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner, origClientOrderId)
 
@@ -552,29 +563,31 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 
 	newOrder.TimeInForce = origOrder.TimeInForce
 
-	orderGasMeter := ctx.GasMeter()
-
 	resAdd, err := k.NewOrderSingle(ctx, newOrder, types.TxMessageType_CancelReplaceLimitOrder)
 	if err != nil {
 		return nil, err
 	}
 
-	orderGas := k.getReplacedOrderGas(
+	*orderGas = k.getReplacedOrderGas(
 		ctx, newOrder.DestinationFilled, newOrder.Destination.Amount,
 		types.TxMessageType_CancelReplaceLimitOrder,
 		origOrder.Created,
 	)
-
-	orderGasMeter.ConsumeGas(orderGas, types.TxMessageType_CancelReplaceLimitOrder.String())
 
 	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
 	return &sdk.Result{Events: evts}, nil
 }
 
 func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error) {
-	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceMarketOrder")
+	orderGasMeter := ctx.GasMeter()
+
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	desc := types.TxMessageType_CancelReplaceMarketOrder.String()
+	orderGas := new(sdk.Gas)
+	k.paramStore.Get(ctx, types.KeyTrxFee, orderGas)
+
+	defer postReplaceOrder(orderGasMeter, orderGas, desc)
 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
 
@@ -613,8 +626,6 @@ func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelR
 	dstRemaining := msg.Destination.Amount.Sub(destinationFilled)
 	remDstCoin := sdk.NewCoin(msg.Destination.Denom, dstRemaining)
 
-	orderGasMeter := ctx.GasMeter()
-
 	resAdd, err := k.createMarketOrder(
 		ctx,
 		msg.Source,
@@ -629,11 +640,10 @@ func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelR
 		return nil, err
 	}
 
-	orderGas := k.getReplacedOrderGas(
+	*orderGas = k.getReplacedOrderGas(
 		ctx, destinationFilled, msg.Destination.Amount, types.TxMessageType_CancelReplaceMarketOrder,
 		origOrder.Created,
 	)
-	orderGasMeter.ConsumeGas(orderGas, types.TxMessageType_CancelReplaceMarketOrder.String())
 
 	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
 
