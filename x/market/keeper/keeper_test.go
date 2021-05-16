@@ -527,9 +527,15 @@ func TestInsufficientGas(t *testing.T) {
 
 	gasMeter := sdk.NewGasMeter(gasPriceNewOrder - 5000)
 
+	_, err := k.NewOrderSingle(ctx, order1, types.TxMessageType_AddLimitOrder)
+	require.NoError(t, err)
+
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "1121usd")
+	order2 := order(ctx.BlockTime(), acc2, "1121usd", "888eur")
+
 	require.Panics(t, func() {
 		k.NewOrderSingle(
-			ctx.WithGasMeter(gasMeter), order1,
+			ctx.WithGasMeter(gasMeter), order2,
 			types.TxMessageType_AddLimitOrder,
 		)
 	})

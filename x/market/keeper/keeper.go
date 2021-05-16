@@ -146,8 +146,8 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 	)
 }
 
-// createMarketOrder creates a new market order by setting the message type
-// whether it is a new (Add) or replacement.
+// createMarketOrder creates a new market order allowing to set the message type
+// to new (Add) or Replacement.
 func (k *Keeper) createMarketOrder(
 	ctx sdk.Context,
 	srcDenom string, dst sdk.Coin,
@@ -179,7 +179,11 @@ func (k *Keeper) createMarketOrder(
 	return k.NewOrderSingle(ctx, order, msgType)
 }
 
-func calcRebate(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas {
+// getOrderGas calculates the gas for an order. The liquid fee applies to liquid
+// unfilled orders. If an order is not liquid the full fee applies. If filled
+// partially then the difference between the full fee - liquid fee is applied
+// proportionally.
+func getOrderGas(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas {
 	// TODO is destination sufficient to evaluate the total filling impact
 	// for limit/market orders?
 	if dstFilled.Equal(sdk.ZeroInt()) {
@@ -196,7 +200,7 @@ func calcRebate(dstFilled, dstAmount sdk.Int, stdFee, liquidFee sdk.Gas) sdk.Gas
 	return rebatePct.Mul(rebate.ToDec()).RoundInt().Uint64()
 }
 
-func (k *Keeper) calcReplacementGas(
+func (k *Keeper) getReplacedOrderGas(
 	ctx sdk.Context, dstFilled, dstAmount sdk.Int,
 	messageType types.TxMessageType, lastOrderTm time.Time,
 ) sdk.Gas {
@@ -217,7 +221,7 @@ func (k *Keeper) calcReplacementGas(
 
 		if lastOrderTm.Equal(time.Unix(0, 0)) ||
 		 lastOrderTmMinutes >= float64(qualificationMin) {
-			return calcRebate(dstFilled, dstAmount, stdTrxFee, liquidTrxFee)
+			return getOrderGas(dstFilled, dstAmount, stdTrxFee, liquidTrxFee)
 		}
 	}
 
@@ -225,10 +229,9 @@ func (k *Keeper) calcReplacementGas(
 	return stdTrxFee
 }
 
-// calcNewOrderGas applies to New orders.
-func (k *Keeper) calcNewOrderGas(
+func (k *Keeper) getNewOrderGas(
 	ctx sdk.Context,
-	order types.Order,
+	order *types.Order,
 	messageType types.TxMessageType,
 ) sdk.Gas {
 	var stdTrxFee uint64
@@ -245,7 +248,7 @@ func (k *Keeper) calcNewOrderGas(
 		var liquidTrxFee uint64
 		k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
 
-		return calcRebate(order.DestinationFilled, order.Destination.Amount,
+		return getOrderGas(order.DestinationFilled, order.Destination.Amount,
 			stdTrxFee, liquidTrxFee)
 	}
 
@@ -253,29 +256,20 @@ func (k *Keeper) calcNewOrderGas(
 	return stdTrxFee
 }
 
-// SpendNewOrderGas applies to Cancel, New non-replacement orders.
-func (k *Keeper) SpendNewOrderGas(
+// postNewOrderSingle spends gas on new orders and adds non-fill-or-kill orders to the
+// order-book.
+func (k *Keeper) postNewOrderSingle(
 	ctx sdk.Context,
 	orderGasMeter sdk.GasMeter,
-	order types.Order,
-	messageType types.TxMessageType,
-) {
-	orderGas := k.calcNewOrderGas(ctx, order, messageType)
-	orderGasMeter.ConsumeGas(orderGas, messageType.String())
-}
-
-// postOrder does not affect replacement orders' gas consumption.
-func (k *Keeper) postOrder(
-	ctx sdk.Context,
-	orderGasMeter sdk.GasMeter,
-	order types.Order,
+	order *types.Order,
 	messageType types.TxMessageType, commitTrade func(),
 ) {
 	if messageType != types.TxMessageType_CancelReplaceLimitOrder &&
 		messageType != types.TxMessageType_CancelReplaceMarketOrder {
 
-		// Cancel && New Orders
-		k.SpendNewOrderGas(ctx, orderGasMeter, order, messageType)
+		// New Orders
+		orderGas := k.getNewOrderGas(ctx, order, messageType)
+		orderGasMeter.ConsumeGas(orderGas, messageType.String())
 	}
 
 	// Roll back any state changes made by the aggressive FillOrKill order.
@@ -295,7 +289,9 @@ func (k *Keeper) NewOrderSingle(
 	// impostor meter that would not panic
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	defer k.postOrder(ctx, trxGasMeter, aggressiveOrder, messageType, commitTrade)
+	defer k.postNewOrderSingle(
+		ctx, trxGasMeter, &aggressiveOrder, messageType, commitTrade,
+	)
 
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return nil, err
@@ -563,7 +559,7 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 		return nil, err
 	}
 
-	orderGas := k.calcReplacementGas(
+	orderGas := k.getReplacedOrderGas(
 		ctx, newOrder.DestinationFilled, newOrder.Destination.Amount,
 		types.TxMessageType_CancelReplaceLimitOrder,
 		origOrder.Created,
@@ -633,7 +629,7 @@ func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelR
 		return nil, err
 	}
 
-	orderGas := k.calcReplacementGas(
+	orderGas := k.getReplacedOrderGas(
 		ctx, destinationFilled, msg.Destination.Amount, types.TxMessageType_CancelReplaceMarketOrder,
 		origOrder.Created,
 	)
