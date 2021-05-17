@@ -31,7 +31,9 @@ func (o Order) MarshalJSON() ([]byte, error) {
     "denom": "%v",
     "amount": "%v"
   },
-  "destination_filled": "%v"
+  "destination_filled": "%v",
+  "created": "%v",
+  "orig_order_created": "%v"
 }
 `,
 		o.ID,
@@ -46,6 +48,8 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		o.Destination.Denom,
 		o.Destination.Amount,
 		o.DestinationFilled,
+		o.Created,
+		o.OrigOrderCreated,
 	)
 
 	return []byte(s), nil
@@ -83,7 +87,7 @@ func (o Order) Price() sdk.Dec {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner)
+	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v\nCreated:%v\nReplacementOrder:%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner, o.Created, o.OrigOrderCreated)
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {
@@ -130,7 +134,8 @@ func NewOrder(
 	timeInForce TimeInForce,
 	src, dst sdk.Coin,
 	seller sdk.AccAddress,
-	clientOrderId string) (Order, error) {
+	clientOrderId string,
+    origOrderCreated time.Time) (Order, error) {
 
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
 		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
@@ -148,6 +153,7 @@ func NewOrder(
 		Destination:       dst,
 		DestinationFilled: sdk.ZeroInt(),
 		Created:           createdTm,
+		OrigOrderCreated:  origOrderCreated,
 	}
 
 	if err := o.IsValid(); err != nil {

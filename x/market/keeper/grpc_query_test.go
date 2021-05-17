@@ -21,11 +21,9 @@ func TestQueryByAccount(t *testing.T) {
 	types.RegisterQueryServer(queryHelper, k)
 	queryClient := types.NewQueryClient(queryHelper)
 	o, err := types.NewOrder(
-		ctx.BlockTime(),
-		types.TimeInForce_GoodTillCancel,
-		sdk.NewCoin("alx", sdk.OneInt()),
-		sdk.NewCoin("blx", sdk.OneInt()),
-		myAddress, "myOrderID",
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel,
+		sdk.NewCoin("alx", sdk.OneInt()), sdk.NewCoin("blx", sdk.OneInt()),
+		myAddress, "myOrderID", time.Time{},
 	)
 	require.NoError(t, err)
 	k.setOrder(ctx, &o)
@@ -129,13 +127,13 @@ func TestInstrument(t *testing.T) {
 	acc := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
 	o := order(ctx.BlockTime(), acc, "100usd", "100chf")
-	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	oPlusOne := order(
 		ctx.BlockTime().Add(time.Second), acc, "100usd", "100gbp",
 	)
-	_, err = k.NewOrderSingle(ctx, oPlusOne, types.TxMessageType_AddLimitOrder)
+	_, err = k.NewOrderSingle(ctx, oPlusOne)
 	require.NoError(t, err)
 
 	specs := map[string]struct {

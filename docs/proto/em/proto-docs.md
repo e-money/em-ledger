@@ -124,8 +124,6 @@
     - [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse)
     - [TxParams](#em.market.v1.TxParams)
   
-    - [TxMessageType](#em.market.v1.TxMessageType)
-  
     - [Msg](#em.market.v1.Msg)
   
 - [em/queries/v1/query.proto](#em/queries/v1/query.proto)
@@ -1125,6 +1123,7 @@
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination_filled` | [string](#string) |  |  |
 | `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `orig_order_created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | applicable to CancelReplace orders: the creation timestamp of the order this order replaces. |
 
 
 
@@ -1472,29 +1471,13 @@
 | ----- | ---- | ----- | ----------- |
 | `trx_fee` | [uint64](#uint64) |  | default fee for a market transaction. |
 | `liquid_trx_fee` | [uint64](#uint64) |  | Valid liquidity adding orders are free or adjusted to a minimum nominal/fee |
-| `liquidity_rebate_minutes_span` | [int64](#int64) |  | Minutes interval for the liquidity rebate to apply. For the liquidity rebate to apply, the running transaction should occur x minutes after the signers' last liquid trx. |
+| `liquidity_rebate_minutes_span` | [int64](#int64) |  | Minutes interval for eligible replacing liquidity transactions to qualify for the rebate. For the rebate to apply, the replacing transaction should occur x minutes after the signer's original trx. |
 
 
 
 
 
  <!-- end messages -->
-
-
-<a name="em.market.v1.TxMessageType"></a>
-
-### TxMessageType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| DEFAULT_TX_MSG | 0 | Tx fallback for fees etc. |
-| ADD_LIMIT_ORDER | 1 |  |
-| ADD_MARKET_ORDER | 2 |  |
-| CANCEL_REPLACE_LIMIT_ORDER | 3 |  |
-| CANCEL_REPLACE_MARKET_ORDER | 4 |  |
-| CANCEL_ORDER | 5 |  |
-
 
  <!-- end enums -->
 

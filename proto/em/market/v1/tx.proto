@@ -20,29 +20,6 @@ service Msg {
       returns (MsgCancelReplaceMarketOrderResponse);
 }
 
-enum TxMessageType {
-  option (gogoproto.goproto_enum_stringer) = true;
-
-  // Tx fallback for fees etc.
-  DEFAULT_TX_MSG = 0
-  [ (gogoproto.enumvalue_customname) = "DefaultTxMsg" ];
-
-  ADD_LIMIT_ORDER = 1
-  [ (gogoproto.enumvalue_customname) = "AddLimitOrder" ];
-
-  ADD_MARKET_ORDER = 2
-  [ (gogoproto.enumvalue_customname) = "AddMarketOrder" ];
-
-  CANCEL_REPLACE_LIMIT_ORDER = 3
-  [ (gogoproto.enumvalue_customname) = "CancelReplaceLimitOrder" ];
-
-  CANCEL_REPLACE_MARKET_ORDER = 4
-  [ (gogoproto.enumvalue_customname) = "CancelReplaceMarketOrder" ];
-
-  CANCEL_ORDER = 5
-  [ (gogoproto.enumvalue_customname) = "CancelOrder" ];
-}
-
 message TxParams {
   // default fee for a market transaction.
   uint64 trx_fee = 1 [(gogoproto.moretags) = "yaml:\"trx_fee\""];
@@ -50,9 +27,9 @@ message TxParams {
   // Valid liquidity adding orders are free or adjusted to a minimum nominal/fee
   uint64 liquid_trx_fee = 2 [(gogoproto.moretags) = "yaml:\"liquid_trx_fee\""];
 
-  // Minutes interval for eligible liquidity transactions to qualify for
-  // the rebate. For the rebate to apply, the running transaction
-  // should occur x minutes after the signers' last liquid trx.
+  // Minutes interval for eligible replacing liquidity transactions to qualify
+  // for the rebate. For the rebate to apply, the replacing transaction should
+  // occur x minutes after the signer's original trx.
   int64 liquidity_rebate_minutes_span = 3 [
     (gogoproto.moretags) = "yaml:\"liquidity_rebate_minutes_span\""
   ];

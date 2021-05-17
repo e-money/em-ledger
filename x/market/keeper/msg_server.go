@@ -6,13 +6,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/market/types"
+	"time"
 )
 
 var _ types.MsgServer = msgServer{}
 
 type marketKeeper interface {
 	NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error)
-	NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order, messageType types.TxMessageType) (*sdk.Result, error)
+	NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
 	CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
 	CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
 	CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error)
@@ -32,12 +33,16 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 
-	order, err := types.NewOrder(ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner, msg.ClientOrderId)
+	order, err := types.NewOrder(
+		ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner,
+		msg.ClientOrderId, time.Time{},
+	)
+
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := m.k.NewOrderSingle(ctx, order, types.TxMessageType_AddLimitOrder)
+	result, err := m.k.NewOrderSingle(ctx, order)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +95,10 @@ func (m msgServer) CancelReplaceLimitOrder(c context.Context, msg *types.MsgCanc
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
-	order, err := types.NewOrder(ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner, msg.NewClientOrderId)
+	order, err := types.NewOrder(
+		ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner,
+		msg.NewClientOrderId, time.Time{},
+	)
 	if err != nil {
 		return nil, err
 	}

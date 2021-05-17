@@ -50,7 +50,7 @@ func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
 }
 
 func (k Keeper) SendOrderToMarket(ctx sdk.Context, order market.Order) (*sdk.Result, error) {
-	return k.marketKeeper.NewOrderSingle(ctx, order, market.TxMessageType_AddLimitOrder)
+	return k.marketKeeper.NewOrderSingle(ctx, order)
 }
 
 func (k Keeper) GetMarketData(ctx sdk.Context) []market.MarketData {

@@ -15,7 +15,10 @@ import (
 func TestSerialization(t *testing.T) {
 	// Verify that non-public fields survive de-/serialization
 	tm := time.Now()
-	order1, _ := NewOrder(tm, TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"), []byte("acc1"), "A")
+	order1, _ := NewOrder(
+		tm, TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"),
+		[]byte("acc1"), "A", time.Time{},
+	)
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
 	order1.SourceFilled = sdk.NewInt(10)
@@ -51,19 +54,29 @@ func TestSerialization(t *testing.T) {
 
 	require.Equal(t, order1.TimeInForce, order2.TimeInForce)
 	require.True(t, order1.Created.Equal(order2.Created))
+	require.Equal(t, order1.OrigOrderCreated, order2.OrigOrderCreated)
 }
 
 func TestInvalidOrder(t *testing.T) {
 	// 0 amount source
-	_, err := NewOrder(time.Now(), TimeInForce_GoodTillCancel, coin("0eur"), coin("120usd"), []byte("acc"), "A")
+	_, err := NewOrder(
+		time.Now(), TimeInForce_GoodTillCancel, coin("0eur"), coin("120usd"),
+		[]byte("acc"), "A", time.Time{},
+	)
 	require.Error(t, err)
 
 	// 0 amount destination
-	_, err = NewOrder(time.Now(), TimeInForce_GoodTillCancel, coin("120eur"), coin("0usd"), []byte("acc"), "A")
+	_, err = NewOrder(
+		time.Now(), TimeInForce_GoodTillCancel, coin("120eur"), coin("0usd"),
+		[]byte("acc"), "A", time.Time{},
+	)
 	require.Error(t, err)
 
 	// Same denomination
-	_, err = NewOrder(time.Now(), TimeInForce_GoodTillCancel, coin("1000eur"), coin("850eur"), []byte("acc"), "A")
+	_, err = NewOrder(
+		time.Now(), TimeInForce_GoodTillCancel, coin("1000eur"), coin("850eur"),
+		[]byte("acc"), "A", time.Time{},
+	)
 	require.Error(t, err)
 
 	c := sdk.Coin{
@@ -72,7 +85,10 @@ func TestInvalidOrder(t *testing.T) {
 	}
 
 	// Negative source
-	_, err = NewOrder(time.Now(), TimeInForce_GoodTillCancel, c, coin("120usd"), []byte("acc"), "B")
+	_, err = NewOrder(
+		time.Now(), TimeInForce_GoodTillCancel, c, coin("120usd"),
+		[]byte("acc"), "B", time.Time{},
+	)
 	require.Error(t, err)
 }
 

@@ -25,23 +25,23 @@ func TestQryGetAllInstrumentsWithNonZeroBestPrices(t *testing.T) {
 
 	// generate passive order
 	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
-	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// generate passive order
 	o = order(ctx.BlockTime(), acc1, "72eur", "1213jpy")
-	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// generate passive order of half balances
 	o = order(ctx.BlockTime(), acc1, "72chf", "312usd")
-	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// Execute an order
 	// fulfilled
 	o = order(ctx.BlockTime(), acc2, "156usd", "36chf")
-	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	{
@@ -83,25 +83,21 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 	// generate passive order
 	_, err := k.NewOrderSingle(
 		ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"),
-		types.TxMessageType_AddMarketOrder,
 	)
 	require.NoError(t, err)
 
 	_, err = k.NewOrderSingle(
 		ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"),
-		types.TxMessageType_AddMarketOrder,
 	)
 	require.NoError(t, err)
 
 	res, err := k.NewOrderSingle(
 		ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"),
-		types.TxMessageType_AddMarketOrder,
 	)
 	require.True(t, err == nil, res.Log)
 
 	res, err = k.NewOrderSingle(
 		ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"),
-		types.TxMessageType_AddMarketOrder,
 	)
 	require.True(t, err == nil, res.Log)
 
@@ -148,20 +144,20 @@ func TestQuerier1(t *testing.T) {
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
 	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
-	_, err := k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "72eur", "1213jpy")
-	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	o = order(ctx.BlockTime(), acc1, "72chf", "312usd")
-	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// Execute an order
 	o = order(ctx.BlockTime(), acc2, "156usd", "36chf")
-	_, err = k.NewOrderSingle(ctx, o, types.TxMessageType_AddMarketOrder)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	{

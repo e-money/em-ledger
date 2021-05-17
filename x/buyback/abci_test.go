@@ -142,10 +142,10 @@ func TestBuyback3(t *testing.T) {
 		acc1 = createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "5000000pesos")
 		acc2 = createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
 	)
-	_, err := market.NewOrderSingle(ctx, order(acc1, "4000000pesos", "1ungm"), types.TxMessageType_AddLimitOrder)
+	_, err := market.NewOrderSingle(ctx, order(acc1, "4000000pesos", "1ungm"))
 	require.NoError(t, err)
 
-	_, err = market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"), types.TxMessageType_AddLimitOrder)
+	_, err = market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
 	require.NoError(t, err)
 
 	// Attempt to create a position using the meager pesos balance of the module
@@ -201,16 +201,19 @@ func generateMarketActivity(ctx sdk.Context, marketKeeper *market.Keeper, ak ban
 		acc2 = createAccount(ctx, ak, bk, randomAddress(), "150000eur,290000chf")
 	)
 
-	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"), types.TxMessageType_AddLimitOrder)
-	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"), types.TxMessageType_AddLimitOrder)
-	marketKeeper.NewOrderSingle(ctx, order(acc2, "10000eur", "5000ungm"), types.TxMessageType_AddLimitOrder)
-	marketKeeper.NewOrderSingle(ctx, order(acc2, "20000chf", "5000ungm"), types.TxMessageType_AddLimitOrder)
+	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
+	marketKeeper.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
+	marketKeeper.NewOrderSingle(ctx, order(acc2, "10000eur", "5000ungm"))
+	marketKeeper.NewOrderSingle(ctx, order(acc2, "20000chf", "5000ungm"))
 }
 
 func order(account authtypes.AccountI, src, dst string) types.Order {
 	s, _ := sdk.ParseCoinNormalized(src)
 	d, _ := sdk.ParseCoinNormalized(dst)
-	o, err := types.NewOrder(time.Now(), types.TimeInForce_GoodTillCancel, s, d, account.GetAddress(), tmrand.Str(10))
+	o, err := types.NewOrder(
+		time.Now(), types.TimeInForce_GoodTillCancel, s, d,
+		account.GetAddress(), tmrand.Str(10), time.Time{},
+	)
 	if err != nil {
 		panic(err)
 	}
