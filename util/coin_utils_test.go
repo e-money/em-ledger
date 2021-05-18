@@ -1,10 +1,10 @@
 package util
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSplit1(t *testing.T) {

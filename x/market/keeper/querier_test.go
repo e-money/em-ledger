@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	"github.com/e-money/em-ledger/x/market/types"
 	"strings"
 	"testing"
 	"time"
@@ -17,39 +18,39 @@ import (
 )
 
 func TestQryGetAllInstrumentsWithNonZeroBestPrices(t *testing.T) {
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf,400ngm")
-	acc2 := createAccount(ctx, ak, "acc2", "1000usd")
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur,2500chf,400ngm")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
 	// generate passive order
-	o := order(acc1, "100eur", "120usd")
+	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
 	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// generate passive order
-	o = order(acc1, "72eur", "1213jpy")
+	o = order(ctx.BlockTime(), acc1, "72eur", "1213jpy")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// generate passive order of half balances
-	o = order(acc1, "72chf", "312usd")
+	o = order(ctx.BlockTime(), acc1, "72chf", "312usd")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// Execute an order
 	// fulfilled
-	o = order(acc2, "156usd", "36chf")
+	o = order(ctx.BlockTime(), acc2, "156usd", "36chf")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := NewQuerier(k)(ctx, []string{types.QueryInstruments}, abci.RequestQuery{})
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
-		var instrLst []QueryInstrumentsResponse
+		var instrLst []types.QueryInstrumentsResponse_Element
 		err = json2.Unmarshal([]byte(instr.String()), &instrLst)
 		require.Nil(t, err, "Unmarshal from instruments response")
 
@@ -73,23 +74,23 @@ func TestQryGetAllInstrumentsWithNonZeroBestPrices(t *testing.T) {
 }
 
 func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "10000eur")
-	acc2 := createAccount(ctx, ak, "acc2", "7400usd")
-	acc3 := createAccount(ctx, ak, "acc3", "2200chf")
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "10000eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "7400usd")
+	acc3 := createAccount(ctx, ak, bk, randomAddress(), "2200chf")
 
 	// generate passive order
-	_, err := k.NewOrderSingle(ctx, order(acc1, "10000eur", "11000usd"))
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
-	_, err = k.NewOrderSingle(ctx, order(acc1, "10000eur", "1400chf"))
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"))
 	require.NoError(t, err)
 
-	res, err := k.NewOrderSingle(ctx, order(acc2, "7400usd", "5000eur"))
+	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
-	res, err = k.NewOrderSingle(ctx, order(acc3, "2200chf", "5000eur"))
+	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
@@ -101,12 +102,12 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 	require.Len(t, allInstruments, 30)
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := NewQuerier(k)(ctx, []string{types.QueryInstruments}, abci.RequestQuery{})
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")
 		require.True(t, instr.IsArray())
-		var instrLst []QueryInstrumentsResponse
+		var instrLst []types.QueryInstrumentsResponse_Element
 		err = json2.Unmarshal([]byte(instr.String()), &instrLst)
 		require.Nil(t, err, "Unmarshal from instruments response")
 
@@ -129,30 +130,30 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 }
 
 func TestQuerier1(t *testing.T) {
-	ctx, k, ak, _, _ := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
-	acc1 := createAccount(ctx, ak, "acc1", "5000eur,2500chf")
-	acc2 := createAccount(ctx, ak, "acc2", "1000usd")
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur,2500chf")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
-	o := order(acc1, "100eur", "120usd")
+	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
 	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
-	o = order(acc1, "72eur", "1213jpy")
+	o = order(ctx.BlockTime(), acc1, "72eur", "1213jpy")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
-	o = order(acc1, "72chf", "312usd")
+	o = order(ctx.BlockTime(), acc1, "72chf", "312usd")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	// Execute an order
-	o = order(acc2, "156usd", "36chf")
+	o = order(ctx.BlockTime(), acc2, "156usd", "36chf")
 	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	{
-		bz, err := queryInstruments(ctx, k)
+		bz, err := NewQuerier(k)(ctx, []string{types.QueryInstruments}, abci.RequestQuery{})
 		require.NoError(t, err)
 		json := gjson.ParseBytes(bz)
 		instr := json.Get("instruments")

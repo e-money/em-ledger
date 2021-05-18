@@ -7,6 +7,7 @@ package types
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -26,6 +27,7 @@ const (
 	AttributeKeyDestination       = "destination"
 	AttributeKeyDestinationFilled = "destination_filled"
 	AttributeKeyAggressive        = "aggressive"
+	AttributeKeyCreated           = "created"
 )
 
 func EmitAcceptEvent(ctx sdk.Context, order Order) {
@@ -33,10 +35,11 @@ func EmitAcceptEvent(ctx sdk.Context, order Order) {
 		sdk.NewEvent(EventTypeMarket,
 			sdk.NewAttribute(AttributeKeyAction, "accept"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
-			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeyDestination, order.Destination.String()),
+			sdk.NewAttribute(AttributeKeyCreated, order.Created.Format(time.RFC3339)),
 		),
 	)
 }
@@ -46,7 +49,7 @@ func EmitExpireEvent(ctx sdk.Context, order Order) {
 		sdk.NewEvent(EventTypeMarket,
 			sdk.NewAttribute(AttributeKeyAction, "expire"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
-			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySource, order.Source.String()),
 			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", order.SourceFilled.String(), order.Source.Denom)),
@@ -62,7 +65,7 @@ func EmitFillEvent(ctx sdk.Context, order Order, aggressive bool, sourceFilled s
 		sdk.NewEvent(EventTypeMarket,
 			sdk.NewAttribute(AttributeKeyAction, "fill"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
-			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeyAggressive, strconv.FormatBool(aggressive)),
 			sdk.NewAttribute(AttributeKeySourceFilled, fmt.Sprintf("%v%v", sourceFilled.String(), order.Source.Denom)),
@@ -76,7 +79,7 @@ func EmitUpdateEvent(ctx sdk.Context, order Order) {
 		sdk.NewEvent(EventTypeMarket,
 			sdk.NewAttribute(AttributeKeyAction, "update"),
 			sdk.NewAttribute(AttributeKeyOrderID, fmt.Sprintf("%d", order.ID)),
-			sdk.NewAttribute(AttributeKeyOwner, order.Owner.String()),
+			sdk.NewAttribute(AttributeKeyOwner, order.Owner),
 			sdk.NewAttribute(AttributeKeyClientOrderID, order.ClientOrderID),
 			sdk.NewAttribute(AttributeKeySourceRemaining, fmt.Sprintf("%v%v", order.SourceRemaining.String(), order.Source.Denom)),
 		),

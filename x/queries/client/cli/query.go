@@ -5,68 +5,78 @@
 package cli
 
 import (
-	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/queries/types"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 )
 
-func GetQuerySpendableBalance(cdc *codec.Codec) *cobra.Command {
-	spendableBalanceCmd := &cobra.Command{
+func GetQueryCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                        types.ModuleName,
+		Short:                      "Querying commands for circulation and vested balance",
+		SuggestionsMinimumDistance: 2,
+	}
+	cmd.AddCommand(
+		GetQuerySpendableBalance(),
+		GetQueryCirculatingSupplyCmd(),
+	)
+
+	return cmd
+}
+
+func GetQuerySpendableBalance() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "spendable",
 		Short: "Display the vested balance of an account",
 		Args:  cobra.ExactArgs(1),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			key, err := sdk.AccAddressFromBech32(args[0])
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			resp, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QuerySpendable, key))
-
-			var bal sdk.Coins
-			err = cdc.UnmarshalJSON(resp, &bal)
+			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(bal)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Spendable(cmd.Context(), &types.QuerySpendableRequest{Address: addr.String()})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(spendableBalanceCmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }
 
 // Meant as an extension to the "emcli query supply" queries.
-func GetQueryCirculatingSupplyCmd(cdc *codec.Codec) *cobra.Command {
-	circulatingSupplyCmd := &cobra.Command{
+func GetQueryCirculatingSupplyCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "circulating",
 		Short: "Display circulating (ie non-vesting) token supply",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			resp, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryCirculating))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			var totalSupply sdk.Coins
-			err = cdc.UnmarshalJSON(resp, &totalSupply)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Circulating(cmd.Context(), &types.QueryCirculatingRequest{})
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(totalSupply)
+			return clientCtx.PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(circulatingSupplyCmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

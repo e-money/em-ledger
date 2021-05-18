@@ -7,21 +7,23 @@ package networktest
 import (
 	"bytes"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tidwall/gjson"
 )
 
 const (
-	EMCLI = "./build/emcli"
+	// todo (reviewer) : emcli was merged into emd:
+	EMCLI = "./build/emd"
 
 	// gjson paths
-	QGetMintableEUR = "value.mintable.#(denom==\"eeur\").amount"
-	QGetBalanceEUR  = "value.Account.value.coins.#(denom==\"eeur\").amount"
+	QGetMintableEUR = "mintable.#(denom==\"eeur\").amount"
+	QGetBalanceEUR  = "balances.#(denom==\"eeur\").amount"
 )
 
 type Emcli struct {
@@ -39,7 +41,7 @@ func (cli Emcli) QueryInflation() ([]byte, error) {
 }
 
 func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "send", from.name, to.GetAddress(), amount)
+	args := cli.addTransactionFlags("tx", "bank", "send", from.name, to.GetAddress(), amount)
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -102,19 +104,53 @@ func (cli Emcli) QueryRewards(delegator string) (gjson.Result, error) {
 }
 
 // NOTE Hardcoded to eeur for now.
-func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error) {
-	args := cli.addQueryFlags("query", "account", account)
+func (cli Emcli) QueryBalance(account string) (balance int, err error) {
+	args := cli.addQueryFlags("query", "bank", "balances", account)
 	bz, err := execCmdAndCollectResponse(args)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 
 	queryresponse := gjson.ParseBytes(bz)
 
 	v := queryresponse.Get(QGetBalanceEUR)
-	balance, _ = strconv.Atoi(v.Str)
+	if v.Exists() {
+		balance, _ = strconv.Atoi(v.Str)
+	}
 
-	v = queryresponse.Get(QGetMintableEUR)
+	return
+}
+
+// QueryBalanceDenom retrieve Balance by Denom
+func (cli Emcli) QueryBalanceDenom(account, denom string) (balance int, err error) {
+	args := cli.addQueryFlags("query", "bank", "balances", account)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, err
+	}
+
+	queryresponse := gjson.ParseBytes(bz)
+
+	denomQ := fmt.Sprintf(`balances.#(denom=="%s").amount`, denom)
+	v := queryresponse.Get(denomQ)
+	if v.Exists() {
+		balance, _ = strconv.Atoi(v.Str)
+	}
+
+	return
+}
+
+// NOTE Hardcoded to eeur for now.
+func (cli Emcli) QueryAccount(account string) (mintable int, err error) {
+	args := cli.addQueryFlags("query", "account", account)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, err
+	}
+
+	queryresponse := gjson.ParseBytes(bz)
+
+	v := queryresponse.Get(QGetMintableEUR)
 	if v.Exists() {
 		mintable, _ = strconv.Atoi(v.Str)
 	}
@@ -123,7 +159,7 @@ func (cli Emcli) QueryAccount(account string) (balance, mintable int, err error)
 }
 
 func (cli Emcli) QueryTotalSupply() ([]byte, error) {
-	args := cli.addQueryFlags("query", "supply", "total")
+	args := cli.addQueryFlags("query", "bank", "total")
 	return execCmdAndCollectResponse(args)
 }
 
@@ -160,6 +196,20 @@ func (cli Emcli) QueryValidators() (gjson.Result, error) {
 	}
 
 	return gjson.ParseBytes(bz), nil
+}
+
+func (cli Emcli) BEP3ListSwaps() (string, error) {
+	args := cli.addQueryFlags("query", "bep3", "swaps")
+	bz, err := execCmdAndCollectResponse(args)
+
+	return string(bz), err
+}
+
+func (cli Emcli) BEP3SupplyOf(denom string) (string, error) {
+	args := cli.addQueryFlags("query", "bep3", "supply", denom)
+	bz, err := execCmdAndCollectResponse(args)
+
+	return string(bz), err
 }
 
 func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
@@ -224,13 +274,41 @@ func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherChainSender, coins string, TTL int) (string, string, string, error) {
+	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, fmt.Sprint(TTL), "--from", creator.name)
+	output, err := execCmdCollectOutput(args, KeyPwd)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	re := regexp.MustCompile("(?i)(Random number: (?P<randomnumber>\\w+)|Timestamp: (?P<timestamp>\\d+)|Random number hash: (?P<randomnumberhash>\\w+))")
+	groups := extractNamedGroups(output, re)
+
+	var (
+		randNumber     = groups["randomnumber"]
+		randNumberHash = groups["randomnumberhash"]
+		timestamp      = groups["timestamp"]
+	)
+
+	return randNumber, randNumberHash, timestamp, nil
+}
+
+func (cli Emcli) BEP3Claim(claimant Key, swapId, secret string) (string, error) {
+	args := cli.addTransactionFlags("tx", "bep3", "claim", swapId, secret, "--from", claimant.name)
+
+	return execCmdCollectOutput(args, KeyPwd)
+}
+
 func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	json := gjson.ParseBytes(bz)
 
 	txhashjson := json.Get("txhash")
 	logs := json.Get("logs")
+	code := json.Get("code")
 
-	if !txhashjson.Exists() || !logs.Exists() {
+	// todo (reviewer) : emd command returns `exit 0` although the TX has failed with `signature verification failed`
+	// any non zero `code` in response json is a failure code
+	if !txhashjson.Exists() || !logs.Exists() || code.Int() != 0 {
 		return "", false, fmt.Errorf("tx appears to have failed %v", string(bz))
 	}
 
@@ -250,8 +328,8 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 		return "", err
 	}
 
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
-	//bz, err := cmd.CombinedOutput()
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// bz, err := cmd.CombinedOutput()
 	var b bytes.Buffer
 	cmd.Stderr = &b
 
@@ -276,9 +354,9 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 		return "", false, err
 	}
 
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := cmd.CombinedOutput()
-	//fmt.Println(" *** CombinedOutput", string(bz))
+	// fmt.Println(" *** CombinedOutput", string(bz))
 	if err != nil {
 		return "", false, err
 	}
@@ -287,13 +365,14 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
-	//fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
-	//fmt.Println(" *** Output: ", string(bz))
+	// fmt.Println(" *** Output: ", string(bz))
 	return bz, err
 }
 
 func (cli Emcli) addQueryFlags(arguments ...string) []string {
+	arguments = append(arguments, "--output", "json")
 	return cli.addNetworkFlags(arguments)
 }
 
@@ -301,6 +380,7 @@ func (cli Emcli) addTransactionFlags(arguments ...string) []string {
 	arguments = append(arguments,
 		"--home", cli.keystore.path,
 		"--keyring-backend", "test",
+		"--broadcast-mode", "block",
 		"--yes",
 	)
 
@@ -311,6 +391,22 @@ func (cli Emcli) addNetworkFlags(arguments []string) []string {
 	return append(arguments,
 		"--node", cli.node,
 		"--chain-id", cli.chainid,
-		"--output", "json",
 	)
+}
+
+func extractNamedGroups(input string, re *regexp.Regexp) map[string]string {
+	groupNames := re.SubexpNames()
+	result := make(map[string]string)
+
+	for _, match := range re.FindAllStringSubmatch(input, -1) {
+		for groupIdx, group := range match {
+			if groupNames[groupIdx] == "" || len(group) == 0 {
+				continue
+			}
+
+			result[groupNames[groupIdx]] = group
+		}
+	}
+
+	return result
 }

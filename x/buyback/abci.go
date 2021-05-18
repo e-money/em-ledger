@@ -2,13 +2,12 @@ package buyback
 
 import (
 	"fmt"
-
-	"github.com/e-money/em-ledger/x/market/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/buyback/internal/types"
+	markettypes "github.com/e-money/em-ledger/x/market/types"
 )
 
-func BeginBlocker(ctx sdk.Context, k Keeper) {
+func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 	if !k.UpdateBuybackMarket(ctx) {
 		return
 	}
@@ -19,10 +18,10 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 	var (
 		stakingDenom = k.GetStakingTokenDenom(ctx)
 		pricingInfo  = groupMarketDataBySource(k.GetMarketData(ctx), stakingDenom)
-		account      = k.GetBuybackAccount(ctx)
+		account      = k.GetBuybackAccountAddr()
 	)
 
-	for _, balance := range account.GetCoins() {
+	for _, balance := range bk.GetAllBalances(ctx, account) {
 		pricedata, found := pricingInfo[balance.Denom]
 		if !found {
 			// do not have market data to create an order.
@@ -40,11 +39,12 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 			continue
 		}
 
-		order, err := types.NewOrder(
-			types.TimeInForce_GoodTilCancel,
+		order, err := markettypes.NewOrder(
+			ctx.BlockTime(),
+			markettypes.TimeInForce_GoodTillCancel,
 			balance,
 			sdk.NewCoin(stakingDenom, destinationAmount),
-			account.GetAddress(),
+			account,
 			generateClientOrderId(ctx, balance),
 		)
 
@@ -58,8 +58,9 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 			ctx.Logger().Error("Error sending buyback order to market", "err", err)
 			panic(err)
 		}
-
-		ctx.EventManager().EmitEvents(result.Events)
+		for _, ev := range result.Events {
+			ctx.EventManager().EmitEvent(sdk.Event(ev))
+		}
 	}
 
 	err := k.BurnStakingToken(ctx)
@@ -73,8 +74,8 @@ func generateClientOrderId(ctx sdk.Context, balance sdk.Coin) string {
 }
 
 // Return market data on trades that purchased the given denom.
-func groupMarketDataBySource(marketData []types.MarketData, denom string) map[string]types.MarketData {
-	result := make(map[string]types.MarketData)
+func groupMarketDataBySource(marketData []markettypes.MarketData, denom string) map[string]markettypes.MarketData {
+	result := make(map[string]markettypes.MarketData)
 
 	for _, md := range marketData {
 		if md.Destination != denom {

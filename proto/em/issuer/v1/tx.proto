@@ -1,0 +1,69 @@
+syntax = "proto3";
+package em.issuer.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/issuer/types";
+
+service Msg {
+
+  rpc IncreaseMintable(MsgIncreaseMintable)
+      returns (MsgIncreaseMintableResponse);
+
+  rpc DecreaseMintable(MsgDecreaseMintable)
+      returns (MsgDecreaseMintableResponse);
+
+  rpc RevokeLiquidityProvider(MsgRevokeLiquidityProvider)
+      returns (MsgRevokeLiquidityProviderResponse);
+
+  rpc SetInflation(MsgSetInflation) returns (MsgSetInflationResponse);
+}
+
+message MsgIncreaseMintable {
+  string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
+  string liquidity_provider = 2
+      [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
+  repeated cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.customname) = "MintableIncrease",
+    (gogoproto.moretags) = "yaml:\"amount\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message MsgIncreaseMintableResponse {}
+
+message MsgDecreaseMintable {
+  string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
+  string liquidity_provider = 2
+      [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
+  repeated cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.customname) = "MintableDecrease",
+    (gogoproto.moretags) = "yaml:\"amount\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message MsgDecreaseMintableResponse {}
+
+message MsgRevokeLiquidityProvider {
+  string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
+  string liquidity_provider = 2
+      [ (gogoproto.moretags) = "yaml:\"liquidity_provider\"" ];
+}
+
+message MsgRevokeLiquidityProviderResponse {}
+
+message MsgSetInflation {
+  string issuer = 1 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
+  string denom = 2 [ (gogoproto.moretags) = "yaml:\"denom\"" ];
+  string inflation_rate = 3 [
+    (gogoproto.moretags) = "yaml:\"inflation_rate\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message MsgSetInflationResponse {}

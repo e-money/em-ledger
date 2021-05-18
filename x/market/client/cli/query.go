@@ -5,28 +5,15 @@
 package cli
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"os"
-	"strings"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/market/keeper"
-	"github.com/tidwall/gjson"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/market/types"
+	"github.com/spf13/cobra"
 )
 
-func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Querying commands for the market module",
@@ -36,135 +23,90 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		GetInstrumentsCmd(cdc),
-		GetInstrumentCmd(cdc),
-		GetByAccountCmd(cdc),
+		GetInstrumentsCmd(),
+		GetInstrumentCmd(),
+		GetByAccountCmd(),
 	)
 
 	return cmd
 }
 
-func GetByAccountCmd(cdc *codec.Codec) *cobra.Command {
+func GetByAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "account [key_or_address]",
 		Short: "Query orders placed by a specific account",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			addr, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				// Named key specified
-				addr, _, err = context.GetFromFields(os.Stdin, args[0], viper.GetBool(flags.FlagGenerateOnly))
-				if err != nil {
-					return err
-				}
-			}
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, types.QueryByAccount, addr))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			switch cliCtx.OutputFormat {
-			case "text":
-				fmt.Println(stringifyOrders(bz))
-
-			case "json":
-				if cliCtx.Indent {
-					buf := new(bytes.Buffer)
-					err = json.Indent(buf, bz, "", "  ")
-					if err != nil {
-						return err
-					}
-
-					bz = buf.Bytes()
-				}
-
-				fmt.Println(string(bz))
+			addr, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				// Named key specified
+				addr = clientCtx.FromAddress
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.ByAccount(cmd.Context(), &types.QueryByAccountRequest{Address: addr.String()})
+			if err != nil {
+				return err
 			}
 
-			return nil
+			return clientCtx.WithJSONMarshaler(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(cmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }
 
-func stringifyOrders(bz []byte) string {
-	sb := new(strings.Builder)
-
-	allOrders := gjson.ParseBytes(bz).Get("orders")
-
-	for _, order := range allOrders.Array() {
-		srcDenom, dstDenom := order.Get("source.denom").Str, order.Get("destination.denom").Str
-
-		sb.WriteString(
-			fmt.Sprintf("%v : %v -> %v @ %v (%v)\n - (%v%v remaining) (%v%v filled) (%v%v filled)\n",
-				order.Get("order_id").Raw,
-				srcDenom,
-				dstDenom,
-				order.Get("price").Str,
-				order.Get("owner").Str,
-				order.Get("source_remaining").Str, srcDenom,
-				order.Get("source_filled").Str, srcDenom,
-				order.Get("destination_filled").Str, dstDenom,
-			),
-		)
-	}
-
-	return sb.String()
-}
-
-func GetInstrumentCmd(cdc *codec.Codec) *cobra.Command {
+func GetInstrumentCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "instrument [source-denomination] [destination-denomination]",
 		Short: "Query the order book of a specific instrument",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			source, destination := args[0], args[1]
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", types.QuerierRoute, types.QueryInstrument, source, destination))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			resp := new(keeper.QueryInstrumentResponse)
-			err = json.Unmarshal(bz, resp)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Instrument(cmd.Context(), &types.QueryInstrumentRequest{
+				Source:      args[0],
+				Destination: args[1],
+			})
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(resp)
+			return clientCtx.WithJSONMarshaler(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(cmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }
 
-func GetInstrumentsCmd(cdc *codec.Codec) *cobra.Command {
+func GetInstrumentsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "instruments",
 		Short: "Query the current instruments",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			bz, _, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInstruments))
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			resp := new(keeper.QueryInstrumentsWrapperResponse)
-			err = json.Unmarshal(bz, resp)
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.Instruments(cmd.Context(), &types.QueryInstrumentsRequest{})
 			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(resp)
+			return clientCtx.WithJSONMarshaler(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
 		},
 	}
-
-	return flags.GetCommands(cmd)[0]
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
 }

@@ -5,9 +5,8 @@
 package bank
 
 import (
-	"github.com/e-money/em-ledger/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/x/authority/types"
 )
 
 type RestrictedKeeper interface {

@@ -1,0 +1,26 @@
+syntax = "proto3";
+package em.authority.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/authority/types";
+
+service Query {
+  rpc GasPrices(QueryGasPricesRequest) returns (QueryGasPricesResponse) {
+    option (google.api.http).get = "/e-money/authority/v1/gasprices";
+  };
+}
+
+message QueryGasPricesRequest {}
+
+message QueryGasPricesResponse {
+  option (gogoproto.goproto_stringer) = false;
+
+  repeated cosmos.base.v1beta1.DecCoin min_gas_prices = 1 [
+    (gogoproto.moretags) = "yaml:\"min_gas_prices\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.nullable) = false
+  ];
+}

@@ -6,8 +6,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
+	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 )
 
 type (
@@ -15,7 +14,7 @@ type (
 		SetMinimumGasPrices(gasPricesStr string) error
 	}
 
-	SupplyKeeper interface {
-		GetSupply(ctx sdk.Context) (supply supply.SupplyI)
+	BankKeeper interface {
+		GetSupply(ctx sdk.Context) exported.SupplyI
 	}
 )

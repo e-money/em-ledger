@@ -12,36 +12,31 @@ import (
 	"github.com/e-money/em-ledger/x/issuer/types"
 )
 
-// TODO Accept Keeper argument
 func newHandler(k keeper.Keeper) sdk.Handler {
+	msgServer := keeper.NewMsgServerImpl(k)
+
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
-		case types.MsgIncreaseMintable:
-			return handleMsgIncreaseMintableAmount(ctx, msg, k)
-		case types.MsgDecreaseMintable:
-			return handleMsgDecreaseMintableAmount(ctx, msg, k)
-		case types.MsgRevokeLiquidityProvider:
-			return handleMsgRevokeLiquidityProvider(ctx, msg, k)
-		case types.MsgSetInflation:
-			return handleMsgSetInflation(ctx, msg, k)
+		case *types.MsgIncreaseMintable:
+			res, err := msgServer.IncreaseMintable(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
+		case *types.MsgDecreaseMintable:
+			res, err := msgServer.DecreaseMintable(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
+		case *types.MsgRevokeLiquidityProvider:
+			res, err := msgServer.RevokeLiquidityProvider(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
+		case *types.MsgSetInflation:
+			res, err := msgServer.SetInflation(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Unrecognized issuance Msg type: %T", msg)
 		}
 	}
-}
-
-func handleMsgSetInflation(ctx sdk.Context, msg types.MsgSetInflation, k keeper.Keeper) (*sdk.Result, error) {
-	return k.SetInflationRate(ctx, msg.Issuer, msg.InflationRate, msg.Denom)
-}
-
-func handleMsgRevokeLiquidityProvider(ctx sdk.Context, msg types.MsgRevokeLiquidityProvider, k keeper.Keeper) (*sdk.Result, error) {
-	return k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer)
-}
-
-func handleMsgDecreaseMintableAmount(ctx sdk.Context, msg types.MsgDecreaseMintable, k keeper.Keeper) (*sdk.Result, error) {
-	return k.DecreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.MintableDecrease)
-}
-
-func handleMsgIncreaseMintableAmount(ctx sdk.Context, msg types.MsgIncreaseMintable, k keeper.Keeper) (*sdk.Result, error) {
-	return k.IncreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, msg.Issuer, msg.MintableIncrease)
 }

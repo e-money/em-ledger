@@ -5,21 +5,17 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/spf13/cobra"
 )
 
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func GetTxCmd() *cobra.Command {
 	issuanceTxCmd := &cobra.Command{
 		Use:                        "issuer",
 		Short:                      "Control inflation rates and manage liquidity providers",
@@ -29,27 +25,27 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	issuanceTxCmd.AddCommand(
-		flags.PostCommands(
-			getCmdIncreaseMintableAmount(cdc),
-			getCmdDecreaseMintableAmount(cdc),
-			getCmdSetInflation(cdc),
-			getCmdRevokeLiquidityProvider(cdc),
-		)...,
+		getCmdIncreaseMintableAmount(),
+		getCmdDecreaseMintableAmount(),
+		getCmdSetInflation(),
+		getCmdRevokeLiquidityProvider(),
 	)
 
 	return issuanceTxCmd
 }
 
-func getCmdSetInflation(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func getCmdSetInflation() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:     "set-inflation [issuer_key_or_address] [denomination] [inflation]",
-		Example: "emcli issuer set-inflation issuerkey eeur 0.02",
+		Example: "emd tx issuer set-inflation issuerkey eeur 0.02",
 		Short:   "Set the inflation rate for a denomination",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+			cmd.Flags().Set(flags.FlagFrom, args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			denom := args[1]
 			if !util.ValidateDenom(denom) {
@@ -61,100 +57,126 @@ func getCmdSetInflation(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.MsgSetInflation{
+			msg := &types.MsgSetInflation{
 				Denom:         denom,
 				InflationRate: inflation,
-				Issuer:        cliCtx.GetFromAddress(),
+				Issuer:        clientCtx.GetFromAddress().String(),
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
-func getCmdIncreaseMintableAmount(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func getCmdIncreaseMintableAmount() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "increase-mintable [issuer_key_or_address] [liquidity_provider_address] [amount]",
 		Short: "Increase the amount mintable for a liquidity provider.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+			cmd.Flags().Set(flags.FlagFrom, args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			lpAcc, err := sdk.AccAddressFromBech32(args[1])
 			if err != nil {
 				return err
 			}
 
-			mintableIncrease, err := sdk.ParseCoins(args[2])
+			mintableIncrease, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgIncreaseMintable{
+			msg := &types.MsgIncreaseMintable{
 				MintableIncrease:  mintableIncrease,
-				LiquidityProvider: lpAcc,
-				Issuer:            cliCtx.GetFromAddress(),
+				LiquidityProvider: lpAcc.String(),
+				Issuer:            clientCtx.GetFromAddress().String(),
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
-func getCmdDecreaseMintableAmount(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func getCmdDecreaseMintableAmount() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "decrease-mintable [issuer_key_or_address] [liquidity_provider_address] [amount]",
 		Short: "Decrease the amount mintable for a liquidity provider. Result cannot be negative",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+			cmd.Flags().Set(flags.FlagFrom, args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			lpAcc, err := sdk.AccAddressFromBech32(args[1])
 			if err != nil {
 				return err
 			}
 
-			mintableDecrease, err := sdk.ParseCoins(args[2])
+			mintableDecrease, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgDecreaseMintable{
+			msg := &types.MsgDecreaseMintable{
 				MintableDecrease:  mintableDecrease,
-				LiquidityProvider: lpAcc,
-				Issuer:            cliCtx.GetFromAddress(),
+				LiquidityProvider: lpAcc.String(),
+				Issuer:            clientCtx.GetFromAddress().String(),
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }
 
-func getCmdRevokeLiquidityProvider(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func getCmdRevokeLiquidityProvider() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "revoke-mint [issuer_key_or_address] [liquidity_provider_address]",
 		Short: "Revoke liquidity provider status for an account",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+			cmd.Flags().Set(flags.FlagFrom, args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			lpAcc, err := sdk.AccAddressFromBech32(args[1])
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgRevokeLiquidityProvider{
-				LiquidityProvider: lpAcc,
-				Issuer:            cliCtx.GetFromAddress(),
+			msg := &types.MsgRevokeLiquidityProvider{
+				LiquidityProvider: lpAcc.String(),
+				Issuer:            clientCtx.GetFromAddress().String(),
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
 }

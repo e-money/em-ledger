@@ -4,7 +4,7 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,7 +14,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tidwall/sjson"
 )
 
 var _ = Describe("Buyback", func() {
@@ -27,8 +26,13 @@ var _ = Describe("Buyback", func() {
 	It("starts a new testnet", func() {
 		awaitReady, err := testnet.RestartWithModifications(
 			func(bz []byte) []byte {
+				// Allow for stablecoin inflation to create a buyback balance
 				genesisTime := time.Now().Add(-365 * 24 * time.Hour).UTC()
-				bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime.Format(time.RFC3339))
+				bz = setGenesisTime(bz, genesisTime)
+
+				// Disable inflation for NGM token to better detect burn events.
+				bz = setInflation(bz, "ungm", sdk.ZeroDec())
+
 				return bz
 			})
 
@@ -37,15 +41,20 @@ var _ = Describe("Buyback", func() {
 	})
 
 	It("queries the buyback balance", func() {
-		time.Sleep(5 * time.Second)
+		var js []gjson.Result
+		var bz []byte
+		for i := 0; i < 20; i++ { // await
+			time.Sleep(500 * time.Millisecond)
+			var err error
+			bz, err = emcli.QueryBuybackBalance()
+			Expect(err).ToNot(HaveOccurred())
 
-		bz, err := emcli.QueryBuybackBalance()
-		Expect(err).ToNot(HaveOccurred())
-
-		js := gjson.GetBytes(bz, "balance").Array()
+			js = gjson.GetBytes(bz, "balance").Array()
+			if len(js) == 3 {
+				break
+			}
+		}
 		Expect(js).To(HaveLen(3), "Buyback module does not appear to have a balance %v", string(bz))
-
-		time.Sleep(4 * time.Second)
 
 		// Generate some trades to set a market price for ungm
 		_, success, err := emcli.MarketAddLimitOrder(key1, "1000eeur", "4000ungm", tmrand.Str(10))
@@ -71,8 +80,8 @@ var _ = Describe("Buyback", func() {
 		supplyAfter, err := emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())
 
-		ngmSupplyBefore, _ := sdk.NewIntFromString(gjson.GetBytes(supplyBefore, "#(denom==\"ungm\").amount").Str)
-		ngmSupplyAfter, _ := sdk.NewIntFromString(gjson.GetBytes(supplyAfter, "#(denom==\"ungm\").amount").Str)
+		ngmSupplyBefore, _ := sdk.NewIntFromString(gjson.GetBytes(supplyBefore, "supply.#(denom==\"ungm\").amount").Str)
+		ngmSupplyAfter, _ := sdk.NewIntFromString(gjson.GetBytes(supplyAfter, "supply.#(denom==\"ungm\").amount").Str)
 
 		Expect(ngmSupplyBefore.Sub(ngmSupplyAfter)).To(Equal(sdk.NewInt(4000)))
 	})

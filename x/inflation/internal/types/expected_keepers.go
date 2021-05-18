@@ -6,23 +6,23 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/cosmos-sdk/x/supply/exported"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank/exported"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-// SupplyKeeper defines the expected supply keeper
-type SupplyKeeper interface {
-	GetModuleAddress(name string) sdk.AccAddress
-
-	// TODO remove with genesis 2-phases refactor https://github.com/cosmos/cosmos-sdk/issues/2862
-	SetModuleAccount(sdk.Context, exported.ModuleAccountI)
-
+// BankKeeper defines the expected bank IO methods
+type BankKeeper interface {
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
-	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) error
-	GetSupply(ctx sdk.Context) (supply exported.SupplyI)
+	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	GetSupply(ctx sdk.Context) exported.SupplyI
 }
 
+type AccountKeeper interface {
+	GetModuleAddress(moduleName string) sdk.AccAddress
+	SetModuleAccount(ctx sdk.Context, macc types.ModuleAccountI)
+}
 type StakingKeeper interface {
-	GetParams(ctx sdk.Context) staking.Params
+	GetParams(ctx sdk.Context) stakingtypes.Params
 }

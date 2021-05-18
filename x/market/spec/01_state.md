@@ -14,3 +14,4 @@ Order state consists of the following data:
 * Destination: a `Coin` representing the minimum amount of tokens to buy.
 * DestinationFilled: `Int` that tracks the bought amount so far.
 * Price: a `Dec` calculated as *Destination* / *Source*.
+* Created: the Block 'Timestamp' at which the order is processed.
