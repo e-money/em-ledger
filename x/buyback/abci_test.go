@@ -253,6 +253,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
+	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
@@ -276,15 +277,17 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 		bk = embank.Wrap(bankkeeper.NewBaseKeeper(
 			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		), allowAllDenoms)
+
+		marketKeeper = market.NewKeeper(
+			encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{},
+			pk.Subspace(market.ModuleName),
+		)
 	)
 
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))
 	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
 
-	marketKeeper := market.NewKeeper(
-		encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{},
-		pk.Subspace(types.ModuleName),
-	)
+	marketKeeper.InitParamsStore(ctx)
 
 	keeper := NewKeeper(encConfig.Marshaler, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
 	keeper.SetUpdateInterval(ctx, time.Hour)
