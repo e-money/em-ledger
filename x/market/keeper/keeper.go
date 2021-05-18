@@ -229,6 +229,13 @@ func (k *Keeper) calcReplaceOrderGas(
 	return stdTrxFee
 }
 
+func handlePanic(r interface{}) error {
+	fmt.Println(r)
+	fmt.Println(string(debug.Stack()))
+
+	return fmt.Errorf("%v", r)
+}
+
 // postNewOrderSingle is a deferred function for NewOrderSingle. It spends gas
 // on any order and adds non fill-or-kill orders to the order-book.
 func (k *Keeper) postNewOrderSingle(
@@ -237,17 +244,14 @@ func (k *Keeper) postNewOrderSingle(
 ) {
 	// Catch NewSingleOrder() panics
 	if orderErr := recover(); orderErr != nil {
-		*callerErr = fmt.Errorf("%s", orderErr)
-		fmt.Println(orderErr)
-		fmt.Println(string(debug.Stack()))
+		// set NewSingleOrder() error value
+		*callerErr = handlePanic(orderErr)
 	}
 
 	defer func() {
 		// Catch Sdk panics i.e. store related
 		if sdkErr := recover(); sdkErr != nil {
-			*callerErr = fmt.Errorf("%v", sdkErr)
-			fmt.Println(sdkErr)
-			fmt.Println(string(debug.Stack()))
+			*callerErr = handlePanic(sdkErr)
 		}
 	}()
 
