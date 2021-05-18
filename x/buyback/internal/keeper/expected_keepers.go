@@ -7,7 +7,7 @@ import (
 
 type (
 	MarketKeeper interface {
-		NewOrderSingle(ctx sdk.Context, aggressiveOrder market.Order) (*sdk.Result, error)
+		NewOrderSingle(ctx sdk.Context, order market.Order) (*sdk.Result, error)
 		GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) []*market.Order
 		GetInstruments(ctx sdk.Context) (instrs []market.MarketData)
 		CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)

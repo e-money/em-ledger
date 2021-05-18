@@ -78,8 +78,8 @@ message Order {
     (gogoproto.stdtime) = true
   ];
 
-  // applicable to CancelReplace orders: the creation timestamp of the order
-  // this order replaces.
+  // applicable to CancelReplace orders: the creation timestamp of the original
+  // order.
   google.protobuf.Timestamp orig_order_created = 11 [
     (gogoproto.moretags) = "yaml:\"orig_order_created\"",
     (gogoproto.nullable) = false,

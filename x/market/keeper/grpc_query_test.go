@@ -21,9 +21,12 @@ func TestQueryByAccount(t *testing.T) {
 	types.RegisterQueryServer(queryHelper, k)
 	queryClient := types.NewQueryClient(queryHelper)
 	o, err := types.NewOrder(
-		ctx.BlockTime(), types.TimeInForce_GoodTillCancel,
-		sdk.NewCoin("alx", sdk.OneInt()), sdk.NewCoin("blx", sdk.OneInt()),
-		myAddress, "myOrderID", time.Time{},
+		ctx.BlockTime(),
+		types.TimeInForce_GoodTillCancel,
+		sdk.NewCoin("alx", sdk.OneInt()),
+		sdk.NewCoin("blx", sdk.OneInt()),
+		myAddress,"myOrderID",
+		time.Time{},
 	)
 	require.NoError(t, err)
 	k.setOrder(ctx, &o)

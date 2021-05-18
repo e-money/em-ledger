@@ -5,7 +5,7 @@ import (
 	"github.com/e-money/em-ledger/x/market/types"
 )
 
-// InitParamsStore initializes param store
+// InitParamsStore writes the params to the module store
 func (k Keeper) InitParamsStore(ctx sdk.Context) uint64 {
 	defaultSet := types.DefaultTxParams()
 	var trxFee uint64
@@ -41,8 +41,10 @@ func (k Keeper) GetLiquidTrxFee(ctx sdk.Context) uint64 {
 	return liqTrxFee
 }
 
-// GetLiquidityRebateMinutesSpan retrieves the default market order fee from the
-// paramStore
+// GetLiquidityRebateMinutesSpan retrieves the Minutes interval for eligible
+// replacing transactions to receive a rebate. For a rebate to apply, the
+// replacing transaction should occur these minutes after the signer's original
+// trx.
 func (k Keeper) GetLiquidityRebateMinutesSpan(ctx sdk.Context) int64 {
 	var liqTrxFee int64
 	k.paramStore.Get(ctx, types.KeyLiquidityRebateMinutesSpan, &liqTrxFee)
@@ -50,13 +52,13 @@ func (k Keeper) GetLiquidityRebateMinutesSpan(ctx sdk.Context) int64 {
 	return liqTrxFee
 }
 
-// GetParams returns the total set of Trx parameters.
+// GetParams returns the total market parameters set.
 func (k Keeper) GetParams(ctx sdk.Context) types.TxParams {
 	return types.NewTxParams(k.GetTrxFee(ctx), k.GetLiquidTrxFee(ctx),
 		k.GetLiquidityRebateMinutesSpan(ctx))
 }
 
-// SetParams sets the total set of ibc-transfer parameters.
+// SetParams sets the total market parameters set.
 func (k Keeper) SetParams(ctx sdk.Context, params types.TxParams) {
 	k.paramStore.SetParamSet(ctx, &params)
 }

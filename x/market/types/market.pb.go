@@ -123,8 +123,8 @@ type Order struct {
 	Destination       types.Coin                             `protobuf:"bytes,8,opt,name=destination,proto3" json:"destination" yaml:"destination"`
 	DestinationFilled github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,9,opt,name=destination_filled,json=destinationFilled,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"destination_filled" yaml:"destination_filled"`
 	Created           time.Time                              `protobuf:"bytes,10,opt,name=created,proto3,stdtime" json:"created" yaml:"created"`
-	// applicable to CancelReplace orders: the creation timestamp of the order
-	// this order replaces.
+	// applicable to CancelReplace orders: the creation timestamp of the original
+	// order.
 	OrigOrderCreated time.Time `protobuf:"bytes,11,opt,name=orig_order_created,json=origOrderCreated,proto3,stdtime" json:"orig_order_created" yaml:"orig_order_created"`
 }
 

@@ -786,26 +786,18 @@ func TestMultipleOrders(t *testing.T) {
 	totalSupply := snapshotAccounts(ctx, bk)
 
 	// Add two orders that draw on the same balance.
-	_, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"),
-	)
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
-	_, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"),
-	)
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"))
 	require.NoError(t, err)
 
 	// require.Len(t, k.instruments, 2)
 
-	res, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"),
-	)
+	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
-	res, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"),
-	)
+	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
@@ -822,9 +814,7 @@ func TestCancelZeroRemainingOrders(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
 	acc := createAccount(ctx, ak, bk, randomAddress(), "10000eur")
-	_, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc, "10000eur", "11000usd"),
-	)
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
 	err = bk.SendCoins(ctx, acc.GetAddress(), sdk.AccAddress([]byte("void")), coins("10000eur"))
@@ -894,24 +884,16 @@ func TestAllInstruments(t *testing.T) {
 	acc3 := createAccount(ctx, ak, bk, randomAddress(), "2200chf")
 
 	// Add two orders that draw on the same balance.
-	_, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"),
-	)
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
-	_, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"),
-	)
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"))
 	require.NoError(t, err)
 
-	res, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"),
-	)
+	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
-	res, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"),
-	)
+	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
@@ -1411,9 +1393,7 @@ func TestVestingAccount(t *testing.T) {
 	vestingAcc := vestingtypes.NewDelayedVestingAccount(account.(*authtypes.BaseAccount), amount, math.MaxInt64)
 	ak.SetAccount(ctx, vestingAcc)
 
-	_, err := keeper.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), vestingAcc, "5000eur", "4700chf"),
-	)
+	_, err := keeper.NewOrderSingle(ctx, order(ctx.BlockTime(), vestingAcc, "5000eur", "4700chf"))
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
@@ -1577,13 +1557,9 @@ func TestNonMatchingOrders(t *testing.T) {
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "100000usd")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "240000eur")
 
-	_, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "20000usd", "20000eur"),
-	)
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "20000usd", "20000eur"))
 	require.NoError(t, err)
-	_, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc2, "20000eur", "50000usd"),
-	)
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "20000eur", "50000usd"))
 	require.NoError(t, err)
 
 	acc1Orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
@@ -1912,21 +1888,9 @@ func coins(s string) sdk.Coins {
 }
 
 func order(createdTm time.Time, account authtypes.AccountI, src, dst string) types.Order {
-	return orderReplacement(createdTm, account, src, dst, time.Time{})
-}
-
-func orderReplacement(
-	createdTm time.Time, account authtypes.AccountI, src, dst string,
-	origOrderTm time.Time,
-) types.Order {
 	o, err := types.NewOrder(
-		createdTm,
-		types.TimeInForce_GoodTillCancel,
-		coin(src),
-		coin(dst),
-		account.GetAddress(),
-		cid(),
-		origOrderTm,
+		createdTm, types.TimeInForce_GoodTillCancel, coin(src), coin(dst),
+		account.GetAddress(), cid(), time.Time{},
 	)
 	if err != nil {
 		panic(err)

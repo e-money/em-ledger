@@ -30,7 +30,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&TxParams{})
 }
 
-// ParamSetPairs implements params.ParamSet
+// ParamSetPairs implements params.ParamSet or map
 func (p *TxParams) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyTrxFee, &p.TrxFee, validateIsUInt),
@@ -42,7 +42,7 @@ func (p *TxParams) ParamSetPairs() paramtypes.ParamSetPairs {
 	}
 }
 
-// NewTxParams creates a new parameter configuration for the bank module
+// NewTxParams creates a new parameter configuration for the market module
 func NewTxParams(trxFee, liquidTrxFee uint64, liquidityRebateMinutes int64) TxParams {
 	return TxParams{
 		TrxFee:                     trxFee,

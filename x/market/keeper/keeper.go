@@ -148,8 +148,8 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 	return res, err
 }
 
-// createMarketOrder creates a new market order allowing to set the message type
-// to new (Add) or Replacement.
+// createMarketOrder creates a market order that returns the created order and
+// takes the original order creation timestamp.
 func (k *Keeper) createMarketOrder(
 	ctx sdk.Context,
 	srcDenom string, dst sdk.Coin,
@@ -183,9 +183,10 @@ func (k *Keeper) createMarketOrder(
 	return &order, res, err
 }
 
-// calcOrderGas calculates the order rebate. The liquid fee applies to liquid
-// unfilled orders. If filled partially, the difference between the full fee
-// minus (-) liquid fee is applied proportionally.
+// calcOrderGas computes the order gas by applying any liquidity rebate. The
+// liquid fee i.e. 0 gas applies to liquid unfilled orders. For Orders filled
+// partially the difference between the full fee minus (-) liquid fee is applied
+// proportionally.
 func (k *Keeper) calcOrderGas(
 	ctx sdk.Context, stdTrxFee sdk.Gas, dstFilled, dstAmount sdk.Int,
 ) sdk.Gas {
@@ -241,14 +242,18 @@ func (k *Keeper) postNewOrderSingle(
 	ctx sdk.Context, orderGasMeter sdk.GasMeter, order *types.Order,
 	commitTrade func(), callerErr *error,
 ) {
+	// Catch NewSingleOrder() panics
 	if orderErr := recover(); orderErr != nil {
 		*callerErr = fmt.Errorf("%s", orderErr)
+		fmt.Println(orderErr)
+		fmt.Println(string(debug.Stack()))
 	}
 
 	defer func() {
-		if gasErr := recover(); gasErr != nil {
-			*callerErr = fmt.Errorf("%v", gasErr)
-			fmt.Println(gasErr)
+		// Catch Sdk panics i.e. store related
+		if sdkErr := recover(); sdkErr != nil {
+			*callerErr = fmt.Errorf("%v", sdkErr)
+			fmt.Println(sdkErr)
 			fmt.Println(string(debug.Stack()))
 		}
 	}()
@@ -263,11 +268,10 @@ func (k *Keeper) postNewOrderSingle(
 	commitTrade()
 }
 
-func (k *Keeper) NewOrderSingle(
-	ctx sdk.Context, aggressiveOrder types.Order,
-) (res *sdk.Result, err error) {
+func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (res *sdk.Result, err error) {
 	ctx, commitTrade := ctx.CacheContext()
 
+	// the transactor's meter
 	orderGasMeter := ctx.GasMeter()
 	// impostor meter that would not panic
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -466,6 +470,7 @@ func (k *Keeper) NewOrderSingle(
 
 func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 	k.appstateInit.Do(func() {
+		// TODO should we move the market params to genesis or const them?
 		k.InitParamsStore(ctx)
 
 		// Load the restricted denominations from the authority module
@@ -503,8 +508,7 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 }
 
 // postOrderSpendGas is a deferred function from Order processing
-// NewSingleOrder, NewCancelReplace functions to charge the StdFee for canonical
-// and exceptional cases.
+// NewSingleOrder, NewCancelReplace functions to charge Gas.
 func (k *Keeper) postOrderSpendGas(
 	ctx sdk.Context, order *types.Order, orderGasMeter sdk.GasMeter, callerErr *error,
 ) {
@@ -554,16 +558,13 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	defer func() {
-		// consume gas if did not enter NewSingleOrder()
+		// consume gas, if it did not make it to NewSingleOrder()
 		if err != nil && orderGasMeter.GasConsumed() == 0 {
 			k.postOrderSpendGas(ctx, &newOrder, orderGasMeter, &err)
 		}
 	}()
 
-	origOrder := k.GetOrderByOwnerAndClientOrderId(
-		ctx, newOrder.Owner,
-		origClientOrderId,
-	)
+	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner, origClientOrderId)
 
 	if origOrder == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
@@ -590,6 +591,7 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	newOrder.TimeInForce = origOrder.TimeInForce
 	newOrder.OrigOrderCreated = origOrder.Created
 
+	// pass in the meter we will charge Gas.
 	resAdd, err := k.NewOrderSingle(ctx.WithGasMeter(orderGasMeter), newOrder)
 	if err != nil {
 		return nil, err
@@ -601,14 +603,14 @@ func (k *Keeper) CancelReplaceLimitOrder(
 
 func (k *Keeper) CancelReplaceMarketOrder(
 	ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder,
-) (res *sdk.Result, err error) {
+) (resAdd *sdk.Result, err error) {
 	var newOrder *types.Order
 
 	orderGasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	defer func() {
-		// consume gas if did not enter NewSingleOrder()
+		// consume gas, if it did not make it to NewSingleOrder()
 		if err != nil && orderGasMeter.GasConsumed() == 0 {
 			k.postOrderSpendGas(ctx, newOrder, orderGasMeter, &err)
 		}
@@ -651,7 +653,8 @@ func (k *Keeper) CancelReplaceMarketOrder(
 	dstRemaining := msg.Destination.Amount.Sub(destinationFilled)
 	remDstCoin := sdk.NewCoin(msg.Destination.Denom, dstRemaining)
 
-	newOrder, res, err = k.createMarketOrder(
+	newOrder, resAdd, err = k.createMarketOrder(
+		// pass in the meter we will charge gas
 		ctx.WithGasMeter(orderGasMeter),
 		msg.Source,
 		remDstCoin,
@@ -665,7 +668,7 @@ func (k *Keeper) CancelReplaceMarketOrder(
 		return nil, err
 	}
 
-	evts := append(ctx.EventManager().ABCIEvents(), res.Events...)
+	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
 
 	return &sdk.Result{Events: evts}, nil
 }

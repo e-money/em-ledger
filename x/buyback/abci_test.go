@@ -211,8 +211,12 @@ func order(account authtypes.AccountI, src, dst string) types.Order {
 	s, _ := sdk.ParseCoinNormalized(src)
 	d, _ := sdk.ParseCoinNormalized(dst)
 	o, err := types.NewOrder(
-		time.Now(), types.TimeInForce_GoodTillCancel, s, d,
-		account.GetAddress(), tmrand.Str(10), time.Time{},
+		time.Now(),
+		types.TimeInForce_GoodTillCancel,
+		s, d,
+		account.GetAddress(),
+		tmrand.Str(10),
+		time.Time{},
 	)
 	if err != nil {
 		panic(err)

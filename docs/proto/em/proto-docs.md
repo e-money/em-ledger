@@ -1123,7 +1123,7 @@
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination_filled` | [string](#string) |  |  |
 | `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `orig_order_created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | applicable to CancelReplace orders: the creation timestamp of the order this order replaces. |
+| `orig_order_created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | applicable to CancelReplace orders: the creation timestamp of the original order. |
 
 
 
@@ -1471,7 +1471,7 @@
 | ----- | ---- | ----- | ----------- |
 | `trx_fee` | [uint64](#uint64) |  | default fee for a market transaction. |
 | `liquid_trx_fee` | [uint64](#uint64) |  | Valid liquidity adding orders are free or adjusted to a minimum nominal/fee |
-| `liquidity_rebate_minutes_span` | [int64](#int64) |  | Minutes interval for eligible replacing liquidity transactions to qualify for the rebate. For the rebate to apply, the replacing transaction should occur x minutes after the signer's original trx. |
+| `liquidity_rebate_minutes_span` | [int64](#int64) |  | Minutes interval for eligible replacing transactions to receive a rebate. For a rebate to apply, the replacing transaction should occur these minutes after the signer's original trx. |
 
 
 

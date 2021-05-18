@@ -27,9 +27,9 @@ message TxParams {
   // Valid liquidity adding orders are free or adjusted to a minimum nominal/fee
   uint64 liquid_trx_fee = 2 [(gogoproto.moretags) = "yaml:\"liquid_trx_fee\""];
 
-  // Minutes interval for eligible replacing liquidity transactions to qualify
-  // for the rebate. For the rebate to apply, the replacing transaction should
-  // occur x minutes after the signer's original trx.
+  // Minutes interval for eligible replacing transactions to receive a rebate.
+  // For a rebate to apply, the replacing transaction should occur these minutes
+  // after the signer's original trx.
   int64 liquidity_rebate_minutes_span = 3 [
     (gogoproto.moretags) = "yaml:\"liquidity_rebate_minutes_span\""
   ];

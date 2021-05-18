@@ -36,9 +36,9 @@ type TxParams struct {
 	TrxFee uint64 `protobuf:"varint,1,opt,name=trx_fee,json=trxFee,proto3" json:"trx_fee,omitempty" yaml:"trx_fee"`
 	// Valid liquidity adding orders are free or adjusted to a minimum nominal/fee
 	LiquidTrxFee uint64 `protobuf:"varint,2,opt,name=liquid_trx_fee,json=liquidTrxFee,proto3" json:"liquid_trx_fee,omitempty" yaml:"liquid_trx_fee"`
-	// Minutes interval for eligible replacing liquidity transactions to qualify
-	// for the rebate. For the rebate to apply, the replacing transaction should
-	// occur x minutes after the signer's original trx.
+	// Minutes interval for eligible replacing transactions to receive a rebate.
+	// For a rebate to apply, the replacing transaction should occur these minutes
+	// after the signer's original trx.
 	LiquidityRebateMinutesSpan int64 `protobuf:"varint,3,opt,name=liquidity_rebate_minutes_span,json=liquidityRebateMinutesSpan,proto3" json:"liquidity_rebate_minutes_span,omitempty" yaml:"liquidity_rebate_minutes_span"`
 }
 

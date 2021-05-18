@@ -87,7 +87,7 @@ func (o Order) Price() sdk.Dec {
 }
 
 func (o Order) String() string {
-	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v\nCreated:%v\nReplacementOrder:%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner, o.Created, o.OrigOrderCreated)
+	return fmt.Sprintf("%d : %v -> %v @ %v\n(%v%v remaining) (%v%v filled) (%v%v filled)\n%v\nCreated:%v\nOriginal Order Created:%v", o.ID, o.Source, o.Destination, o.Price(), o.SourceRemaining, o.Source.Denom, o.SourceFilled, o.Source.Denom, o.DestinationFilled, o.Destination.Denom, o.Owner, o.Created, o.OrigOrderCreated)
 }
 
 func (ep ExecutionPlan) DestinationCapacity() sdk.Dec {

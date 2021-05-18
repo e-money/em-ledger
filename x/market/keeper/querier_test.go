@@ -81,24 +81,16 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 	acc3 := createAccount(ctx, ak, bk, randomAddress(), "2200chf")
 
 	// generate passive order
-	_, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"),
-	)
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "11000usd"))
 	require.NoError(t, err)
 
-	_, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"),
-	)
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "10000eur", "1400chf"))
 	require.NoError(t, err)
 
-	res, err := k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"),
-	)
+	res, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "7400usd", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
-	res, err = k.NewOrderSingle(
-		ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"),
-	)
+	res, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc3, "2200chf", "5000eur"))
 	require.True(t, err == nil, res.Log)
 
 	// All acc1's EUR are sold by now. No orders should be on books
