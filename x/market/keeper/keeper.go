@@ -20,13 +20,6 @@ import (
 	"github.com/e-money/em-ledger/x/market/types"
 )
 
-const (
-	// Gas prices must be predictable, and not depend on the number of passive orders matched.
-	gasPriceNewOrder           = uint64(25000)
-	gasPriceCancelReplaceOrder = uint64(25000)
-	gasPriceCancelOrder        = uint64(12500)
-)
-
 var _ marketKeeper = &Keeper{}
 
 type Keeper struct {

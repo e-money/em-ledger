@@ -91,7 +91,7 @@ func TestBasicTrade(t *testing.T) {
 	require.Equal(t, *instruments[0].Timestamp, ctx.BlockTime())
 
 	// Ensure that gas usage is not higher due to the order being matched.
-	require.Equal(t, gasPriceNewOrder, gasmeter.GasConsumed())
+	require.Equal(t, stdTrxFee, gasmeter.GasConsumed())
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
 	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
@@ -662,6 +662,23 @@ func TestLiquidNewLimit0Gas(t *testing.T) {
 	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
 }
 
+func TestLiquidNewLimitFullGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	src1, dst1 := "eur", "usd"
+	order1 := order(ctx.BlockTime(), acc1, "100"+src1, "120"+dst1)
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+}
+
 func TestLiquidNewMarket0Gas(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
@@ -939,12 +956,15 @@ func Test3(t *testing.T) {
 	o := order(ctx.BlockTime(), acc1, "100eur", "120usd")
 	k.NewOrderSingle(ctx, o)
 
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	for i := 0; i < 4; i++ {
 		o = order(ctx.BlockTime(), acc2, "30usd", "25eur")
 		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
 	}
-	require.Equal(t, 4*gasPriceNewOrder, gasMeter.GasConsumed())
+	require.Equal(t, 4*stdTrxFee, gasMeter.GasConsumed())
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
 	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
@@ -1206,6 +1226,9 @@ func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
 	_, err := k.NewOrderSingle(ctx, order1)
 	require.NoError(t, err)
 
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	order2cid := cid()
 	order2, _ := types.NewOrder(
@@ -1214,7 +1237,7 @@ func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
 	)
 	res, err := k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
 	require.True(t, err == nil, res.Log)
-	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
 
 	{
 		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
@@ -1237,7 +1260,7 @@ func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
 	gasMeter = sdk.NewGasMeter(math.MaxUint64)
 	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
 	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
-	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
 
 	o := order(ctx.BlockTime(), acc2, "2600usd", "300eur")
 	_, err = k.NewOrderSingle(ctx, o)
@@ -1602,11 +1625,14 @@ func TestSyntheticInstruments2(t *testing.T) {
 		require.NoError(t, err, res.Log)
 	}
 
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	monsterOrder := order(ctx.BlockTime(), acc3, "3700000eur", "4000000usd")
 	res, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), monsterOrder)
 	require.NoError(t, err, res.Log)
-	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
 
 	// require.Len(t, k.instruments, 0)
 
