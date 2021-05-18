@@ -10,14 +10,14 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"math"
+	"runtime/debug"
 	"sync"
 	"time"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/x/market/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/market/types"
 )
 
 const (
@@ -247,7 +247,9 @@ func (k *Keeper) postNewOrderSingle(
 
 	defer func() {
 		if gasErr := recover(); gasErr != nil {
-			*callerErr = fmt.Errorf("out of Gas:%s", gasErr)
+			*callerErr = fmt.Errorf("%v", gasErr)
+			fmt.Println(gasErr)
+			fmt.Println(string(debug.Stack()))
 		}
 	}()
 
