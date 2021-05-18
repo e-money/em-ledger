@@ -204,16 +204,16 @@ func (k *Keeper) calcOrderGas(
 		Sub(sdk.NewIntFromUint64(liquidTrxFee))
 
 	payPct := dstFilled.ToDec().Quo(dstAmount.ToDec())
-	payGas := payPct.Mul(totalRebate.ToDec())
+	payGas := payPct.Mul(totalRebate.ToDec()).RoundInt().Uint64()
 
-	return payGas.RoundInt().Uint64()
+	return payGas
 }
 
 // calcReplaceOrderGas computes gas for replacement orders. Because it needs
 // the original order's creation time, this func acts is a precondition for
 // calcOrderGas().
 func (k *Keeper) calcReplaceOrderGas(
-	ctx sdk.Context, dstFilled, dstAmount sdk.Int, lastOrderTm time.Time,
+	ctx sdk.Context, dstFilled, dstAmount sdk.Int, origOrderTm time.Time,
 ) sdk.Gas {
 	var stdTrxFee uint64
 	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
@@ -221,8 +221,8 @@ func (k *Keeper) calcReplaceOrderGas(
 	var qualificationMin int64
 	k.paramStore.Get(ctx, types.KeyLiquidityRebateMinutesSpan, &qualificationMin)
 
-	// check at least LiquidityRebateMinutesSpan elapsed from replaced order
-	if ctx.BlockTime().Sub(lastOrderTm).Minutes() >= float64(qualificationMin) {
+	elapsedMin := ctx.BlockTime().Sub(origOrderTm).Minutes()
+	if elapsedMin >= float64(qualificationMin) {
 		return k.calcOrderGas(ctx, stdTrxFee, dstFilled, dstAmount)
 	}
 
