@@ -645,47 +645,13 @@ func TestInsufficientGas(t *testing.T) {
 	require.True(t, strings.Contains(strings.ToLower(err.Error()), "gas"))
 }
 
-func TestLiquidNewLimit0Gas(t *testing.T) {
-	ctx, k, ak, bk := createTestComponents(t)
-
-	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
-
-	gasMeter := sdk.NewGasMeter(math.MaxUint64)
-
-	var liquidTrxFee uint64
-	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
-
-	src1, dst1 := "eur", "usd"
-	order1 := order(ctx.BlockTime(), acc1, "100"+src1, "120"+dst1)
-	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
-	require.NoError(t, err)
-	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
-}
-
-func TestLiquidNewLimitFullGas(t *testing.T) {
-	ctx, k, ak, bk := createTestComponents(t)
-
-	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
-
-	gasMeter := sdk.NewGasMeter(math.MaxUint64)
-
-	var liquidTrxFee uint64
-	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
-
-	src1, dst1 := "eur", "usd"
-	order1 := order(ctx.BlockTime(), acc1, "100"+src1, "120"+dst1)
-	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
-	require.NoError(t, err)
-	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
-}
-
-func TestLiquidNewMarket0Gas(t *testing.T) {
+func TestLimitOrderLiquidAndFullGas(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp")
-	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
 
-	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+	gasMeter := sdk.NewInfiniteGasMeter()
 
 	var stdTrxFee uint64
 	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
@@ -693,12 +659,86 @@ func TestLiquidNewMarket0Gas(t *testing.T) {
 	var liquidTrxFee uint64
 	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
 
-	order1 := order(ctx.BlockTime(), acc1, "100gbp", "120eur")
+	order1 := order(ctx.BlockTime(), acc1, "1gbp", "1eur")
 	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
 	require.NoError(t, err)
 	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
 
-	order2 := order(ctx.BlockTime(), acc2, "120eur", "100gbp")
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order2 := order(ctx.BlockTime(), acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+	require.NoError(t, err)
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+}
+
+func TestPartiallyLiquidLimitOrderGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
+
+	gasMeter := sdk.NewInfiniteGasMeter()
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	order1 := order(ctx.BlockTime(), acc1, "1gbp", "1eur")
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order2 := order(ctx.BlockTime(), acc2, "10eur", "10gbp")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+	require.NoError(t, err)
+	require.Equal(
+		t, sdk.Gas(float64(stdTrxFee-liquidTrxFee)*0.1), gasMeter.GasConsumed(),
+		"1/10 filled => 10% of total Gas",
+	)
+
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order3 := order(ctx.BlockTime(), acc1, "36gbp", "36eur")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order3)
+	require.NoError(t, err)
+	require.Equal(
+		t, (stdTrxFee-liquidTrxFee)/4, gasMeter.GasConsumed(),
+		"9/36 filled => 25% of total Gas",
+	)
+
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order4 := order(ctx.BlockTime(), acc2, "36eur", "36gbp")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order4)
+	require.NoError(t, err)
+	expGas := sdk.Gas(float64((stdTrxFee-liquidTrxFee)*3)/4)
+	require.Equal(
+		t, expGas, gasMeter.GasConsumed(),
+		"27/36 filled => 3/4 of total Gas",
+	)
+}
+
+func TestLiquidNewMarketOrderGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
+
+	gasMeter := sdk.NewInfiniteGasMeter()
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	order1 := order(ctx.BlockTime(), acc1, "100gbp", "100eur")
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	order2 := order(ctx.BlockTime(), acc2, "100eur", "100gbp")
 	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
 	require.NoError(t, err)
 	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
@@ -718,6 +758,312 @@ func TestLiquidNewMarket0Gas(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, liquidTrxFee, ctx.GasMeter().GasConsumed())
+}
+
+func TestPartiallyLiquidMarketOrderGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	order1 := order(ctx.BlockTime(), acc1, "1gbp", "1eur")
+	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order1)
+	require.NoError(t, err)
+	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed())
+
+	order2 := order(ctx.BlockTime(), acc2, "10eur", "10gbp")
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+	require.NoError(t, err)
+	require.Equal(
+		t, sdk.Gas(float64(stdTrxFee-liquidTrxFee)*0.1), gasMeter.GasConsumed(),
+		"1/10 filled => 10% of total Gas",
+	)
+
+	bal1Bef := bk.GetBalance(ctx, acc1.GetAddress(), "gbp")
+
+	gasMeter = sdk.NewInfiniteGasMeter()
+	slippage := sdk.NewDecWithPrec(75, 2)
+	cid := cid()
+	ctx = ctx.WithGasMeter(gasMeter)
+	_, err = k.NewMarketOrderWithSlippage(
+		ctx,
+		"gbp",
+		sdk.NewCoin("eur", sdk.NewInt(36)),
+		slippage,
+		acc1.GetAddress(),
+		types.TimeInForce_GoodTillCancel,
+		cid,
+	)
+	require.NoError(t, err)
+	bal1Aft := bk.GetBalance(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), acc1.GetAddress(), "gbp")
+	rebate := stdTrxFee-liquidTrxFee
+	filledPct := bal1Bef.Sub(bal1Aft).Amount.ToDec().Quo(sdk.NewDec(36))
+	expGas := sdk.Gas(
+		filledPct.Mul(sdk.NewInt(int64(rebate)).ToDec()).RoundInt64(),
+	)
+	require.Equal(
+		t, expGas, gasMeter.GasConsumed(),
+		"9/36 filled => 1/4 of total Gas",
+	)
+}
+
+func TestKeeperLimitOrderLiquidFullGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "100000eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "100000usd")
+
+	order1cid := cid()
+	order1, _ := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("100eur"),
+		coin("100usd"), acc1.GetAddress(), order1cid, time.Time{},
+	)
+	_, err := k.NewOrderSingle(ctx, order1)
+	require.NoError(t, err)
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	var qualificationMin int64
+	k.paramStore.Get(ctx, types.KeyLiquidityRebateMinutesSpan, &qualificationMin)
+
+	order2cid := cid()
+	order2, _ := types.NewOrder(
+		ctx.BlockTime(),
+		types.TimeInForce_GoodTillCancel,
+		coin("5000eur"),
+		coin("5000usd"),
+		acc1.GetAddress(),
+		order2cid,
+		time.Time{},
+	)
+	gasMeter := sdk.NewInfiniteGasMeter()
+	// Add + Interval Minutes
+	res, err := k.CancelReplaceLimitOrder(
+		ctx.WithGasMeter(gasMeter).
+			WithBlockTime(ctx.BlockTime().
+				Add(time.Duration(qualificationMin)*time.Minute)),
+		order2, order1cid,
+	)
+	require.True(t, err == nil, res.Log)
+	require.Equal(
+		t, liquidTrxFee, gasMeter.GasConsumed(),
+		"Liquid gas as unfilled replacing orders, past minute-interval",
+	)
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order2cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("5000eur").String(), orders[0].Source.String())
+		require.Equal(t, coin("5000usd").String(), orders[0].Destination.String())
+		// unfilled: remaining == source amount
+		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
+	}
+
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order3, err := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5000chf"),
+		coin("5000usd"), acc1.GetAddress(), cid(), time.Time{},
+	)
+	require.NoError(t, err)
+
+	// Wrong client order id for previous order submitted.
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order1cid)
+	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
+	require.Equal(
+		t, stdTrxFee, gasMeter.GasConsumed(),
+		"Erred replacing order is charged Std gas",
+	)
+
+	// Changing instrument of order
+	gasMeter = sdk.NewGasMeter(math.MaxUint64)
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed(), "erred trx")
+
+	o := order(ctx.BlockTime(), acc2, "1000usd", "300eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
+	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
+
+	require.Equal(t, int64(300), bal2.AmountOf("eur").Int64())
+	require.Equal(t, int64(300), bal1.AmountOf("usd").Int64())
+
+	filled := sdk.ZeroInt()
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
+	}
+
+	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
+	order4cid := cid()
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order4, _ := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("3000eur"),
+		coin("3000usd"), acc1.GetAddress(), order4cid, time.Time{},
+	)
+	ctx = ctx.WithGasMeter(gasMeter)
+	res, err = k.CancelReplaceLimitOrder(
+		ctx.WithBlockTime(ctx.BlockTime().Add(
+			time.Duration(qualificationMin)*time.Minute)),
+		order4, order2cid,
+	)
+	require.NoError(t, err, err)
+	require.Equal(
+		t, gasMeter.GasConsumed(), sdk.Gas(float64(stdTrxFee-liquidTrxFee)*0.1),
+		"300/3000 filled => 10% of total Gas",
+	)
+	require.Greaterf(
+		t, gasMeter.GasConsumed(), liquidTrxFee,
+		"Gas consumed should filled should be greater than LiquidTrxFee",
+	)
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order4cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("3000eur").String(), orders[0].Source.String())
+		require.Equal(t, coin("3000usd").String(), orders[0].Destination.String())
+		require.Equal(
+			t, sdk.NewInt(3000).Sub(filled).String(),
+			orders[0].SourceRemaining.String(),
+		)
+	}
+}
+
+func TestKeeperReplaceMarketOrderFullLiquidGas(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "20000eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "45000usd")
+
+	totalSupply := snapshotAccounts(ctx, bk)
+
+	order1cid := cid()
+	order1, _ := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500eur"),
+		coin("1200usd"), acc1.GetAddress(), order1cid, time.Time{},
+	)
+	_, err := k.NewOrderSingle(ctx, order1)
+	require.NoError(t, err)
+
+	var stdTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
+
+	var liquidTrxFee uint64
+	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
+
+	var qualificationMin int64
+	k.paramStore.Get(ctx, types.KeyLiquidityRebateMinutesSpan, &qualificationMin)
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+	order2cid := cid()
+	order2, _ := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5000eur"),
+		coin("17000usd"), acc1.GetAddress(), order2cid, time.Time{},
+	)
+	res, err := k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
+	require.True(t, err == nil, res.Log)
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order2cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("5000eur"), orders[0].Source)
+		require.Equal(t, coin("17000usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
+	}
+
+	gasMeter = sdk.NewInfiniteGasMeter()
+	order3, _ := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500chf"),
+		coin("1700usd"), acc1.GetAddress(), cid(), time.Time{},
+	)
+	// Wrong client order id for previous order submitted.
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order1cid)
+	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+
+	// Changing instrument of order
+	gasMeter = sdk.NewGasMeter(math.MaxUint64)
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+
+	o := order(ctx.BlockTime(), acc2, "2600usd", "300eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
+	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
+
+	require.Equal(t, int64(300), bal2.AmountOf("eur").Int64())
+	require.Equal(t, int64(1020), bal1.AmountOf("usd").Int64())
+
+	filled := sdk.ZeroInt()
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
+	}
+
+	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
+	order4cid := cid()
+	order4, _ := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("10000eur"),
+		coin("35050usd"), acc1.GetAddress(), order4cid, time.Time{},
+	)
+	gasMeter = sdk.NewInfiniteGasMeter()
+	// add qualification minutes
+	res, err = k.CancelReplaceLimitOrder(
+		ctx.WithGasMeter(gasMeter).
+			WithBlockTime(ctx.BlockTime().
+				Add(time.Duration(qualificationMin)*time.Minute)),
+		order4, order2cid,
+	)
+	t.Log(gasMeter.String())
+	require.True(t, err == nil, res.Log)
+	expGas := sdk.NewDec(int64(stdTrxFee - liquidTrxFee)).
+		Mul(sdk.NewDec(1020)).
+			Quo(sdk.NewDec(35050)).
+		RoundInt().
+		Uint64()
+	require.Equal(t, expGas, gasMeter.GasConsumed(),
+		"Partial Fee: Full fee * destinationFilled(1020)/totalDestination(35050)")
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order4cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("10000eur"), orders[0].Source)
+		require.Equal(t, coin("35050usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
+	}
+
+	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
+	order5 := order(ctx.BlockTime(), acc2, "42000usd", "8000eur")
+	k.NewOrderSingle(ctx, order5)
+	require.True(t, err == nil, res.Log)
+
+	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
+	_, err = k.CancelReplaceLimitOrder(ctx, order6, order4cid)
+	require.True(t, types.ErrNoSourceRemaining.Is(err))
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
 }
 
 func TestCancelNewLimitFullGas(t *testing.T) {
