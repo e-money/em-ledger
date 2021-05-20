@@ -5,10 +5,10 @@
 package keeper
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	"sync"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	emtypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
@@ -23,20 +23,22 @@ const (
 )
 
 type Keeper struct {
-	storeKey sdk.StoreKey
-	ik       issuer.Keeper
-	sk       types.SupplyKeeper
-	gpk      types.GasPricesKeeper
+	cdc        codec.BinaryMarshaler
+	storeKey   sdk.StoreKey
+	ik         issuer.Keeper
+	bankKeeper types.BankKeeper
+	gpk        types.GasPricesKeeper
 
 	gasPricesInit *sync.Once
 }
 
-func NewKeeper(storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, supplyKeeper types.SupplyKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
 	return Keeper{
-		ik:       issuerKeeper,
-		sk:       supplyKeeper,
-		gpk:      gasPricesKeeper,
-		storeKey: storeKey,
+		cdc:        cdc,
+		ik:         issuerKeeper,
+		bankKeeper: bankKeeper,
+		gpk:        gasPricesKeeper,
+		storeKey:   storeKey,
 
 		gasPricesInit: new(sync.Once),
 	}
@@ -49,18 +51,23 @@ func (k Keeper) SetAuthority(ctx sdk.Context, authority sdk.AccAddress) {
 		panic("Authority was already specified")
 	}
 
-	bz := types.ModuleCdc.MustMarshalBinaryBare(authority)
+	bz := k.cdc.MustMarshalBinaryBare(&types.Authority{Address: authority.String()})
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
-func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress) {
+func (k Keeper) GetAuthority(ctx sdk.Context) sdk.AccAddress {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyAuthorityAccAddress))
-	types.ModuleCdc.MustUnmarshalBinaryBare(bz, &authority)
-	return
+	var authority types.Authority
+	k.cdc.MustUnmarshalBinaryBare(bz, &authority)
+	acc, err := sdk.AccAddressFromBech32(authority.Address)
+	if err != nil {
+		panic(err.Error())
+	}
+	return acc
 }
 
-func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
+func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
@@ -73,42 +80,43 @@ func (k Keeper) CreateIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 	return k.ik.AddIssuer(ctx, i)
 }
 
-func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error) {
+func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrices sdk.DecCoins) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
-	if !gasprices.IsValid() {
-		return nil, sdkerrors.Wrapf(types.ErrInvalidGasPrices, "%v", gasprices)
+	if !newPrices.IsValid() {
+		return nil, sdkerrors.Wrapf(types.ErrInvalidGasPrices, "%v", newPrices)
 	}
 
 	// Check that the denominations actually exist before setting the gas prices to avoid being "locked out" of the blockchain
-	supply := k.sk.GetSupply(ctx).GetTotal()
-	for _, d := range gasprices {
+	supply := k.bankKeeper.GetSupply(ctx).GetTotal()
+	for _, d := range newPrices {
 		if supply.AmountOf(d.Denom).IsZero() {
 			return nil, sdkerrors.Wrapf(types.ErrUnknownDenom, "%v", d.Denom)
 		}
 	}
 
-	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(gasprices)
+	gasPrices := types.GasPrices{Minimum: newPrices}
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&gasPrices)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(keyGasPrices), bz)
 
-	k.gpk.SetMinimumGasPrices(gasprices.String())
-	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
+	k.gpk.SetMinimumGasPrices(newPrices.String())
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) GetGasPrices(ctx sdk.Context) (gasPrices sdk.DecCoins) {
+func (k Keeper) GetGasPrices(ctx sdk.Context) sdk.DecCoins {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyGasPrices))
 
 	if bz == nil {
-		return
+		return nil
 	}
-
-	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &gasPrices)
-	return
+	var gasPrices types.GasPrices
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &gasPrices)
+	return gasPrices.Minimum
 }
 
-func (k Keeper) DestroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
+func (k Keeper) destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	k.MustBeAuthority(ctx, authority)
 
 	return k.ik.RemoveIssuer(ctx, issuerAddress)
@@ -127,17 +135,18 @@ func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
 	panic(sdkerrors.Wrap(types.ErrNotAuthority, address.String()))
 }
 
-func (k Keeper) SetRestrictedDenoms(ctx sdk.Context, denoms emtypes.RestrictedDenoms) {
+func (k Keeper) SetRestrictedDenoms(ctx sdk.Context, denoms []types.RestrictedDenom) {
 	store := ctx.KVStore(k.storeKey)
-	bz := types.ModuleCdc.MustMarshalBinaryLengthPrefixed(denoms)
+	state := types.RestrictedDenoms{Denoms: denoms}
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&state)
 	store.Set([]byte(keyRestrictedDenoms), bz)
 }
 
-func (k Keeper) GetRestrictedDenoms(ctx sdk.Context) (res emtypes.RestrictedDenoms) {
+func (k Keeper) GetRestrictedDenoms(ctx sdk.Context) (res types.RestrictedDenoms) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get([]byte(keyRestrictedDenoms))
-	types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
 
 	return
 }

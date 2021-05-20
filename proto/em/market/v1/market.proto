@@ -1,0 +1,100 @@
+syntax = "proto3";
+package em.market.v1;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/market/types";
+
+enum TimeInForce {
+  option (gogoproto.goproto_enum_stringer) =
+      true; // todo (reviewer) : json representation is changed to full names
+
+  TIME_IN_FORCE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+  TIME_IN_FORCE_GOOD_TILL_CANCEL = 1
+      [ (gogoproto.enumvalue_customname) = "GoodTillCancel" ];
+  TIME_IN_FORCE_IMMEDIATE_OR_CANCEL = 2
+      [ (gogoproto.enumvalue_customname) = "ImmediateOrCancel" ];
+  TIME_IN_FORCE_FILL_OR_KILL = 3
+      [ (gogoproto.enumvalue_customname) = "FillOrKill" ];
+}
+
+message Instrument {
+  string source = 1;
+  string destination = 2;
+}
+
+message Order {
+  option (gogoproto.goproto_stringer) = false;
+
+  uint64 order_id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.moretags) = "yaml:\"order_id\""
+  ];
+
+  TimeInForce time_in_force = 2
+      [ (gogoproto.moretags) = "yaml:\"time_in_force\"" ];
+
+  string owner = 3 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
+
+  string client_order_id = 4 [
+    (gogoproto.customname) = "ClientOrderID",
+    (gogoproto.moretags) = "yaml:\"client_order_id\""
+  ];
+
+  cosmos.base.v1beta1.Coin source = 5 [
+    (gogoproto.moretags) = "yaml:\"source\"",
+    (gogoproto.nullable) = false
+  ];
+
+  string source_remaining = 6 [
+    (gogoproto.moretags) = "yaml:\"source_remaining\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+
+  string source_filled = 7 [
+    (gogoproto.moretags) = "yaml:\"source_filled\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+
+  cosmos.base.v1beta1.Coin destination = 8 [
+    (gogoproto.moretags) = "yaml:\"destination\"",
+    (gogoproto.nullable) = false
+  ];
+
+  string destination_filled = 9 [
+    (gogoproto.moretags) = "yaml:\"destination_filled\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+
+  google.protobuf.Timestamp created = 10 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
+}
+
+message ExecutionPlan {
+  option (gogoproto.goproto_stringer) = false;
+
+  string price = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+  Order first_order = 2;
+  Order second_order = 3;
+}
+
+message MarketData {
+  string source = 1;
+  string destination = 2;
+  string last_price = 3
+      [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec" ];
+
+  google.protobuf.Timestamp timestamp = 4 [ (gogoproto.stdtime) = true ];
+}

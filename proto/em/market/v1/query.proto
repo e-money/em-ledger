@@ -1,0 +1,113 @@
+syntax = "proto3";
+package em.market.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "em/market/v1/market.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/market/types";
+
+service Query {
+  rpc ByAccount(QueryByAccountRequest) returns (QueryByAccountResponse) {
+    option (google.api.http).get = "/e-money/market/v1/account/{address}";
+  };
+  rpc Instruments(QueryInstrumentsRequest) returns (QueryInstrumentsResponse) {
+    option (google.api.http).get = "/e-money/market/v1/instruments";
+  };
+  rpc Instrument(QueryInstrumentRequest) returns (QueryInstrumentResponse) {
+    option (google.api.http).get =
+        "/e-money/market/v1/instrument/{source}/{destination}";
+  };
+}
+
+message QueryByAccountRequest {
+  string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
+}
+
+message QueryByAccountResponse {
+  option (gogoproto.goproto_stringer) = false;
+
+  repeated Order orders = 1
+      [ (gogoproto.moretags) = "yaml:\"orders\"", (gogoproto.nullable) = true ];
+}
+
+message QueryInstrumentsRequest {}
+
+message QueryInstrumentsResponse {
+  option (gogoproto.goproto_stringer) = false;
+
+  repeated Element instruments = 1 [
+    (gogoproto.moretags) = "yaml:\"instruments\"",
+    (gogoproto.nullable) = false
+  ];
+
+  message Element {
+    option (gogoproto.goproto_stringer) = false;
+
+    string source = 1 [ (gogoproto.moretags) = "yaml:\"source\"" ];
+
+    string destination = 2 [ (gogoproto.moretags) = "yaml:\"destination\"" ];
+
+    string last_price = 3 [
+      (gogoproto.moretags) = "yaml:\"last_price\"",
+      (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"
+    ];
+
+    string best_price = 4 [
+      (gogoproto.moretags) = "yaml:\"best_price\"",
+      (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"
+    ];
+
+    google.protobuf.Timestamp last_traded = 5 [
+      (gogoproto.moretags) = "yaml:\"last_traded\"",
+      (gogoproto.stdtime) = true
+    ];
+  }
+}
+
+message QueryInstrumentRequest {
+  string source = 1;
+  string destination = 2;
+}
+
+message QueryInstrumentResponse {
+  option (gogoproto.goproto_stringer) = false;
+
+  string source = 1 [ (gogoproto.moretags) = "yaml:\"source\"" ];
+  string destination = 2 [ (gogoproto.moretags) = "yaml:\"destination\"" ];
+  repeated QueryOrderResponse orders = 3 [
+    (gogoproto.moretags) = "yaml:\"orders\"",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message QueryOrderResponse {
+  option (gogoproto.goproto_stringer) = false;
+
+  uint64 id = 1
+      [ (gogoproto.customname) = "ID", (gogoproto.moretags) = "yaml:\"id\"" ];
+
+  string owner = 2 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
+
+  string source_remaining = 3
+      [ (gogoproto.moretags) = "yaml:\"source_remaining\"" ];
+
+  string client_order_id = 4 [
+    (gogoproto.moretags) = "yaml:\"client_order_id\"",
+    (gogoproto.nullable) = true
+  ];
+
+  string price = 5 [
+    (gogoproto.moretags) = "yaml:\"price\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+
+  google.protobuf.Timestamp created = 6 [
+    (gogoproto.moretags) = "yaml:\"created\"",
+    (gogoproto.nullable) = false,
+    (gogoproto.stdtime) = true
+  ];
+}

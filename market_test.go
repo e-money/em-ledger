@@ -4,27 +4,23 @@
 
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	emoney "github.com/e-money/em-ledger"
+	"github.com/e-money/em-ledger/networktest"
 	market "github.com/e-money/em-ledger/x/market/types"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-
-	emoney "github.com/e-money/em-ledger" // To get around this issue: https://stackoverflow.com/q/14723229
-	"github.com/e-money/em-ledger/networktest"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/tidwall/gjson"
-
-	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 var _ = Describe("Market", func() {
@@ -60,6 +56,13 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Crashing validator can catch up", func() {
+			var (
+				height int64
+				err    error
+			)
+			height, err = networktest.GetHeight()
+			Expect(err).ToNot(HaveOccurred())
+
 			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
@@ -100,14 +103,23 @@ var _ = Describe("Market", func() {
 				Expect(success).To(BeTrue())
 			}
 
+			height, err = networktest.IncChainWithExpiration(height, 1 *time.Second)
+			Expect(err).ToNot(HaveOccurred())
+
+			aBlockHash, err := networktest.ChainBlockHash()
+			Expect(err).ToNot(HaveOccurred())
+			fmt.Printf("Waiting a few blocks for emdnode2 log to register %s block\n",aBlockHash)
+
 			// Wait and while and attempt to discover consensus failure in the logs of the resurrected validator
-			time.Sleep(8 * time.Second)
+			// allow node2 log to catch up by waiting a few blocks
+			height, err = networktest.IncChainWithExpiration(height+14, 40 *time.Second)
+			Expect(err).ToNot(HaveOccurred())
 
 			log, err := testnet.GetValidatorLogs(2)
 			Expect(err).ToNot(HaveOccurred())
-			if strings.Contains(log, "Wrong Block.Header.AppHash") ||
-				strings.Contains(log, "panic") {
-				Fail(fmt.Sprintf("Validator 2 does not appear to have re-established consensus:\n%v", log))
+			if !strings.Contains(log, aBlockHash) {
+				Fail(fmt.Sprintf("Validator 2 has not caught up with block %s:\n%s",
+					aBlockHash, log))
 			}
 		})
 
@@ -125,6 +137,8 @@ var _ = Describe("Market", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1", "--fees", "50eeur")
+			Expect(err).To(BeNil())
+			Expect(success).To(BeTrue())
 
 			// Create one transaction that includes a market order and a lot transfers, which will make the tx run out of gas.
 			jsonPath, err := ioutil.TempDir("", "")
@@ -134,13 +148,19 @@ var _ = Describe("Market", func() {
 			msgs := make([]sdk.Msg, 0)
 
 			addr3, err := sdk.AccAddressFromBech32(acc3.GetAddress())
-			if err != nil {
-				panic(err)
-			}
+			Expect(err).To(BeNil())
 
-			clientOrderId := "ShouldNotBePresent"
-			addOrder := market.MsgAddLimitOrder{
-				Owner:         addr3,
+			const clientOrderId = "ShouldNotBePresent"
+
+			// Order must not be available for querying or fail fast
+			bz, err := emcli.QueryMarketByAccount(addr3.String())
+			Expect(err).To(BeNil())
+			query := fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
+			Expect(gjson.ParseBytes(bz).Get(query).Array()).To(BeEmpty())
+
+			addOrder := &market.MsgAddLimitOrder{
+				TimeInForce:   market.TimeInForce_GoodTillCancel,
+				Owner:         acc3.GetAddress(),
 				Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
 				Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
 				ClientOrderId: clientOrderId,
@@ -150,27 +170,27 @@ var _ = Describe("Market", func() {
 
 			// Add a few transfers to make sure that gas is exhausted
 			addr2, err := sdk.AccAddressFromBech32(acc2.GetAddress())
-			if err != nil {
-				panic(err)
-			}
+			Expect(err).To(BeNil())
 
 			coins := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewInt(5000)))
 			for i := 0; i < 5; i++ {
-				msgs = append(msgs, bank.NewMsgSend(addr3, addr2, coins))
+				msgs = append(msgs, banktypes.NewMsgSend(addr3, addr2, coins))
 			}
 
 			accountJson, err := emcli.QueryAccountJson(acc3.GetAddress())
 			Expect(err).To(BeNil())
-			accNum := gjson.ParseBytes(accountJson).Get("value.account_number").Uint()
-			accSeq := gjson.ParseBytes(accountJson).Get("value.sequence").Uint()
+			accNum := gjson.ParseBytes(accountJson).Get("account_number").Uint()
+			accSeq := gjson.ParseBytes(accountJson).Get("sequence").Uint()
 
-			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "500eeur", accNum, accSeq, msgs...)
+			// todo (reviewer): reduced the fee to ensure the TX fails.
+			tx := networktest.CreateMultiMsgTx(acc3, testnet.ChainID(), "0.1eeur", accNum, accSeq, msgs...)
 
-			cdc := emoney.MakeCodec()
-			json := cdc.MustMarshalJSON(tx)
+			cfg := emoney.MakeEncodingConfig()
+			txBz, err := cfg.TxConfig.TxJSONEncoder()(tx)
+			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
-			ioutil.WriteFile(transactionPath, json, 0777)
+			ioutil.WriteFile(transactionPath, txBz, 0777)
 
 			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			Expect(err).To(BeNil())
@@ -178,10 +198,10 @@ var _ = Describe("Market", func() {
 			Expect(gjson.Parse(s).Get("logs.0.success").Exists()).To(Equal(false))
 
 			// Order must not be available for querying
-			bz, err := emcli.QueryMarketByAccount(addr3.String())
+			bz, err = emcli.QueryMarketByAccount(addr3.String())
 			Expect(err).To(BeNil())
 
-			query := fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
+			query = fmt.Sprintf("orders.#(client_order_id==\"%v\")#", clientOrderId)
 			Expect(gjson.ParseBytes(bz).Get(query).Array()).To(BeEmpty())
 		})
 	})

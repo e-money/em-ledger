@@ -6,26 +6,23 @@ package rest
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"net/http"
-
-	"github.com/gorilla/mux"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
+	"github.com/gorilla/mux"
+	"net/http"
 )
 
-func RegisterQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
+func RegisterQueryRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc("/market/instruments", queryInstrumentsHandlerFn(cliCtx)).Methods("GET")
 	r.HandleFunc("/market/instrument/{src}/{dst}", queryInstrumentHandlerFn(cliCtx)).Methods("GET")
 	r.HandleFunc("/market/account/{address}", queryByAccountHandlerFn(cliCtx)).Methods("GET")
 
 }
 
-func queryByAccountHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func queryByAccountHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -53,7 +50,7 @@ func queryByAccountHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func queryInstrumentHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func queryInstrumentHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		src, dst := vars["src"], vars["dst"]
@@ -80,7 +77,7 @@ func queryInstrumentHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func queryInstrumentsHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func queryInstrumentsHandlerFn(cliCtx client.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryInstruments)
 

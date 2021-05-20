@@ -1,6 +1,6 @@
 // +build bdd
 
-package emoney
+package emoney_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -25,8 +25,8 @@ var _ = Describe("Restricted denominationsq", func() {
 				type Obj map[string]interface{}
 
 				o := Obj{
-					"Denom": "ungm",
-					"Allowed": []string{
+					"denom": "ungm",
+					"allowed": []string{
 						Key1.GetAddress(),
 					},
 				}

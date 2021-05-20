@@ -1,14 +1,18 @@
 package queries
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/client"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/e-money/em-ledger/x/queries/client/cli"
+	"github.com/e-money/em-ledger/x/queries/client/rest"
 	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"github.com/e-money/em-ledger/x/queries/client/rest"
 	"github.com/e-money/em-ledger/x/queries/types"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -21,68 +25,79 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-type (
-	AppModuleBasic struct{}
+type AppModuleBasic struct{}
 
-	AppModule struct {
-		AppModuleBasic
+type AppModule struct {
+	AppModuleBasic
+	ak AccountKeeper
+	bk BankKeeper
+}
 
-		AccountKeeper AccountKeeper
-	}
-)
+func (amb AppModuleBasic) Name() string { return types.ModuleName }
 
-func NewAppModule(accKeeper AccountKeeper) AppModule {
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+}
+
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+	return nil
+}
+
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+	return nil
+}
+
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+	rest.RegisterRoutes(clientCtx, rtr)
+}
+
+func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
+}
+
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	return nil
+}
+
+func (AppModuleBasic) GetQueryCmd() *cobra.Command {
+	return cli.GetQueryCmd()
+}
+
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+}
+
+func NewAppModule(ak AccountKeeper, bk BankKeeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		AccountKeeper:  accKeeper,
+		ak: ak,
+		bk: bk,
 	}
 }
 
-func (amb AppModuleBasic) Name() string {
-	return types.ModuleName
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
 }
 
-func (amb AppModuleBasic) RegisterCodec(_ *codec.Codec) {}
-
-func (amb AppModuleBasic) DefaultGenesis() json.RawMessage { return nil }
-
-func (amb AppModuleBasic) ValidateGenesis(_ json.RawMessage) error { return nil }
-
-func (amb AppModuleBasic) RegisterRESTRoutes(cliCtx context.CLIContext, router *mux.Router) {
-	rest.RegisterRoutes(cliCtx, router)
-}
-
-func (amb AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command { return nil }
-
-func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	// This module contains queries that should be added directly to some of the SDK standard queries.
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
 	return nil
 }
 
-func (am AppModule) InitGenesis(_ sdk.Context, _ json.RawMessage) []abci.ValidatorUpdate { return nil }
+func (am AppModule) RegisterInvariants(sdk.InvariantRegistry) {}
 
-func (am AppModule) ExportGenesis(_ sdk.Context) json.RawMessage { return nil }
-
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
-
-func (am AppModule) Route() string {
-	return ""
+func (am AppModule) Route() sdk.Route {
+	return sdk.Route{}
 }
 
-func (am AppModule) NewHandler() sdk.Handler {
-	return nil
+func (am AppModule) QuerierRoute() string { return types.QuerierRoute }
+
+func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+	return NewLegacyQuerier(am.ak, am.bk)
 }
 
-func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterQueryServer(cfg.QueryServer(), NewQuerier(am.ak, am.bk))
 }
 
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.AccountKeeper)
-}
+func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-func (am AppModule) BeginBlock(ctx sdk.Context, beginBlock abci.RequestBeginBlock) {}
-
-func (am AppModule) EndBlock(ctx sdk.Context, endBlock abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return nil
+func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
 }

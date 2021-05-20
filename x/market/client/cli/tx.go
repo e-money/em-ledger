@@ -5,20 +5,12 @@
 package cli
 
 import (
-	"bufio"
-
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/spf13/viper"
-
-	"github.com/spf13/cobra"
-
 	"github.com/e-money/em-ledger/x/market/types"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -28,7 +20,7 @@ const (
 )
 
 // GetTxCmd returns the transaction commands for this module
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func GetTxCmd() *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "Market transaction commands",
@@ -38,44 +30,49 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	txCmd.AddCommand(
-		AddLimitOrderCmd(cdc),
-		AddMarketOrderCmd(cdc),
-		CancelOrderCmd(cdc),
-		CancelReplaceOrder(cdc),
+		AddLimitOrderCmd(),
+		AddMarketOrderCmd(),
+		CancelOrderCmd(),
+		CancelReplaceOrder(),
 	)
 	return txCmd
 }
 
-func AddLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
+func AddLimitOrderCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-limit [source-amount] [destination-amount] [client-orderid]",
 		Short: "Create a limit order and send it to the market",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
-			src, err := sdk.ParseCoin(args[0])
+			src, err := sdk.ParseCoinNormalized(args[0])
 			if err != nil {
 				return
 			}
 
-			dst, err := sdk.ParseCoin(args[1])
+			dst, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {
 				return
 			}
 
 			clientOrderID := args[2]
 
-			timeInForce, err := types.TimeInForceFromString(viper.GetString(flag_TimeInForce))
+			tif, err := cmd.Flags().GetString(flag_TimeInForce)
+			if err != nil {
+				return err
+			}
+			timeInForce, err := types.TimeInForceFromString(tif)
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgAddLimitOrder{
-				Owner:         cliCtx.GetFromAddress(),
-				TimeInForce:   timeInForce.String(),
+			msg := &types.MsgAddLimitOrder{
+				Owner:         clientCtx.GetFromAddress().String(),
+				TimeInForce:   timeInForce,
 				Source:        src,
 				Destination:   dst,
 				ClientOrderId: clientOrderID,
@@ -86,33 +83,33 @@ func AddLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
 				return
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
-	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_GoodTilCancel.String(), flag_TimeInForceDescription)
-	cmd = flags.PostCommands(cmd)[0]
+	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(flag_TimeInForce, "GTC", flag_TimeInForceDescription)
 	return cmd
 }
 
-func AddMarketOrderCmd(cdc *codec.Codec) *cobra.Command {
+func AddMarketOrderCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-market [source-denom] [destination-amount] [market-slippage] [client-orderid]",
 		Short: "Create a market order",
 		Long: `Create an order based on latest pricing information. 
 
 Example:
- emcli tx market add-market eeur 300echf 0.05 order12345
+ emd tx market add-market eeur 300echf 0.05 order12345
 `,
 		Args: cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
 			srcDenom := args[0]
 
-			dst, err := sdk.ParseCoin(args[1])
+			dst, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {
 				return
 			}
@@ -124,14 +121,18 @@ Example:
 
 			clientOrderID := args[3]
 
-			timeInForce, err := types.TimeInForceFromString(viper.GetString(flag_TimeInForce))
+			tif, err := cmd.Flags().GetString(flag_TimeInForce)
+			if err != nil {
+				return err
+			}
+			timeInForce, err := types.TimeInForceFromString(tif)
 			if err != nil {
 				return err
 			}
 
-			msg := types.MsgAddMarketOrder{
-				Owner:         cliCtx.GetFromAddress(),
-				TimeInForce:   timeInForce.String(),
+			msg := &types.MsgAddMarketOrder{
+				Owner:         clientCtx.GetFromAddress().String(),
+				TimeInForce:   timeInForce,
 				Source:        srcDenom,
 				Destination:   dst,
 				ClientOrderId: clientOrderID,
@@ -143,62 +144,63 @@ Example:
 				return
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
-	cmd.Flags().String(flag_TimeInForce, types.TimeInForce_ImmediateOrCancel.String(), flag_TimeInForceDescription)
-	cmd = flags.PostCommands(cmd)[0]
+	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(flag_TimeInForce, "IOC", flag_TimeInForceDescription)
 	return cmd
 
 }
 
-func CancelOrderCmd(cdc *codec.Codec) *cobra.Command {
+func CancelOrderCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cancel [client-orderid]",
 		Short: "Cancel an order in the market",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			clientOrderID := args[0]
-
-			msg := types.MsgCancelOrder{
-				Owner:         cliCtx.GetFromAddress(),
-				ClientOrderId: clientOrderID,
-			}
-
-			err := msg.ValidateBasic()
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			clientOrderID := args[0]
+
+			msg := &types.MsgCancelOrder{
+				Owner:         clientCtx.GetFromAddress().String(),
+				ClientOrderId: clientOrderID,
+			}
+
+			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
-	cmd = flags.PostCommands(cmd)[0]
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
+func CancelReplaceOrder() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cancelreplace [original-client-order-id] [source-amount] [destination-amount] [client-orderid]",
 		Short: "Update an existing order",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
 
-			src, err := sdk.ParseCoin(args[1])
+			src, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {
 				return
 			}
 
-			dst, err := sdk.ParseCoin(args[2])
+			dst, err := sdk.ParseCoinNormalized(args[2])
 			if err != nil {
 				return
 			}
@@ -206,8 +208,8 @@ func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
 			origClientOrderID := args[0]
 			newClientOrderID := args[3]
 
-			msg := types.MsgCancelReplaceLimitOrder{
-				Owner:             cliCtx.GetFromAddress(),
+			msg := &types.MsgCancelReplaceLimitOrder{
+				Owner:             clientCtx.GetFromAddress().String(),
 				Source:            src,
 				Destination:       dst,
 				OrigClientOrderId: origClientOrderID,
@@ -219,10 +221,9 @@ func CancelReplaceOrder(cdc *codec.Codec) *cobra.Command {
 				return
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
-
-	cmd = flags.PostCommands(cmd)[0]
+	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

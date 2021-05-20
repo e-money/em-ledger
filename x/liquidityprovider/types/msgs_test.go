@@ -21,12 +21,12 @@ func TestValidation(t *testing.T) {
 
 	msg1 := MsgMintTokens{
 		Amount:            []sdk.Coin{coin1, coin2},
-		LiquidityProvider: sdk.AccAddress("abcd"),
+		LiquidityProvider: "invalidAddress",
 	}
 
 	msg2 := MsgBurnTokens{
 		Amount:            []sdk.Coin{coin1, coin2},
-		LiquidityProvider: sdk.AccAddress("abcd"),
+		LiquidityProvider: "invalidAddress",
 	}
 
 	require.NotNil(t, msg1.ValidateBasic())

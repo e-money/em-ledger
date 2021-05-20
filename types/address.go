@@ -37,8 +37,12 @@ const (
 
 func ConfigureSDK() {
 	config := sdk.GetConfig()
+	SetNetworkPrefix(config)
+	config.Seal()
+}
+
+func SetNetworkPrefix(config *sdk.Config) {
 	config.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
 	config.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
-	config.Seal()
 }

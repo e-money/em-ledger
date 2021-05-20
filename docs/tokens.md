@@ -18,22 +18,21 @@ The list of supported tokens and their respective exchange rates are available a
 ```json
 {
   "_comment": "See https://github.com/e-money/em-ledger/blob/master/docs/tokens.md",
-  "last_updated": "2020-01-01T00:00:00.000000Z",
   "tokens": [
     {
-      "token": "eeur",
+      "token": "EEUR",
       "description": "Interest bearing EUR token",
       "exponent": 6,
       "underlying_currency": "EUR"
     },
     {
-      "token": "echf",
+      "token": "ECHF",
       "description": "Interest bearing CHF token",
       "exponent": 6,
       "underlying_currency": "CHF"
     },
     {
-      "token": "ejpy",
+      "token": "EJPY",
       "description": "Interest bearing JPY token",
       "exponent": 6,
       "underlying_currency": "JPY"
@@ -64,10 +63,10 @@ The current exchange rate from a token to underlying currency can be fetched via
 
 ```json
 {
-  "eeur": {
+  "EEUR": {
     "EUR": 0.999950
   },
-  "echf": {
+  "ECHF": {
     "CHF": 0.999980
   }
 }
@@ -77,7 +76,7 @@ As the rates change slowly, it is typically not necessary to query more than onc
 
 ## Displaying Amounts
 
-To display a `eeur` amount in terms of `EUR`, the following calculation must be made:  
+To display a `EEUR` amount in terms of `EUR`, the following calculation must be made:  
 `EUR_amount = eeur_amount * exchange_rate / 10^eeur_exponent`
 
-The `exponent` for EUR specifies the number of digits to display. For instance, `eeur 1234567890` at an exchange rate of 0.999950 should be displayed as `EUR 123,45` (after rounding down).
+The `exponent` for EUR specifies the number of digits to display. For instance, `EEUR 1234567890` at an exchange rate of 0.999950 should be displayed as `EUR 123.45` (after rounding down).

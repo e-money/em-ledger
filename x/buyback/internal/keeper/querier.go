@@ -20,16 +20,9 @@ func NewQuerier(k Keeper) sdk.Querier {
 	}
 }
 
-type QueryBalanceResponse struct {
-	Balance sdk.Coins `json:"balance" yaml:"balance"`
-}
-
 func queryBalance(ctx sdk.Context, k Keeper) ([]byte, error) {
-	account := k.GetBuybackAccount(ctx)
-
-	response := QueryBalanceResponse{
-		Balance: account.GetCoins(),
+	response := types.QueryBalanceResponse{
+		Balance: k.bankKeeper.GetAllBalances(ctx, k.GetBuybackAccountAddr()),
 	}
-
 	return json.Marshal(response)
 }
