@@ -259,6 +259,7 @@ func (k *Keeper) postNewOrderSingle(
 
 	// Roll back any state changes made by the aggressive FillOrKill order.
 	if *killOrder {
+		// order has not been filled
 		return
 	}
 
@@ -510,17 +511,25 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 // postOrderSpendGas is a deferred function from Order processing
 // NewSingleOrder, NewCancelReplace functions to charge Gas.
 func (k *Keeper) postOrderSpendGas(
-	ctx sdk.Context, order *types.Order, orderGasMeter sdk.GasMeter, callerErr *error,
+	ctx sdk.Context, order *types.Order, orderGasMeter sdk.GasMeter,
+	callerErr *error,
 ) {
-	var stdTrxFee sdk.Gas
-	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
-
+	var stdTrxFee = k.GetTrxFee(ctx)
 	// Order failed
 	if *callerErr != nil || order == nil || order.IsValid() != nil {
 		orderGasMeter.ConsumeGas(
 			stdTrxFee,
-			fmt.Sprintf("cannot cover the erred order %d gas", stdTrxFee),
+			fmt.Sprintf("cannot cover the erred/cancelled order %d gas", stdTrxFee),
 		)
+		return
+	}
+
+	// Non-liquidity adding order
+	if order.TimeInForce != types.TimeInForce_GoodTillCancel {
+		orderGasMeter.ConsumeGas(
+			stdTrxFee, fmt.Sprintf("FOK, IOC orders cost the full gas"),
+		)
+
 		return
 	}
 

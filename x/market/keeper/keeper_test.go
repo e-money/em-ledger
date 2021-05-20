@@ -538,9 +538,12 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 		string(res.Events[0].Attributes[len(res.Events[0].Attributes)-1].GetValue()),
 	)
 
+	stdTrxFee := k.GetTrxFee(ctx)
+	gasMeter := sdk.NewInfiniteGasMeter()
+
 	// Create a fill or kill order that cannot be satisfied by the current market
 	result, err := k.NewMarketOrderWithSlippage(
-		ctx,
+		ctx.WithGasMeter(gasMeter),
 		"gbp",
 		sdk.NewCoin("eur", sdk.NewInt(200)),
 		sdk.ZeroDec(),
@@ -554,6 +557,8 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	require.Equal(t, types.EventTypeMarket, result.Events[0].Type)
 	require.Equal(t, "action", string(result.Events[0].Attributes[0].GetKey()))
 	require.Equal(t, "expire", string(result.Events[0].Attributes[0].GetValue()))
+	require.Equal(t, gasMeter.GasConsumed(), stdTrxFee,
+		"Partially filled FillOrKill costs like a cancelled order")
 
 	// Last order must fail completely due to not being fillable
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -574,10 +579,15 @@ func TestFillOrKillLimitOrder1(t *testing.T) {
 	_, err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
+	stdTrxFee := k.GetTrxFee(ctx)
+	gasMeter := sdk.NewInfiniteGasMeter()
+
 	order2 := order(ctx.BlockTime(), acc1, "200gbp", "200eur")
 	order2.TimeInForce = types.TimeInForce_FillOrKill
-	_, err = k.NewOrderSingle(ctx, order2)
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
 	require.NoError(t, err)
+	require.Equal(t, gasMeter.GasConsumed(), stdTrxFee,
+		"Partially filled FillOrKill costs like a cancelled order")
 
 	// Order must fail completely due to not being fillable
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -593,32 +603,91 @@ func TestFillOrKillLimitOrder1(t *testing.T) {
 	require.Equal(t, acc2Orders[0].Created, ctx.BlockTime())
 }
 
+func TestFillOrKillLimitOrder2Filled(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "500gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+	// Create a tiny market for eur
+	o := order(ctx.BlockTime(), acc2, "100eur", "100gbp")
+	_, err := k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	stdTrxFee := k.GetTrxFee(ctx)
+	gasMeter := sdk.NewInfiniteGasMeter()
+
+	// A successful FOK Order
+	order2 := order(ctx.BlockTime(), acc1, "100gbp", "100eur")
+	order2.TimeInForce = types.TimeInForce_FillOrKill
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+	require.NoError(t, err)
+	require.Equal(t, gasMeter.GasConsumed(), stdTrxFee,
+		"Filled order")
+
+	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("400gbp,100eur"), acc1Bal)
+
+	acc2Bal := bk.GetAllBalances(ctx, acc2.GetAddress())
+	require.Equal(t, coins("400eur,100gbp"), acc2Bal)
+
+	// Test that the order book looks as expected
+	require.Empty(t, k.GetOrdersByOwner(ctx, acc1.GetAddress()))
+	require.Empty(t, k.GetOrdersByOwner(ctx, acc2.GetAddress()))
+}
+
 func TestImmediateOrCancel(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "20gbp")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "20eur")
 
-	var o types.Order
 	var err error
 
-	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
-	_, err = k.NewOrderSingle(ctx, o)
+	o1 := order(ctx.BlockTime(), acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o1)
 	require.NoError(t, err)
 
-	o = order(ctx.BlockTime(), acc1, "2gbp", "2eur")
-	o.TimeInForce = types.TimeInForce_ImmediateOrCancel
-	cid := o.ClientOrderID
-	_, err = k.NewOrderSingle(ctx, o)
+	stdTrxFee := k.GetTrxFee(ctx)
+	gasMeter := sdk.NewInfiniteGasMeter()
+
+	// IOK partially Filled
+	o2 := order(ctx.BlockTime(), acc1, "2gbp", "2eur")
+	o2.TimeInForce = types.TimeInForce_ImmediateOrCancel
+	cid2 := o2.ClientOrderID
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o2)
 	require.NoError(t, err)
-	require.Equal(t, o.Created, ctx.BlockTime())
+	require.Equal(t, o2.Created, ctx.BlockTime())
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
 
 	// Verify that order is not in book
-	order := k.GetOrderByOwnerAndClientOrderId(ctx, acc1.GetAddress().String(), cid)
+	order := k.GetOrderByOwnerAndClientOrderId(ctx, acc1.GetAddress().String(), cid2)
 	require.Nil(t, order)
 
 	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
 	require.Equal(t, coins("19gbp,1eur"), bal1)
+
+	// again o1
+	_, err = k.NewOrderSingle(ctx, o1)
+	require.NoError(t, err)
+
+	// IOK Filled
+	gasMeter = sdk.NewInfiniteGasMeter()
+	o2.Source = sdk.NewCoin("gbp", sdk.NewInt(1))
+	o2.Destination = sdk.NewCoin("eur", sdk.NewInt(1))
+	o2.TimeInForce = types.TimeInForce_ImmediateOrCancel
+	o2.ClientOrderID = cid()
+	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o2)
+	require.NoError(t, err)
+	require.Equal(t, o2.Created, ctx.BlockTime())
+	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+
+	// Verify that order is not in book
+	order = k.GetOrderByOwnerAndClientOrderId(ctx, acc1.GetAddress().String(), o2.ClientOrderID)
+	require.Nil(t, order)
+
+	bal2 := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("18gbp,2eur"), bal2)
 }
 
 func TestInsufficientGas(t *testing.T) {
