@@ -240,7 +240,7 @@ func handlePanic(r interface{}) error {
 // on any order and adds non fill-or-kill orders to the order-book.
 func (k *Keeper) postNewOrderSingle(
 	ctx sdk.Context, orderGasMeter sdk.GasMeter, order *types.Order,
-	commitTrade func(), callerErr *error,
+	commitTrade func(), killOrder *bool, callerErr *error,
 ) {
 	// Catch NewSingleOrder() panics
 	if orderErr := recover(); orderErr != nil {
@@ -258,7 +258,7 @@ func (k *Keeper) postNewOrderSingle(
 	k.postOrderSpendGas(ctx, order, orderGasMeter, callerErr)
 
 	// Roll back any state changes made by the aggressive FillOrKill order.
-	if order.TimeInForce == types.TimeInForce_FillOrKill {
+	if *killOrder {
 		return
 	}
 
@@ -266,6 +266,8 @@ func (k *Keeper) postNewOrderSingle(
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (res *sdk.Result, err error) {
+	// Set this to true to roll back any state changes made by the aggressive order. Used for FillOrKill orders.
+	KillOrder := false
 	ctx, commitTrade := ctx.CacheContext()
 
 	// the transactor's meter
@@ -273,7 +275,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (r
 	// impostor meter that would not panic
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	defer k.postNewOrderSingle(ctx, orderGasMeter, &aggressiveOrder, commitTrade, &err)
+	defer k.postNewOrderSingle(ctx, orderGasMeter, &aggressiveOrder, commitTrade, &KillOrder, &err)
 
 	if err := aggressiveOrder.IsValid(); err != nil {
 		return nil, err
@@ -449,6 +451,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (r
 			addToBook = false
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		case types.TimeInForce_FillOrKill:
+			KillOrder = true
 			ctx = ctx.WithEventManager(sdk.NewEventManager())
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		}
