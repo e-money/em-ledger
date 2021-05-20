@@ -47,6 +47,68 @@ func init() {
 	emtypes.ConfigureSDK()
 }
 
+
+func TestKeeper_calcOrderGas(t *testing.T) {
+	ctx, k, _, _ := createTestComponents(t)
+
+	var (
+		stdTrxFee    sdk.Gas = k.GetTrxFee(ctx)
+		liquidTrxFee sdk.Gas = k.GetLiquidTrxFee(ctx)
+		//liquidIntervalMin int64 = k.GetLiquidityRebateMinutesSpan(ctx)
+	)
+	tests := []struct {
+		name         string
+		ctx          sdk.Context
+		stdTrxFee    sdk.Gas
+		liquidTrxFee sdk.Gas
+		dstFilled    sdk.Int
+		dstAmount    sdk.Int
+		want         sdk.Gas
+	}{
+		{
+			name:      "0% Filled Full Gas",
+			ctx:       ctx,
+			stdTrxFee: stdTrxFee,
+			dstFilled: sdk.NewInt(0),
+			dstAmount: sdk.NewInt(0),
+			want:      liquidTrxFee,
+		},
+		{
+			name:      "100% Filled Full Gas",
+			ctx:       ctx,
+			stdTrxFee: stdTrxFee,
+			dstFilled: sdk.NewInt(1),
+			dstAmount: sdk.NewInt(1),
+			want:      stdTrxFee,
+		},
+		{
+			name:      "10% Filled Full Gas",
+			ctx:       ctx,
+			stdTrxFee: stdTrxFee,
+			dstFilled: sdk.NewInt(10),
+			dstAmount: sdk.NewInt(100),
+			want:      stdTrxFee/10,
+		},
+		{
+			name:      "90% Filled Full Gas",
+			ctx:       ctx,
+			stdTrxFee: stdTrxFee,
+			dstFilled: sdk.NewInt(90),
+			dstAmount: sdk.NewInt(100),
+			want:      sdk.Gas(float64(stdTrxFee) * 0.9),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := k.calcOrderGas(tt.ctx, tt.stdTrxFee, tt.dstFilled,
+				tt.dstAmount); got != tt.want {
+				t.Errorf("calcOrderGas() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBasicTrade(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
