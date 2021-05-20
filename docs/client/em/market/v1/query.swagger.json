@@ -147,6 +147,11 @@
         "created": {
           "type": "string",
           "format": "date-time"
+        },
+        "orig_order_created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "applicable to CancelReplace orders: the creation timestamp of the original\norder."
         }
       }
     },
