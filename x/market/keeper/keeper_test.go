@@ -774,10 +774,10 @@ func TestInsufficientGas(t *testing.T) {
 	var stdTrxFee uint64
 	k.paramStore.Get(ctx, types.KeyTrxFee, &stdTrxFee)
 
-	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
-	t.Log(gasMeter.String())
-	require.Error(t, err)
-	require.True(t, strings.Contains(strings.ToLower(err.Error()), "gas"))
+	require.Panics(t, func() {
+		// Taking away liquidity not enough to cover the full Trx fee
+		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+	})
 	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
 }
 
@@ -863,9 +863,11 @@ func TestSingleOrderPanicFullGas(t *testing.T) {
 	order2 := order(ctx.BlockTime(), acc2, "1eur", "1gbp")
 	// Panic during banking interactions
 	k.bk = nil
-	_, err = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
-	require.Error(t, err)
-	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
+	require.Panics(t, func() {
+		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+	})
+	// Baseapp should charge the appropriate fee
+	require.Equal(t, sdk.Gas(0), gasMeter.GasConsumed())
 }
 
 func TestPartiallyLiquidLimitOrderGas(t *testing.T) {
@@ -1310,8 +1312,6 @@ func TestReplaceMarketOrderErrGas(t *testing.T) {
 
 	trxPms := k.GetParams(ctx)
 	var stdTrxFee uint64 = trxPms.GetTrxFee()
-	//var liquidTrxFee uint64 = trxPms.GetLiquidTrxFee()
-	//var qualificationMin int64 = trxPms.GetLiquidityRebateMinutesSpan()
 
 	var o types.Order
 	var err error
@@ -1362,10 +1362,11 @@ func TestReplaceMarketOrderErrGas(t *testing.T) {
 
 	gasMeter := sdk.NewInfiniteGasMeter()
 	ctx = ctx.WithGasMeter(gasMeter)
-	// panic NewSingleOrder
 	k.bk = nil
-	_, err = k.CancelReplaceMarketOrder(ctx, mcrm)
-	require.Error(t, err)
+	require.Panics(t, func() {
+		// panic CancelReplace
+		k.CancelReplaceMarketOrder(ctx, mcrm)
+	})
 	require.Equal(t, stdTrxFee, ctx.GasMeter().GasConsumed())
 }
 

@@ -242,19 +242,6 @@ func (k *Keeper) postNewOrderSingle(
 	ctx sdk.Context, orderGasMeter sdk.GasMeter, order *types.Order,
 	commitTrade func(), killOrder *bool, callerErr *error,
 ) {
-	// Catch NewSingleOrder() panics
-	if orderErr := recover(); orderErr != nil {
-		// set NewSingleOrder() error value
-		*callerErr = handlePanic(orderErr)
-	}
-
-	defer func() {
-		// Catch Sdk panics i.e. store related
-		if sdkErr := recover(); sdkErr != nil {
-			*callerErr = handlePanic(sdkErr)
-		}
-	}()
-
 	k.postOrderSpendGas(ctx, order, orderGasMeter, callerErr)
 
 	// Roll back any state changes made by the aggressive FillOrKill order.
