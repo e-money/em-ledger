@@ -14,7 +14,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	embank "github.com/e-money/em-ledger/hooks/bank"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"strings"
 	"testing"
@@ -265,18 +264,14 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 		ak = authkeeper.NewAccountKeeper(
 			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 		)
-		allowAllDenoms = embank.RestrictedKeeperFunc(func(context sdk.Context) types2.RestrictedDenoms {
-			return types2.RestrictedDenoms{}
-		})
-		bk = embank.Wrap(bankkeeper.NewBaseKeeper(
-			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
-		), allowAllDenoms)
+
+		bk = embank.Wrap(bankkeeper.NewBaseKeeper(encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr))
 	)
 
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))
 	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
 
-	marketKeeper := market.NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{})
+	marketKeeper := market.NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, bk)
 
 	keeper := NewKeeper(encConfig.Marshaler, buybackKey, marketKeeper, ak, mockStakingKeeper{}, bk)
 	keeper.SetUpdateInterval(ctx, time.Hour)
@@ -325,20 +320,10 @@ func randomAddress() sdk.AccAddress {
 	return tmrand.Bytes(sdk.AddrLen)
 }
 
-var (
-	_ types.RestrictedKeeper = (*mockAuthority)(nil)
-	_ keeper.StakingKeeper   = (*mockStakingKeeper)(nil)
-)
+var _ keeper.StakingKeeper = (*mockStakingKeeper)(nil)
 
-type (
-	mockAuthority     struct{}
-	mockStakingKeeper struct{}
-)
+type mockStakingKeeper struct{}
 
 func (mockStakingKeeper) BondDenom(sdk.Context) string {
 	return stakingDenom
-}
-
-func (mockAuthority) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
-	return types2.RestrictedDenoms{}
 }

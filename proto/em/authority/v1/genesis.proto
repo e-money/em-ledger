@@ -13,12 +13,7 @@ message GenesisState {
     (gogoproto.moretags) = "yaml:\"key\""
   ];
 
-  repeated RestrictedDenom restricted_denoms = 2 [
-    (gogoproto.moretags) = "yaml:\"restricted_denoms\"",
-    (gogoproto.nullable) = false
-  ];
-
-  repeated cosmos.base.v1beta1.DecCoin min_gas_prices = 3 [
+  repeated cosmos.base.v1beta1.DecCoin min_gas_prices = 2 [
     (gogoproto.moretags) = "yaml:\"min_gas_prices\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
     (gogoproto.nullable) = false
