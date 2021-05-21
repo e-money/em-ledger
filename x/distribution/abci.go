@@ -20,7 +20,6 @@ var (
 	previousProposerKey = []byte("emdistr/previousproposer")
 )
 
-// todo (reviewer) : using the same name as sdk module to prevent adding both.
 const ModuleName = distrtypes.ModuleName
 
 type AccountKeeper interface {
