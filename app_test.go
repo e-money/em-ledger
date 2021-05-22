@@ -29,7 +29,7 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	}
 
 	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
-	authorityState := authority.NewGenesisState(rand.Bytes(sdk.AddrLen), nil, sdk.NewDecCoins())
+	authorityState := authority.NewGenesisState(rand.Bytes(sdk.AddrLen), sdk.NewDecCoins())
 	genesisState[authority.ModuleName] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")

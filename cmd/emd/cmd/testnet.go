@@ -40,7 +40,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 )
 
 const stakingToken = "ungm"
@@ -473,7 +472,7 @@ func createInflationGenesis() json.RawMessage {
 }
 
 func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
-	gen := authority.NewGenesisState(akey, []emauthtypes.RestrictedDenom{}, sdk.NewDecCoins())
+	gen := authority.NewGenesisState(akey, sdk.NewDecCoins())
 
 	bz, err := json.Marshal(gen)
 	if err != nil {
@@ -524,16 +523,16 @@ func createTestBep3Genesis() json.RawMessage {
 				SupplyLimit: bep3types.SupplyLimit{
 					Limit:          limit,
 					TimeLimited:    false,
-					TimePeriod:     int64(time.Hour*24),
+					TimePeriod:     int64(time.Hour * 24),
 					TimeBasedLimit: sdk.ZeroInt(),
 				},
-				Active:        true,
-				DeputyAddress: depBech32Addr,
-				FixedFee:      sdk.NewInt(bep3types.DeputyFee),
-				MinSwapAmount: sdk.OneInt(),
-				MaxSwapAmount: limit,
-				SwapTimestamp: time.Now().Unix(),
-				SwapTimeSpanMin:  24*3*60, // 3 days in minutes
+				Active:          true,
+				DeputyAddress:   depBech32Addr,
+				FixedFee:        sdk.NewInt(bep3types.DeputyFee),
+				MinSwapAmount:   sdk.OneInt(),
+				MaxSwapAmount:   limit,
+				SwapTimestamp:   time.Now().Unix(),
+				SwapTimeSpanMin: 24 * 3 * 60, // 3 days in minutes
 			}
 	}
 

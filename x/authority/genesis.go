@@ -10,11 +10,10 @@ import (
 	"github.com/e-money/em-ledger/x/authority/types"
 )
 
-func NewGenesisState(authorityKey sdk.AccAddress, restrictedDenoms []types.RestrictedDenom, gasPrices sdk.DecCoins) types.GenesisState {
+func NewGenesisState(authorityKey sdk.AccAddress, gasPrices sdk.DecCoins) types.GenesisState {
 	return types.GenesisState{
-		AuthorityKey:     authorityKey.String(),
-		RestrictedDenoms: restrictedDenoms,
-		MinGasPrices:     gasPrices,
+		AuthorityKey: authorityKey.String(),
+		MinGasPrices: gasPrices,
 	}
 }
 
@@ -28,7 +27,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, state types.GenesisState) error
 		return sdkerrors.Wrap(err, "authority key")
 	}
 	keeper.SetAuthority(ctx, authKey)
-	keeper.SetRestrictedDenoms(ctx, state.RestrictedDenoms)
 	keeper.SetGasPrices(ctx, authKey, state.MinGasPrices)
 	return nil
 }

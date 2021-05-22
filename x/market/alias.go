@@ -63,7 +63,6 @@ type (
 	MsgCancelOrder             = types.MsgCancelOrder
 	MsgCancelReplaceLimitOrder = types.MsgCancelReplaceLimitOrder
 
-	AccountKeeper    = types.AccountKeeper
-	BankKeeper       = types.BankKeeper
-	RestrictedKeeper = types.RestrictedKeeper
+	AccountKeeper = types.AccountKeeper
+	BankKeeper    = types.BankKeeper
 )

@@ -7,8 +7,6 @@
 - [em/authority/v1/authority.proto](#em/authority/v1/authority.proto)
     - [Authority](#em.authority.v1.Authority)
     - [GasPrices](#em.authority.v1.GasPrices)
-    - [RestrictedDenom](#em.authority.v1.RestrictedDenom)
-    - [RestrictedDenoms](#em.authority.v1.RestrictedDenoms)
   
 - [em/authority/v1/genesis.proto](#em/authority/v1/genesis.proto)
     - [GenesisState](#em.authority.v1.GenesisState)
@@ -175,37 +173,6 @@
 
 
 
-
-<a name="em.authority.v1.RestrictedDenom"></a>
-
-### RestrictedDenom
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `denom` | [string](#string) |  | todo (reviewer) : moved from /types/ todo (reviewer) : please note the lower case json/yaml attribute names now (convention) |
-| `allowed` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="em.authority.v1.RestrictedDenoms"></a>
-
-### RestrictedDenoms
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `denoms` | [RestrictedDenom](#em.authority.v1.RestrictedDenom) | repeated |  |
-
-
-
-
-
  <!-- end messages -->
 
  <!-- end enums -->
@@ -232,7 +199,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
-| `restricted_denoms` | [RestrictedDenom](#em.authority.v1.RestrictedDenom) | repeated |  |
 | `min_gas_prices` | [cosmos.base.v1beta1.DecCoin](#cosmos.base.v1beta1.DecCoin) | repeated |  |
 
 
