@@ -304,7 +304,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	if aggressiveOrder.IsFilled() {
 		types.EmitExpireEvent(ctx, aggressiveOrder)
 	} else {
-		// Check whether this denomination is restricted and thus cannot create passive orders
 		addToBook := true
 
 		switch aggressiveOrder.TimeInForce {
