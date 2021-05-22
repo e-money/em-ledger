@@ -50,5 +50,3 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
 	state.Params.CommunityTax = sdk.ZeroDec()
 	return cdc.MustMarshalJSON(state)
 }
-
-// todo (reviewer) : IMHO this modules would fit better into x/ than hooks as it contains an alternative/modified impl than adding callbacks

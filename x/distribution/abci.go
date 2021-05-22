@@ -38,13 +38,12 @@ type DistributionKeeper interface {
 
 // set the proposer for determining distribution during endblock
 // and distribute rewards for the previous block
-// todo (reviewer): the logic in the this function was not modified. Please ensure that it still is what you need.
 func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKeeper, ak AccountKeeper, bk bankkeeper.ViewKeeper, db db.DB) {
 	defer telemetry.ModuleMeasureSince(ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 
 	batch := apptypes.GetCurrentBatch(ctx)
 	if batch == nil {
-		panic("batch object not found") // todo (reviewer): panic in begin blocker is not handled downstream and will crash the node.
+		panic("batch object not found")
 	}
 
 	// determine the total power signing the block
@@ -56,15 +55,14 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKee
 		}
 	}
 
-	previousProposer, err := db.Get(previousProposerKey)
-	// todo (reviewer) : a panic in the begin blocker will crash the node. It is not "recovered" anywhere downstream
-	if err != nil {
-		panic(err)
-	}
-
 	// TODO this is Tendermint-dependent
 	// ref https://github.com/cosmos/cosmos-sdk/issues/3095
 	if ctx.BlockHeight() > 1 {
+		previousProposer, err := db.Get(previousProposerKey)
+		if err != nil {
+			panic(err)
+		}
+
 		feeCollector := ak.GetModuleAddress(auth.FeeCollectorName)
 		coins := bk.GetAllBalances(ctx, feeCollector)
 
@@ -74,6 +72,5 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k DistributionKee
 		}
 	}
 
-	previousProposer = req.Header.ProposerAddress
-	batch.Set(previousProposerKey, previousProposer)
+	batch.Set(previousProposerKey, req.Header.ProposerAddress)
 }
