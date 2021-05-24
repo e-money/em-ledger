@@ -427,6 +427,8 @@ func NewApp(
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
+	sdk.ChainAnteDecorators(app.marketKeeper)
+
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {

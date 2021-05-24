@@ -17,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -868,6 +869,70 @@ func TestSingleOrderPanicFullGas(t *testing.T) {
 	})
 	// Baseapp should charge the appropriate fee
 	require.Equal(t, sdk.Gas(0), gasMeter.GasConsumed())
+}
+
+func TestAnteHandlerNoTrx(t *testing.T) {
+	ctx, k, _, _ := createTestComponents(t)
+	sud := ante.NewSetUpContextDecorator()
+	anteHandler := sdk.ChainAnteDecorators(sud, k)
+
+	encodingConfig := MakeTestEncodingConfig()
+
+	clientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithChainID("testing")
+
+	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
+	txf := clienttx.NewFactoryCLI(clientCtx, flagSet).
+		WithMemo("PanicLimitOrder").
+		WithFees("100000NGM")
+
+	msg := &types.MsgAddLimitOrder{}
+	txb, err := clienttx.BuildUnsignedTx(txf, msg)
+	require.NoError(t, err)
+
+	gasMeter := sdk.NewInfiniteGasMeter()
+	_, err = anteHandler(ctx.WithGasMeter(gasMeter), txb.GetTx(), false)
+	require.NoError(t, err)
+	require.Equal(t, gasMeter.GasConsumed(), sdk.Gas(0))
+}
+
+type PanicDecorator struct{}
+
+func (pd PanicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	panic("market order panic")
+}
+
+func TestChargeStdFeeAnteHandlerPanic(t *testing.T) {
+	ctx, k, _, _ := createTestComponents(t)
+	sud := ante.NewSetUpContextDecorator()
+
+	anteHandler := sdk.ChainAnteDecorators(sud, k, PanicDecorator{})
+
+	encodingConfig := MakeTestEncodingConfig()
+
+	clientCtx := client.Context{}.
+		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithTxConfig(encodingConfig.TxConfig).
+		WithChainID("testing")
+
+	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
+	txf := clienttx.NewFactoryCLI(clientCtx, flagSet)
+
+	msg := &types.MsgAddLimitOrder{}
+	txb, err := clienttx.BuildUnsignedTx(txf, msg)
+	require.NoError(t, err)
+
+	stdTrxFee := k.GetTrxFee(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
+	gasMeter := sdk.NewInfiniteGasMeter()
+	ctx = ctx.WithGasMeter(gasMeter)
+
+	ctx, err = anteHandler(ctx, txb.GetTx(), false)
+	require.Error(t, err)
+	require.Equal(t, ctx.GasMeter().GasConsumed(), stdTrxFee)
 }
 
 func TestPartiallyLiquidLimitOrderGas(t *testing.T) {

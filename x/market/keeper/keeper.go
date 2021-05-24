@@ -6,11 +6,11 @@ package keeper
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"math"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -229,11 +229,36 @@ func (k *Keeper) calcReplaceOrderGas(
 	return stdTrxFee
 }
 
-func handlePanic(r interface{}) error {
-	fmt.Println(r)
-	fmt.Println(string(debug.Stack()))
+// AnteHandle fulfills the AnteDecorator interface for the market module to
+// charge the standard gas for panicked orders.
+func (k *Keeper) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (anteCtx sdk.Context, anteErr error) {
+	// all transactions must implement GasTx
+	gasTx, ok := tx.(ante.GasTx)
+	if !ok {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
+	}
 
-	return fmt.Errorf("%v", r)
+	defer func() {
+		// About recover():
+		// https://github.com/cosmos/cosmos-sdk/blob/45265b1ea6251e50b28a96eea954edd4abbefd3a/x/auth/ante/setup.go#L45
+		if r := recover(); r != nil {
+			fmt.Println("*** Market ante handle panic:")
+			stdTrxFee := k.GetTrxFee(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
+
+			anteCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
+
+			// charge StdFee
+			anteCtx.GasMeter().ConsumeGas(stdTrxFee, "Panicked Market Order")
+
+			log := fmt.Sprintf("market order panic: %v gasWanted: %d, gasUsed: %d",
+				r, gasTx.GetGas(), anteCtx.GasMeter().GasConsumed())
+
+			// send error downstream with required gas info
+			anteErr = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, log)
+		}
+	}()
+
+	return next(ctx, tx, simulate)
 }
 
 // postNewOrderSingle is a deferred function for NewOrderSingle. It spends gas
