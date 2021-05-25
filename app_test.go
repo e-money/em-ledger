@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -56,7 +57,7 @@ func coins(s string) sdk.Coins {
 	return coins
 }
 
-func TestAppLiquidOrder0Gas(t *testing.T) {
+func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
 	ctx, app, enc := setupMarketApp(t,  []func(*baseapp.BaseApp){}...)
 	require.NotNil(t, app)
 
@@ -67,22 +68,19 @@ func TestAppLiquidOrder0Gas(t *testing.T) {
 	)
 	genesisState[authority.ModuleName] = enc.Marshaler.MustMarshalJSON(&authorityState)
 
-	keystore, err := keyring.New(t.Name(), keyring.BackendMemory, "", nil)
-	require.NoError(t, err)
+	keystore1, acct1 := getNewAcctInfo(t)
+	keystore2, acct2 := getNewAcctInfo(t)
 
-	uid := "theKeyName"
-
-	info, _, err := keystore.NewMnemonic(
-		uid, keyring.English, sdk.FullFundraiserPath, hd.Secp256k1,
-	)
-	require.NoError(t, err)
-	t.Log(info.GetAddress().String())
-
-	supply := coins("100000chf,100000eur,1000000ngm")
+	bal1 := coins("100000chf,1000000ngm")
+	bal2 := coins("100000eur,1000000ngm")
+	supply := coins("100000chf,100000eur,2000000ngm")
 
 	bankState := banktypes.NewGenesisState(
 		banktypes.DefaultParams(),
-		[]banktypes.Balance{{info.GetAddress().String(), supply}},
+		[]banktypes.Balance{
+			{acct1.GetAddress().String(), bal1},
+			{acct2.GetAddress().String(), bal2},
+		},
 		supply,
 		[]banktypes.Metadata{},
 	)
@@ -105,53 +103,113 @@ func TestAppLiquidOrder0Gas(t *testing.T) {
 	require.NotNil(t, total)
 
 	app.accountKeeper.SetAccount(
-		ctx, app.accountKeeper.NewAccountWithAddress(ctx, info.GetAddress()),
+		ctx, app.accountKeeper.NewAccountWithAddress(ctx, acct1.GetAddress()),
 	)
-	acci := app.accountKeeper.GetAccount(ctx, info.GetAddress())
-	t.Log(acci.GetAddress().String())
-	require.NotNil(t, acci)
-	require.Equal(t, acci.GetAddress().String(), info.GetAddress().String())
+	app.accountKeeper.SetAccount(
+		ctx, app.accountKeeper.NewAccountWithAddress(ctx, acct2.GetAddress()),
+	)
 
-	err = app.bankKeeper.SetBalances(
-		ctx, info.GetAddress(),	coins("250000ngm,50000chf"))
-	require.NoError(t, err)
-
+	//
+	// Liquid 0 Gas Cost
+	//
 	msg := &types.MsgAddLimitOrder{
 		TimeInForce:   types.TimeInForce_GoodTillCancel,
-		Owner:         info.GetAddress().String(),
+		Owner:         acct1.GetAddress().String(),
 		Source:        sdk.NewCoin("chf", sdk.NewInt(50000)),
-		Destination:   sdk.NewCoin("eur", sdk.NewInt(60000)),
-		ClientOrderId: "testAddLimitOrder-chf-eur",
+		Destination:   sdk.NewCoin("eur", sdk.NewInt(50000)),
+		ClientOrderId: "testAddLimitOrder-chf-eur1",
 	}
+
+	tx := getSignedTrx(ctx, t, app.accountKeeper, enc, msg, keystore1, acct1, 0, 0)
+
+	gasInfo, _, err := app.Deliver(enc.TxConfig.TxEncoder(), tx)
+	require.NoError(t, err)
+	require.Equal(t, gasInfo.GasUsed, sdk.Gas(0))
+
+	//
+	// Destination denomination xxx does not exist and errs, full gas
+	//
+	msg2 := &types.MsgAddLimitOrder{
+		TimeInForce:   types.TimeInForce_GoodTillCancel,
+		Owner:         acct1.GetAddress().String(),
+		Source:        sdk.NewCoin("chf", sdk.NewInt(50000)),
+		Destination:   sdk.NewCoin("xxx", sdk.NewInt(50000)),
+		ClientOrderId: "testAddLimitOrder-chf-eur2",
+	}
+
+	tx = getSignedTrx(ctx, t, app.accountKeeper, enc, msg2, keystore1, acct1, 0, 1)
+
+	gasInfo, _, err = app.Deliver(enc.TxConfig.TxEncoder(), tx)
+	require.Error(t, err)
+	require.Equal(t, gasInfo.GasUsed, sdk.Gas(25000))
+
+	msg3 := &types.MsgAddLimitOrder{
+		TimeInForce:   types.TimeInForce_GoodTillCancel,
+		Owner:         acct2.GetAddress().String(),
+		Source:        sdk.NewCoin("eur", sdk.NewInt(50000)),
+		Destination:   sdk.NewCoin("chf", sdk.NewInt(50000)),
+		ClientOrderId: "testAddLimitOrder-eur-chf",
+	}
+
+	tx = getSignedTrx(ctx, t, app.accountKeeper, enc, msg3, keystore2, acct2, 0, 0)
+
+	gasInfo, _, err = app.Deliver(enc.TxConfig.TxEncoder(), tx)
+	require.NoError(t, err)
+	require.Equal(t, gasInfo.GasUsed, sdk.Gas(25000))
+}
+
+func getSignedTrx(
+	ctx sdk.Context,
+	t *testing.T, ak types.AccountKeeper, enc EncodingConfig,
+	msg *types.MsgAddLimitOrder,
+	keystore keyring.Keyring, acct keyring.Info,
+	accountNumber, sequence uint64,
+) authsign.Tx {
+	acci := ak.GetAccount(ctx, acct.GetAddress())
+	require.Equal(t, acci.GetAddress().String(), acct.GetAddress().String())
 
 	txBuilder := enc.TxConfig.NewTxBuilder()
 	txBuilder.SetMsgs(msg)
 	txBuilder.SetFeeAmount(coins("25000ngm"))
 	txBuilder.SetGasLimit(213456)
-	txBuilder.SetMemo("TestAppLiquidOrder0Gas")
+	txBuilder.SetMemo("TestMarketOrder")
 
 	txFactory := clienttx.Factory{}.
 		WithChainID("").
 		WithTxConfig(enc.TxConfig).
 		WithSignMode(signing.SignMode_SIGN_MODE_DIRECT).
-		WithAccountNumber(acci.GetAccountNumber()).
-		WithSequence(acci.GetSequence()).
+		WithAccountNumber(accountNumber).
+		WithSequence(sequence).
 		WithKeybase(keystore)
 
 	tx := txBuilder.GetTx()
 	signers := tx.GetSigners()
-	require.Equal(t, signers[0].String(), info.GetAddress().String())
+	require.Equal(t, signers[0].String(), acct.GetAddress().String())
 
-	err = authclient.SignTx(txFactory, client.Context{}, info.GetName(),
-		txBuilder, true, true)
+	err := authclient.SignTx(
+		txFactory, client.Context{}, acct.GetName(),
+		txBuilder, true, true,
+	)
 	require.NoError(t, err)
 
 	_, err = enc.TxConfig.TxEncoder()(txBuilder.GetTx())
 	require.NoError(t, err)
 
-	gasInfo, _, err := app.Deliver(enc.TxConfig.TxEncoder(), tx)
+	return tx
+}
+
+func getNewAcctInfo(t *testing.T) (keyring.Keyring, keyring.Info) {
+	keystore, err := keyring.New(t.Name()+"1", keyring.BackendMemory, "", nil)
 	require.NoError(t, err)
-	require.Equal(t, gasInfo.GasUsed, sdk.Gas(0))
+
+	uid := "theKeyName"
+
+	info, _, err := keystore.NewMnemonic(
+		uid, keyring.English, sdk.FullFundraiserPath, hd.Secp256k1,
+	)
+	require.NoError(t, err)
+
+	return keystore, info
 }
 
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {

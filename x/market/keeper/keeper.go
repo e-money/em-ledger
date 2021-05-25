@@ -241,25 +241,25 @@ func (k Keeper) AnteHandle(
 	}
 
 	defer func() {
-		// Set gas meter to 0 before running market messages
-		// Set limit to what the user requested
-		anteCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
-
-		// About recover():
-		// https://github.com/cosmos/cosmos-sdk/blob/45265b1ea6251e50b28a96eea954edd4abbefd3a/x/auth/ante/setup.go#L45
-		if r := recover(); r != nil {
-			stdTrxFee := k.GetTrxFee(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
-
-			// charge StdFee
-			anteCtx.GasMeter().ConsumeGas(stdTrxFee, "Panicked Market Order")
-
-			log := fmt.Sprintf("market order panic: %v gasWanted: %d, gasUsed: %d",
-				r, gasTx.GetGas(), anteCtx.GasMeter().GasConsumed())
-
-			// send error downstream with required gas info
-			// an alternative pattern is to issue panic with the updated error
-			anteErr = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, log)
+		// tx -> messages have passed validation
+		msgs := tx.GetMsgs()
+		for _, msg := range msgs {
+			switch msg.Type() {
+			case types.MsgAddLimitOrder{}.Type():
+			case types.MsgAddMarketOrder{}.Type():
+			case types.MsgCancelOrder{}.Type():
+			case types.MsgCancelReplaceLimitOrder{}.Type():
+			case types.MsgCancelReplaceMarketOrder{}.Type():
+				continue
+			default:
+				// not a market transaction
+				return
+			}
 		}
+
+		// Set gas meter to 0 before running market messages
+		// Set limit to the user value
+		anteCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
 	}()
 
 	return next(ctx, tx, simulate)
