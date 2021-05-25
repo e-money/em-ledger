@@ -70,9 +70,9 @@ import (
 	"path/filepath"
 	"time"
 
-	emdistr "github.com/e-money/em-ledger/hooks/distribution"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/buyback"
+	emdistr "github.com/e-money/em-ledger/x/distribution"
 	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
