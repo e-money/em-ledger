@@ -231,7 +231,9 @@ func (k *Keeper) calcReplaceOrderGas(
 
 // AnteHandle fulfills the AnteDecorator interface for the market module to
 // charge the standard gas for panicked orders.
-func (k *Keeper) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (anteCtx sdk.Context, anteErr error) {
+func (k Keeper) AnteHandle(
+	ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler,
+) (anteCtx sdk.Context, anteErr error) {
 	// all transactions must implement GasTx
 	gasTx, ok := tx.(ante.GasTx)
 	if !ok {
@@ -239,13 +241,14 @@ func (k *Keeper) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.
 	}
 
 	defer func() {
+		// Set gas meter to 0 before running market messages
+		// Set limit to what the user requested
+		anteCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
+
 		// About recover():
 		// https://github.com/cosmos/cosmos-sdk/blob/45265b1ea6251e50b28a96eea954edd4abbefd3a/x/auth/ante/setup.go#L45
 		if r := recover(); r != nil {
-			fmt.Println("*** Market ante handle panic:")
 			stdTrxFee := k.GetTrxFee(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
-
-			anteCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
 
 			// charge StdFee
 			anteCtx.GasMeter().ConsumeGas(stdTrxFee, "Panicked Market Order")
@@ -254,6 +257,7 @@ func (k *Keeper) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.
 				r, gasTx.GetGas(), anteCtx.GasMeter().GasConsumed())
 
 			// send error downstream with required gas info
+			// an alternative pattern is to issue panic with the updated error
 			anteErr = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, log)
 		}
 	}()

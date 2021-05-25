@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -422,12 +423,11 @@ func NewApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
-		ante.NewAnteHandler(
-			app.accountKeeper, app.bankKeeper, ante.DefaultSigVerificationGasConsumer,
-			encodingConfig.TxConfig.SignModeHandler(),
+		getAnteHandler(
+			app.accountKeeper, app.bankKeeper,
+			encodingConfig.TxConfig.SignModeHandler(), app.marketKeeper,
 		),
 	)
-	sdk.ChainAnteDecorators(app.marketKeeper)
 
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -641,6 +641,32 @@ func (app EMoneyApp) SetMinimumGasPrices(gasPricesStr string) (err error) {
 
 	baseapp.SetMinGasPrices(gasPricesStr)(app.BaseApp)
 	return
+}
+
+func getAnteHandler(
+	ak authkeeper.AccountKeeper, bk bankkeeper.Keeper,
+	signModeHandler signing.SignModeHandler, marketAnteHandler sdk.AnteDecorator,
+) sdk.AnteHandler {
+	return sdk.ChainAnteDecorators(
+		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
+		ante.NewRejectExtensionOptionsDecorator(),
+		ante.NewMempoolFeeDecorator(),
+		ante.NewValidateBasicDecorator(),
+		ante.TxTimeoutHeightDecorator{},
+		ante.NewValidateMemoDecorator(ak),
+		ante.NewConsumeGasForTxSizeDecorator(ak),
+		ante.NewRejectFeeGranterDecorator(),
+		ante.NewSetPubKeyDecorator(ak),
+		ante.NewValidateSigCountDecorator(ak),
+		ante.NewDeductFeeDecorator(ak, bk),
+		ante.NewSigGasConsumeDecorator(
+			ak, ante.DefaultSigVerificationGasConsumer,
+		),
+		ante.NewSigVerificationDecorator(ak, signModeHandler),
+		ante.NewIncrementSequenceDecorator(ak),
+		// last to execute
+		marketAnteHandler,
+	)
 }
 
 func init() {
