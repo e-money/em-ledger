@@ -67,6 +67,7 @@ MsgCancelReplaceLimitOrder struct {
   Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
   OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
   NewClientOrderId  string         `json:"new_client_order_id" yaml:"new_client_order_id"`
+  TimeInForce       string         `json:"time_in_force" yaml:"time_in_force"`
   Source            sdk.Coin       `json:"source" yaml:"source"`
   Destination       sdk.Coin       `json:"destination" yaml:"destination"`
 }

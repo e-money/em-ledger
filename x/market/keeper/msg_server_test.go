@@ -304,6 +304,7 @@ func TestCancelReplaceLimitOrder(t *testing.T) {
 				Owner:             ownerAddr.String(),
 				OrigClientOrderId: "origClientID",
 				NewClientOrderId:  "myNewClientID",
+				TimeInForce:       types.TimeInForce_ImmediateOrCancel,
 				Source:            sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
@@ -321,7 +322,7 @@ func TestCancelReplaceLimitOrder(t *testing.T) {
 				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
 			}},
 			expOrder: types.Order{
-				TimeInForce:       types.TimeInForce_GoodTillCancel,
+				TimeInForce:       types.TimeInForce_ImmediateOrCancel,
 				Owner:             ownerAddr.String(),
 				ClientOrderID:     "myNewClientID",
 				Source:            sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
@@ -330,6 +331,17 @@ func TestCancelReplaceLimitOrder(t *testing.T) {
 				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 				DestinationFilled: sdk.ZeroInt(),
 			},
+		},
+		"Time In Force invalid": {
+			req: &types.MsgCancelReplaceLimitOrder{
+				Owner:             ownerAddr.String(),
+				OrigClientOrderId: "origClientID",
+				NewClientOrderId:  "myNewClientID",
+				TimeInForce:       -1,
+				Source:            sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
+				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
+			},
+			expErr: true,
 		},
 		"owner missing": {
 			req: &types.MsgCancelReplaceLimitOrder{

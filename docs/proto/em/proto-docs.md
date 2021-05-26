@@ -1373,6 +1373,7 @@
 | `owner` | [string](#string) |  |  |
 | `original_client_order_id` | [string](#string) |  |  |
 | `new_client_order_id` | [string](#string) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
 | `source` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 

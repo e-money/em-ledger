@@ -208,8 +208,19 @@ func CancelReplaceOrder() *cobra.Command {
 			origClientOrderID := args[0]
 			newClientOrderID := args[3]
 
+			tif, err := cmd.Flags().GetString(flag_TimeInForce)
+			if err != nil {
+				return err
+			}
+
+			timeInForce, err := types.TimeInForceFromString(tif)
+			if err != nil {
+				return err
+			}
+
 			msg := &types.MsgCancelReplaceLimitOrder{
 				Owner:             clientCtx.GetFromAddress().String(),
+				TimeInForce:       timeInForce,
 				Source:            src,
 				Destination:       dst,
 				OrigClientOrderId: origClientOrderID,
@@ -225,5 +236,7 @@ func CancelReplaceOrder() *cobra.Command {
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(flag_TimeInForce, "GTC", flag_TimeInForceDescription)
+
 	return cmd
 }
