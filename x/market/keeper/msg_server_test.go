@@ -113,34 +113,40 @@ func TestAddLimitOrder(t *testing.T) {
 func TestAddMarketOrder(t *testing.T) {
 	var (
 		ownerAddr        = randomAccAddress()
-		gotDenom         string
+		gotSrc 			 sdk.Coin
 		gotDst           sdk.Coin
 		gotMaxSlippage   sdk.Dec
-		gotOwner         sdk.AccAddress
-		gotTimeInForce   types.TimeInForce
-		gotClientOrderId string
+		gotOrder         types.Order
 	)
 
 	keeper := marketKeeperMock{}
 	svr := NewMsgServerImpl(&keeper)
 
 	specs := map[string]struct {
-		req       *types.MsgAddMarketOrder
-		mockFn    func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error)
-		expErr    bool
-		expEvents sdk.Events
+		req                      *types.MsgAddMarketOrder
+		mockAddLimitOrderFn      func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
+		mockGetSrcFromSlippageFn func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error)
+		expErr                   bool
+		expSrc                   sdk.Coin
+		expEvents                sdk.Events
+		expOrder                 types.Order
 	}{
 		"all good": {
 			req: &types.MsgAddMarketOrder{
 				Owner:         ownerAddr.String(),
 				ClientOrderId: "myClientIOrderID",
 				TimeInForce:   types.TimeInForce_FillOrKill,
-				Source:        "eur",
+				Source:        "eeur",
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 				MaxSlippage:   sdk.NewDec(10),
 			},
-			mockFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
-				gotDenom, gotDst, gotMaxSlippage, gotOwner, gotTimeInForce, gotClientOrderId = srcDenom, dst, maxSlippage, owner, timeInForce, clientOrderId
+			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
+				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
+				gotDst, gotMaxSlippage = dst, maxSlippage
+				return gotSrc, nil
+			},
+			mockAddLimitOrderFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+				gotOrder = aggressiveOrder
 				return &sdk.Result{
 					Events: []abcitypes.Event{{
 						Type:       "testing",
@@ -152,13 +158,30 @@ func TestAddMarketOrder(t *testing.T) {
 				Type:       "testing",
 				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
 			}},
+			expSrc: sdk.NewCoin("eeur", sdk.OneInt()),
+			expOrder: types.Order{
+				TimeInForce:       types.TimeInForce_FillOrKill,
+				Owner:             ownerAddr.String(),
+				ClientOrderID:     "myClientIOrderID",
+				Source:            sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
+				SourceRemaining:   sdk.OneInt(),
+				SourceFilled:      sdk.ZeroInt(),
+				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
+				DestinationFilled: sdk.ZeroInt(),
+			},
 		},
 		"owner missing": {
 			req: &types.MsgAddMarketOrder{
 				ClientOrderId: "myClientIOrderID",
 				TimeInForce:   types.TimeInForce_FillOrKill,
+				Source:        "eeur",
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 				MaxSlippage:   sdk.NewDec(10),
+			},
+			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
+				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
+				gotDst, gotMaxSlippage = dst, maxSlippage
+				return gotSrc, nil
 			},
 			expErr: true,
 		},
@@ -167,8 +190,14 @@ func TestAddMarketOrder(t *testing.T) {
 				Owner:         "invalid",
 				ClientOrderId: "myClientIOrderID",
 				TimeInForce:   types.TimeInForce_FillOrKill,
+				Source:        "eeur",
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 				MaxSlippage:   sdk.NewDec(10),
+			},
+			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
+				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
+				gotDst, gotMaxSlippage = dst, maxSlippage
+				return gotSrc, nil
 			},
 			expErr: true,
 		},
@@ -177,10 +206,15 @@ func TestAddMarketOrder(t *testing.T) {
 				Owner:         ownerAddr.String(),
 				ClientOrderId: "myClientIOrderID",
 				TimeInForce:   types.TimeInForce_FillOrKill,
+				Source:        "eeur",
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 				MaxSlippage:   sdk.NewDec(10),
 			},
-			mockFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
+			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
+				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
+				return gotSrc, nil
+			},
+			mockAddLimitOrderFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -188,7 +222,8 @@ func TestAddMarketOrder(t *testing.T) {
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
-			keeper.NewMarketOrderWithSlippageFn = spec.mockFn
+			keeper.GetSrcFromSlippageFn = spec.mockGetSrcFromSlippageFn
+			keeper.NewOrderSingleFn = spec.mockAddLimitOrderFn
 			eventManager := sdk.NewEventManager()
 			ctx := sdk.Context{}.WithContext(context.Background()).WithEventManager(eventManager)
 			_, gotErr := svr.AddMarketOrder(sdk.WrapSDKContext(ctx), spec.req)
@@ -197,13 +232,11 @@ func TestAddMarketOrder(t *testing.T) {
 				return
 			}
 			require.NoError(t, gotErr)
+			require.Equal(t, spec.expOrder.String(), gotOrder.String())
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, spec.req.Source, gotDenom)
+			assert.Equal(t, spec.expSrc, gotSrc)
 			assert.Equal(t, spec.req.Destination, gotDst)
 			assert.Equal(t, spec.req.MaxSlippage, gotMaxSlippage)
-			assert.Equal(t, ownerAddr, gotOwner)
-			assert.Equal(t, spec.req.TimeInForce, gotTimeInForce)
-			assert.Equal(t, spec.req.ClientOrderId, gotClientOrderId)
 		})
 	}
 }

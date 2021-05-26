@@ -118,6 +118,7 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 	if err != nil {
 		return nil, err
 	}
+
 	order, err := types.NewOrder(
 		ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId,
 	)
@@ -131,6 +132,14 @@ func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, ds
 func (k *Keeper) GetSrcFromSlippage(
 	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
 ) (sdk.Coin, error) {
+	if err := sdk.ValidateDenom(srcDenom); err != nil {
+		return sdk.Coin{}, sdkerrors.Wrapf(types.ErrInvalidInstrument,"%s", err)
+	}
+
+	if !dst.IsValid() {
+		return sdk.Coin{}, sdkerrors.Wrapf(types.ErrInvalidInstrument,"%v", dst)
+	}
+
 	// If the order allows for slippage, adjust the source amount accordingly.
 	md := k.GetInstrument(ctx, srcDenom, dst.Denom)
 	if md == nil || md.LastPrice == nil {

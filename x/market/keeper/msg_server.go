@@ -50,19 +50,23 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 func (m msgServer) AddMarketOrder(c context.Context, msg *types.MsgAddMarketOrder) (*types.MsgAddMarketOrderResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	owner, err := sdk.AccAddressFromBech32(msg.Owner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
-	}
-	result, err := m.k.NewMarketOrderWithSlippage(ctx, msg.Source, msg.Destination, msg.MaxSlippage, owner, msg.TimeInForce, msg.ClientOrderId)
+	slippageSource, err := m.k.GetSrcFromSlippage(
+		ctx, msg.Source, msg.Destination, msg.MaxSlippage,
+	)
 	if err != nil {
 		return nil, err
 	}
-	for _, e := range result.Events {
-		ctx.EventManager().EmitEvent(sdk.Event(e))
+
+	limitMsg := &types.MsgAddLimitOrder{
+		Owner:         msg.Owner,
+		ClientOrderId: msg.ClientOrderId,
+		TimeInForce:   msg.TimeInForce,
+		Source:        slippageSource,
+		Destination:   msg.Destination,
 	}
 
-	return &types.MsgAddMarketOrderResponse{}, nil
+	_, err = m.AddLimitOrder(c, limitMsg)
+	return &types.MsgAddMarketOrderResponse{}, err
 }
 
 func (m msgServer) CancelOrder(c context.Context, msg *types.MsgCancelOrder) (*types.MsgCancelOrderResponse, error) {
@@ -128,9 +132,5 @@ func (m msgServer) CancelReplaceMarketOrder(c context.Context, msg *types.MsgCan
 	}
 
 	_, err = m.CancelReplaceLimitOrder(c, limitMsg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.MsgCancelReplaceMarketOrderResponse{}, nil
+	return &types.MsgCancelReplaceMarketOrderResponse{}, err
 }
