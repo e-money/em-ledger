@@ -268,16 +268,19 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
 
 	newClientID := cid()
-	mcrm := &types.MsgCancelReplaceMarketOrder{
-		Owner:             acc1.GetAddress().String(),
-		OrigClientOrderId: clientID,
-		NewClientOrderId:  newClientID,
-		TimeInForce:       types.TimeInForce_GoodTillCancel,
-		Source:            "gbp",
-		Destination:       sdk.NewCoin("eur", sdk.NewInt(100)),
-		MaxSlippage:       sdk.NewDecWithPrec(0, 2),
-	}
-	_, err = k.CancelReplaceMarketOrder(ctx, mcrm)
+	dest := sdk.NewCoin("eur", sdk.NewInt(100))
+
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, "gbp", dest, sdk.NewDecWithPrec(0, 2),
+	)
+	require.NoError(t, err)
+	order, err := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, slippageSource, dest, acc1.GetAddress(),
+		newClientID,
+	)
+	require.NoError(t, err)
+
+	_, err = k.CancelReplaceLimitOrder(ctx, order, clientID)
 	require.NoError(t, err)
 
 	expOrder := &types.Order{
@@ -286,10 +289,10 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 		Owner:             acc1.GetAddress().String(),
 		ClientOrderID:     newClientID,
 		// Zero slippage same amount
-		Source:            sdk.NewCoin(mcrm.Source, sdk.NewInt(100)),
+		Source:            sdk.NewCoin("gbp", sdk.NewInt(100)),
 		SourceRemaining:   sdk.NewInt(100),
 		SourceFilled:      sdk.ZeroInt(),
-		Destination:       mcrm.Destination,
+		Destination:       dest,
 		DestinationFilled: sdk.ZeroInt(),
 		Created:           ctx.BlockTime(),
 	}
@@ -330,7 +333,7 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 	acc1b := bk.GetAllBalances(ctx, acc1.GetAddress())
 	require.Equal(t, coins("20eur,90gbp").String(), acc1b.String())
 
-	// Make a market order that allows slippage
+	// Make a market newOrder that allows slippage
 	clientID := cid()
 	slippage := sdk.NewDecWithPrec(0, 2)
 	_, err = k.NewMarketOrderWithSlippage(
@@ -352,7 +355,7 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 	foundOrder := k.GetOrderByOwnerAndClientOrderId(
 		ctx, acc1.GetAddress().String(), clientID,
 	)
-	require.NotNil(t, foundOrder, "Market order should exist")
+	require.NotNil(t, foundOrder, "Market newOrder should exist")
 	// 0% slippage same as ratio (1eur/2gbp) * 10 => 5gbp
 	require.True(t, foundOrder.Source.IsEqual(sdk.NewCoin("gbp", sdk.NewInt(5))))
 
@@ -366,7 +369,25 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 		Destination:       sdk.NewCoin("eur", sdk.NewInt(10)),
 		MaxSlippage:       sdk.NewDecWithPrec(100, 2),
 	}
-	_, err = k.CancelReplaceMarketOrder(ctx, mcrm)
+
+	dest := sdk.NewCoin("eur", sdk.NewInt(10))
+
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, "gbp", dest, sdk.NewDecWithPrec(100, 2),
+	)
+	require.NoError(t, err)
+
+	newOrder, err := types.NewOrder(
+		ctx.BlockTime(),
+		types.TimeInForce_GoodTillCancel,
+		slippageSource,
+		dest,
+		acc1.GetAddress(),
+		newClientID,
+	)
+	require.NoError(t, err)
+
+	_, err = k.CancelReplaceLimitOrder(ctx, newOrder, clientID)
 	require.NoError(t, err)
 	expOrder := &types.Order{
 		ID:                3,
@@ -386,7 +407,7 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 	origOrder := k.GetOrderByOwnerAndClientOrderId(
 		ctx, acc1.GetAddress().String(), clientID,
 	)
-	require.Nil(t, origOrder, "Original market order should not exist")
+	require.Nil(t, origOrder, "Original market newOrder should not exist")
 
 	foundOrder = k.GetOrderByOwnerAndClientOrderId(
 		ctx, acc1.GetAddress().String(), newClientID,

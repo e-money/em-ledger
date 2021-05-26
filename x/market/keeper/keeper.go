@@ -112,22 +112,38 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 }
 
 func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dst, maxSlippage,
+	)
+	if err != nil {
+		return nil, err
+	}
+	order, err := types.NewOrder(
+		ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return k.NewOrderSingle(ctx, order)
+}
+
+func (k *Keeper) GetSrcFromSlippage(
+	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
+) (sdk.Coin, error) {
 	// If the order allows for slippage, adjust the source amount accordingly.
 	md := k.GetInstrument(ctx, srcDenom, dst.Denom)
 	if md == nil || md.LastPrice == nil {
-		return nil, sdkerrors.Wrapf(types.ErrNoMarketDataAvailable, "%v/%v", srcDenom, dst.Denom)
+		return sdk.Coin{}, sdkerrors.Wrapf(
+			types.ErrNoMarketDataAvailable, "%v/%v", srcDenom, dst.Denom,
+		)
 	}
 
 	source := dst.Amount.ToDec().Quo(*md.LastPrice)
 	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
 
 	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
-	order, err := types.NewOrder(ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return k.NewOrderSingle(ctx, order)
+	return slippageSource, nil
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
@@ -377,7 +393,12 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 
 	// Verify that instrument is the same.
 	if origOrder.Source.Denom != newOrder.Source.Denom || origOrder.Destination.Denom != newOrder.Destination.Denom {
-		return nil, sdkerrors.Wrap(types.ErrOrderInstrumentChanged, "")
+		return nil, sdkerrors.Wrap(
+			types.ErrOrderInstrumentChanged, fmt.Sprintf(
+				"source %s != %s Or dest %s != %s", origOrder.Source, newOrder.Source,
+				origOrder.Destination.Denom, newOrder.Destination.Denom,
+			),
+		)
 	}
 
 	// Has the previous order already achieved the goal on the source side?
@@ -401,61 +422,6 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 	}
 
 	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
-	return &sdk.Result{Events: evts}, nil
-}
-
-func (k *Keeper) CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error) {
-	// Use a fixed gas amount
-	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceMarketOrder")
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
-
-	if origOrder == nil {
-		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, msg.OrigClientOrderId)
-	}
-
-	// Verify that instrument is the same.
-	if origOrder.Source.Denom != msg.Source || origOrder.Destination.Denom != msg.Destination.Denom {
-		return nil, sdkerrors.Wrap(
-			types.ErrOrderInstrumentChanged, fmt.Sprintf(
-				"source %s != %s Or dest %s != %s", origOrder.Source, msg.Source,
-				origOrder.Destination.Denom, msg.Destination.Denom,
-			),
-		)
-	}
-
-	// Has the previous order already achieved the goal on the source side?
-	if origOrder.DestinationFilled.GTE(msg.Destination.Amount) {
-		return nil, sdkerrors.Wrap(
-			types.ErrNoSourceRemaining, fmt.Sprintf(
-				"has already been filled filled:%s >= %s",
-				origOrder.Destination.Amount.String(), msg.Destination.Amount.String()),
-			)
-	}
-
-	k.deleteOrder(ctx, origOrder)
-	types.EmitExpireEvent(ctx, *origOrder)
-
-	ownerAddr, err := sdk.AccAddressFromBech32(msg.Owner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
-	}
-
-	destinationFilled := origOrder.DestinationFilled
-	dstRemaining := msg.Destination.Amount.Sub(destinationFilled)
-	remDstCoin := sdk.NewCoin(msg.Destination.Denom, dstRemaining)
-
-	resAdd, err := k.NewMarketOrderWithSlippage(
-		ctx, msg.Source, remDstCoin, msg.MaxSlippage, ownerAddr,
-		msg.TimeInForce, msg.NewClientOrderId,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
-
 	return &sdk.Result{Events: evts}, nil
 }
 
