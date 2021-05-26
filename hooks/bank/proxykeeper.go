@@ -7,23 +7,20 @@ package bank
 import (
 	"context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/e-money/em-ledger/x/authority/types"
 )
 
 var _ bankkeeper.Keeper = (*ProxyKeeper)(nil)
 
 type ProxyKeeper struct {
 	bk        bankkeeper.Keeper
-	rk        RestrictedKeeper
 	listeners []func(sdk.Context, []sdk.AccAddress)
 }
 
-func Wrap(bk bankkeeper.Keeper, rk RestrictedKeeper) *ProxyKeeper {
-	return &ProxyKeeper{bk: bk, rk: rk}
+func Wrap(bk bankkeeper.Keeper) *ProxyKeeper {
+	return &ProxyKeeper{bk: bk}
 }
 
 func (pk *ProxyKeeper) AddBalanceListener(l func(sdk.Context, []sdk.AccAddress)) {
@@ -51,16 +48,6 @@ func deduplicate(accounts []sdk.AccAddress) []sdk.AccAddress {
 }
 
 func (pk ProxyKeeper) InputOutputCoins(ctx sdk.Context, inputs []banktypes.Input, outputs []banktypes.Output) error {
-	restrictedDenoms := pk.rk.GetRestrictedDenoms(ctx)
-	// Multisend does not support restricted denominations.
-	for _, input := range inputs {
-		for _, coin := range input.Coins {
-			if _, found := restrictedDenoms.Find(coin.Denom); found {
-				return sdkerrors.Wrap(ErrRestrictedDenomination, coin.Denom)
-			}
-		}
-	}
-
 	err := pk.bk.InputOutputCoins(ctx, inputs, outputs)
 	if err != nil {
 		return err
@@ -82,15 +69,6 @@ func (pk ProxyKeeper) InputOutputCoins(ctx sdk.Context, inputs []banktypes.Input
 }
 
 func (pk ProxyKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
-	restrictedDenoms := pk.rk.GetRestrictedDenoms(ctx)
-	for _, c := range amt {
-		if denom, found := restrictedDenoms.Find(c.Denom); found {
-			if !denom.IsAnyAllowed(fromAddr, toAddr) {
-				return sdkerrors.Wrap(ErrRestrictedDenomination, c.Denom)
-			}
-		}
-	}
-
 	err := pk.bk.SendCoins(ctx, fromAddr, toAddr, amt)
 	if err != nil {
 		return err
@@ -299,11 +277,4 @@ func (pk *ProxyKeeper) DenomMetadata(ctx context.Context, request *banktypes.Que
 
 func (pk *ProxyKeeper) DenomsMetadata(ctx context.Context, request *banktypes.QueryDenomsMetadataRequest) (*banktypes.QueryDenomsMetadataResponse, error) {
 	return pk.bk.DenomsMetadata(ctx, request)
-}
-
-// RestrictedKeeperFunc implements the RestrictedKeeper interface.
-type RestrictedKeeperFunc func(sdk.Context) types.RestrictedDenoms
-
-func (r RestrictedKeeperFunc) GetRestrictedDenoms(ctx sdk.Context) types.RestrictedDenoms {
-	return r(ctx)
 }

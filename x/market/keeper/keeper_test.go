@@ -28,7 +28,6 @@ import (
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	emtypes "github.com/e-money/em-ledger/types"
-	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
@@ -1077,91 +1076,6 @@ func TestInvalidInstrument(t *testing.T) {
 	require.True(t, types.ErrInvalidInstrument.Is(err))
 }
 
-func TestRestrictedDenominations1(t *testing.T) {
-	ctx, k, ak, bk := createTestComponents(t)
-
-	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp, 10000eur")
-	acc2 := createAccount(ctx, ak, bk, randomAddress(), "6500usd,1200gbp")
-
-	// Restrict trading of gbp
-	k.authorityk = dummyAuthority{
-		RestrictedDenoms: emauthtypes.RestrictedDenoms{Denoms: []emauthtypes.RestrictedDenom{
-			{"gbp", []string{acc1.GetAddress().String()}},
-		}},
-	}
-
-	k.initializeFromStore(ctx)
-
-	{ // Verify that acc2 can't create a passive gbp order
-		o := order(ctx.BlockTime(), acc2, "500gbp", "542eur")
-		_, err := k.NewOrderSingle(ctx, o)
-		require.NoError(t, err)
-		// require.Empty(t, k.instruments)
-
-		o = order(ctx.BlockTime(), acc2, "542usd", "500gbp")
-		_, err = k.NewOrderSingle(ctx, o)
-		require.NoError(t, err)
-		// require.Empty(t, k.instruments)
-	}
-
-	{ // Verify that acc1 can create a passive gbp order
-		o := order(ctx.BlockTime(), acc1, "542eur", "500gbp")
-		_, err := k.NewOrderSingle(ctx, o)
-		require.NoError(t, err)
-		// require.Len(t, k.instruments, 1)
-
-		o = order(ctx.BlockTime(), acc1, "200gbp", "333usd")
-		_, err = k.NewOrderSingle(ctx, o)
-		require.NoError(t, err)
-		// require.Len(t, k.instruments, 2)
-	}
-
-	{ // Verify that acc2 managed to sell its gbp to a passive order
-		o := order(ctx.BlockTime(), acc2, "500gbp", "542eur")
-		_, err := k.NewOrderSingle(ctx, o)
-		require.NoError(t, err)
-
-		balance := bk.GetAllBalances(ctx, acc2.GetAddress())
-		require.Equal(t, "542", balance.AmountOf("eur").String())
-
-		o = order(ctx.BlockTime(), acc2, "333usd", "200gbp")
-		_, err = k.NewOrderSingle(ctx, o)
-		require.NoError(t, err)
-		balance = bk.GetAllBalances(ctx, acc2.GetAddress())
-		require.Equal(t, "900", balance.AmountOf("gbp").String())
-	}
-}
-
-func TestRestrictedDenominations2(t *testing.T) {
-	// Two instruments are restricted.
-	ctx, k, ak, bk := createTestComponents(t)
-
-	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000gbp, 10000usd")
-
-	// Restrict trading of gbp and usd
-	k.authorityk = dummyAuthority{
-		RestrictedDenoms: emauthtypes.RestrictedDenoms{Denoms: []emauthtypes.RestrictedDenom{
-			{"gbp", []string{}},
-			{"usd", []string{acc1.GetAddress().String()}},
-		}},
-	}
-
-	k.initializeFromStore(ctx)
-
-	gasMeter := sdk.NewGasMeter(math.MaxUint64)
-	// Ensure that no orders can be created, even though acc1 is allowed to create usd orders
-	o := order(ctx.BlockTime(), acc1, "542usd", "500gbp")
-	_, err := k.NewOrderSingle(ctx.WithGasMeter(gasMeter), o)
-	require.NoError(t, err)
-	// require.Empty(t, k.instruments)
-	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
-
-	o = order(ctx.BlockTime(), acc1, "500gbp", "542usd")
-	_, err = k.NewOrderSingle(ctx, o)
-	require.NoError(t, err)
-	// require.Empty(t, k.instruments)
-}
-
 func TestSyntheticInstruments1(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
@@ -1467,14 +1381,12 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 			encConfig.Marshaler, keyBank, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
 
-		wrappedBank = embank.Wrap(bk, embank.RestrictedKeeperFunc(func(ctx sdk.Context) emauthtypes.RestrictedDenoms {
-			return emauthtypes.RestrictedDenoms{} // allow all
-		}))
+		wrappedBank = embank.Wrap(bk)
 	)
 
 	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
 
-	marketKeeper := NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, wrappedBank, dummyAuthority{})
+	marketKeeper := NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, wrappedBank)
 	return ctx, marketKeeper, ak, wrappedBank
 }
 
@@ -1503,14 +1415,6 @@ func MakeTestEncodingConfig() simappparams.EncodingConfig {
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
-}
-
-type dummyAuthority struct {
-	RestrictedDenoms emauthtypes.RestrictedDenoms
-}
-
-func (da dummyAuthority) GetRestrictedDenoms(sdk.Context) emauthtypes.RestrictedDenoms {
-	return da.RestrictedDenoms
 }
 
 func coin(s string) sdk.Coin {

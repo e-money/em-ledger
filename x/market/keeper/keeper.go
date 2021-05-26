@@ -7,7 +7,7 @@ package keeper
 import (
 	"fmt"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
+
 	"math"
 	"sync"
 	"time"
@@ -33,17 +33,14 @@ type Keeper struct {
 	keyIndices sdk.StoreKey
 	cdc        codec.BinaryMarshaler
 	// instruments types.Instruments
-	ak         types.AccountKeeper
-	bk         types.BankKeeper
-	authorityk types.RestrictedKeeper
+	ak types.AccountKeeper
+	bk types.BankKeeper
 
 	// accountOrders types.Orders
 	appstateInit *sync.Once
-
-	restrictedDenoms types2.RestrictedDenoms
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper, authorityKeeper types.RestrictedKeeper) *Keeper {
+func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,
@@ -52,8 +49,6 @@ func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, keyIndices sdk.Store
 		bk:         bankKeeper,
 
 		appstateInit: new(sync.Once),
-
-		authorityk: authorityKeeper,
 	}
 
 	bankKeeper.AddBalanceListener(k.accountChanged)
@@ -278,10 +273,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, stepSourceFilled.RoundInt())
 			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
 			if err != nil {
-				panic(err)
+				fmt.Println(nextDestinationFilledCoin, nextSourceFilledCoin)
+			} else {
+				types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
 			}
-
-			types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
 
 			if passiveOrder.IsFilled() {
 				k.deleteOrder(ctx, passiveOrder)
@@ -311,15 +306,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	if aggressiveOrder.IsFilled() {
 		types.EmitExpireEvent(ctx, aggressiveOrder)
 	} else {
-		// Check whether this denomination is restricted and thus cannot create passive orders
 		addToBook := true
-		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Source.Denom); found {
-			addToBook = denom.IsAnyAllowed(owner)
-		}
-
-		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Destination.Denom); addToBook && found {
-			addToBook = denom.IsAnyAllowed(owner)
-		}
 
 		switch aggressiveOrder.TimeInForce {
 		case types.TimeInForce_ImmediateOrCancel:
@@ -327,6 +314,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		case types.TimeInForce_FillOrKill:
 			KillOrder = true
+			addToBook = false
 			ctx = ctx.WithEventManager(sdk.NewEventManager())
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		}
@@ -345,9 +333,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 
 func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 	k.appstateInit.Do(func() {
-		// Load the restricted denominations from the authority module
-		k.restrictedDenoms = k.authorityk.GetRestrictedDenoms(ctx)
-
 		// TODO Reinstate this when the mem store arrives in v0.40 of the Cosmos SDK.
 		//// Load the last known market state from app state.
 		//store := ctx.KVStore(k.key)
