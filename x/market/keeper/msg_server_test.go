@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,6 +183,19 @@ func TestAddMarketOrder(t *testing.T) {
 				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
 				gotDst, gotMaxSlippage = dst, maxSlippage
 				return gotSrc, nil
+			},
+			expErr: true,
+		},
+		"slippage func fails": {
+			req: &types.MsgAddMarketOrder{
+				ClientOrderId: "myClientIOrderID",
+				TimeInForce:   types.TimeInForce_FillOrKill,
+				Source:        "eeur",
+				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
+				MaxSlippage:   sdk.NewDec(10),
+			},
+			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
+				return sdk.Coin{}, sdkerrors.Wrap(types.ErrInvalidInstrument, "xxx")
 			},
 			expErr: true,
 		},
@@ -527,6 +541,21 @@ func TestCancelReplaceMarketOrder(t *testing.T) {
 			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
 				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
 				return gotSrc, nil
+			},
+			expErr: true,
+		},
+		"slippage func fails": {
+			req: &types.MsgCancelReplaceMarketOrder{
+				Owner:             ownerAddr.String(),
+				OrigClientOrderId: "origClientID",
+				NewClientOrderId:  "myNewClientID",
+				TimeInForce:       types.TimeInForce_ImmediateOrCancel,
+				Source:            "eeur",
+				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
+				MaxSlippage:       sdk.NewDec(10),
+			},
+			mockGetSrcFromSlippageFn: func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error) {
+				return sdk.Coin{}, sdkerrors.Wrap(types.ErrInvalidInstrument, "xxx")
 			},
 			expErr: true,
 		},

@@ -414,6 +414,96 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 	require.Equal(t, coins("20eur,90gbp").String(), acc1Bal.String())
 }
 
+func TestGetSrcFromSlippage(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	var (
+		acc1 = createAccount(ctx, ak, bk, randomAddress(), "500gbp")
+		acc2 = createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+		o   types.Order
+		err error
+		srcDenom string
+		slippedSource, dest sdk.Coin
+	)
+
+	srcDenom = "jpy"
+	dest = sdk.NewCoin("eur", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
+	)
+	require.Error(t, err, "No trades yet with jpy")
+
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("dek", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
+	)
+	require.Error(t, err, "No trades yet with dek")
+
+	slippage := sdk.NewDec(-2)
+
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.Error(t, err)
+	require.True(t, types.ErrInvalidSlippage.Is(err))
+
+	// Establish market price by executing a 1:1 trade
+	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Add liquidity
+	o = order(ctx.BlockTime(), acc2, "100eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t, slippedSource.String(), sdk.NewCoin(srcDenom, dest.Amount).String(),
+		"0% slippage -> source amount or last market price",
+	)
+
+	// 100%
+	slippage = sdk.NewDec(1)
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(1))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t, sdk.NewCoin(srcDenom, sdk.NewInt(2)).String(),
+		slippedSource.String(),
+		"100% slippage -> 1+100% source amount",
+	)
+
+	// 20%
+	slippage = sdk.OneDec().Quo(sdk.NewDec(5))
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(10))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t, sdk.NewCoin(srcDenom, sdk.NewInt(12)).String(), slippedSource.String(),
+		"20% slippage -> 10+20%=>12 amount",
+	)
+}
+
 func TestFillOrKillMarketOrder1(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 

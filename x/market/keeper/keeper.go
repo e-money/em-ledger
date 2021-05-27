@@ -7,7 +7,6 @@ package keeper
 import (
 	"fmt"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-
 	"math"
 	"sync"
 	"time"
@@ -111,6 +110,10 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	return bestPlan
 }
 
+// GetSrcFromSlippage expresses the maximum source amount to spend to buy the
+// requested dst amount. Taking the corresponding source amount
+// (dst amount/last market price) and adding the slippage percentage is the
+// resulting value. The maxSlippage decimal expresses a percentage (1 is 100%).
 func (k *Keeper) GetSrcFromSlippage(
 	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
 ) (sdk.Coin, error) {
@@ -120,6 +123,21 @@ func (k *Keeper) GetSrcFromSlippage(
 
 	if !dst.IsValid() {
 		return sdk.Coin{}, sdkerrors.Wrapf(types.ErrInvalidInstrument,"%v", dst)
+	}
+
+	if srcDenom == dst.Denom {
+		return sdk.Coin{}, sdkerrors.Wrapf(
+			types.ErrInvalidInstrument,
+			"source denomination %s is same as the destination %s", srcDenom,
+			dst.Denom,
+		)
+	}
+
+	if maxSlippage.LT(sdk.ZeroDec()) {
+		return sdk.Coin{}, sdkerrors.Wrapf(
+			types.ErrInvalidSlippage,
+			"cannot specify negative slippage %s", maxSlippage.String(),
+		)
 	}
 
 	// If the order allows for slippage, adjust the source amount accordingly.
