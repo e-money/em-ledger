@@ -2,11 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
-	db "github.com/tendermint/tm-db"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/tendermint/tendermint/crypto"
+	db "github.com/tendermint/tm-db"
 )
 
 func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr crypto.Address, power int64, signed bool, blockCount int64, slashable bool) {
@@ -62,7 +61,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 				),
 			)
 
-			k.slashValidator(ctx, batch, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
+			k.sk.Slash(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
 			k.sk.Jail(ctx, consAddr)
 
 			// fetch signing info

@@ -129,10 +129,6 @@
   
     - [Query](#em.queries.v1.Query)
   
-- [em/slashing/v1/slashing.proto](#em/slashing/v1/slashing.proto)
-    - [Penalties](#em.slashing.v1.Penalties)
-    - [Penalty](#em.slashing.v1.Penalty)
-  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -1491,53 +1487,6 @@
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Circulating` | [QueryCirculatingRequest](#em.queries.v1.QueryCirculatingRequest) | [QueryCirculatingResponse](#em.queries.v1.QueryCirculatingResponse) |  | GET|/e-money/bank/v1/circulating|
 | `Spendable` | [QuerySpendableRequest](#em.queries.v1.QuerySpendableRequest) | [QuerySpendableResponse](#em.queries.v1.QuerySpendableResponse) |  | GET|/e-money/bank/v1/spendable/{address}|
-
- <!-- end services -->
-
-
-
-<a name="em/slashing/v1/slashing.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## em/slashing/v1/slashing.proto
-
-
-
-<a name="em.slashing.v1.Penalties"></a>
-
-### Penalties
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `elements` | [Penalty](#em.slashing.v1.Penalty) | repeated |  |
-
-
-
-
-
-
-<a name="em.slashing.v1.Penalty"></a>
-
-### Penalty
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `validator` | [string](#string) |  |  |
-| `amounts` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
 
  <!-- end services -->
 

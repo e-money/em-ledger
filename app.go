@@ -70,16 +70,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/buyback"
-	emdistr "github.com/e-money/em-ledger/x/distribution"
-	"github.com/e-money/em-ledger/x/inflation"
-	"github.com/e-money/em-ledger/x/issuer"
-	"github.com/e-money/em-ledger/x/liquidityprovider"
-	"github.com/e-money/em-ledger/x/market"
-	emslashing "github.com/e-money/em-ledger/x/slashing"
-	emslashingtypes "github.com/e-money/em-ledger/x/slashing/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -93,6 +83,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/buyback"
+	emdistr "github.com/e-money/em-ledger/x/distribution"
+	"github.com/e-money/em-ledger/x/inflation"
+	"github.com/e-money/em-ledger/x/issuer"
+	"github.com/e-money/em-ledger/x/liquidityprovider"
+	"github.com/e-money/em-ledger/x/market"
+	emslashing "github.com/e-money/em-ledger/x/slashing"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
@@ -146,12 +144,11 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		// em modules
-		inflation.ModuleName:           {authtypes.Minter},
-		emslashingtypes.ModuleName:     {authtypes.Minter},
-		liquidityprovider.ModuleName:   {authtypes.Minter, authtypes.Burner},
-		buyback.ModuleName:             {authtypes.Burner},
-		emslashingtypes.PenaltyAccount: nil,
-		bep3.ModuleName:                {authtypes.Burner, authtypes.Minter},
+		inflation.ModuleName:         {authtypes.Minter},
+		emslashing.ModuleName:        nil, // TODO Remove this line?
+		liquidityprovider.ModuleName: {authtypes.Minter, authtypes.Burner},
+		buyback.ModuleName:           {authtypes.Burner},
+		bep3.ModuleName:              {authtypes.Burner, authtypes.Minter},
 	}
 
 	// module accounts that are allowed to receive tokens

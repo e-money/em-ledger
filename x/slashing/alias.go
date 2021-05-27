@@ -5,15 +5,15 @@
 package slashing
 
 import (
+	sdktypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/e-money/em-ledger/x/slashing/keeper"
-	"github.com/e-money/em-ledger/x/slashing/types"
 )
 
 const (
-	ModuleName   = types.ModuleName
-	RouterKey    = types.RouterKey
-	StoreKey     = types.StoreKey
-	QuerierRoute = types.QuerierRoute
+	ModuleName   = sdktypes.ModuleName
+	RouterKey    = sdktypes.RouterKey
+	StoreKey     = sdktypes.StoreKey
+	QuerierRoute = sdktypes.QuerierRoute
 )
 
 var (
