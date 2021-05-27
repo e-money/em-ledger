@@ -10,7 +10,6 @@ import (
 var _ types.MsgServer = msgServer{}
 
 type marketKeeper interface {
-	NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error)
 	NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
 	CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
 	CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)

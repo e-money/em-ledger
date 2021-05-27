@@ -111,24 +111,6 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	return bestPlan
 }
 
-func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
-	slippageSource, err := k.GetSrcFromSlippage(
-		ctx, srcDenom, dst, maxSlippage,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	order, err := types.NewOrder(
-		ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return k.NewOrderSingle(ctx, order)
-}
-
 func (k *Keeper) GetSrcFromSlippage(
 	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
 ) (sdk.Coin, error) {

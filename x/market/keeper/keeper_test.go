@@ -193,15 +193,14 @@ func TestMarketOrderSlippage1(t *testing.T) {
 	// Make a market order that allows slippage
 
 	slippage := sdk.NewDecWithPrec(50, 2)
-	_, err = k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
-		slippage,
-		acc1.GetAddress(),
-		types.TimeInForce_GoodTillCancel,
-		cid(),
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(200))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
 	)
+	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
 
 	// Check that the balance matches the first two orders being executed while the third did not fall within the slippage
@@ -213,15 +212,12 @@ func TestMarketOrderSlippage1(t *testing.T) {
 
 	// Ensure that the order can not exceed account balance
 	slippage = sdk.NewDecWithPrec(500, 2)
-	_, err = k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
-		slippage,
-		acc1.GetAddress(),
-		types.TimeInForce_GoodTillCancel,
-		cid(),
+	slippageSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
 	)
+	require.NoError(t, err)
+	limitOrder = order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
 }
 
@@ -244,18 +240,18 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make a market order that allows slippage
-	clientID := cid()
 	slippage := sdk.NewDecWithPrec(100, 2)
-	_, err = k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(100)),
-		slippage,
-		acc1.GetAddress(),
-		types.TimeInForce_GoodTillCancel,
-		clientID,
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(100))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
 	)
 	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
+	require.NoError(t, err)
+
+	clientID := limitOrder.ClientOrderID
 	foundOrder := k.GetOrderByOwnerAndClientOrderId(
 		ctx, acc1.GetAddress().String(), clientID,
 	)
@@ -268,10 +264,8 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
 
 	newClientID := cid()
-	dest := sdk.NewCoin("eur", sdk.NewInt(100))
-
-	slippageSource, err := k.GetSrcFromSlippage(
-		ctx, "gbp", dest, sdk.NewDecWithPrec(0, 2),
+	slippageSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.NewDecWithPrec(0, 2),
 	)
 	require.NoError(t, err)
 	order, err := types.NewOrder(
@@ -334,18 +328,19 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 	require.Equal(t, coins("20eur,90gbp").String(), acc1b.String())
 
 	// Make a market newOrder that allows slippage
-	clientID := cid()
 	slippage := sdk.NewDecWithPrec(0, 2)
-	_, err = k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(10)),
-		slippage,
-		acc1.GetAddress(),
-		types.TimeInForce_GoodTillCancel,
-		clientID,
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(10))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
 	)
 	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
+	require.NoError(t, err)
+
+	clientID := limitOrder.ClientOrderID
+
 	acc1b = bk.GetAllBalances(ctx, acc1.GetAddress())
 
 	// Gave 1 gbp and gained a eur
@@ -370,9 +365,9 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 		MaxSlippage:       sdk.NewDecWithPrec(100, 2),
 	}
 
-	dest := sdk.NewCoin("eur", sdk.NewInt(10))
+	dest = sdk.NewCoin("eur", sdk.NewInt(10))
 
-	slippageSource, err := k.GetSrcFromSlippage(
+	slippageSource, err = k.GetSrcFromSlippage(
 		ctx, "gbp", dest, sdk.NewDecWithPrec(100, 2),
 	)
 	require.NoError(t, err)
@@ -454,16 +449,15 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	)
 
 	// Create a fill or kill order that cannot be satisfied by the current market
-	result, err := k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
-		sdk.ZeroDec(),
-		acc1.GetAddress(),
-		types.TimeInForce_FillOrKill,
-		cid(),
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(200))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
 	)
-
+	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	limitOrder.TimeInForce = types.TimeInForce_FillOrKill
+	result, err := k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
 	require.Len(t, result.Events, 1)
 	require.Equal(t, types.EventTypeMarket, result.Events[0].Type)
