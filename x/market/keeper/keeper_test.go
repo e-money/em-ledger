@@ -370,7 +370,6 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 		Destination:       mcrm.Destination,
 		DestinationFilled: sdk.ZeroInt(),
 		Created:           ctx.BlockTime(),
-		OrigOrderCreated:  foundOrder.Created,
 	}
 	require.NoError(t, err)
 
@@ -459,7 +458,6 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 		Destination:       mcrm.Destination,
 		DestinationFilled: sdk.ZeroInt(),
 		Created:           ctx.BlockTime(),
-		OrigOrderCreated:  foundOrder.Created,
 	}
 	require.NoError(t, err)
 

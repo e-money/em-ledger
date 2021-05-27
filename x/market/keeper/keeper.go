@@ -151,7 +151,13 @@ func (k *Keeper) createMarketOrder(
 	timeInForce types.TimeInForce,
 	clientOrderId string,
 	origOrderCreated time.Time,
-) (*types.Order, *sdk.Result, error) {
+) (order *types.Order, res *sdk.Result, err error) {
+	gasMeter := ctx.GasMeter()
+
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	defer k.OrderSpendGas(ctx, order, origOrderCreated, gasMeter, &err)
+
 	// If the order allows for slippage, adjust the source amount accordingly.
 	md := k.GetInstrument(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), srcDenom, dst.Denom)
 	if md == nil || md.LastPrice == nil {
@@ -164,16 +170,18 @@ func (k *Keeper) createMarketOrder(
 	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
 
 	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
-	order, err := types.NewOrder(
+	var orderTmp types.Order
+	orderTmp, err = types.NewOrder(
 		ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId,
 		origOrderCreated,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
+	order = &orderTmp
 
-	res, err := k.NewOrderSingle(ctx, order)
-	return &order, res, err
+	res, err = k.NewOrderSingle(ctx, *order)
+	return order, res, err
 }
 
 // calcOrderGas computes the order gas by applying any liquidity rebate. The
@@ -271,8 +279,6 @@ func (k *Keeper) postNewOrderSingle(
 	ctx sdk.Context, orderGasMeter sdk.GasMeter, order *types.Order,
 	commitTrade func(), killOrder *bool, callerErr *error,
 ) {
-	k.postOrderSpendGas(ctx, order, orderGasMeter, callerErr)
-
 	// Roll back any state changes made by the aggressive FillOrKill order.
 	if *killOrder {
 		// order has not been filled
@@ -524,11 +530,11 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
-// postOrderSpendGas is a deferred function from Order processing
+// OrderSpendGas is a deferred function from Order processing
 // NewSingleOrder, NewCancelReplace functions to charge Gas.
-func (k *Keeper) postOrderSpendGas(
-	ctx sdk.Context, order *types.Order, orderGasMeter sdk.GasMeter,
-	callerErr *error,
+func (k *Keeper) OrderSpendGas(
+	ctx sdk.Context, order *types.Order, origOrderCreated time.Time,
+	orderGasMeter sdk.GasMeter, callerErr *error,
 ) {
 	var stdTrxFee = k.GetTrxFee(ctx)
 	// Order failed
@@ -559,7 +565,7 @@ func (k *Keeper) postOrderSpendGas(
 	// Rebate candidate
 	var orderGas sdk.Gas
 
-	if order.OrigOrderCreated.IsZero() {
+	if origOrderCreated.IsZero() {
 		orderGas = k.calcOrderGas(
 			ctx, stdTrxFee, order.DestinationFilled,
 			order.Destination.Amount,
@@ -567,7 +573,7 @@ func (k *Keeper) postOrderSpendGas(
 	} else {
 		orderGas = k.calcReplaceOrderGas(
 			ctx, order.DestinationFilled, order.Destination.Amount,
-			order.OrigOrderCreated,
+			origOrderCreated,
 		)
 	}
 
@@ -582,14 +588,9 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	orderGasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	defer func() {
-		// consume gas, if it did not make it to NewSingleOrder()
-		if err != nil && orderGasMeter.GasConsumed() == 0 {
-			k.postOrderSpendGas(ctx, &newOrder, orderGasMeter, &err)
-		}
-	}()
-
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner, origClientOrderId)
+
+	defer k.OrderSpendGas(ctx, &newOrder, origOrder.Created, orderGasMeter, &err)
 
 	if origOrder == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
@@ -614,7 +615,6 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	newOrder.DestinationFilled = origOrder.DestinationFilled
 
 	newOrder.TimeInForce = origOrder.TimeInForce
-	newOrder.OrigOrderCreated = origOrder.Created
 
 	// pass in the meter we will charge Gas.
 	resAdd, err := k.NewOrderSingle(ctx.WithGasMeter(orderGasMeter), newOrder)
@@ -634,14 +634,9 @@ func (k *Keeper) CancelReplaceMarketOrder(
 	orderGasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	defer func() {
-		// consume gas, if it did not make it to NewSingleOrder()
-		if err != nil && orderGasMeter.GasConsumed() == 0 {
-			k.postOrderSpendGas(ctx, newOrder, orderGasMeter, &err)
-		}
-	}()
-
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
+
+	defer k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 
 	if origOrder == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, msg.OrigClientOrderId)

@@ -155,7 +155,7 @@ func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
 
 	gasInfo, _, err = app.Deliver(enc.TxConfig.TxEncoder(), tx)
 	require.NoError(t, err)
-	require.Equal(t, gasInfo.GasUsed, sdk.Gas(25000))
+	require.Equal(t, sdk.Gas(0), gasInfo.GasUsed)
 }
 
 func getSignedTrx(

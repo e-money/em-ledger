@@ -17,6 +17,7 @@ type marketKeeper interface {
 	CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
 	CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
 	CancelReplaceMarketOrder(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error)
+	OrderSpendGas(ctx sdk.Context, order *types.Order, origOrderCreated time.Time, orderGasMeter sdk.GasMeter,	callerErr *error)
 }
 type msgServer struct {
 	k marketKeeper
@@ -26,14 +27,26 @@ func NewMsgServerImpl(keeper marketKeeper) types.MsgServer {
 	return &msgServer{k: keeper}
 }
 
-func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder) (*types.MsgAddLimitOrderResponse, error) {
+func (m msgServer) AddLimitOrder(
+	c context.Context, msg *types.MsgAddLimitOrder,
+) (_ *types.MsgAddLimitOrderResponse, err error) {
+	var (
+		order types.Order
+		gasMeter sdk.GasMeter
+	)
+
 	ctx := sdk.UnwrapSDKContext(c)
+	gasMeter = ctx.GasMeter()
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	defer m.k.OrderSpendGas(ctx, &order, time.Time{}, gasMeter, &err)
+
 	owner, err := sdk.AccAddressFromBech32(msg.Owner)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 
-	order, err := types.NewOrder(
+	order, err = types.NewOrder(
 		ctx.BlockTime(), msg.TimeInForce, msg.Source, msg.Destination, owner,
 		msg.ClientOrderId, time.Time{},
 	)

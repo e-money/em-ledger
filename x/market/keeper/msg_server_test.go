@@ -10,6 +10,7 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/rand"
 	"testing"
+	"time"
 )
 
 func TestAddLimitOrder(t *testing.T) {
@@ -514,6 +515,12 @@ type marketKeeperMock struct {
 	CancelOrderFn                func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
 	CancelReplaceLimitOrderFn    func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
 	CancelReplaceMarketOrderFn   func(ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder) (*sdk.Result, error)
+}
+
+func (m marketKeeperMock) OrderSpendGas(
+	ctx sdk.Context, order *types.Order, origOrderCreated time.Time,
+	orderGasMeter sdk.GasMeter, callerErr *error,
+) {
 }
 
 func (m marketKeeperMock) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {

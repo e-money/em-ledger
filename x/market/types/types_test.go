@@ -54,7 +54,6 @@ func TestSerialization(t *testing.T) {
 
 	require.Equal(t, order1.TimeInForce, order2.TimeInForce)
 	require.True(t, order1.Created.Equal(order2.Created))
-	require.Equal(t, order1.OrigOrderCreated, order2.OrigOrderCreated)
 }
 
 func TestInvalidOrder(t *testing.T) {

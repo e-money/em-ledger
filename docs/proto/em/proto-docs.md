@@ -1123,7 +1123,6 @@
 | `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `destination_filled` | [string](#string) |  |  |
 | `created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
-| `orig_order_created` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | applicable to CancelReplace orders: the creation timestamp of the original order. |
 
 
 
