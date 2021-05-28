@@ -6,7 +6,6 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	types2 "github.com/e-money/em-ledger/x/authority/types"
@@ -237,48 +236,14 @@ func (k *Keeper) calcReplaceOrderGas(
 	return stdTrxFee
 }
 
-// AnteHandle fulfills the AnteDecorator interface for the market module to
-// charge the standard gas for panicked orders.
-func (k Keeper) AnteHandle(
-	ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler,
-) (anteCtx sdk.Context, anteErr error) {
-	// all transactions must implement GasTx
-	gasTx, ok := tx.(ante.GasTx)
-	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
-	}
-
-	defer func() {
-		// tx -> messages have passed validation
-		msgs := tx.GetMsgs()
-		for _, msg := range msgs {
-			switch msg.Type() {
-			case types.MsgAddLimitOrder{}.Type():
-			case types.MsgAddMarketOrder{}.Type():
-			case types.MsgCancelOrder{}.Type():
-			case types.MsgCancelReplaceLimitOrder{}.Type():
-			case types.MsgCancelReplaceMarketOrder{}.Type():
-				continue
-			default:
-				// not a market transaction
-				return
-			}
-		}
-
-		// Set gas meter to 0 before running market messages
-		// Set limit to the user value
-		anteCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
-	}()
-
-	return next(ctx, tx, simulate)
-}
-
 // postNewOrderSingle is a deferred function for NewOrderSingle. It spends gas
 // on any order and adds non fill-or-kill orders to the order-book.
 func (k *Keeper) postNewOrderSingle(
 	ctx sdk.Context, orderGasMeter sdk.GasMeter, order *types.Order,
 	commitTrade func(), killOrder *bool, callerErr *error,
 ) {
+	k.OrderSpendGas(ctx, order, time.Time{}, orderGasMeter, callerErr)
+
 	// Roll back any state changes made by the aggressive FillOrKill order.
 	if *killOrder {
 		// order has not been filled
@@ -636,14 +601,14 @@ func (k *Keeper) CancelReplaceMarketOrder(
 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
 
-	defer k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-
 	if origOrder == nil {
+		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, msg.OrigClientOrderId)
 	}
 
 	// Verify that instrument is the same.
 	if origOrder.Source.Denom != msg.Source || origOrder.Destination.Denom != msg.Destination.Denom {
+		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 		return nil, sdkerrors.Wrap(
 			types.ErrOrderInstrumentChanged, fmt.Sprintf(
 				"source %s != %s Or dest %s != %s", origOrder.Source, msg.Source,
@@ -654,6 +619,7 @@ func (k *Keeper) CancelReplaceMarketOrder(
 
 	// Has the previous order already achieved the goal on the source side?
 	if origOrder.DestinationFilled.GTE(msg.Destination.Amount) {
+		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 		return nil, sdkerrors.Wrap(
 			types.ErrNoSourceRemaining, fmt.Sprintf(
 				"has already been filled filled:%s >= %s",
@@ -666,6 +632,7 @@ func (k *Keeper) CancelReplaceMarketOrder(
 
 	ownerAddr, err := sdk.AccAddressFromBech32(msg.Owner)
 	if err != nil {
+		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 
@@ -675,7 +642,7 @@ func (k *Keeper) CancelReplaceMarketOrder(
 
 	newOrder, resAdd, err = k.createMarketOrder(
 		// pass in the meter we will charge gas
-		ctx.WithGasMeter(orderGasMeter),
+		ctx,
 		msg.Source,
 		remDstCoin,
 		msg.MaxSlippage,
@@ -685,8 +652,11 @@ func (k *Keeper) CancelReplaceMarketOrder(
 		origOrder.Created,
 	)
 	if err != nil {
+		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 		return nil, err
 	}
+
+	defer k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
 
 	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
 

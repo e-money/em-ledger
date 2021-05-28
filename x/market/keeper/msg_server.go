@@ -32,14 +32,9 @@ func (m msgServer) AddLimitOrder(
 ) (_ *types.MsgAddLimitOrderResponse, err error) {
 	var (
 		order types.Order
-		gasMeter sdk.GasMeter
 	)
 
 	ctx := sdk.UnwrapSDKContext(c)
-	gasMeter = ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	defer m.k.OrderSpendGas(ctx, &order, time.Time{}, gasMeter, &err)
 
 	owner, err := sdk.AccAddressFromBech32(msg.Owner)
 	if err != nil {
