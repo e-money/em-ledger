@@ -17,9 +17,8 @@ import (
 var _ evidencetypes.SlashingKeeper = Keeper{}
 
 const (
-	dbKeyMissedByVal      = "%v.missedBlocks"
-	dbKeyPendingPenalties = "activePenalties"
-	dbKeyBlockTimes       = "blocktimes"
+	dbKeyMissedByVal = "%v.missedBlocks"
+	dbKeyBlockTimes  = "blocktimes"
 )
 
 type Keeper struct {
