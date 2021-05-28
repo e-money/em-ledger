@@ -52,17 +52,13 @@ var _ = Describe("Staking", func() {
 				slash, err := listener.AwaitSlash()
 				Expect(err).ToNot(HaveOccurred())
 
-				payoutEvent, err := listener.AwaitPenaltyPayout()
-				Expect(err).ToNot(HaveOccurred())
-
 				_, err = testnet.KillValidator(2)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(slash()).ToNot(BeNil())
-				Expect(payoutEvent()).To(BeTrue())
 
-				// Allow for a few blocks
-				time.Sleep(5 * time.Second)
+				// wait 2 blocks
+				nt.IncChain(2)
 
 				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())

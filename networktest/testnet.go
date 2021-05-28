@@ -266,6 +266,20 @@ func (t *Testnet) updateGenesis() {
 	writeGenesisFiles(bz)
 }
 
+// IncChain waits till the chain increments by the requested blocks or times out.
+func IncChain(delta int64) (int64, error) {
+	height, err := GetHeight()
+	if err != nil {
+		return height, err
+	}
+
+	return IncChainWithExpiration(
+		height+delta,
+		// generous and unlikely to exhaust
+		time.Duration(delta*5)*time.Second,
+	)
+}
+
 func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error) {
 	newHeight, err := WaitForHeightWithTimeout(
 		height+1, sleepDur,
