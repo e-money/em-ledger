@@ -270,7 +270,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	addr, val := addrs[0], pks[0]
 	sh := staking.NewHandler(sk)
 	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
-	//require.True(t, got.IsOK())
+
 	require.NoError(t, err)
 	staking.EndBlocker(ctx, sk)
 
@@ -315,7 +315,11 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	// validator should not have been slashed twice
 	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, resultingTokens, validator.GetTokens())
-	require.Equal(t, preSlashingSupply, bk.GetSupply(ctx))
+
+	// Verify that slashed tokens have been burned
+	slashingPenalty := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).TruncateInt()
+	totalSupplyAfter := bk.GetSupply(ctx).GetTotal().AmountOf("stake")
+	require.Equal(t, preSlashingSupply.GetTotal().AmountOf("stake").Sub(slashingPenalty), totalSupplyAfter)
 }
 
 // Test a validator dipping in and out of the validator set
