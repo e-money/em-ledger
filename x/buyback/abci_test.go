@@ -15,7 +15,6 @@ import (
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	embank "github.com/e-money/em-ledger/hooks/bank"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"strings"
 	"testing"
@@ -216,7 +215,6 @@ func order(account authtypes.AccountI, src, dst string) types.Order {
 		s, d,
 		account.GetAddress(),
 		tmrand.Str(10),
-		time.Time{},
 	)
 	if err != nil {
 		panic(err)
@@ -274,16 +272,11 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 		pk = paramskeeper.NewKeeper(encConfig.Marshaler, encConfig.Amino, keyParams, tkeyParams)
 		ak = authkeeper.NewAccountKeeper(
 			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
-		)
-		allowAllDenoms = embank.RestrictedKeeperFunc(func(context sdk.Context) types2.RestrictedDenoms {
-			return types2.RestrictedDenoms{}
-		})
-		bk = embank.Wrap(bankkeeper.NewBaseKeeper(
-			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
-		), allowAllDenoms)
-
+		)        
+		bk = embank.Wrap(bankkeeper.NewBaseKeeper(encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr))
+        
 		marketKeeper = market.NewKeeper(
-			encConfig.Marshaler, keyMarket, keyIndices, ak, bk, mockAuthority{},
+			encConfig.Marshaler, keyMarket, keyIndices, ak, bk,
 			pk.Subspace(market.ModuleName),
 		)
 	)
@@ -340,20 +333,10 @@ func randomAddress() sdk.AccAddress {
 	return tmrand.Bytes(sdk.AddrLen)
 }
 
-var (
-	_ types.RestrictedKeeper = (*mockAuthority)(nil)
-	_ keeper.StakingKeeper   = (*mockStakingKeeper)(nil)
-)
+var _ keeper.StakingKeeper = (*mockStakingKeeper)(nil)
 
-type (
-	mockAuthority     struct{}
-	mockStakingKeeper struct{}
-)
+type mockStakingKeeper struct{}
 
 func (mockStakingKeeper) BondDenom(sdk.Context) string {
 	return stakingDenom
-}
-
-func (mockAuthority) GetRestrictedDenoms(sdk.Context) types2.RestrictedDenoms {
-	return types2.RestrictedDenoms{}
 }

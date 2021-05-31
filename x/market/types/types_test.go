@@ -17,7 +17,7 @@ func TestSerialization(t *testing.T) {
 	tm := time.Now()
 	order1, _ := NewOrder(
 		tm, TimeInForce_GoodTillCancel, coin("100eur"), coin("120usd"),
-		[]byte("acc1"), "A", time.Time{},
+		[]byte("acc1"), "A",
 	)
 	order1.ID = 3123
 	order1.SourceRemaining = sdk.NewInt(50)
@@ -60,21 +60,21 @@ func TestInvalidOrder(t *testing.T) {
 	// 0 amount source
 	_, err := NewOrder(
 		time.Now(), TimeInForce_GoodTillCancel, coin("0eur"), coin("120usd"),
-		[]byte("acc"), "A", time.Time{},
+		[]byte("acc"), "A",
 	)
 	require.Error(t, err)
 
 	// 0 amount destination
 	_, err = NewOrder(
 		time.Now(), TimeInForce_GoodTillCancel, coin("120eur"), coin("0usd"),
-		[]byte("acc"), "A", time.Time{},
+		[]byte("acc"), "A",
 	)
 	require.Error(t, err)
 
 	// Same denomination
 	_, err = NewOrder(
 		time.Now(), TimeInForce_GoodTillCancel, coin("1000eur"), coin("850eur"),
-		[]byte("acc"), "A", time.Time{},
+		[]byte("acc"), "A",
 	)
 	require.Error(t, err)
 
@@ -86,7 +86,7 @@ func TestInvalidOrder(t *testing.T) {
 	// Negative source
 	_, err = NewOrder(
 		time.Now(), TimeInForce_GoodTillCancel, c, coin("120usd"),
-		[]byte("acc"), "B", time.Time{},
+		[]byte("acc"), "B",
 	)
 	require.Error(t, err)
 }

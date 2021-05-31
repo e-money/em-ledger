@@ -25,105 +25,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type RestrictedDenoms struct {
-	Denoms []RestrictedDenom `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms" yaml:"denoms"`
-}
-
-func (m *RestrictedDenoms) Reset()         { *m = RestrictedDenoms{} }
-func (m *RestrictedDenoms) String() string { return proto.CompactTextString(m) }
-func (*RestrictedDenoms) ProtoMessage()    {}
-func (*RestrictedDenoms) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3f91f8bbecb83881, []int{0}
-}
-func (m *RestrictedDenoms) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RestrictedDenoms) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_RestrictedDenoms.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *RestrictedDenoms) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RestrictedDenoms.Merge(m, src)
-}
-func (m *RestrictedDenoms) XXX_Size() int {
-	return m.Size()
-}
-func (m *RestrictedDenoms) XXX_DiscardUnknown() {
-	xxx_messageInfo_RestrictedDenoms.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RestrictedDenoms proto.InternalMessageInfo
-
-func (m *RestrictedDenoms) GetDenoms() []RestrictedDenom {
-	if m != nil {
-		return m.Denoms
-	}
-	return nil
-}
-
-type RestrictedDenom struct {
-	// todo (reviewer) :  moved from /types/
-	// todo (reviewer) : please note the lower case json/yaml attribute names now
-	// (convention)
-	Denom   string   `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty" yaml:"denom"`
-	Allowed []string `protobuf:"bytes,2,rep,name=allowed,proto3" json:"allowed,omitempty" yaml:"allowed"`
-}
-
-func (m *RestrictedDenom) Reset()         { *m = RestrictedDenom{} }
-func (m *RestrictedDenom) String() string { return proto.CompactTextString(m) }
-func (*RestrictedDenom) ProtoMessage()    {}
-func (*RestrictedDenom) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3f91f8bbecb83881, []int{1}
-}
-func (m *RestrictedDenom) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RestrictedDenom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_RestrictedDenom.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *RestrictedDenom) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RestrictedDenom.Merge(m, src)
-}
-func (m *RestrictedDenom) XXX_Size() int {
-	return m.Size()
-}
-func (m *RestrictedDenom) XXX_DiscardUnknown() {
-	xxx_messageInfo_RestrictedDenom.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RestrictedDenom proto.InternalMessageInfo
-
-func (m *RestrictedDenom) GetDenom() string {
-	if m != nil {
-		return m.Denom
-	}
-	return ""
-}
-
-func (m *RestrictedDenom) GetAllowed() []string {
-	if m != nil {
-		return m.Allowed
-	}
-	return nil
-}
-
 type Authority struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty" yaml:"address"`
 }
@@ -132,7 +33,7 @@ func (m *Authority) Reset()         { *m = Authority{} }
 func (m *Authority) String() string { return proto.CompactTextString(m) }
 func (*Authority) ProtoMessage()    {}
 func (*Authority) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3f91f8bbecb83881, []int{2}
+	return fileDescriptor_3f91f8bbecb83881, []int{0}
 }
 func (m *Authority) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -176,7 +77,7 @@ func (m *GasPrices) Reset()         { *m = GasPrices{} }
 func (m *GasPrices) String() string { return proto.CompactTextString(m) }
 func (*GasPrices) ProtoMessage()    {}
 func (*GasPrices) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3f91f8bbecb83881, []int{3}
+	return fileDescriptor_3f91f8bbecb83881, []int{1}
 }
 func (m *GasPrices) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -213,8 +114,6 @@ func (m *GasPrices) GetMinimum() github_com_cosmos_cosmos_sdk_types.DecCoins {
 }
 
 func init() {
-	proto.RegisterType((*RestrictedDenoms)(nil), "em.authority.v1.RestrictedDenoms")
-	proto.RegisterType((*RestrictedDenom)(nil), "em.authority.v1.RestrictedDenom")
 	proto.RegisterType((*Authority)(nil), "em.authority.v1.Authority")
 	proto.RegisterType((*GasPrices)(nil), "em.authority.v1.GasPrices")
 }
@@ -222,108 +121,26 @@ func init() {
 func init() { proto.RegisterFile("em/authority/v1/authority.proto", fileDescriptor_3f91f8bbecb83881) }
 
 var fileDescriptor_3f91f8bbecb83881 = []byte{
-	// 387 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x92, 0xbf, 0xae, 0xd3, 0x30,
-	0x14, 0xc6, 0x13, 0xae, 0xb8, 0x55, 0xcc, 0x9f, 0x56, 0x11, 0x48, 0x55, 0x85, 0x92, 0xc8, 0x03,
-	0xaa, 0x04, 0xb5, 0x15, 0x98, 0x60, 0x23, 0x14, 0xc1, 0x06, 0xca, 0xc8, 0x96, 0x3f, 0x47, 0xa9,
-	0x45, 0x1c, 0x57, 0xb1, 0x5b, 0xc8, 0xc0, 0x0b, 0x30, 0xf1, 0x1c, 0x3c, 0x49, 0xc7, 0x8e, 0x4c,
-	0x01, 0xb5, 0x6f, 0xd0, 0x27, 0xb8, 0x6a, 0xec, 0xa8, 0x51, 0xa7, 0x9c, 0xe4, 0x3b, 0xbf, 0xef,
-	0xc4, 0xdf, 0x31, 0xf2, 0x81, 0xd3, 0x64, 0xa3, 0x56, 0xa2, 0x66, 0xaa, 0xa1, 0xdb, 0xf0, 0xf2,
-	0x42, 0xd6, 0xb5, 0x50, 0xc2, 0x1d, 0x03, 0x27, 0x97, 0x6f, 0xdb, 0x70, 0xf6, 0xa4, 0x10, 0x85,
-	0xe8, 0x34, 0x7a, 0xae, 0x74, 0xdb, 0xcc, 0xcb, 0x84, 0xe4, 0x42, 0xd2, 0x34, 0x91, 0x40, 0xb7,
-	0x61, 0x0a, 0x2a, 0x09, 0x69, 0x26, 0x58, 0xa5, 0x75, 0x9c, 0xa1, 0x49, 0x0c, 0x52, 0xd5, 0x2c,
-	0x53, 0x90, 0x2f, 0xa1, 0x12, 0x5c, 0xba, 0x9f, 0xd1, 0x6d, 0xde, 0x55, 0x53, 0x3b, 0xb8, 0x99,
-	0x3f, 0x78, 0x15, 0x90, 0xab, 0x59, 0xe4, 0x0a, 0x89, 0x9e, 0xee, 0x5a, 0xdf, 0x3a, 0xb5, 0xfe,
-	0xa3, 0x26, 0xe1, 0xe5, 0x5b, 0xac, 0x69, 0x1c, 0x1b, 0x1b, 0x5c, 0xa0, 0xf1, 0x15, 0xe1, 0x3e,
-	0x47, 0xf7, 0x3b, 0x71, 0x6a, 0x07, 0xf6, 0xdc, 0x89, 0x26, 0xa7, 0xd6, 0x7f, 0x38, 0x80, 0x71,
-	0xac, 0x65, 0xf7, 0x25, 0x1a, 0x25, 0x65, 0x29, 0xbe, 0x43, 0x3e, 0xbd, 0x17, 0xdc, 0xcc, 0x9d,
-	0xc8, 0x3d, 0xb5, 0xfe, 0x63, 0xdd, 0x69, 0x04, 0x1c, 0xf7, 0x2d, 0xf8, 0x0d, 0x72, 0xde, 0xf5,
-	0xff, 0xd9, 0xa1, 0x79, 0x5e, 0x83, 0x94, 0x66, 0xc8, 0x10, 0xd5, 0xc2, 0x19, 0x35, 0xd5, 0x2f,
-	0x1b, 0x39, 0x1f, 0x13, 0xf9, 0xa5, 0x66, 0x19, 0x48, 0xf7, 0x27, 0x1a, 0x71, 0x56, 0x31, 0xbe,
-	0xe1, 0x26, 0x83, 0x67, 0x44, 0x07, 0x49, 0xce, 0x41, 0x12, 0x13, 0x24, 0x59, 0x42, 0xf6, 0x5e,
-	0xb0, 0x2a, 0xfa, 0x60, 0xce, 0x6f, 0xdc, 0x0d, 0x8a, 0xff, 0xfc, 0xf3, 0x5f, 0x14, 0x4c, 0xad,
-	0x36, 0x29, 0xc9, 0x04, 0xa7, 0x66, 0x15, 0xfa, 0xb1, 0x90, 0xf9, 0x37, 0xaa, 0x9a, 0x35, 0xc8,
-	0xde, 0x45, 0xc6, 0xfd, 0xcc, 0xe8, 0xd3, 0xee, 0xe0, 0xd9, 0xfb, 0x83, 0x67, 0xff, 0x3f, 0x78,
-	0xf6, 0xef, 0xa3, 0x67, 0xed, 0x8f, 0x9e, 0xf5, 0xf7, 0xe8, 0x59, 0x5f, 0xc9, 0xc0, 0x0f, 0x16,
-	0x5c, 0x54, 0xd0, 0x50, 0xe0, 0x8b, 0x12, 0xf2, 0x02, 0x6a, 0xfa, 0x63, 0x70, 0x67, 0x3a, 0xef,
-	0xf4, 0xb6, 0x5b, 0xf3, 0xeb, 0xbb, 0x00, 0x00, 0x00, 0xff, 0xff, 0x7f, 0x9f, 0x36, 0x34, 0x50,
-	0x02, 0x00, 0x00,
-}
-
-func (m *RestrictedDenoms) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RestrictedDenoms) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RestrictedDenoms) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Denoms) > 0 {
-		for iNdEx := len(m.Denoms) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Denoms[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintAuthority(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *RestrictedDenom) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RestrictedDenom) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RestrictedDenom) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Allowed) > 0 {
-		for iNdEx := len(m.Allowed) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Allowed[iNdEx])
-			copy(dAtA[i:], m.Allowed[iNdEx])
-			i = encodeVarintAuthority(dAtA, i, uint64(len(m.Allowed[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.Denom) > 0 {
-		i -= len(m.Denom)
-		copy(dAtA[i:], m.Denom)
-		i = encodeVarintAuthority(dAtA, i, uint64(len(m.Denom)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	// 297 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x90, 0xbf, 0x4a, 0xc3, 0x40,
+	0x1c, 0xc7, 0x73, 0x08, 0x96, 0x44, 0x50, 0x08, 0x0e, 0xa5, 0xc8, 0xa5, 0x64, 0x2a, 0x68, 0xee,
+	0x88, 0x4e, 0xba, 0x19, 0x15, 0x1d, 0xa5, 0xa3, 0xdb, 0x25, 0xf9, 0x91, 0x1e, 0xf6, 0x72, 0x25,
+	0x77, 0x09, 0x66, 0xf0, 0x05, 0x9c, 0x7c, 0x0e, 0x9f, 0xa4, 0x63, 0x47, 0xa7, 0x2a, 0xc9, 0x1b,
+	0xf8, 0x04, 0xd2, 0xfc, 0x21, 0x9d, 0xee, 0xcf, 0xf7, 0x77, 0x9f, 0xcf, 0xf1, 0xb5, 0x1c, 0x10,
+	0x94, 0xe5, 0x7a, 0x21, 0x33, 0xae, 0x4b, 0x5a, 0xf8, 0xc3, 0x81, 0xac, 0x32, 0xa9, 0xa5, 0x7d,
+	0x02, 0x82, 0x0c, 0x77, 0x85, 0x3f, 0x39, 0x4d, 0x64, 0x22, 0x9b, 0x8c, 0xee, 0x76, 0xed, 0xd8,
+	0x04, 0x47, 0x52, 0x09, 0xa9, 0x68, 0xc8, 0x14, 0xd0, 0xc2, 0x0f, 0x41, 0x33, 0x9f, 0x46, 0x92,
+	0xa7, 0x6d, 0xee, 0x5e, 0x5b, 0xe6, 0x6d, 0x4f, 0xb1, 0x2f, 0xac, 0x11, 0x8b, 0xe3, 0x0c, 0x94,
+	0x1a, 0xa3, 0x29, 0x9a, 0x99, 0x81, 0xfd, 0xb7, 0x75, 0x8e, 0x4b, 0x26, 0x96, 0x37, 0x6e, 0x17,
+	0xb8, 0xf3, 0x7e, 0xc4, 0xfd, 0x40, 0x96, 0xf9, 0xc8, 0xd4, 0x73, 0xc6, 0x23, 0x50, 0xf6, 0xbb,
+	0x35, 0x12, 0x3c, 0xe5, 0x22, 0x17, 0x63, 0x34, 0x3d, 0x98, 0x1d, 0x5d, 0x9e, 0x91, 0x56, 0x4d,
+	0x76, 0x6a, 0xd2, 0xa9, 0xc9, 0x3d, 0x44, 0x77, 0x92, 0xa7, 0xc1, 0xc3, 0x7a, 0xeb, 0x18, 0x03,
+	0xbd, 0x7b, 0xea, 0x7e, 0xfd, 0x38, 0xe7, 0x09, 0xd7, 0x8b, 0x3c, 0x24, 0x91, 0x14, 0xb4, 0xfb,
+	0x7c, 0xbb, 0x78, 0x2a, 0x7e, 0xa5, 0xba, 0x5c, 0x81, 0xea, 0x29, 0x6a, 0xde, 0x3b, 0x83, 0xa7,
+	0x75, 0x85, 0xd1, 0xa6, 0xc2, 0xe8, 0xb7, 0xc2, 0xe8, 0xb3, 0xc6, 0xc6, 0xa6, 0xc6, 0xc6, 0x77,
+	0x8d, 0x8d, 0x17, 0xb2, 0xc7, 0x03, 0x4f, 0xc8, 0x14, 0x4a, 0x0a, 0xc2, 0x5b, 0x42, 0x9c, 0x40,
+	0x46, 0xdf, 0xf6, 0x5a, 0x6e, 0xd8, 0xe1, 0x61, 0x53, 0xcc, 0xd5, 0x7f, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x57, 0x7d, 0x71, 0xbc, 0x82, 0x01, 0x00, 0x00,
 }
 
 func (m *Authority) Marshal() (dAtA []byte, err error) {
@@ -404,40 +221,6 @@ func encodeVarintAuthority(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *RestrictedDenoms) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Denoms) > 0 {
-		for _, e := range m.Denoms {
-			l = e.Size()
-			n += 1 + l + sovAuthority(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *RestrictedDenom) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Denom)
-	if l > 0 {
-		n += 1 + l + sovAuthority(uint64(l))
-	}
-	if len(m.Allowed) > 0 {
-		for _, s := range m.Allowed {
-			l = len(s)
-			n += 1 + l + sovAuthority(uint64(l))
-		}
-	}
-	return n
-}
-
 func (m *Authority) Size() (n int) {
 	if m == nil {
 		return 0
@@ -471,204 +254,6 @@ func sovAuthority(x uint64) (n int) {
 }
 func sozAuthority(x uint64) (n int) {
 	return sovAuthority(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *RestrictedDenoms) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAuthority
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RestrictedDenoms: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RestrictedDenoms: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denoms", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAuthority
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denoms = append(m.Denoms, RestrictedDenom{})
-			if err := m.Denoms[len(m.Denoms)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAuthority(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RestrictedDenom) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAuthority
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: RestrictedDenom: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RestrictedDenom: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAuthority
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Denom = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Allowed", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAuthority
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Allowed = append(m.Allowed, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAuthority(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAuthority
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *Authority) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

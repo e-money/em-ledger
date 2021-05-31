@@ -64,7 +64,6 @@ func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
 	genesisState := ModuleBasics.DefaultGenesis(enc.Marshaler)
 	authorityState := authority.NewGenesisState(
 		rand.Bytes(sdk.AddrLen), nil,
-		sdk.NewDecCoins(),
 	)
 	genesisState[authority.ModuleName] = enc.Marshaler.MustMarshalJSON(&authorityState)
 
@@ -226,7 +225,7 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	}
 
 	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
-	authorityState := authority.NewGenesisState(rand.Bytes(sdk.AddrLen), nil, sdk.NewDecCoins())
+	authorityState := authority.NewGenesisState(rand.Bytes(sdk.AddrLen), sdk.NewDecCoins())
 	genesisState[authority.ModuleName] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")

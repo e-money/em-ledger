@@ -18,7 +18,6 @@ import (
 
 const (
 	keyAuthorityAccAddress = "AuthorityAccountAddress"
-	keyRestrictedDenoms    = "RestrictedDenoms"
 	keyGasPrices           = "GasPrices"
 )
 
@@ -133,22 +132,6 @@ func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
 	}
 
 	panic(sdkerrors.Wrap(types.ErrNotAuthority, address.String()))
-}
-
-func (k Keeper) SetRestrictedDenoms(ctx sdk.Context, denoms []types.RestrictedDenom) {
-	store := ctx.KVStore(k.storeKey)
-	state := types.RestrictedDenoms{Denoms: denoms}
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&state)
-	store.Set([]byte(keyRestrictedDenoms), bz)
-}
-
-func (k Keeper) GetRestrictedDenoms(ctx sdk.Context) (res types.RestrictedDenoms) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := store.Get([]byte(keyRestrictedDenoms))
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &res)
-
-	return
 }
 
 // Gas prices are kept in-memory in the app structure. Make sure they are initialized on node restart.

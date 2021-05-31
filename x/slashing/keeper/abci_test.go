@@ -29,7 +29,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	apptypes "github.com/e-money/em-ledger/types"
-	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/slashing/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -245,12 +244,8 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountK
 		ak = authkeeper.NewAccountKeeper(
 			encConfig.Marshaler, authCapKey, pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms,
 		)
-		allowAllDenoms = embank.RestrictedKeeperFunc(func(context sdk.Context) emauthtypes.RestrictedDenoms {
-			return emauthtypes.RestrictedDenoms{}
-		})
-		bk = embank.Wrap(bankkeeper.NewBaseKeeper(
-			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
-		), allowAllDenoms)
+
+		bk = embank.Wrap(bankkeeper.NewBaseKeeper(encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr))
 
 		sk = stakingkeeper.NewKeeper(encConfig.Marshaler, stakingKey, ak, bk, pk.Subspace(stakingtypes.ModuleName))
 	)

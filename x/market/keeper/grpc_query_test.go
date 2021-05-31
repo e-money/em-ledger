@@ -26,7 +26,6 @@ func TestQueryByAccount(t *testing.T) {
 		sdk.NewCoin("alx", sdk.OneInt()),
 		sdk.NewCoin("blx", sdk.OneInt()),
 		myAddress,"myOrderID",
-		time.Time{},
 	)
 	require.NoError(t, err)
 	k.setOrder(ctx, &o)

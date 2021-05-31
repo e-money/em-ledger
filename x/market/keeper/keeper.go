@@ -8,7 +8,6 @@ import (
 	"fmt"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	types2 "github.com/e-money/em-ledger/x/authority/types"
 	"math"
 	"sync"
 	"time"
@@ -26,16 +25,13 @@ type Keeper struct {
 	keyIndices sdk.StoreKey
 	cdc        codec.BinaryMarshaler
 	// instruments types.Instruments
-	ak         types.AccountKeeper
-	bk         types.BankKeeper
-	authorityk types.RestrictedKeeper
+	ak types.AccountKeeper
+	bk types.BankKeeper
 
 	paramStore paramtypes.Subspace
 
 	// accountOrders types.Orders
 	appstateInit *sync.Once
-
-	restrictedDenoms types2.RestrictedDenoms
 }
 
 func NewKeeper(
@@ -44,7 +40,6 @@ func NewKeeper(
 	keyIndices sdk.StoreKey,
 	authKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	authorityKeeper types.RestrictedKeeper,
 	paramStore paramtypes.Subspace,
 ) *Keeper {
 	// set params map
@@ -61,8 +56,6 @@ func NewKeeper(
 		paramStore: paramStore,
 
 		appstateInit: new(sync.Once),
-
-		authorityk: authorityKeeper,
 	}
 
 	bankKeeper.AddBalanceListener(k.accountChanged)
@@ -125,42 +118,25 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	return bestPlan
 }
 
-func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
-	_, res, err := k.createMarketOrder(
-		ctx,
-		srcDenom,
-		dst,
-		maxSlippage,
-		owner,
-		timeInForce,
-		clientOrderId,
-		time.Time{},
-	)
-
-	return res, err
-}
-
-// createMarketOrder creates a market order that returns the created order and
-// takes the original order creation timestamp.
-func (k *Keeper) createMarketOrder(
-	ctx sdk.Context,
-	srcDenom string, dst sdk.Coin,
-	maxSlippage sdk.Dec,
-	owner sdk.AccAddress,
-	timeInForce types.TimeInForce,
-	clientOrderId string,
-	origOrderCreated time.Time,
-) (order *types.Order, res *sdk.Result, err error) {
-	gasMeter := ctx.GasMeter()
-
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	defer k.OrderSpendGas(ctx, order, origOrderCreated, gasMeter, &err)
+// GetSrcFromSlippage expresses the maximum source amount to spend to buy the
+// requested dst amount. Taking the corresponding source amount
+// (dst amount/last market price) and adding the slippage percentage is the
+// resulting value. The maxSlippage decimal expresses a percentage (1 is 100%).
+func (k *Keeper) GetSrcFromSlippage(
+	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
+) (sdk.Coin, error) {
+	// ValidateBasic() for the 2 Market messages has validated the src/dst coins
+	if maxSlippage.LT(sdk.ZeroDec()) {
+		return sdk.Coin{}, sdkerrors.Wrapf(
+			types.ErrInvalidSlippage,
+			"cannot specify negative slippage %s", maxSlippage.String(),
+		)
+	}
 
 	// If the order allows for slippage, adjust the source amount accordingly.
 	md := k.GetInstrument(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()), srcDenom, dst.Denom)
 	if md == nil || md.LastPrice == nil {
-		return nil, nil, sdkerrors.Wrapf(
+		return sdk.Coin{}, sdkerrors.Wrapf(
 			types.ErrNoMarketDataAvailable, "%v/%v", srcDenom, dst.Denom,
 		)
 	}
@@ -169,18 +145,7 @@ func (k *Keeper) createMarketOrder(
 	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
 
 	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
-	var orderTmp types.Order
-	orderTmp, err = types.NewOrder(
-		ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId,
-		origOrderCreated,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	order = &orderTmp
-
-	res, err = k.NewOrderSingle(ctx, *order)
-	return order, res, err
+	return slippageSource, nil
 }
 
 // calcOrderGas computes the order gas by applying any liquidity rebate. The
@@ -424,15 +389,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (r
 	if aggressiveOrder.IsFilled() {
 		types.EmitExpireEvent(ctx, aggressiveOrder)
 	} else {
-		// Check whether this denomination is restricted and thus cannot create passive orders
 		addToBook := true
-		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Source.Denom); found {
-			addToBook = denom.IsAnyAllowed(owner)
-		}
-
-		if denom, found := k.restrictedDenoms.Find(aggressiveOrder.Destination.Denom); addToBook && found {
-			addToBook = denom.IsAnyAllowed(owner)
-		}
 
 		switch aggressiveOrder.TimeInForce {
 		case types.TimeInForce_ImmediateOrCancel:
@@ -440,6 +397,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (r
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		case types.TimeInForce_FillOrKill:
 			KillOrder = true
+			addToBook = false
 			ctx = ctx.WithEventManager(sdk.NewEventManager())
 			types.EmitExpireEvent(ctx, aggressiveOrder)
 		}
@@ -460,9 +418,6 @@ func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 	k.appstateInit.Do(func() {
 		// TODO should we move the market params to genesis or const them?
 		k.InitParamsStore(ctx)
-
-		// Load the restricted denominations from the authority module
-		k.restrictedDenoms = k.authorityk.GetRestrictedDenoms(ctx)
 
 		// TODO Reinstate this when the mem store arrives in v0.40 of the Cosmos SDK.
 		//// Load the last known market state from app state.
@@ -563,7 +518,12 @@ func (k *Keeper) CancelReplaceLimitOrder(
 
 	// Verify that instrument is the same.
 	if origOrder.Source.Denom != newOrder.Source.Denom || origOrder.Destination.Denom != newOrder.Destination.Denom {
-		return nil, sdkerrors.Wrap(types.ErrOrderInstrumentChanged, "")
+		return nil, sdkerrors.Wrap(
+			types.ErrOrderInstrumentChanged, fmt.Sprintf(
+				"source %s != %s Or dest %s != %s", origOrder.Source, newOrder.Source,
+				origOrder.Destination.Denom, newOrder.Destination.Denom,
+			),
+		)
 	}
 
 	// Has the previous order already achieved the goal on the source side?
@@ -588,78 +548,6 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	}
 
 	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
-	return &sdk.Result{Events: evts}, nil
-}
-
-func (k *Keeper) CancelReplaceMarketOrder(
-	ctx sdk.Context, msg *types.MsgCancelReplaceMarketOrder,
-) (resAdd *sdk.Result, err error) {
-	var newOrder *types.Order
-
-	orderGasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, msg.Owner, msg.OrigClientOrderId)
-
-	if origOrder == nil {
-		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, msg.OrigClientOrderId)
-	}
-
-	// Verify that instrument is the same.
-	if origOrder.Source.Denom != msg.Source || origOrder.Destination.Denom != msg.Destination.Denom {
-		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-		return nil, sdkerrors.Wrap(
-			types.ErrOrderInstrumentChanged, fmt.Sprintf(
-				"source %s != %s Or dest %s != %s", origOrder.Source, msg.Source,
-				origOrder.Destination.Denom, msg.Destination.Denom,
-			),
-		)
-	}
-
-	// Has the previous order already achieved the goal on the source side?
-	if origOrder.DestinationFilled.GTE(msg.Destination.Amount) {
-		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-		return nil, sdkerrors.Wrap(
-			types.ErrNoSourceRemaining, fmt.Sprintf(
-				"has already been filled filled:%s >= %s",
-				origOrder.Destination.Amount.String(), msg.Destination.Amount.String()),
-			)
-	}
-
-	k.deleteOrder(ctx, origOrder)
-	types.EmitExpireEvent(ctx, *origOrder)
-
-	ownerAddr, err := sdk.AccAddressFromBech32(msg.Owner)
-	if err != nil {
-		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
-	}
-
-	destinationFilled := origOrder.DestinationFilled
-	dstRemaining := msg.Destination.Amount.Sub(destinationFilled)
-	remDstCoin := sdk.NewCoin(msg.Destination.Denom, dstRemaining)
-
-	newOrder, resAdd, err = k.createMarketOrder(
-		// pass in the meter we will charge gas
-		ctx,
-		msg.Source,
-		remDstCoin,
-		msg.MaxSlippage,
-		ownerAddr,
-		msg.TimeInForce,
-		msg.NewClientOrderId,
-		origOrder.Created,
-	)
-	if err != nil {
-		k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-		return nil, err
-	}
-
-	defer k.OrderSpendGas(ctx, newOrder, origOrder.Created, orderGasMeter, &err)
-
-	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
-
 	return &sdk.Result{Events: evts}, nil
 }
 

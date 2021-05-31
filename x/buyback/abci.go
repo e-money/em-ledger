@@ -5,7 +5,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	markettypes "github.com/e-money/em-ledger/x/market/types"
-	"time"
 )
 
 func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
@@ -47,7 +46,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 			sdk.NewCoin(stakingDenom, destinationAmount),
 			account,
 			generateClientOrderId(ctx, balance),
-			time.Time{},
 		)
 
 		if err != nil {
