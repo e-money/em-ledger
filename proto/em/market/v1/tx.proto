@@ -16,6 +16,8 @@ service Msg {
   rpc CancelOrder(MsgCancelOrder) returns (MsgCancelOrderResponse);
   rpc CancelReplaceLimitOrder(MsgCancelReplaceLimitOrder)
       returns (MsgCancelReplaceLimitOrderResponse);
+  rpc CancelReplaceMarketOrder(MsgCancelReplaceMarketOrder)
+      returns (MsgCancelReplaceMarketOrderResponse);
 }
 
 message MsgAddLimitOrder {
@@ -99,3 +101,36 @@ message MsgCancelReplaceLimitOrder {
 }
 
 message MsgCancelReplaceLimitOrderResponse {}
+
+message MsgCancelReplaceMarketOrder {
+  string owner = 1 [ (gogoproto.moretags) = "yaml:\"owner\"" ];
+
+  string original_client_order_id = 2 [
+    (gogoproto.customname) = "OrigClientOrderId",
+    (gogoproto.moretags) = "yaml:\"original_client_order_id\""
+  ];
+
+  string new_client_order_id = 3 [
+    (gogoproto.customname) = "NewClientOrderId",
+    (gogoproto.moretags) = "yaml:\"new_client_order_id\""
+  ];
+
+  TimeInForce time_in_force = 4
+  [ (gogoproto.moretags) = "yaml:\"time_in_force\"" ];
+
+  string source = 5 [ (gogoproto.moretags) = "yaml:\"source\"" ];
+
+  cosmos.base.v1beta1.Coin destination = 6 [
+    (gogoproto.moretags) = "yaml:\"destination\"",
+    (gogoproto.nullable) = false
+  ];
+
+  string maximum_slippage = 7 [
+    (gogoproto.customname) = "MaxSlippage",
+    (gogoproto.moretags) = "yaml:\"maximum_slippage\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message MsgCancelReplaceMarketOrderResponse {}

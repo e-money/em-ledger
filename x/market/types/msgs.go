@@ -16,6 +16,7 @@ var (
 	_ sdk.Msg = &MsgAddMarketOrder{}
 	_ sdk.Msg = &MsgCancelOrder{}
 	_ sdk.Msg = &MsgCancelReplaceLimitOrder{}
+	_ sdk.Msg = &MsgCancelReplaceMarketOrder{}
 )
 
 func (m MsgAddMarketOrder) Route() string {
@@ -183,4 +184,49 @@ func validateClientOrderID(id string) error {
 	}
 
 	return nil
+}
+
+func (m MsgCancelReplaceMarketOrder) Route() string {
+	return RouterKey
+}
+
+func (m MsgCancelReplaceMarketOrder) Type() string {
+	return "cancel_replace_market_order"
+}
+
+func (m MsgCancelReplaceMarketOrder) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address (%s)", err)
+	}
+
+	if !m.Destination.IsValid() {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "destination amount is invalid: %v", m.Destination.String())
+	}
+
+	if err := sdk.ValidateDenom(m.Source); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "source denomination is invalid: %v", m.Source)
+	}
+
+	if m.Source == m.Destination.Denom {
+		return sdkerrors.Wrapf(ErrInvalidInstrument, "'%s/%s' is not a valid instrument", m.Source, m.Destination.Denom)
+	}
+
+	err := validateClientOrderID(m.OrigClientOrderId)
+	if err != nil {
+		return err
+	}
+
+	return validateClientOrderID(m.NewClientOrderId)
+}
+
+func (m MsgCancelReplaceMarketOrder) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+func (m MsgCancelReplaceMarketOrder) GetSigners() []sdk.AccAddress {
+	from, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
 }
