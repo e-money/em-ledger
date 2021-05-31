@@ -117,22 +117,7 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 func (k *Keeper) GetSrcFromSlippage(
 	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
 ) (sdk.Coin, error) {
-	if err := sdk.ValidateDenom(srcDenom); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(types.ErrInvalidInstrument,"%s", err)
-	}
-
-	if !dst.IsValid() {
-		return sdk.Coin{}, sdkerrors.Wrapf(types.ErrInvalidInstrument,"%v", dst)
-	}
-
-	if srcDenom == dst.Denom {
-		return sdk.Coin{}, sdkerrors.Wrapf(
-			types.ErrInvalidInstrument,
-			"source denomination %s is same as the destination %s", srcDenom,
-			dst.Denom,
-		)
-	}
-
+	// ValidateBasic() for the 2 Market messages has validated the src/dst coins
 	if maxSlippage.LT(sdk.ZeroDec()) {
 		return sdk.Coin{}, sdkerrors.Wrapf(
 			types.ErrInvalidSlippage,
