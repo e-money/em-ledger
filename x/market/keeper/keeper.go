@@ -469,7 +469,7 @@ func (k *Keeper) OrderSpendGas(
 	// Non-liquidity adding order
 	if order.TimeInForce != types.TimeInForce_GoodTillCancel {
 		orderGasMeter.ConsumeGas(
-			stdTrxFee, fmt.Sprintf("FOK, IOC orders cost the full gas"),
+			stdTrxFee, "FOK, IOC orders cost the full gas",
 		)
 
 		return
@@ -485,20 +485,23 @@ func (k *Keeper) OrderSpendGas(
 	// Rebate candidate
 	var orderGas sdk.Gas
 
+	var gasMsg string
 	if origOrderCreated.IsZero() {
 		orderGas = k.calcOrderGas(
 			ctx, stdTrxFee, order.DestinationFilled,
 			order.Destination.Amount,
 		)
+		gasMsg = fmt.Sprintf("aggressive order gas:%d", orderGas)
 	} else {
 		orderGas = k.calcReplaceOrderGas(
 			ctx, order.DestinationFilled, order.Destination.Amount,
 			origOrderCreated,
 		)
+		gasMsg = fmt.Sprintf("replacing order gas:%d", orderGas)
 	}
 
 	orderGasMeter.ConsumeGas(
-		orderGas, fmt.Sprintf("cannot cover order %d gas", orderGas),
+		orderGas, gasMsg,
 	)
 }
 
@@ -508,9 +511,16 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	orderGasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
+	// failed decoding of the original order results in panic
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner, origClientOrderId)
 
-	defer k.OrderSpendGas(ctx, &newOrder, origOrder.Created, orderGasMeter, &err)
+	// origOrder could be nil
+	origOrderCreated := time.Time{}
+	if origOrder != nil {
+		origOrderCreated = origOrder.Created
+	}
+
+	defer k.OrderSpendGas(ctx, &newOrder, origOrderCreated, orderGasMeter, &err)
 
 	if origOrder == nil {
 		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
@@ -542,7 +552,7 @@ func (k *Keeper) CancelReplaceLimitOrder(
 	newOrder.TimeInForce = origOrder.TimeInForce
 
 	// pass in the meter we will charge Gas.
-	resAdd, err := k.NewOrderSingle(ctx.WithGasMeter(orderGasMeter), newOrder)
+	resAdd, err := k.NewOrderSingle(ctx, newOrder)
 	if err != nil {
 		return nil, err
 	}

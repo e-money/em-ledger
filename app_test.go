@@ -58,6 +58,9 @@ func coins(s string) sdk.Coins {
 }
 
 func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
+	// Gas cost expended before entering the market module.
+	const gasStartingCost = 55914
+
 	ctx, app, enc := setupMarketApp(t,  []func(*baseapp.BaseApp){}...)
 	require.NotNil(t, app)
 
@@ -123,10 +126,11 @@ func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
 
 	gasInfo, _, err := app.Deliver(enc.TxConfig.TxEncoder(), tx)
 	require.NoError(t, err)
-	require.Equal(t, gasInfo.GasUsed, sdk.Gas(0))
+	t.Log(gasInfo.GasUsed)
+	require.Equal(t, gasInfo.GasUsed, sdk.Gas(gasStartingCost))
 
 	//
-	// Destination denomination xxx does not exist and errs, full gas
+	// Destination denomination xxx does not exist and errs
 	//
 	msg2 := &types.MsgAddLimitOrder{
 		TimeInForce:   types.TimeInForce_GoodTillCancel,
@@ -140,7 +144,8 @@ func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
 
 	gasInfo, _, err = app.Deliver(enc.TxConfig.TxEncoder(), tx)
 	require.Error(t, err)
-	require.Equal(t, gasInfo.GasUsed, sdk.Gas(25000))
+	t.Log(gasInfo.GasUsed)
+	require.Less(t, sdk.Gas(gasStartingCost), gasInfo.GasUsed)
 
 	msg3 := &types.MsgAddLimitOrder{
 		TimeInForce:   types.TimeInForce_GoodTillCancel,
@@ -150,11 +155,13 @@ func TestAppLimitOrder_0_Full_Err_Gas(t *testing.T) {
 		ClientOrderId: "testAddLimitOrder-eur-chf",
 	}
 
+	ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
 	tx = getSignedTrx(ctx, t, app.accountKeeper, enc, msg3, keystore2, acct2, 0, 0)
 
 	gasInfo, _, err = app.Deliver(enc.TxConfig.TxEncoder(), tx)
 	require.NoError(t, err)
-	require.Equal(t, sdk.Gas(0), gasInfo.GasUsed)
+	t.Log(gasInfo.GasUsed)
+	require.Less(t, sdk.Gas(gasStartingCost), gasInfo.GasUsed)
 }
 
 func getSignedTrx(

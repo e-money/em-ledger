@@ -439,8 +439,6 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 
 	clientID := limitOrder.ClientOrderID
 
-	acc1b = bk.GetAllBalances(ctx, acc1.GetAddress())
-
 	// Gave 1 gbp and gained a eur
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
 	require.Equal(t, coins("20eur,90gbp").String(), acc1Bal.String())
@@ -541,14 +539,14 @@ func TestGetSrcFromSlippage(t *testing.T) {
 
 	srcDenom = "jpy"
 	dest = sdk.NewCoin("eur", sdk.NewInt(100))
-	slippedSource, err = k.GetSrcFromSlippage(
+	_, err = k.GetSrcFromSlippage(
 		ctx, srcDenom, dest, sdk.ZeroDec(),
 	)
 	require.Error(t, err, "No trades yet with jpy")
 
 	srcDenom = "gbp"
 	dest = sdk.NewCoin("dek", sdk.NewInt(100))
-	slippedSource, err = k.GetSrcFromSlippage(
+	_, err = k.GetSrcFromSlippage(
 		ctx, srcDenom, dest, sdk.ZeroDec(),
 	)
 	require.Error(t, err, "No trades yet with dek")
@@ -557,7 +555,7 @@ func TestGetSrcFromSlippage(t *testing.T) {
 
 	srcDenom = "gbp"
 	dest = sdk.NewCoin("eur", sdk.NewInt(100))
-	slippedSource, err = k.GetSrcFromSlippage(
+	_, err = k.GetSrcFromSlippage(
 		ctx, srcDenom, dest, slippage,
 	)
 	require.Error(t, err)
@@ -825,7 +823,7 @@ func TestInsufficientGas(t *testing.T) {
 
 	require.Panics(t, func() {
 		// Taking away liquidity not enough to cover the full Trx fee
-		k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
+		_, _ = k.NewOrderSingle(ctx.WithGasMeter(gasMeter), order2)
 	})
 	require.Equal(t, stdTrxFee, gasMeter.GasConsumed())
 }
@@ -1123,6 +1121,10 @@ func TestKeeperLimitOrderLiquidFullGas(t *testing.T) {
 		coin("5000usd"), acc1.GetAddress(), cid(),
 	)
 	require.NoError(t, err)
+	require.Equal(
+		t, liquidTrxFee, gasMeter.GasConsumed(),
+		"Liquid trx changed instrument eur->chf",
+	)
 
 	// Wrong client order id for previous order submitted.
 	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order1cid)
@@ -1163,7 +1165,7 @@ func TestKeeperLimitOrderLiquidFullGas(t *testing.T) {
 		coin("3000usd"), acc1.GetAddress(), order4cid,
 	)
 	ctx = ctx.WithGasMeter(gasMeter)
-	res, err = k.CancelReplaceLimitOrder(
+	_, err = k.CancelReplaceLimitOrder(
 		ctx.WithBlockTime(ctx.BlockTime().Add(
 			time.Duration(qualificationMin)*time.Minute)),
 		order4, order2cid,
@@ -1342,7 +1344,7 @@ func TestKeeperReplaceLimitFullLiquidGas(t *testing.T) {
 
 	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
 	order5 := order(ctx.BlockTime(), acc2, "42000usd", "8000eur")
-	k.NewOrderSingle(ctx, order5)
+	_, err = k.NewOrderSingle(ctx, order5)
 	require.True(t, err == nil, res.Log)
 
 	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
@@ -1356,8 +1358,7 @@ func TestReplaceMarketOrderErrGas(t *testing.T) {
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "500gbp")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
 
-	trxPms := k.GetParams(ctx)
-	var stdTrxFee uint64 = trxPms.GetTrxFee()
+	var liquidTrxFee uint64 = k.GetLiquidTrxFee(ctx)
 
 	var o types.Order
 	var err error
@@ -1372,7 +1373,6 @@ func TestReplaceMarketOrderErrGas(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make a market order that allows slippage
-	clientID := cid()
 	slippage := sdk.NewDecWithPrec(100, 2)
 	srcDenom := "gbp"
 	dest := sdk.NewCoin("eur", sdk.NewInt(100))
@@ -1384,7 +1384,7 @@ func TestReplaceMarketOrderErrGas(t *testing.T) {
 	_, err = k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
 	foundOrder := k.GetOrderByOwnerAndClientOrderId(
-		ctx, acc1.GetAddress().String(), clientID,
+		ctx, acc1.GetAddress().String(), limitOrder.ClientOrderID,
 	)
 	require.NotNil(t, foundOrder, "Market order should exist")
 	// 100% slippage to double source
@@ -1404,12 +1404,15 @@ func TestReplaceMarketOrderErrGas(t *testing.T) {
 	limitOrder = order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
 	gasMeter := sdk.NewInfiniteGasMeter()
 	ctx = ctx.WithGasMeter(gasMeter)
+	// panic execution of single order
 	k.bk = nil
 	require.Panics(t, func() {
-		// panic CancelReplace
-		k.NewOrderSingle(ctx, limitOrder)
+		_, _ = k.NewOrderSingle(ctx, limitOrder)
 	})
-	require.Equal(t, stdTrxFee, ctx.GasMeter().GasConsumed())
+	require.Equal(
+		t, liquidTrxFee,
+		ctx.GasMeter().GasConsumed(), "Panic gas consumption is unpredictable",
+	)
 }
 
 func TestCancelNewLimitFullGas(t *testing.T) {
@@ -1467,7 +1470,6 @@ func TestCancelNewMarketFullGas(t *testing.T) {
 
 	gasMeter = sdk.NewGasMeter(math.MaxUint64)
 	slippage := sdk.NewDecWithPrec(50, 2)
-	cid := cid()
 	srcDenom := "gbp"
 	dest := sdk.NewCoin("eur", sdk.NewInt(200))
 	slippageSource, err := k.GetSrcFromSlippage(
@@ -1479,7 +1481,7 @@ func TestCancelNewMarketFullGas(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, liquidTrxFee, gasMeter.GasConsumed(), "Non-filled-Liquid")
 
-	_, err = k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), cid)
+	_, err = k.CancelOrder(ctx.WithGasMeter(gasMeter), acc1.GetAddress(), limitOrder.ClientOrderID)
 	require.NoError(t, err)
 	require.Equal(t, stdTrxFee, gasMeter.GasConsumed(), "Cancel pays std fee")
 }
