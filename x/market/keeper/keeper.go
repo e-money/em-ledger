@@ -158,8 +158,6 @@ func (k *Keeper) calcOrderGas(
 	var liquidTrxFee sdk.Gas
 	k.paramStore.Get(ctx, types.KeyLiquidTrxFee, &liquidTrxFee)
 
-	// TODO is destination sufficient to evaluate the total filling impact
-	// for limit/market orders?
 	if dstFilled.IsZero() {
 		// 0% fill -> 100% totalRebate
 		return liquidTrxFee

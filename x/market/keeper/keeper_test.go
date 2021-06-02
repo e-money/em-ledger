@@ -53,7 +53,6 @@ func TestKeeper_calcOrderGas(t *testing.T) {
 	var (
 		stdTrxFee    sdk.Gas = k.GetTrxFee(ctx)
 		liquidTrxFee sdk.Gas = k.GetLiquidTrxFee(ctx)
-		//liquidIntervalMin int64 = k.GetLiquidityRebateMinutesSpan(ctx)
 	)
 	tests := []struct {
 		name         string
@@ -105,6 +104,93 @@ func TestKeeper_calcOrderGas(t *testing.T) {
 				t.Errorf("calcOrderGas() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestKeeper_calcReplaceOrderGas(t *testing.T) {
+	ctx, k, _, _ := createTestComponents(t)
+
+	ctx = ctx.WithBlockTime(time.Now())
+
+	var (
+		stdTrxFee    sdk.Gas = k.GetTrxFee(ctx)
+		liquidTrxFee sdk.Gas = k.GetLiquidTrxFee(ctx)
+		// set ctx to rebate allowance + 1
+		liquidIntervalMin = time.Duration(k.GetLiquidityRebateMinutesSpan(ctx)+1) *
+			time.Minute
+	)
+
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	tests := []struct {
+		name             string
+		ctx              sdk.Context
+		stdTrxFee        sdk.Gas
+		liquidTrxFee     sdk.Gas
+		dstFilled        sdk.Int
+		dstAmount        sdk.Int
+		origOrderCreated time.Time
+		want             sdk.Gas
+	}{
+		{
+			name:             "0% Filled Full Gas",
+			ctx:              ctx.WithBlockTime(ctx.BlockTime().Add(liquidIntervalMin)),
+			stdTrxFee:        stdTrxFee,
+			dstFilled:        sdk.NewInt(0),
+			dstAmount:        sdk.NewInt(0),
+			origOrderCreated: time.Now(),
+			want:             liquidTrxFee,
+		},
+		{
+			name:             "0% Filled but not meeting qualified minutes, Full Gas",
+			ctx:              ctx,
+			stdTrxFee:        stdTrxFee,
+			dstFilled:        sdk.NewInt(0),
+			dstAmount:        sdk.NewInt(0),
+			origOrderCreated: time.Now(),
+			want:             stdTrxFee,
+		},
+		{
+			name:             "100% Filled Full Gas",
+			ctx:              ctx.WithBlockTime(ctx.BlockTime().Add(liquidIntervalMin)),
+			stdTrxFee:        stdTrxFee,
+			dstFilled:        sdk.NewInt(1),
+			dstAmount:        sdk.NewInt(1),
+			origOrderCreated: time.Now(),
+			want:             stdTrxFee,
+		},
+		{
+			name:             "10% Filled Full Gas",
+			ctx:              ctx.WithBlockTime(ctx.BlockTime().Add(liquidIntervalMin)),
+			stdTrxFee:        stdTrxFee,
+			dstFilled:        sdk.NewInt(10),
+			dstAmount:        sdk.NewInt(100),
+			origOrderCreated: time.Now(),
+			want:             stdTrxFee / 10,
+		},
+		{
+			name:             "90% Filled Full Gas",
+			ctx:              ctx.WithBlockTime(ctx.BlockTime().Add(liquidIntervalMin)),
+			stdTrxFee:        stdTrxFee,
+			dstFilled:        sdk.NewInt(90),
+			dstAmount:        sdk.NewInt(100),
+			origOrderCreated: time.Now(),
+			want:             sdk.Gas(float64(stdTrxFee) * 0.9),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				if got := k.calcReplaceOrderGas(
+					tt.ctx, tt.dstFilled, tt.dstAmount, tt.origOrderCreated,
+				); got != tt.want {
+					t.Errorf(
+						"calcReplaceOrderGas() = %v, want %v", got, tt.want,
+					)
+				}
+			},
+		)
 	}
 }
 
