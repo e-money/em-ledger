@@ -86,8 +86,7 @@ bdd-test:
 
 github-ci: build-linux
 	$(MAKE) test
-	$(MAKE) clean
-	$(MAKE) bdd-test
+	$(MAKE) proto-lint
 
 local-testnet:
 	go test -mod=readonly -v --tags="bdd" bdd_test.go localnet_test.go
