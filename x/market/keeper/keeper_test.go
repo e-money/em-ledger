@@ -45,6 +45,12 @@ func init() {
 	emtypes.ConfigureSDK()
 }
 
+// equality for nearly equal floats due to rounding or irrational values.
+func epsEqual(a, b sdk.Dec) bool {
+	eps := sdk.NewDecWithPrec(1, sdk.Precision)
+	return a.Sub(b).LTE(eps) && b.Sub(a).LTE(eps)
+}
+
 func TestBasicTrade(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
@@ -78,8 +84,11 @@ func TestBasicTrade(t *testing.T) {
 	instruments = k.GetInstruments(ctx)
 	require.Len(t, instruments, 2)
 	p := order1.Price()
-	t.Skip("Alex - deactivated before migration. fails with rounding after this line")
-	require.Equal(t, instruments[0].LastPrice.String(), p.String())
+
+	require.Truef(
+		t, epsEqual(*instruments[0].LastPrice, p), "last market price %s should equal plan price %s",
+		instruments[0].LastPrice.String(), p.String(),
+	)
 	require.Equal(t, *instruments[0].Timestamp, ctx.BlockTime())
 
 	// Ensure that gas usage is not higher due to the order being matched.
@@ -96,11 +105,8 @@ func TestBasicTrade(t *testing.T) {
 	require.Equal(t, "50", bal2.AmountOf("eur").String())
 	require.Equal(t, "7340", bal2.AmountOf("usd").String())
 
-	// require.Len(t, k.instruments, 1)
 
-	// i := k.instruments[0]
-	// remainingOrder := i.Orders.LeftKey().(*types.Order)
-	// require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
+	require.Equal(t, int64(60), order2.SourceRemaining.Int64())
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
 }
