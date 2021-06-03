@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/e-money/em-ledger/x/buyback"
 )
 
 // This is a fork of the DeductFeeDecorator from the SDK version v0.42.4
@@ -38,6 +39,10 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		panic(fmt.Sprintf("%s module account has not been set", types.FeeCollectorName))
 	}
 
+	if addr := dfd.ak.GetModuleAddress(buyback.AccountName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", buyback.AccountName))
+	}
+
 	feePayer := feeTx.FeePayer()
 	feePayerAcc := dfd.ak.GetAccount(ctx, feePayer)
 
@@ -47,7 +52,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	// deduct the fees
 	if !feeTx.GetFee().IsZero() {
-		err = DeductFees(dfd.bankKeeper, ctx, feePayerAcc, feeTx.GetFee())
+		err = deductFees(dfd.bankKeeper, dfd.stakingKeeper, ctx, feePayerAcc, feeTx.GetFee())
 		if err != nil {
 			return ctx, err
 		}
@@ -56,15 +61,38 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	return next(ctx, tx, simulate)
 }
 
-// DeductFees deducts fees from the given account.
-func DeductFees(bankKeeper types.BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
+// deductFees deducts fees from the given account.
+func deductFees(bankKeeper types.BankKeeper, stakingKeeper StakingKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
 	if !fees.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
 	}
 
-	err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+	bondDenom := stakingKeeper.BondDenom(ctx)
+
+	stakingTokenFee := sdk.NewCoins()
+	stableCoinFee := sdk.NewCoins()
+
+	// Separate fee into staking token and stablecoins.
+	for _, coin := range fees {
+		if coin.Denom == bondDenom {
+			stakingTokenFee = stakingTokenFee.Add(coin)
+		} else {
+			stableCoinFee = stableCoinFee.Add(coin)
+		}
+	}
+
+	if !stakingTokenFee.IsZero() {
+		err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, stakingTokenFee)
+		if err != nil {
+			return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+		}
+	}
+
+	if !stableCoinFee.IsZero() {
+		err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), buyback.AccountName, stableCoinFee)
+		if err != nil {
+			return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+		}
 	}
 
 	return nil
