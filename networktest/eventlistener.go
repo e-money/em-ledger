@@ -9,6 +9,8 @@ package networktest
 import (
 	"context"
 	"fmt"
+	bep3types "github.com/e-money/bep3/module/types"
+	"strings"
 	"time"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -35,6 +37,10 @@ func NewEventListener() (EventListener, error) {
 }
 
 func (el EventListener) subscribeQuery(query string, listener func(ct.ResultEvent) bool) error {
+	return el.subscribeQueryDuration(query, time.Minute, listener)
+}
+
+func (el EventListener) subscribeQueryDuration(query string, timeout time.Duration, listener func(ct.ResultEvent) bool) error {
 	ctx := context.Background()
 	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
 	if err != nil {
@@ -49,7 +55,7 @@ func (el EventListener) subscribeQuery(query string, listener func(ct.ResultEven
 				if !listener(evt) {
 					return
 				}
-			case <-time.After(time.Minute):
+			case <-time.After(timeout):
 				fmt.Println(" *** Timeout waiting for event.", query)
 				return
 			}
@@ -60,6 +66,10 @@ func (el EventListener) subscribeQuery(query string, listener func(ct.ResultEven
 }
 
 func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error) {
+	return el.awaitQueryDuration(query, time.Minute)
+}
+
+func (el EventListener) awaitQueryDuration(query string, timeout time.Duration) (func() *ct.ResultEvent, error) {
 	ctx := context.Background()
 	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
 	if err != nil {
@@ -72,13 +82,88 @@ func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error)
 		select {
 		case evt := <-eventChannel:
 			return &evt
-		case <-time.After(time.Minute):
+		case <-time.After(timeout):
 			fmt.Println(" *** Timeout waiting for event.", query)
 			return nil
 		}
 	}
 
 	return res, nil
+}
+
+func (el EventListener) AwaitNewBlock() (func() bool, error) {
+	eventFn, err := el.awaitQuery("tm.event='NewBlock'")
+	if err != nil {
+		return nil, err
+	}
+
+	return func() bool {
+		event := eventFn()
+
+		if event == nil {
+			return false
+		}
+
+		_, ok := event.Data.(types.EventDataNewBlock)
+		if !ok {
+			fmt.Printf("Unexpected event type data received: %T\n", event.Data)
+			return false
+		}
+
+		return true
+	}, nil
+}
+
+func (el EventListener) SubscribeExpiration(swapID string, timeout time.Duration) error {
+	stopTime := time.Now().Add(timeout)
+
+	return el.subscribeQueryDuration("tm.event='NewBlock'",timeout,
+		func(event ct.ResultEvent) bool {
+			for k, v := range event.Events {
+				fmt.Println(k)
+				if strings.HasPrefix(k, bep3types.EventTypeSwapsExpired) {
+					fmt.Println(v)
+				}
+			}
+
+			return time.Now().Before(stopTime)
+		})
+}
+
+func (el EventListener) AwaitBep3Expired(swapID string) (func() bool, error) {
+	evQry := fmt.Sprintf("tm.event='NewBlock'")
+	eventFn, err := el.awaitQueryDuration(
+		evQry, 65*time.Second,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return func() bool {
+		event := eventFn()
+
+		if event == nil {
+			return false
+		}
+
+		eventNB, ok := event.Data.(types.EventDataNewBlock)
+		if !ok {
+			fmt.Printf("*** Unexpected event type data received: %T\n", event.Data)
+			return false
+		}
+		for _, e := range eventNB.ResultBeginBlock.Events {
+			if e.Type == bep3types.EventTypeSwapsExpired {
+				key := string(e.Attributes[0].Key)
+				if key == bep3types.AttributeKeyAtomicSwapIDs {
+					val := string(e.Attributes[0].Value)
+					if val == swapID {
+						return true
+					}
+				}
+			}
+		}
+
+		return true
+	}, nil
 }
 
 func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {

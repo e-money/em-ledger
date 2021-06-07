@@ -63,14 +63,7 @@ var _ = Describe("BEP3 Swap", func() {
 				err    error
 			)
 			height, err = networktest.GetHeight()
-			if err != nil {
-				fmt.Println(err)
-				fmt.Println("Not ready to run bep3 tests, sleeping...")
-				time.Sleep(10 * time.Second)
-				height, err = networktest.GetHeight()
-				Expect(err).ToNot(HaveOccurred())
-			}
-			fmt.Println("Creating swap at height:", height)
+			Expect(err).ToNot(HaveOccurred())
 
 			// deputy has sent 5ungm to key1 on another chain.
 			// The deputy creates the swap on the e-money chain.
@@ -190,8 +183,13 @@ var _ = Describe("BEP3 Swap", func() {
 			Expect(gjson.Parse(list).Get(swapStatusQuery).Str).To(Equal("Open"))
 
 			fmt.Println("Sleeping 61 seconds to expire swap...")
-			time.Sleep(61 * time.Second) // Swap expires after 60 seconds
-			height = incChainHeight(height)
+			listener, err := networktest.NewEventListener()
+			Expect(err).ToNot(HaveOccurred())
+			err = listener.SubscribeExpiration(id, 65*time.Second)
+			Expect(err).ToNot(HaveOccurred())
+
+			//time.Sleep(61 * time.Second) // Swap expires after 60 seconds
+			//height = incChainHeight(height)
 
 			// Verify state
 			list, _ = emcli.BEP3ListSwaps()
