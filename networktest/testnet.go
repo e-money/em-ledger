@@ -8,6 +8,7 @@ package networktest
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -28,6 +29,7 @@ type Testnet struct {
 	Keystore *KeyStore
 	chainID  string
 	genesis  []byte // Holds the unaltered genesis file that is re-created on every restart.
+
 }
 
 const (
@@ -326,6 +328,40 @@ func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, er
 			if height >= requestedHeight {
 				return height, nil
 			}
+		}
+	}
+}
+
+// WaitForListenerWithTimeout waits till the chain is able to return an event
+// listener or times out.
+func WaitForListenerWithTimeout(t time.Duration) (listener EventListener, err error) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	timeout := time.After(t)
+
+	for {
+		select {
+		case <-timeout:
+			ticker.Stop()
+			return EventListener{},
+			errors.New("timeout before receiving an event listener")
+		case <-ticker.C:
+			listener, err = NewEventListener()
+			if err != nil {
+				fmt.Print(".")
+				continue
+			}
+
+			newBlocker, err := listener.AwaitNewBlock()
+			if err != nil {
+				fmt.Print(".")
+				continue
+			}
+			if !newBlocker() {
+				fmt.Print(".")
+				continue
+			}
+
+			return listener, nil
 		}
 	}
 }
