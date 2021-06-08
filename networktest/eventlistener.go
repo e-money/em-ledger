@@ -9,9 +9,10 @@ package networktest
 import (
 	"context"
 	"fmt"
-	bep3types "github.com/e-money/bep3/module/types"
+	"sync"
 	"time"
 
+	bep3types "github.com/e-money/bep3/module/types"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	client "github.com/tendermint/tendermint/rpc/client/http"
 	ct "github.com/tendermint/tendermint/rpc/core/types"
@@ -127,6 +128,7 @@ func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duratio
 				if e.Type == bep3types.EventTypeSwapsExpired {
 					key := string(e.Attributes[0].Key)
 					if key == bep3types.AttributeKeyAtomicSwapIDs {
+						// attribute value is a list; omit brackets
 						val := string(e.Attributes[0].Value[1 : len(e.Attributes[0].Value)-1])
 						if val == swapID {
 							// do not fetch additional events.
@@ -140,6 +142,47 @@ func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duratio
 			return true
 		},
 	)
+}
+
+// SubTx fetches all tx events till a timeout or the expected transactions
+// hash events are found
+func (el EventListener) SubTx(
+	mu *sync.Mutex, txHashes map[string]bool, total int, timeout time.Duration,
+) (found int, err error) {
+	ctx := context.Background()
+	query := "tm.event='Tx'"
+	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
+	if err != nil {
+		return 0, err
+	}
+
+	defer el.client.WSEvents.Unsubscribe(ctx, "", query)
+
+	for ;found < total;{
+		select {
+		case evt := <-eventChannel:
+			for k, v := range evt.Events {
+				if k == "tx.hash" {
+					for _, hash := range v {
+						// writes may still be occurring
+						mu.Lock()
+						in := txHashes[hash]
+						mu.Unlock()
+
+						if in {
+							found++
+						}
+					}
+				}
+			}
+		case <-time.After(timeout):
+			err := fmt.Errorf("timeout waiting for event:%s", query)
+			fmt.Println("***", err.Error())
+			return found, err
+		}
+	}
+
+	return found, nil
 }
 
 func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {

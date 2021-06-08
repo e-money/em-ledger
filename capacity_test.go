@@ -21,7 +21,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
-	"github.com/tidwall/gjson"
 	"os"
 	"sync"
 	"time"
@@ -40,82 +39,45 @@ var _ = Describe("Staking", func() {
 			It("creates a new testnet", createNewTestnet)
 
 			It("Creates a lot of send transactions", func() {
-				emcli := testnet.NewEmcli()
+				const trxCount = 400
 
-				time.Sleep(2 * time.Second)
+				var (
+					mu             = new(sync.Mutex)
+					txHashes       = make(map[string]bool)
+				)
 
-				txhash := make(chan string, 1024)
+				senders := []nt.Key{Key1, Key2, Key3, Key3}
+				receivers := []nt.Key{Key2, Key1, Key1, Key2}
 
-				for i := 0; i < 100; i++ {
-					go func() {
+				for i := 0; i < trxCount; i++ {
+
+					go func(from, to nt.Key) {
 						coins, _ := sdk.ParseCoinsNormalized("15000eeur")
-						txResponse, err := sendTx(Key1, Key2, coins, testnet.ChainID())
+						txResponse, err := sendTx(
+							from, to, coins, testnet.ChainID(),
+						)
 						if err != nil {
 							fmt.Println(err)
+							return
 						}
 
-						txhash <- txResponse.TxHash
-					}()
+						mu.Lock()
+						txHashes[txResponse.TxHash] = true
+						mu.Unlock()
 
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("9000eeur")
-						txResponse, err := sendTx(Key2, Key1, coins, testnet.ChainID())
-						if err != nil {
-							fmt.Println(err)
-						}
-
-						txhash <- txResponse.TxHash
-					}()
-
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("4000eeur")
-						txResponse, err := sendTx(Key3, Key1, coins, testnet.ChainID())
-						if err != nil {
-							fmt.Println(err)
-						}
-
-						txhash <- txResponse.TxHash
-					}()
-
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("7700eeur")
-						txResponse, err := sendTx(Key3, Key2, coins, testnet.ChainID())
-						if err != nil {
-							fmt.Println(err)
-						}
-
-						txhash <- txResponse.TxHash
-					}()
+					}(senders[i%4], receivers[i%4])
 				}
 
-				txHashes := make([]string, 0)
+				listener, err := nt.NewEventListener()
+				Expect(err).ToNot(HaveOccurred())
 
-				go func() {
-					for h := range txhash {
-						txHashes = append(txHashes, h)
-					}
-				}()
+				success, err := listener.SubTx(
+					mu, txHashes, trxCount, 30*time.Second,
+				)
+				Expect(err).ToNot(HaveOccurred())
 
-				time.Sleep(30 * time.Second)
-
-				success, failure, errs := 0, 0, 0
-				for _, h := range txHashes {
-					bz, err := emcli.QueryTransaction(h)
-					if err != nil {
-						errs++
-						continue
-					}
-
-					s := gjson.ParseBytes(bz).Get("txhash")
-					if s.Exists() {
-						success++
-					} else {
-						failure++
-					}
-				}
-
-				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Errors: %v\n Total: %v\n", success, failure, errs, success+failure+errs)
-				Expect(success).To(Equal(400))
+				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n", success, (trxCount)-success)
+				Expect(success).To(Equal(trxCount))
 			})
 		})
 	})
