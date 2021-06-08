@@ -11,7 +11,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/sjson"
-	"time"
 )
 
 var _ = Describe("Staking", func() {
@@ -46,9 +45,6 @@ var _ = Describe("Staking", func() {
 					panic(err)
 				}
 
-				// Allow for a few blocks
-				time.Sleep(5 * time.Second)
-
 				slash, err := listener.AwaitSlash()
 				Expect(err).ToNot(HaveOccurred())
 
@@ -61,8 +57,8 @@ var _ = Describe("Staking", func() {
 				Expect(slash()).ToNot(BeNil())
 				Expect(payoutEvent()).To(BeTrue())
 
-				// Allow for a few blocks
-				time.Sleep(5 * time.Second)
+				// Allow for one block
+				_, _ = nt.IncChain(1)
 
 				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
