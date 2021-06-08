@@ -67,19 +67,19 @@ fi
 coins="100000000000stake,100000000000samoleans"
 delegate="100000000000stake"
 
-redirect $BINARY --home $CHAINDIR/$CHAINID --chain-id $CHAINID init $CHAINID 
+redirect $BINARY --home $CHAINDIR/$CHAINID --chain-id $CHAINID init $CHAINID
 sleep 1
 $BINARY --home $CHAINDIR/$CHAINID keys add validator $KEYRING --output json > $CHAINDIR/$CHAINID/validator_seed.json 2> /dev/null
 sleep 1
 $BINARY --home $CHAINDIR/$CHAINID keys add user $KEYRING --output json > $CHAINDIR/$CHAINID/key_seed.json 2> /dev/null
 sleep 1
-redirect $BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show user -a) $coins 
+redirect $BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show user -a) $coins
 sleep 1
-redirect $BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show validator -a) $coins 
+redirect $BINARY --home $CHAINDIR/$CHAINID add-genesis-account $($BINARY --home $CHAINDIR/$CHAINID keys $KEYRING show validator -a) $coins
 sleep 1
 redirect $BINARY --home $CHAINDIR/$CHAINID gentx validator $delegate $KEYRING --chain-id $CHAINID
 sleep 1
-redirect $BINARY --home $CHAINDIR/$CHAINID collect-gentxs 
+redirect $BINARY --home $CHAINDIR/$CHAINID collect-gentxs
 sleep 1
 
 # Check platform
@@ -109,17 +109,13 @@ else
   # sed -i '' 's#index-events = \[\]#index-events = \["message.action","send_packet.packet_src_channel","send_packet.packet_sequence"\]#g' $CHAINDIR/$CHAINID/config/app.toml
 fi
 
-if [ $BINARY = 'emd' ]; then
-  PASSWORD="1234567890"
-  (echo "$PASSWORD"; echo "$PASSWORD") | $BINARY keys add authority --keyring-backend=file --keyring-dir=$CHAINDIR/$CHAINID/keyring
+PASSWORD="1234567890"
+(echo "$PASSWORD"; echo "$PASSWORD") | $BINARY keys add authority --keyring-backend=file --keyring-dir=$CHAINDIR/$CHAINID/keyring --home .
 
-  # Add authority key to genesis
-  tmp_file=$(mktemp)
-  cat "$CHAINDIR/$CHAINID/config/genesis.json" | jq ".app_state.authority.key=\"$(echo "$PASSWORD"| $BINARY keys show authority --address --keyring-backend=file --keyring-dir=$CHAINDIR/$CHAINID/keyring)\"" > "$tmp_file"
-  mv -f "$tmp_file" "$CHAINDIR/$CHAINID/config/genesis.json"
-
-
-fi
+# Add authority key to genesis
+tmp_file=$(mktemp)
+cat "$CHAINDIR/$CHAINID/config/genesis.json" | jq ".app_state.authority.key=\"$(echo "$PASSWORD"| $BINARY keys show authority --address --keyring-backend=file --home . --keyring-dir=$CHAINDIR/$CHAINID/keyring)\"" > "$tmp_file"
+mv -f "$tmp_file" "$CHAINDIR/$CHAINID/config/genesis.json"
 
 # Start the chain
 redirect $BINARY --home $CHAINDIR/$CHAINID start --pruning=nothing --grpc.address="0.0.0.0:$GRPCPORT" > $CHAINDIR/$CHAINID.log &

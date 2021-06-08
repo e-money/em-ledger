@@ -1,10 +1,11 @@
 #!/bin/bash
-# two-chainz creates two emd chains and configures the relayer to 
+# two-chainz creates two emd chains and configures the relayer to
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 EM_DATA="$(pwd)/data"
 RELAYER_DIR="$(dirname $SCRIPTDIR)"
 RELAYER_CONF="$HOME/.relayer"
+EMD="../../build/emd"
 
 # Ensure emd is installed
 if ! [ -x "$(which emd)" ]; then
@@ -14,7 +15,7 @@ fi
 
 # Display software version for testers
 echo "EMD VERSION INFO:"
-emd version --long
+${EMD} version --long --home .
 
 # Ensure jq is installed
 if [[ ! -x "$(which jq)" ]]; then
@@ -46,8 +47,8 @@ chainid1=ibc-1
 
 echo "Generating EM configurations..."
 mkdir -p $EM_DATA && cd $EM_DATA && cd ../
-"$SCRIPTDIR/one-chain" emd $chainid0 ./data 26657 26656 6060 9090
-"$SCRIPTDIR/one-chain" emd $chainid1 ./data 26557 26556 6061 9091
+"$SCRIPTDIR/one-chain" ${EMD} $chainid0 ./data 26657 26656 6060 9090
+"$SCRIPTDIR/one-chain" ${EMD} $chainid1 ./data 26557 26556 6061 9091
 
 [ -f $EM_DATA/$chainid0.log ] && echo "$chainid0 initialized. Watch file $EM_DATA/$chainid0.log to see its execution."
 [ -f $EM_DATA/$chainid1.log ] && echo "$chainid1 initialized. Watch file $EM_DATA/$chainid1.log to see its execution."
