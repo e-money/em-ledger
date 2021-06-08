@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -56,6 +55,7 @@ import (
 	bep3 "github.com/e-money/bep3/module"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/auth/ante"
 	"github.com/e-money/em-ledger/x/queries"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -422,7 +422,7 @@ func NewApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
-			app.accountKeeper, app.bankKeeper, ante.DefaultSigVerificationGasConsumer,
+			app.accountKeeper, app.bankKeeper, app.stakingKeeper,
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
