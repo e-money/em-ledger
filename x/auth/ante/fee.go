@@ -10,11 +10,15 @@ import (
 	"github.com/e-money/em-ledger/x/buyback"
 )
 
-// This is a fork of the DeductFeeDecorator from the SDK version v0.42.4
-// It deposits the fees differently based on what denomination it is paid with.
+// DeductFeeDecorator deducts fees from the first signer of the tx
+// If the first signer does not have the funds to pay for the fees, return with InsufficientFunds error
+// Call next AnteHandler if fees successfully deducted
+// Fees are deposited differently based on what denomination it is paid with.
 // If the fee is paid in NGM, it is sent to the tradition fee pool and distributed as rewards
 // If the fee is paid with a stablecoin balance, it is sent to the buyback module
+// CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 // https://github.com/e-money/em-ledger/issues/41
+// This is a fork of from the SDK (version v0.42.4)
 type DeductFeeDecorator struct {
 	ak            sdkante.AccountKeeper
 	bankKeeper    types.BankKeeper
