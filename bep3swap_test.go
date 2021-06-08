@@ -119,7 +119,7 @@ var _ = Describe("BEP3 Swap", func() {
 			Expect(jsonOutput.Get("code").Int()).To(Equal(int64(13)))
 		})
 
-		It("Intended recpient claims the swap", func() {
+		It("Intended recipient claims the swap", func() {
 			var (
 				height int64
 				err    error
@@ -182,14 +182,11 @@ var _ = Describe("BEP3 Swap", func() {
 			id := gjson.Parse(list).Get(swapIdQuery).Str
 			Expect(gjson.Parse(list).Get(swapStatusQuery).Str).To(Equal("Open"))
 
-			fmt.Println("Sleeping 61 seconds to expire swap...")
+			fmt.Println("Waiting up to 61 secs for the expiration swap event...")
 			listener, err := networktest.NewEventListener()
 			Expect(err).ToNot(HaveOccurred())
-			err = listener.SubscribeExpiration(id, 65*time.Second)
+			err = listener.SubscribeExpirations(id, 61*time.Second)
 			Expect(err).ToNot(HaveOccurred())
-
-			//time.Sleep(61 * time.Second) // Swap expires after 60 seconds
-			//height = incChainHeight(height)
 
 			// Verify state
 			list, _ = emcli.BEP3ListSwaps()

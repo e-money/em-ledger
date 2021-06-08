@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	bep3types "github.com/e-money/bep3/module/types"
-	"strings"
 	"time"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -47,22 +46,21 @@ func (el EventListener) subscribeQueryDuration(query string, timeout time.Durati
 		return err
 	}
 
-	go func() {
-		defer el.client.WSEvents.Unsubscribe(ctx, "", query)
-		for {
-			select {
-			case evt := <-eventChannel:
-				if !listener(evt) {
-					return
-				}
-			case <-time.After(timeout):
-				fmt.Println(" *** Timeout waiting for event.", query)
-				return
-			}
-		}
-	}()
+	defer el.client.WSEvents.Unsubscribe(ctx, "", query)
 
-	return nil
+	// process found events till timeout or listener false value
+	for {
+		select {
+		case evt := <-eventChannel:
+			if !listener(evt) {
+				return nil
+			}
+		case <-time.After(timeout):
+			err := fmt.Errorf("timeout waiting for event:%s", query)
+			fmt.Println("***", err.Error())
+			return err
+		}
+	}
 }
 
 func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error) {
@@ -114,56 +112,34 @@ func (el EventListener) AwaitNewBlock() (func() bool, error) {
 	}, nil
 }
 
-func (el EventListener) SubscribeExpiration(swapID string, timeout time.Duration) error {
-	stopTime := time.Now().Add(timeout)
-
-	return el.subscribeQueryDuration("tm.event='NewBlock'",timeout,
+// SubscribeExpirations fetches all new block events till a timeout or the
+// expected Bep3 expiration occurs.
+func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duration) error {
+	return el.subscribeQueryDuration(
+		"tm.event='NewBlock'", timeout,
 		func(event ct.ResultEvent) bool {
-			for k, v := range event.Events {
-				fmt.Println(k)
-				if strings.HasPrefix(k, bep3types.EventTypeSwapsExpired) {
-					fmt.Println(v)
-				}
+			eventNB, ok := event.Data.(types.EventDataNewBlock)
+			if !ok {
+				// fetch next
+				return true
 			}
-
-			return time.Now().Before(stopTime)
-		})
-}
-
-func (el EventListener) AwaitBep3Expired(swapID string) (func() bool, error) {
-	evQry := fmt.Sprintf("tm.event='NewBlock'")
-	eventFn, err := el.awaitQueryDuration(
-		evQry, 65*time.Second,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return func() bool {
-		event := eventFn()
-
-		if event == nil {
-			return false
-		}
-
-		eventNB, ok := event.Data.(types.EventDataNewBlock)
-		if !ok {
-			fmt.Printf("*** Unexpected event type data received: %T\n", event.Data)
-			return false
-		}
-		for _, e := range eventNB.ResultBeginBlock.Events {
-			if e.Type == bep3types.EventTypeSwapsExpired {
-				key := string(e.Attributes[0].Key)
-				if key == bep3types.AttributeKeyAtomicSwapIDs {
-					val := string(e.Attributes[0].Value)
-					if val == swapID {
-						return true
+			for _, e := range eventNB.ResultBeginBlock.Events {
+				if e.Type == bep3types.EventTypeSwapsExpired {
+					key := string(e.Attributes[0].Key)
+					if key == bep3types.AttributeKeyAtomicSwapIDs {
+						val := string(e.Attributes[0].Value[1 : len(e.Attributes[0].Value)-1])
+						if val == swapID {
+							// do not fetch additional events.
+							return false
+						}
 					}
 				}
 			}
-		}
 
-		return true
-	}, nil
+			// fetch next
+			return true
+		},
+	)
 }
 
 func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {
