@@ -58,7 +58,8 @@ var _ = Describe("Staking", func() {
 				Expect(payoutEvent()).To(BeTrue())
 
 				// Allow for one block
-				_, _ = nt.IncChain(1)
+				_, err = nt.IncChain(1)
+				Expect(err).ToNot(HaveOccurred())
 
 				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
