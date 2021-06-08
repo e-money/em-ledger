@@ -23,6 +23,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -44,11 +45,11 @@ var _ = Describe("Staking", func() {
 				var (
 					mu             = new(sync.Mutex)
 					txHashes       = make(map[string]bool)
+					errs     int32 = 0
 				)
 
 				senders := []nt.Key{Key1, Key2, Key3, Key3}
 				receivers := []nt.Key{Key2, Key1, Key1, Key2}
-
 				for i := 0; i < trxCount; i++ {
 
 					go func(from, to nt.Key) {
@@ -57,6 +58,7 @@ var _ = Describe("Staking", func() {
 							from, to, coins, testnet.ChainID(),
 						)
 						if err != nil {
+							atomic.AddInt32(&errs, 1)
 							fmt.Println(err)
 							return
 						}
@@ -72,12 +74,15 @@ var _ = Describe("Staking", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				success, err := listener.SubTx(
-					mu, txHashes, trxCount, 30*time.Second,
+					mu, txHashes, trxCount-errs, 30*time.Second,
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n", success, (trxCount)-success)
-				Expect(success).To(Equal(trxCount))
+				fmt.Printf(
+					" *** Transactions summary:\n Successful: %d\n Failed: %d\n Errors: %d\n Total: %d\n",
+					success, trxCount-errs-success, errs, trxCount,
+				)
+				Expect(int(success)).To(Equal(trxCount))
 			})
 		})
 	})

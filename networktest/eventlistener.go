@@ -147,8 +147,8 @@ func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duratio
 // SubTx fetches all tx events till a timeout or the expected transactions
 // hash events are found
 func (el EventListener) SubTx(
-	mu *sync.Mutex, txHashes map[string]bool, total int, timeout time.Duration,
-) (found int, err error) {
+	mu *sync.Mutex, txHashes map[string]bool, total int32, timeout time.Duration,
+) (found int32, err error) {
 	ctx := context.Background()
 	query := "tm.event='Tx'"
 	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
