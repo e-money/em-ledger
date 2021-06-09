@@ -99,7 +99,7 @@ var _ = Describe("Market", func() {
 			}
 
 			// Among the market transactions, send a transaction that we will
-			// search its committed hash from revitalized node 2.
+			// search its committed hash from the revitalized node 2.
 			txHashes       := make(map[string]bool)
 			coin, _ := sdk.ParseCoinsNormalized("15000eeur")
 			txHash, err := testnet.SendTx(
@@ -112,12 +112,18 @@ var _ = Describe("Market", func() {
 			node2Lic, err := networktest.NewEventListenerNode(2)
 			Expect(err).ToNot(HaveOccurred())
 
-			// find the trx hash among the emitted events
-			foundTrx, err := node2Lic.SubTx(
-				nil, txHashes, 1, 20 * time.Second,
+			var (
+				foundCnt int32
+				expiration = 20*time.Second
 			)
+			Eventually(func() int {
+				// find the trx hash among the emitted events
+				foundCnt, err = node2Lic.SubTx(
+					nil, txHashes, 1, expiration,
+				)
+				return int(foundCnt)
+			}, expiration, time.Second).Should(Equal(1))
 			Expect(err).ToNot(HaveOccurred())
-			Expect(int(foundTrx)).To(Equal(1))
 		})
 
 		// Create a vanilla testnet to reset market state

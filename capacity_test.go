@@ -72,9 +72,17 @@ var _ = Describe("Staking", func() {
 				listener, err := nt.NewEventListener()
 				Expect(err).ToNot(HaveOccurred())
 
-				success, err := listener.SubTx(
-					mu, txHashes, trxCount-errs, time.Minute,
+				var (
+					success int32
+					expiration = time.Minute
 				)
+
+				Eventually(func() int {
+					success, err = listener.SubTx(
+						mu, txHashes, trxCount-errs, expiration,
+					)
+					return int(success)
+				}, expiration, time.Second).Should(Equal(trxCount))
 				Expect(err).ToNot(HaveOccurred())
 
 				fmt.Printf(
