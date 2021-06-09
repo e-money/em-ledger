@@ -1,14 +1,7 @@
-// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
-//
-// Please contact partners@e-money.com for licensing related questions.
-
-// +build bdd
-
-package emoney_test
+package networktest
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -16,76 +9,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	emoney "github.com/e-money/em-ledger"
-	nt "github.com/e-money/em-ledger/networktest"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
 	"os"
 	"sync"
-	"sync/atomic"
-	"time"
 )
-
-var _ = Describe("Staking", func() {
-
-	var (
-		Key1 = testnet.Keystore.Key1
-		Key2 = testnet.Keystore.Key2
-		Key3 = testnet.Keystore.Key3
-	)
-
-	Describe("Blocks can hold many transactions", func() {
-		Context("", func() {
-			It("creates a new testnet", createNewTestnet)
-
-			It("Creates a lot of send transactions", func() {
-				const trxCount = 400
-
-				var (
-					mu             = new(sync.Mutex)
-					txHashes       = make(map[string]bool)
-					errs     int32 = 0
-					coin, _ = sdk.ParseCoinsNormalized("15000eeur")
-					chainID = testnet.ChainID()
-				)
-
-				senders := []nt.Key{Key1, Key2, Key3, Key3}
-				receivers := []nt.Key{Key2, Key1, Key1, Key2}
-				for i := 0; i < trxCount; i++ {
-
-					go func(from, to nt.Key) {
-						hash, err := testnet.SendTx(from, to, coin, chainID)
-						if err != nil {
-							atomic.AddInt32(&errs, 1)
-							fmt.Println(err)
-							return
-						}
-
-						mu.Lock()
-						txHashes[hash] = true
-						mu.Unlock()
-
-					}(senders[i%4], receivers[i%4])
-				}
-
-				listener, err := nt.NewEventListener()
-				Expect(err).ToNot(HaveOccurred())
-
-				success, err := listener.SubTx(
-					mu, txHashes, trxCount-errs, time.Minute,
-				)
-				Expect(err).ToNot(HaveOccurred())
-
-				fmt.Printf(
-					" *** Transactions summary:\n Successful: %d\n Failed: %d\n Errors: %d\n Total: %d\n",
-					success, trxCount-errs-success, errs, trxCount,
-				)
-				Expect(int(success)).To(Equal(trxCount))
-			})
-		})
-	})
-})
 
 type accountNoSequence struct {
 	AccountNo, Sequence uint64
@@ -96,20 +24,20 @@ var (
 	sequences = make(map[string]accountNoSequence)
 )
 
-func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResponse, error) {
+func (t Testnet) SendTx(fromKey, toKey Key, amount sdk.Coins, chainID string) (string, error) {
 	sendMutex.Lock()
 	defer sendMutex.Unlock()
 
 	from, err := sdk.AccAddressFromBech32(fromKey.GetAddress())
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 
 	encodingConfig := emoney.MakeEncodingConfig()
 
 	httpClient, err := rpcclient.New("tcp://localhost:26657", "/websocket")
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 
 	clientCtx := client.Context{}.
@@ -124,7 +52,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		WithChainID(chainID).
 		WithFromName(fromKey.GetName()).
 		WithFromAddress(from).
-		WithKeyring(testnet.Keystore.Keyring()).
+		WithKeyring(t.Keystore.Keyring()).
 		WithClient(httpClient).
 		WithSkipConfirmation(true)
 
@@ -135,7 +63,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	if accInfo, present = sequences[fromKey.GetAddress()]; !present {
 		accountNumber, sequence, err := authtypes.AccountRetriever{}.GetAccountNumberSequence(clientCtx, from)
 		if err != nil {
-			return sdk.TxResponse{}, err
+			return "", err
 		}
 
 		accInfo = accountNoSequence{
@@ -150,7 +78,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		Amount:      amount,
 	}
 	if err := sendMsg.ValidateBasic(); err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
 	txf := tx.NewFactoryCLI(clientCtx, flagSet).
@@ -164,8 +92,10 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	var buf bytes.Buffer
 	err = tx.BroadcastTx(clientCtx.WithOutput(&buf), txf, sendMsg)
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
+
 	var resp sdk.TxResponse
-	return resp, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
+	return resp.TxHash, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
 }
+
