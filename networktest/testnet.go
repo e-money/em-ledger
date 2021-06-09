@@ -290,17 +290,6 @@ func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error)
 	return newHeight, err
 }
 
-func ChainBlockHash() (string, error) {
-	status, err := chainStatus()
-	if err != nil {
-		return "", err
-	}
-
-	blockHash := gjson.ParseBytes(status).Get("SyncInfo.latest_block_hash").Str
-
-	return blockHash, nil
-}
-
 func GetHeight() (int64, error) {
 	status, err := chainStatus()
 	if err != nil {

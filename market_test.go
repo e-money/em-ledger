@@ -19,7 +19,6 @@ import (
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -38,7 +37,6 @@ var _ = Describe("Market", func() {
 		It("creates a new testnet", createNewTestnet)
 
 		It("Basic creation of simple orders", func() {
-			time.Sleep(5 * time.Second)
 			//bz, err := emcli.QueryAccountJson(acc1.GetAddress())
 			//fmt.Println(string(bz))
 			//Expect(err).ShouldNot(HaveOccurred())
@@ -57,12 +55,8 @@ var _ = Describe("Market", func() {
 
 		It("Crashing validator can catch up", func() {
 			var (
-				height int64
 				err    error
 			)
-			height, err = networktest.GetHeight()
-			Expect(err).ToNot(HaveOccurred())
-
 			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
@@ -92,7 +86,8 @@ var _ = Describe("Market", func() {
 			//Expect(err).ToNot(HaveOccurred())
 			//fmt.Println("Order book:\n", string(bz))
 
-			time.Sleep(4 * time.Second)
+			_, err = networktest.IncChain(2)
+			Expect(err).ToNot(HaveOccurred())
 
 			_, err = testnet.ResurrectValidator(2)
 			Expect(err).ToNot(HaveOccurred())
@@ -103,32 +98,32 @@ var _ = Describe("Market", func() {
 				Expect(success).To(BeTrue())
 			}
 
-			height, err = networktest.IncChainWithExpiration(height, 1 *time.Second)
+			// Among the market transactions, send a transaction that we will
+			// search its committed hash from revitalized node 2.
+			txHashes       := make(map[string]bool)
+			coin, _ := sdk.ParseCoinsNormalized("15000eeur")
+			txHash, err := testnet.SendTx(
+				testnet.Keystore.Key1, testnet.Keystore.Key2, coin,
+				testnet.ChainID(),
+			)
+			Expect(err).ToNot(HaveOccurred())
+			txHashes[txHash] = true
+
+			node2Lic, err := networktest.NewEventListenerNode(2)
 			Expect(err).ToNot(HaveOccurred())
 
-			aBlockHash, err := networktest.ChainBlockHash()
+			// find the trx hash among the emitted events
+			foundTrx, err := node2Lic.SubTx(
+				nil, txHashes, 1, 20 * time.Second,
+			)
 			Expect(err).ToNot(HaveOccurred())
-			fmt.Printf("Waiting a few blocks for emdnode2 log to register %s block\n",aBlockHash)
-
-			// Wait and while and attempt to discover consensus failure in the logs of the resurrected validator
-			// allow node2 log to catch up by waiting a few blocks
-			height, err = networktest.IncChainWithExpiration(height+14, 40 *time.Second)
-			Expect(err).ToNot(HaveOccurred())
-
-			log, err := testnet.GetValidatorLogs(2)
-			Expect(err).ToNot(HaveOccurred())
-			if !strings.Contains(log, aBlockHash) {
-				Fail(fmt.Sprintf("Validator 2 has not caught up with block %s:\n%s",
-					aBlockHash, log))
-			}
+			Expect(int(foundTrx)).To(Equal(1))
 		})
 
 		// Create a vanilla testnet to reset market state
 		It("creates a new testnet", createNewTestnet)
 
 		It("Runs out of gas while using the market", func() {
-			time.Sleep(5 * time.Second)
-
 			prices, err := sdk.ParseDecCoins("0.00005eeur")
 			Expect(err).ToNot(HaveOccurred())
 

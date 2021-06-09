@@ -24,7 +24,14 @@ type EventListener struct {
 }
 
 func NewEventListener() (EventListener, error) {
-	httpClient, err := client.New("http://localhost:26657", "/websocket")
+	return NewEventListenerNode(0)
+}
+
+func NewEventListenerNode(node int) (EventListener, error) {
+	rpcPorts :=[]int{26657, 26660, 26662, 26664}
+
+	url := fmt.Sprintf("http://localhost:%d", rpcPorts[node])
+	httpClient, err := client.New(url, "/websocket")
 	if err != nil {
 		return EventListener{}, err
 	}
@@ -144,8 +151,9 @@ func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duratio
 	)
 }
 
-// SubTx fetches all tx events till a timeout or the expected transactions
-// hash events are found
+// SubTx fetches all tx events till a timeout or the expected transactions'
+// hashes (txHashes) are found withing the emitted events. This is thread safe
+// and if called from a single thread you may pass a nil mutex.
 func (el EventListener) SubTx(
 	mu *sync.Mutex, txHashes map[string]bool, total int32, timeout time.Duration,
 ) (found int32, err error) {
@@ -164,11 +172,17 @@ func (el EventListener) SubTx(
 			for k, v := range evt.Events {
 				if k == "tx.hash" {
 					for _, hash := range v {
-						// writes may still be occurring
-						mu.Lock()
-						in := txHashes[hash]
-						mu.Unlock()
+						// may not be called concurrently
+						if mu != nil {
+							// writes may still be occurring
+							mu.Lock()
+						}
 
+						in := txHashes[hash]
+
+						if mu != nil {
+							mu.Unlock()
+						}
 						if in {
 							found++
 						}
