@@ -46,6 +46,8 @@ var _ = Describe("Staking", func() {
 					mu             = new(sync.Mutex)
 					txHashes       = make(map[string]bool)
 					errs     int32 = 0
+					coin, _ = sdk.ParseCoinsNormalized("15000eeur")
+					chainID = testnet.ChainID()
 				)
 
 				senders := []nt.Key{Key1, Key2, Key3, Key3}
@@ -53,9 +55,8 @@ var _ = Describe("Staking", func() {
 				for i := 0; i < trxCount; i++ {
 
 					go func(from, to nt.Key) {
-						coins, _ := sdk.ParseCoinsNormalized("15000eeur")
 						txResponse, err := sendTx(
-							from, to, coins, testnet.ChainID(),
+							from, to, coin, chainID,
 						)
 						if err != nil {
 							atomic.AddInt32(&errs, 1)
