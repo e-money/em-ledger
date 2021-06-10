@@ -118,17 +118,3 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 
 	return json.Marshal(resp)
 }
-
-// getBestPrice returns the best priced passive order for source and
-// destination instruments. Returns nil when executePlan cannot find a best
-// plan.
-func getBestPrice(ctx sdk.Context, k *Keeper, source, destination string) *sdk.Dec {
-	var bestPrice *sdk.Dec
-
-	bestPlan := k.createExecutionPlan(ctx, destination, source)
-	if !bestPlan.DestinationCapacity().IsZero() {
-		bestPrice = &bestPlan.Price
-	}
-
-	return bestPrice
-}
