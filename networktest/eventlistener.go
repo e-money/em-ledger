@@ -155,7 +155,7 @@ func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duratio
 // hashes (txHashes) are found withing the emitted events. This is thread safe
 // and if called from a single thread you may pass a nil mutex.
 func (el EventListener) SubTx(
-	mu *sync.Mutex, txHashes map[string]bool, total int32, timeout time.Duration,
+	mu *sync.RWMutex, txHashes map[string]bool, total int32, timeout time.Duration,
 ) (found int32, err error) {
 	ctx := context.Background()
 	query := "tm.event='Tx'"
@@ -175,13 +175,13 @@ func (el EventListener) SubTx(
 						// may not be called concurrently
 						if mu != nil {
 							// writes may still be occurring
-							mu.Lock()
+							mu.RLock()
 						}
 
 						in := txHashes[hash]
 
 						if mu != nil {
-							mu.Unlock()
+							mu.RUnlock()
 						}
 						if in {
 							found++

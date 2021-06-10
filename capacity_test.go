@@ -43,7 +43,7 @@ var _ = Describe("Staking", func() {
 				const trxCount = 400
 
 				var (
-					mu             = new(sync.Mutex)
+					mu             = new(sync.RWMutex)
 					txHashes       = make(map[string]bool)
 					errs     int32 = 0
 					coin, _ = sdk.ParseCoinsNormalized("15000eeur")
