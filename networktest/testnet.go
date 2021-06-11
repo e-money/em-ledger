@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -29,7 +30,7 @@ type Testnet struct {
 	Keystore *KeyStore
 	chainID  string
 	genesis  []byte // Holds the unaltered genesis file that is re-created on every restart.
-
+	sync.Mutex
 }
 
 const (
@@ -89,7 +90,7 @@ func (t *Testnet) Setup() error {
 		return nil
 	}
 
-	err := compileBinaries()
+	err := t.compileBinaries()
 	if err != nil {
 		return err
 	}
@@ -124,17 +125,17 @@ func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (
 	return t.restart(genesisModifier)
 }
 
-func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
+func (t *Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, error) {
 	if reusableNetUp() {
 		return func() bool { return true }, nil
 	}
-	err := dockerComposeDown()
+	err := t.dockerComposeDown()
 	if err != nil {
 		return nil, err
 	}
 
 	for i := 0; i < ContainerCount; i++ {
-		_, err := execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
+		_, err := t.execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
 		if err != nil {
 			return nil, err
 		}
@@ -150,29 +151,29 @@ func (t Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, erro
 		writeGenesisFiles(t.genesis)
 	}
 
-	return dockerComposeUp()
+	return t.dockerComposeUp()
 }
 
-func (t Testnet) Teardown() error {
+func (t *Testnet) Teardown() error {
 	if reusableNetUp() {
 		return nil
 	}
-	return dockerComposeDown()
+	return t.dockerComposeDown()
 }
 
-func (t Testnet) KillValidator(index int) (string, error) {
-	return execCmdAndWait(dockerComposePath, "kill", fmt.Sprintf("emdnode%v", index))
+func (t *Testnet) KillValidator(index int) (string, error) {
+	return t.execCmdAndWait(dockerComposePath, "kill", fmt.Sprintf("emdnode%v", index))
 }
 
-func (t Testnet) ResurrectValidator(index int) (string, error) {
-	return execCmdAndWait(dockerComposePath, "start", fmt.Sprintf("emdnode%v", index))
+func (t *Testnet) ResurrectValidator(index int) (string, error) {
+	return t.execCmdAndWait(dockerComposePath, "start", fmt.Sprintf("emdnode%v", index))
 }
 
-func (t Testnet) GetValidatorLogs(index int) (string, error) {
-	return execCmdAndWait(dockerPath, "logs", fmt.Sprintf("emdnode%v", index))
+func (t *Testnet) GetValidatorLogs(index int) (string, error) {
+	return t.execCmdAndWait(dockerComposePath, "logs", fmt.Sprintf("emdnode%v", index))
 }
 
-func (t Testnet) NewEmcli() Emcli {
+func (t *Testnet) NewEmcli() Emcli {
 	return Emcli{
 		chainid:  t.chainID,
 		node:     DefaultNode,
@@ -180,18 +181,18 @@ func (t Testnet) NewEmcli() Emcli {
 	}
 }
 
-func (t Testnet) ChainID() string {
+func (t *Testnet) ChainID() string {
 	return t.chainID
 }
 
-func (t Testnet) makeTestnet() error {
+func (t *Testnet) makeTestnet() error {
 	numNodes := 4
 
 	if reusableNetUp() {
 		return nil
 	}
 
-	_, err := execCmdAndWait(
+	_, err := t.execCmdAndWait(
 		EMD,
 		"testnet",
 		t.Keystore.Authority.name,
@@ -380,29 +381,29 @@ func WaitForListenerWithTimeout(t time.Duration) (listener EventListener, err er
 	}
 }
 
-func compileBinaries() error {
-	_, err := execCmdAndWait(makePath, "clean", "build-all")
+func (t *Testnet)compileBinaries() error {
+	_, err := t.execCmdAndWait(makePath, "clean", "build-all")
 	if err != nil {
 		fmt.Println("Compilation step caused error: ", err)
 	}
 	return err
 }
 
-func dockerComposeUp() (func() bool, error) {
+func (t *Testnet)dockerComposeUp() (func() bool, error) {
 	wait := func() bool {
 		_, err := WaitForHeightWithTimeout(1, 30*time.Second)
 		return err == nil
 	}
 	_, scanner := createOutputScanner("committed state", 30*time.Second)
-	return wait, execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
+	return wait, t.execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
-func dockerComposeDown() error {
-	_, err := execCmdAndWait(dockerComposePath, "kill")
+func (t *Testnet)dockerComposeDown() error {
+	_, err := t.execCmdAndWait(dockerComposePath, "kill")
 	return err
 }
 
-func execCmdAndRun(name string, arguments []string, scanner func(string)) error {
+func (t *Testnet)execCmdAndRun(name string, arguments []string, scanner func(string)) error {
 	cmd := exec.Command(name, arguments...)
 	err := writeoutput(cmd, scanner)
 	if err != nil {
@@ -412,7 +413,7 @@ func execCmdAndRun(name string, arguments []string, scanner func(string)) error 
 	return cmd.Start()
 }
 
-func execCmdAndWait(name string, arguments ...string) (string, error) {
+func (t *Testnet)execCmdAndWait(name string, arguments ...string) (string, error) {
 	cmd := exec.Command(name, arguments...)
 
 	// TODO Look into ways of not always setting this.
@@ -420,6 +421,8 @@ func execCmdAndWait(name string, arguments ...string) (string, error) {
 
 	var output strings.Builder
 	captureOutput := func(s string) {
+		t.Lock()
+		defer t.Unlock()
 		output.WriteString(s)
 		output.WriteRune('\n')
 	}
