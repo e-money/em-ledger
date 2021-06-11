@@ -19,7 +19,7 @@ import (
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"os"
-	"time"
+	"strings"
 )
 
 var _ = Describe("Market", func() {
@@ -98,32 +98,22 @@ var _ = Describe("Market", func() {
 				Expect(success).To(BeTrue())
 			}
 
-			// Among the market transactions, send a transaction that we will
-			// search its committed hash from the revitalized node 2.
-			txHashes       := make(map[string]bool)
-			coin, _ := sdk.ParseCoinsNormalized("15000eeur")
-			txHash, err := testnet.SendTx(
-				testnet.Keystore.Key1, testnet.Keystore.Key2, coin,
-				testnet.ChainID(),
-			)
-			Expect(err).ToNot(HaveOccurred())
-			txHashes[txHash] = true
-
-			node2Lic, err := networktest.NewEventListenerNode(2)
+			_, err = networktest.IncChain(1)
 			Expect(err).ToNot(HaveOccurred())
 
-			var (
-				foundCnt int32
-				expiration = 20*time.Second
-			)
-			Eventually(func() int {
-				// find the trx hash among the emitted events
-				foundCnt, err = node2Lic.SubTx(
-					nil, txHashes, 1, expiration,
-				)
-				return int(foundCnt)
-			}, expiration, time.Second).Should(Equal(1))
+			aBlockHash, err := networktest.ChainBlockHash()
 			Expect(err).ToNot(HaveOccurred())
+			fmt.Printf("Looking for emdnode2 to participate in %s block commit\n",aBlockHash)
+
+			// +10 blocks to allow node2 to catch up
+			_, _ = networktest.IncChain(10)
+
+			log, err := testnet.GetValidatorLogs(2)
+			Expect(err).ToNot(HaveOccurred())
+			if !strings.Contains(log, aBlockHash) {
+				Fail(fmt.Sprintf("Validator 2 has not caught up with block %s:\n%s",
+					aBlockHash, log))
+			}
 		})
 
 		// Create a vanilla testnet to reset market state

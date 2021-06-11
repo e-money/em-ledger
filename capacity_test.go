@@ -55,7 +55,7 @@ var _ = Describe("Staking", func() {
 				for i := 0; i < trxCount; i++ {
 
 					go func(from, to nt.Key) {
-						hash, err := testnet.SendTx(from, to, coin, chainID)
+						hash, err := sendTx(from, to, coin, chainID)
 						if err != nil {
 							atomic.AddInt32(&errs, 1)
 							fmt.Println(err)
@@ -104,20 +104,20 @@ var (
 	sequences = make(map[string]accountNoSequence)
 )
 
-func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResponse, error) {
+func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (string, error) {
 	sendMutex.Lock()
 	defer sendMutex.Unlock()
 
 	from, err := sdk.AccAddressFromBech32(fromKey.GetAddress())
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 
 	encodingConfig := emoney.MakeEncodingConfig()
 
 	httpClient, err := rpcclient.New("tcp://localhost:26657", "/websocket")
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 
 	clientCtx := client.Context{}.
@@ -143,7 +143,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	if accInfo, present = sequences[fromKey.GetAddress()]; !present {
 		accountNumber, sequence, err := authtypes.AccountRetriever{}.GetAccountNumberSequence(clientCtx, from)
 		if err != nil {
-			return sdk.TxResponse{}, err
+			return "", err
 		}
 
 		accInfo = accountNoSequence{
@@ -158,7 +158,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		Amount:      amount,
 	}
 	if err := sendMsg.ValidateBasic(); err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
 	txf := tx.NewFactoryCLI(clientCtx, flagSet).
@@ -172,8 +172,8 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	var buf bytes.Buffer
 	err = tx.BroadcastTx(clientCtx.WithOutput(&buf), txf, sendMsg)
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 	var resp sdk.TxResponse
-	return resp, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
+	return resp.TxHash, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
 }

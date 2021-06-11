@@ -49,7 +49,7 @@ func (el EventListener) subscribeQuery(query string, listener func(ct.ResultEven
 
 func (el EventListener) subscribeQueryDuration(query string, timeout time.Duration, listener func(ct.ResultEvent) bool) error {
 	ctx := context.Background()
-	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
+	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query, 1000)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (el EventListener) awaitQuery(query string) (func() *ct.ResultEvent, error)
 
 func (el EventListener) awaitQueryDuration(query string, timeout time.Duration) (func() *ct.ResultEvent, error) {
 	ctx := context.Background()
-	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
+	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query, 1000)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (el EventListener) SubTx(
 ) (found int32, err error) {
 	ctx := context.Background()
 	query := "tm.event='Tx'"
-	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query)
+	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query, 10000)
 	if err != nil {
 		return 0, err
 	}
@@ -172,17 +172,10 @@ func (el EventListener) SubTx(
 			for k, v := range evt.Events {
 				if k == "tx.hash" {
 					for _, hash := range v {
-						// may not be called concurrently
-						if mu != nil {
-							// writes may still be occurring
-							mu.RLock()
-						}
-
+						// writes may still be occurring
+						mu.RLock()
 						in := txHashes[hash]
-
-						if mu != nil {
-							mu.RUnlock()
-						}
+						mu.RUnlock()
 						if in {
 							found++
 						}
