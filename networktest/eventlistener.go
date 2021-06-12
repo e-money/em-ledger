@@ -9,7 +9,6 @@ package networktest
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	bep3types "github.com/e-money/bep3/module/types"
@@ -152,46 +151,6 @@ func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duratio
 }
 
 // SubTx fetches all tx events till a timeout or the expected transactions'
-// hashes (txHashes) are found withing the emitted events. This is thread safe
-// and if called from a single thread you may pass a nil mutex.
-func (el EventListener) SubTx(
-	mu *sync.RWMutex, txHashes map[string]bool, total int32, timeout time.Duration,
-) (found int32, err error) {
-	ctx := context.Background()
-	query := "tm.event='Tx'"
-	eventChannel, err := el.client.WSEvents.Subscribe(ctx, "", query, 10000)
-	if err != nil {
-		return 0, err
-	}
-
-	defer el.client.WSEvents.Unsubscribe(ctx, "", query)
-
-	for ;found < total;{
-		select {
-		case evt := <-eventChannel:
-			for k, v := range evt.Events {
-				if k == "tx.hash" {
-					for _, hash := range v {
-						// writes may still be occurring
-						mu.RLock()
-						in := txHashes[hash]
-						mu.RUnlock()
-						if in {
-							found++
-						}
-					}
-				}
-			}
-		case <-time.After(timeout):
-			err := fmt.Errorf("timeout waiting for event:%s", query)
-			fmt.Println("***", err.Error())
-			return found, err
-		}
-	}
-
-	return found, nil
-}
-
 func (el EventListener) AwaitPenaltyPayout() (func() bool, error) {
 	eventFn, err := el.awaitQuery("tm.event='NewBlock' AND penalty_payout.address CONTAINS 'emoney'")
 	if err != nil {

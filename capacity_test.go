@@ -21,10 +21,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
+	"github.com/tidwall/gjson"
 	"os"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 var _ = Describe("Staking", func() {
@@ -43,53 +43,62 @@ var _ = Describe("Staking", func() {
 				const trxCount = 400
 
 				var (
-					mu             = new(sync.RWMutex)
-					txHashes       = make(map[string]bool)
-					errs     int32 = 0
-					coin, _ = sdk.ParseCoinsNormalized("15000eeur")
-					chainID = testnet.ChainID()
+					failedTxs int32 = 0
+					coin, _         = sdk.ParseCoinsNormalized("15000eeur")
+					chainID         = testnet.ChainID()
+					txhash          = make(chan string, 1024)
 				)
 
 				senders := []nt.Key{Key1, Key2, Key3, Key3}
 				receivers := []nt.Key{Key2, Key1, Key1, Key2}
+
 				for i := 0; i < trxCount; i++ {
 
 					go func(from, to nt.Key) {
 						hash, err := sendTx(from, to, coin, chainID)
 						if err != nil {
-							atomic.AddInt32(&errs, 1)
+							atomic.AddInt32(&failedTxs, 1)
 							fmt.Println(err)
 							return
 						}
 
-						mu.Lock()
-						txHashes[hash] = true
-						mu.Unlock()
-
+						txhash <- hash
 					}(senders[i%4], receivers[i%4])
 				}
 
-				listener, err := nt.NewEventListener()
-				Expect(err).ToNot(HaveOccurred())
+				_, _ = nt.IncChain(1)
 
-				var (
-					success int32
-					expiration = time.Minute
-				)
+				emcli := testnet.NewEmcli()
+				success, failure, errs := 0, 0, failedTxs
+				for ; success+failure+int(errs) < trxCount;{
+					h := <-txhash
+					bz, err := emcli.QueryTransaction(h)
+					if err != nil {
+						errs++
+						continue
+					}
 
-				Eventually(func() int {
-					success, err = listener.SubTx(
-						mu, txHashes, trxCount-errs, expiration,
-					)
-					return int(success)
-				}, expiration, time.Second).Should(Equal(trxCount))
-				Expect(err).ToNot(HaveOccurred())
+					s := gjson.ParseBytes(bz).Get("txhash")
+					if s.Exists() {
+						success++
+					} else {
+						failure++
+					}
+				}
 
-				fmt.Printf(
-					" *** Transactions summary:\n Successful: %d\n Failed: %d\n Errors: %d\n Total: %d\n",
-					success, trxCount-errs-success, errs, trxCount,
-				)
-				Expect(int(success)).To(Equal(trxCount))
+				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Errors: %v\n Total: %v\n", success, failure, errs, success+failure+int(errs))
+				Expect(success).To(Equal(trxCount))
+
+				// Equivalent event listening handler
+				// listener, err := nt.NewEventListener()
+				// Expect(err).ToNot(HaveOccurred())
+				//
+				// Eventually(func() int {
+				//	 success, err = listener.SubTx(
+				//	 	mu, txHashes, trxCount-errs, expiration,
+				//	 )
+				//	 return int(success)
+				// }, expiration, time.Second).Should(Equal(trxCount))
 			})
 		})
 	})
