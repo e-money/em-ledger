@@ -59,7 +59,6 @@ var _ = Describe("Staking", func() {
 						if err != nil {
 							atomic.AddInt32(&failedTxs, 1)
 							fmt.Println(err)
-							return
 						}
 
 						txhash <- hash
