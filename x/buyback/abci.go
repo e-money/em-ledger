@@ -50,8 +50,8 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 		result, err := k.SendOrderToMarket(ctx, order)
 		if err != nil {
 			ctx.Logger().Error("Error sending buyback order to market", "err", err)
-			panic(err)
 		}
+
 		for _, ev := range result.Events {
 			ctx.EventManager().EmitEvent(sdk.Event(ev))
 		}
