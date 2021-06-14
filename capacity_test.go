@@ -68,8 +68,8 @@ var _ = Describe("Staking", func() {
 				_, _ = nt.IncChain(1)
 
 				emcli := testnet.NewEmcli()
-				success, failure, errs := 0, 0, failedTxs
-				for ; success+failure+int(errs) < trxCount;{
+				success, failure, errs := 0, 0, int(failedTxs)
+				for ; success+failure+errs < trxCount;{
 					h := <-txhash
 					bz, err := emcli.QueryTransaction(h)
 					if err != nil {
@@ -85,7 +85,7 @@ var _ = Describe("Staking", func() {
 					}
 				}
 
-				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Errors: %v\n Total: %v\n", success, failure, errs, success+failure+int(errs))
+				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Errors: %v\n Total: %v\n", success, failure, errs, success+failure+errs)
 				Expect(success).To(Equal(trxCount))
 
 				// Equivalent event listening handler
