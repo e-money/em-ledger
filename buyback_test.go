@@ -53,7 +53,7 @@ var _ = Describe("Buyback", func() {
 		Expect(awaitReady()).To(BeTrue())
 	})
 
-	It("queries the buyback balance", func() {
+	It("Executes a buyback and checks supply", func() {
 		var buybackBalance sdk.Coins
 		var bz []byte
 
@@ -68,22 +68,11 @@ var _ = Describe("Buyback", func() {
 		// eeur and echf are inflated
 		Expect(buybackBalance).To(HaveLen(2), "Buyback module does not appear to have a balance %v", string(bz))
 
-		// Generate some trades to set a market price for ungm
-		_, success, err := emcli.MarketAddLimitOrder(key1, "1000eeur", "4000ungm", tmrand.Str(10))
-		Expect(err).ToNot(HaveOccurred())
-		Expect(success).To(BeTrue())
-
-		_, success, err = emcli.MarketAddLimitOrder(key2, "4000ungm", "1000eeur", tmrand.Str(10))
-		Expect(err).ToNot(HaveOccurred())
-		Expect(success).To(BeTrue())
-
-		time.Sleep(4 * time.Second)
-
 		supplyBefore, err := emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())
 
 		// Sell some NGM tokens to the buyback module and verify that they are burned.
-		_, success, err = emcli.MarketAddMarketOrder(key1, "ungm", "1000eeur", tmrand.Str(10), sdk.NewDecWithPrec(1, 2))
+		_, success, err := emcli.MarketAddLimitOrder(key1, "4000ungm", "1000eeur", tmrand.Str(10))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(success).To(BeTrue())
 
