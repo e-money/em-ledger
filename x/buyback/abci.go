@@ -17,24 +17,18 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 
 	var (
 		stakingDenom = k.GetStakingTokenDenom(ctx)
-		pricingInfo  = groupMarketDataBySource(k.GetMarketData(ctx), stakingDenom)
 		account      = k.GetBuybackAccountAddr()
 	)
 
 	for _, balance := range bk.GetAllBalances(ctx, account) {
-		pricedata, found := pricingInfo[balance.Denom]
-		if !found {
-			// do not have market data to create an order.
-			continue
-		}
-
-		if pricedata.LastPrice == nil {
-			// do not have market data to create an order.
+		price := k.GetBestPrice(ctx, balance.Denom, stakingDenom)
+		if price == nil {
+			// There are no passive orders to fill for this instrument
 			continue
 		}
 
 		// Calculate the amount of staking tokens that can be purchased at that price
-		destinationAmount := balance.Amount.ToDec().Mul(*pricedata.LastPrice).TruncateInt()
+		destinationAmount := balance.Amount.ToDec().Mul(*price).TruncateInt()
 		if destinationAmount.LT(sdk.OneInt()) {
 			continue
 		}
@@ -71,19 +65,4 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 
 func generateClientOrderId(ctx sdk.Context, balance sdk.Coin) string {
 	return fmt.Sprintf("buyback-%v-%v", balance.Denom, ctx.BlockHeight())
-}
-
-// Return market data on trades that purchased the given denom.
-func groupMarketDataBySource(marketData []markettypes.MarketData, denom string) map[string]markettypes.MarketData {
-	result := make(map[string]markettypes.MarketData)
-
-	for _, md := range marketData {
-		if md.Destination != denom {
-			continue
-		}
-
-		result[md.Source] = md
-	}
-
-	return result
 }

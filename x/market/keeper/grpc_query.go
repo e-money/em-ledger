@@ -85,7 +85,7 @@ func queryInstruments(ctx sdk.Context, k *Keeper) *types.QueryInstrumentsRespons
 			Source:      v.Source,
 			Destination: v.Destination,
 			LastPrice:   v.LastPrice,
-			BestPrice:   getBestPrice(ctx, k, v.Source, v.Destination),
+			BestPrice:   k.GetBestPrice(ctx, v.Source, v.Destination),
 			LastTraded:  v.Timestamp,
 		}
 	}
