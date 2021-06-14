@@ -18,11 +18,25 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 
 	if !signed {
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
+
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeLiveness,
+				sdk.NewAttribute(types.AttributeKeyAddress, consAddr.String()),
+				sdk.NewAttribute(types.AttributeKeyMissedBlocks, fmt.Sprintf("%d", len(missedBlocks))),
+				sdk.NewAttribute(types.AttributeKeyHeight, fmt.Sprintf("%d", height)),
+			),
+		)
+
+		logger.Debug(
+			"absent validator",
+			"height", height,
+			"validator", consAddr.String(),
+			"missed", len(missedBlocks),
+		)
 	}
 
 	k.setMissingBlocksForValidator(batch, consAddr, missedBlocks)
-
-	// todo (reviewer) : the sdk module emits an types.EventTypeLiveness when not signed
 
 	// Validator is only slashable if the signed block window is full (was truncated)
 	if !slashable {
@@ -31,8 +45,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
-
-	// TODO Only do this if missing is true?
 	minSignedPerWindow := k.MinSignedPerWindow(ctx)
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
