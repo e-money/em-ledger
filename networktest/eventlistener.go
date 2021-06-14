@@ -120,11 +120,19 @@ func (el EventListener) AwaitNewBlock() (func() bool, error) {
 }
 
 // SubscribeExpirations fetches all new block events till a timeout or the
-// expected Bep3 expiration occurs.
+// expected Bep3 expiration occurs. Note the expiration events occur for a slice
+// of swap IDs.
 func (el EventListener) SubscribeExpirations(swapID string, timeout time.Duration) error {
 	return el.subscribeQueryDuration(
-		"tm.event='NewBlock'", timeout,
-		func(event ct.ResultEvent) bool {
+		// The following example direct query for the swap expiration is ineffective.
+		// fmt.Sprintf(
+		// 	"tm.event='NewBlock' AND %s.%s=[%s]",
+		//	bep3types.EventTypeSwapsExpired,
+		//	bep3types.AttributeKeyAtomicSwapIDs, swapID)
+		// e.g., event:tm.event='NewBlock' AND swaps_expired.atomic_swap_ids=[df610e4169d3944bcd196ab454059ac20b96b1b5d187481765d2fe589a3c1a97]
+		// Thus resorting to this approach of listening to NewBlocks and parsing the
+		// event attributes list to find the requested swapID.
+		"tm.event='NewBlock'", timeout,	func(event ct.ResultEvent) bool {
 			eventNB, ok := event.Data.(types.EventDataNewBlock)
 			if !ok {
 				// fetch next
