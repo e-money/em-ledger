@@ -9,3 +9,9 @@ const (
 	QuerierRoute = ModuleName
 	RouterKey    = ModuleName
 )
+
+// IAVL Store prefixes
+var (
+	ProviderKeyPrefix   = []byte{0x00}
+	MintableKeyPrefix   = []byte{0x01}
+)

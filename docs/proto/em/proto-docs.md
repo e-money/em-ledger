@@ -916,7 +916,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `account` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `prov_addr` | [string](#string) |  |  |
 | `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 

@@ -6,132 +6,63 @@ package types
 
 import (
 	"fmt"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/gogo/protobuf/proto"
 )
 
-var _ auth.AccountI = &LiquidityProviderAccount{}
-var _ auth.GenesisAccount = &LiquidityProviderAccount{}
-
-func NewLiquidityProviderAccount(account auth.AccountI, mintable sdk.Coins) (*LiquidityProviderAccount, error) {
-	msg, ok := account.(proto.Message)
-	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "can't proto marshal %T", msg)
-	}
-	any, err := codectypes.NewAnyWithValue(msg)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPackAny, err.Error())
-	}
+func NewLiquidityProviderAccount(provAddr string, mintable sdk.Coins) (*LiquidityProviderAccount, error) {
 	return &LiquidityProviderAccount{
-		Account:  any,
+		ProvAddr:  provAddr,
 		Mintable: mintable,
 	}, nil
 }
 
+// Validate validates the liquidity provider monetary load (Mintable) conforms
+// to Cosmos' notion of Coin and provider address is a bech32 address.
 func (acc LiquidityProviderAccount) Validate() error {
 	if err := acc.Mintable.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "mintable")
 	}
-	type validatable interface {
-		Validate() error
+
+	_, err := sdk.AccAddressFromBech32(acc.ProvAddr)
+	if err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, acc.ProvAddr)
 	}
-	if a, ok := acc.GetNestedAccount().(validatable); ok {
-		return a.Validate()
-	}
+
 	return nil
 }
 
-func (acc *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
-	acc.Mintable = acc.Mintable.Add(increase...)
+func (p *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
+	p.Mintable = p.Mintable.Add(increase...)
 }
 
-// Function panics if resulting mintable amount is negative. Should be checked prior to invocation for cleaner handling.
-func (acc *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) {
-	if mintable, anyNegative := acc.Mintable.SafeSub(decrease); !anyNegative {
-		acc.Mintable = mintable
+// Function panics if resulting mintable amount is negative. Should be checked
+// prior to invocation for cleaner handling.
+func (p *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) {
+	if mintable, anyNegative := p.Mintable.SafeSub(decrease); !anyNegative {
+		p.Mintable = mintable
 		return
 	}
 
 	panic(fmt.Errorf("mintable amount cannot be negative"))
 }
 
-func (acc LiquidityProviderAccount) String() string {
-	var pubkey string
-	nestedAccount := acc.GetNestedAccount()
-	if nestedAccount.GetPubKey() != nil {
-		pubkey = sdk.MustBech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, nestedAccount.GetPubKey())
-	}
-
+func (p LiquidityProviderAccount) String() string {
 	return fmt.Sprintf(`Account:
   Address:       %s
-  Pubkey:        %s
-  Mintable:      %s
-  AccountNumber: %d
-  Sequence:      %d`,
-		nestedAccount.GetAddress(), pubkey, acc.Mintable, nestedAccount.GetAccountNumber(), nestedAccount.GetSequence(),
-	)
+  Mintable:      %s`,
+		p.ProvAddr, p.Mintable)
 }
 
-// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
-func (m LiquidityProviderAccount) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var account auth.AccountI
-	if err := unpacker.UnpackAny(m.Account, &account); err != nil {
-		return err
-	}
-	return codectypes.UnpackInterfaces(account, unpacker)
-}
-
-func (m *LiquidityProviderAccount) GetNestedAccount() auth.AccountI {
-	content, ok := m.Account.GetCachedValue().(auth.AccountI)
-	if !ok {
-		panic("nested account was nil")
-	}
-	return content
-}
-
-func (acc *LiquidityProviderAccount) GetAddress() sdk.AccAddress {
-	return acc.GetNestedAccount().GetAddress()
-}
-
-func (acc *LiquidityProviderAccount) SetAddress(address sdk.AccAddress) error {
-	return acc.GetNestedAccount().SetAddress(address)
-
-}
-
-func (acc *LiquidityProviderAccount) GetPubKey() cryptotypes.PubKey {
-	return acc.GetNestedAccount().GetPubKey()
-}
-
-func (acc *LiquidityProviderAccount) SetPubKey(key cryptotypes.PubKey) error {
-	nestedAccount := acc.GetNestedAccount()
-	err := nestedAccount.SetPubKey(key)
+func (p *LiquidityProviderAccount) GetAddress() (sdk.AccAddress, error) {
+	acc, err := sdk.AccAddressFromBech32(p.ProvAddr)
 	if err != nil {
-		return err
+		return acc, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.ProvAddr)
 	}
-	any, err := codectypes.NewAnyWithValue(nestedAccount)
-	if err != nil {
-		return err
-	}
-	acc.Account = any
-	return nil
+
+	return acc, nil
 }
 
-func (acc *LiquidityProviderAccount) GetAccountNumber() uint64 {
-	return acc.GetNestedAccount().GetAccountNumber()
-}
-
-func (acc *LiquidityProviderAccount) SetAccountNumber(u uint64) error {
-	return acc.GetNestedAccount().SetAccountNumber(u)
-}
-
-func (acc *LiquidityProviderAccount) GetSequence() uint64 {
-	return acc.GetNestedAccount().GetSequence()
-}
-
-func (acc *LiquidityProviderAccount) SetSequence(u uint64) error {
-	return acc.GetNestedAccount().SetSequence(u)
+func (p *LiquidityProviderAccount) SetAddress(address string) {
+	p.ProvAddr = address
 }
