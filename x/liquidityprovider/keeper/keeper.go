@@ -70,7 +70,7 @@ func (k Keeper) IterateProviders(
 	ctx sdk.Context,
 	cb func(prov types.LiquidityProviderAccount) (stop bool),
 ) {
-	iterator := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), types.MintableKeyPrefix)
+	iterator := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
 
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {

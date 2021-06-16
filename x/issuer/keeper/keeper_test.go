@@ -23,6 +23,7 @@ import (
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
+	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -266,6 +267,7 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 		issuerKey  = sdk.NewKVStoreKey(types.StoreKey)
+		lpKey  = sdk.NewKVStoreKey(lptypes.StoreKey)
 
 		blockedAddrs = make(map[string]bool)
 		maccPerms    = map[string][]string{
@@ -279,6 +281,7 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 	ms.MountStoreWithDB(stakingKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(lpKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(issuerKey, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
@@ -299,7 +302,7 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 	// Empty supply
 	bk.SetSupply(ctx, banktypes.NewSupply(sdk.NewCoins()))
 
-	lpk := liquidityprovider.NewKeeper(ak, bk)
+	lpk := liquidityprovider.NewKeeper(encConfig.Marshaler, lpKey, bk)
 
 	keeper := NewKeeper(encConfig.Marshaler, issuerKey, lpk, mockInflationKeeper{})
 	return ctx, ak, lpk, keeper
