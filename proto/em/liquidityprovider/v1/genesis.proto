@@ -14,10 +14,7 @@ message GenesisState {
 }
 
 message GenesisAcc {
-  string address = 1 [
-    (gogoproto.customname) = "Account",
-    (gogoproto.moretags) = "yaml:\"address\""
-  ];
+  string address = 1 [(gogoproto.moretags) = "yaml:\"address\""];
   repeated cosmos.base.v1beta1.Coin mintable = 2 [
     (gogoproto.moretags) = "yaml:\"mintable\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",

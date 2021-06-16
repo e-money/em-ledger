@@ -18,7 +18,7 @@ message LiquidityProviderAccount {
   // interest of cultivating wider acceptance for this module other arbitrary
   // address encodings outside the supported cosmos sdk formats perhaps would
   // fit nicely with this loosely defined provider identity specifier.
-  string prov_addr = 1 [(gogoproto.moretags) = "yaml:\"prov_addr\""];
+  string address = 1 [(gogoproto.moretags) = "yaml:\"address\""];
 
   repeated cosmos.base.v1beta1.Coin mintable = 2 [
     (gogoproto.moretags) = "yaml:\"mintable\"",

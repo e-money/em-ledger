@@ -12,21 +12,21 @@ import (
 
 func NewLiquidityProviderAccount(provAddr string, mintable sdk.Coins) (*LiquidityProviderAccount, error) {
 	return &LiquidityProviderAccount{
-		ProvAddr:  provAddr,
+		Address:  provAddr,
 		Mintable: mintable,
 	}, nil
 }
 
 // Validate validates the liquidity provider monetary load (Mintable) conforms
 // to Cosmos' notion of Coin and provider address is a bech32 address.
-func (acc LiquidityProviderAccount) Validate() error {
-	if err := acc.Mintable.Validate(); err != nil {
+func (p LiquidityProviderAccount) Validate() error {
+	if err := p.Mintable.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "mintable")
 	}
 
-	_, err := sdk.AccAddressFromBech32(acc.ProvAddr)
+	_, err := sdk.AccAddressFromBech32(p.Address)
 	if err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, acc.ProvAddr)
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.Address)
 	}
 
 	return nil
@@ -36,33 +36,34 @@ func (p *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
 	p.Mintable = p.Mintable.Add(increase...)
 }
 
-// Function panics if resulting mintable amount is negative. Should be checked
-// prior to invocation for cleaner handling.
-func (p *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) {
+func (p *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) error {
 	if mintable, anyNegative := p.Mintable.SafeSub(decrease); !anyNegative {
 		p.Mintable = mintable
-		return
+		return nil
 	}
 
-	panic(fmt.Errorf("mintable amount cannot be negative"))
+	return fmt.Errorf(
+		"mintable amount cannot be negative, %s - %s", p.Mintable.String(),
+		decrease.String(),
+	)
 }
 
 func (p LiquidityProviderAccount) String() string {
 	return fmt.Sprintf(`Account:
   Address:       %s
   Mintable:      %s`,
-		p.ProvAddr, p.Mintable)
+		p.Address, p.Mintable)
 }
 
 func (p *LiquidityProviderAccount) GetAddress() (sdk.AccAddress, error) {
-	acc, err := sdk.AccAddressFromBech32(p.ProvAddr)
+	acc, err := sdk.AccAddressFromBech32(p.Address)
 	if err != nil {
-		return acc, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.ProvAddr)
+		return acc, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.Address)
 	}
 
 	return acc, nil
 }
 
 func (p *LiquidityProviderAccount) SetAddress(address string) {
-	p.ProvAddr = address
+	p.Address = address
 }

@@ -916,7 +916,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `prov_addr` | [string](#string) |  |  |
+| `address` | [string](#string) |  | Any string address representation with the accompanying supporting encoding and validation functions starting with bech32. However, in the interest of cultivating wider acceptance for this module other arbitrary address encodings outside the supported cosmos sdk formats perhaps would fit nicely with this loosely defined provider identity specifier. |
 | `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 

@@ -30,20 +30,26 @@ func NewKeeper(
 	}
 }
 
-// SetProv stores a liquidity provider in the state.
-func (k Keeper) SetProv(ctx sdk.Context, prov types.LiquidityProviderAccount) {
+// ------------------------------------------
+//				State functions
+// ------------------------------------------
+
+// SetLiquidityProviderAccount stores a liquidity provider in the state.
+func (k Keeper) SetLiquidityProviderAccount(
+	ctx sdk.Context, prov *types.LiquidityProviderAccount,
+) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&prov)
-	store.Set([]byte(prov.ProvAddr), bz)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(prov)
+	store.Set([]byte(prov.Address), bz)
 }
 
-// GetProv finds and deserializes a liquidity provider from the state.
-func (k Keeper) GetProv(ctx sdk.Context, provAddr string) *types.LiquidityProviderAccount {
+// GetLiquidityProviderAccount finds and deserializes a liquidity provider from the state.
+func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, address string) *types.LiquidityProviderAccount {
 	var prov types.LiquidityProviderAccount
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
 
-	bz := store.Get([]byte(provAddr))
+	bz := store.Get([]byte(address))
 	if bz == nil {
 		return nil
 	}
@@ -52,9 +58,9 @@ func (k Keeper) GetProv(ctx sdk.Context, provAddr string) *types.LiquidityProvid
 	return &prov
 }
 
-func (k Keeper) RemoveProv(ctx sdk.Context, provAddr string) {
+func (k Keeper) RevokeLiquidityProviderAccount(ctx sdk.Context, address string) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
-	store.Delete([]byte(provAddr))
+	store.Delete([]byte(address))
 }
 
 // IterateProviders provides an iterator over all stored liquidity providers.
@@ -77,6 +83,23 @@ func (k Keeper) IterateProviders(
 	}
 }
 
+// GetAllLiquidityProviderAccounts returns all the valid liquidity providers.
+func (k Keeper) GetAllLiquidityProviderAccounts(ctx sdk.Context) []types.LiquidityProviderAccount {
+	res := make([]types.LiquidityProviderAccount, 0)
+
+	k.IterateProviders(
+		ctx, func(prov types.LiquidityProviderAccount) (stop bool) {
+			if err := prov.Validate(); err == nil {
+				res = append(res, prov)
+			}
+
+			return false
+		},
+	)
+
+	return res
+}
+
 func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address string, mintable sdk.Coins) (*sdk.Result, error) {
 	logger := k.Logger(ctx)
 
@@ -84,21 +107,25 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address string, mintabl
 	if err != nil {
 		return nil, err
 	}
-	k.SetProv(ctx, *lpAcc)
+	k.SetLiquidityProviderAccount(ctx, lpAcc)
 
-	logger.Info("Created liquidity provider account.", "account", lpAcc.ProvAddr)
+	logger.Info("Created liquidity provider account.", "account", lpAcc.Address)
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, provAddr string, amount sdk.Coins) (*sdk.Result, error) {
-	prov := k.GetProv(ctx, provAddr)
+// ------------------------------------------
+//				Banking functions
+// ------------------------------------------
+
+func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, address string, amount sdk.Coins) (*sdk.Result, error) {
+	prov := k.GetLiquidityProviderAccount(ctx, address)
 	if prov == nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress,
-			"account %s is not a liquidity provider or does not exist", provAddr,
+			"account %s is not a liquidity provider or does not exist", address,
 		)
 	}
 
-	account, err := sdk.AccAddressFromBech32(provAddr)
+	account, err := sdk.AccAddressFromBech32(address)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "account")
 	}
@@ -123,19 +150,19 @@ func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, provAddr string, amount s
 	}
 
 	prov.Mintable = prov.Mintable.Add(amount...)
-	k.SetProv(ctx, *prov)
+	k.SetLiquidityProviderAccount(ctx, prov)
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) MintTokens(ctx sdk.Context, provAddr string, amount sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) MintTokens(ctx sdk.Context, address string, amount sdk.Coins) (*sdk.Result, error) {
 	logger := k.Logger(ctx)
 
-	prov := k.GetProv(ctx, provAddr)
+	prov := k.GetLiquidityProviderAccount(ctx, address)
 	if prov == nil {
 		return nil, sdkerrors.Wrapf(
 			sdkerrors.ErrUnknownAddress,
-			"account %s is not a liquidity provider or does not exist", provAddr,
+			"account %s is not a liquidity provider or does not exist", address,
 		)
 	}
 
@@ -157,7 +184,7 @@ func (k Keeper) MintTokens(ctx sdk.Context, provAddr string, amount sdk.Coins) (
 		return nil, err
 	}
 
-	account, err := sdk.AccAddressFromBech32(provAddr)
+	account, err := sdk.AccAddressFromBech32(address)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "account")
 	}
@@ -170,31 +197,9 @@ func (k Keeper) MintTokens(ctx sdk.Context, provAddr string, amount sdk.Coins) (
 	}
 
 	prov.Mintable = updatedMintableAmount
-	k.SetProv(ctx, *prov)
+	k.SetLiquidityProviderAccount(ctx, prov)
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
-}
-
-func (k Keeper) RevokeLiquidityProviderAccount(
-	ctx sdk.Context, provAddr string,
-) {
-	k.RemoveProv(ctx, provAddr)
-}
-
-func (k Keeper) GetAllLiquidityProviderAccounts(ctx sdk.Context) []types.LiquidityProviderAccount {
-	res := make([]types.LiquidityProviderAccount, 0)
-
-	k.IterateProviders(
-		ctx, func(prov types.LiquidityProviderAccount) (stop bool) {
-			if _, err := prov.GetAddress(); err == nil {
-				res = append(res, prov)
-			}
-
-			return false
-		},
-	)
-
-	return res
 }
 
 // Logger returns a module-specific logger.
