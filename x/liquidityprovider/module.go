@@ -92,7 +92,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 	genAccs := make([]types.GenesisAcc, len(allLPs))
 	for i, lp := range allLPs {
 		genAccs[i] = types.GenesisAcc{
-			Account:  lp.GetAddress().String(),
+			Address:  lp.Address,
 			Mintable: lp.Mintable,
 		}
 	}

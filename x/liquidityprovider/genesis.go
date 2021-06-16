@@ -16,6 +16,7 @@ func defaultGenesisState() *types.GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, gs types.GenesisState) error {
 	for _, lp := range gs.Accounts {
+		// Assuming a bech32 address
 		_, err := sdk.AccAddressFromBech32(lp.Address)
 		if err != nil {
 			return sdkerrors.Wrapf(err, "address: %s", lp.Address)

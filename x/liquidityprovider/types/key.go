@@ -8,6 +8,7 @@ const (
 	ModuleName   = "liquidityprovider"
 	QuerierRoute = ModuleName
 	RouterKey    = ModuleName
+	StoreKey   = ModuleName
 )
 
 // IAVL Store prefixes

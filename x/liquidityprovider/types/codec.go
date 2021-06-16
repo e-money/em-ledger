@@ -10,7 +10,6 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 var (
@@ -23,7 +22,6 @@ var (
 )
 
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(&LiquidityProviderAccount{}, "e-money/LiquidityProviderAccount", nil)
 	cdc.RegisterConcrete(&MsgMintTokens{}, "e-money/MsgMintTokens", nil)
 	cdc.RegisterConcrete(&MsgBurnTokens{}, "e-money/MsgBurnTokens", nil)
 }
@@ -33,16 +31,11 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgMintTokens{},
 		&MsgBurnTokens{},
 	)
-	registry.RegisterImplementations(
-		(*authtypes.AccountI)(nil),
-		&LiquidityProviderAccount{},
-	)
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
 
 func init() {
 	RegisterLegacyAminoCodec(amino)
 	cryptocodec.RegisterCrypto(amino)
-	authtypes.RegisterLegacyAminoCodec(amino)
 	amino.Seal()
 }
