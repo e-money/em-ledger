@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 )
 
@@ -22,6 +23,10 @@ func NewMsgServerImpl(keeper liquidityProvKeeper) types.MsgServer {
 
 func (m msgServer) MintTokens(c context.Context, msg *types.MsgMintTokens) (*types.MsgMintTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+	_, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+	}
 	result, err := m.k.MintTokens(ctx, msg.LiquidityProvider, msg.Amount)
 
 	if err != nil {
@@ -37,6 +42,10 @@ func (m msgServer) MintTokens(c context.Context, msg *types.MsgMintTokens) (*typ
 func (m msgServer) BurnTokens(c context.Context, msg *types.MsgBurnTokens) (*types.MsgBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	_, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+	}
 	result, err := m.k.BurnTokensFromBalance(ctx, msg.LiquidityProvider, msg.Amount)
 	if err != nil {
 		return nil, err
