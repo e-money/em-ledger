@@ -96,7 +96,7 @@ func TestRemoveIssuer(t *testing.T) {
 }
 
 func TestIssuerModifyLiquidityProvider(t *testing.T) {
-	ctx, ak, _, keeper := createTestComponents(t)
+	ctx, ak, lpk, keeper := createTestComponents(t)
 
 	var (
 		iacc, _  = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -110,33 +110,33 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 	keeper.AddIssuer(ctx, issuer)
 	mintable := MustParseCoins("100000eeur,5000ejpy")
 
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
-	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
+	_, err := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc.String(), iacc, mintable)
+	require.NoError(t, err)
 
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
+	_, err = keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc.String(), iacc, mintable)
+	require.NoError(t, err)
 
 	// Verify the two increases in mintable balance
-	a := ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
+	a := lpk.GetLiquidityProviderAccount(ctx, lpacc.String())
 	expected := MustParseCoins("200000eeur,10000ejpy")
 	require.Equal(t, expected, a.Mintable)
 
 	// Decrease the mintable amount too much
 	mintable, _ = sdk.ParseCoinsNormalized("400000eeur")
-	_, err := keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
+	_, err = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc.String(), iacc, mintable)
 	require.NotNil(t, err)
 
 	// Verify unchanged mintable amount
-	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
 	require.Equal(t, expected, a.Mintable)
 
 	// Decrease mintable balance.
 	mintable = MustParseCoins("50000eeur, 2000ejpy")
-	_, err = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
+	_, err = keeper.DecreaseMintableAmountOfLiquidityProvider(ctx, lpacc.String(), iacc, mintable)
 	require.NoError(t, err)
 
 	expected = MustParseCoins("150000eeur,8000ejpy")
-	a = ak.GetAccount(ctx, lpacc).(*liquidityprovider.Account)
-	require.Equal(t, expected, a.Mintable)
+	a = lpk.GetLiquidityProviderAccount(ctx, lpacc.String())
+	require.Equal(t, expected.String(), a.Mintable.String())
 }
 
 func TestAddAndRevokeLiquidityProvider(t *testing.T) {
@@ -155,17 +155,17 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 	mintable := MustParseCoins("100000eeur,5000ejpy")
 
 	// Ensure that a random account can't create a LP
-	_, err := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, randomacc, mintable)
+	_, err := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc.String(), randomacc, mintable)
 	require.Error(t, err)
 
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
-	require.IsType(t, &liquidityprovider.Account{}, ak.GetAccount(ctx, lpacc))
+	_, err = keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc.String(), iacc, mintable)
+	require.NoError(t, err)
 
 	// Make sure a random account can't revoke LP status
-	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc, randomacc)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc.String(), randomacc)
 	require.Error(t, err)
 
-	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc, iacc)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lpacc.String(), iacc)
 	require.NoError(t, err)
 	require.IsType(t, &authtypes.BaseAccount{}, ak.GetAccount(ctx, lpacc))
 }
@@ -187,24 +187,26 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	mintable1 := MustParseCoins("100000eeur,5000ejpy")
 	mintable2 := MustParseCoins("250000edkk,1000esek")
 
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer1, mintable1)
-
-	// Attempt to revoke liquidity given by other issuer
-	_, err := keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
-	require.Error(t, err)
-
-	keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp, issuer2, mintable2)
-
-	lpAccount := lpk.GetLiquidityProviderAccount(ctx, lp)
-	require.Len(t, lpAccount.Mintable, 4)
-
-	_, err = keeper.RevokeLiquidityProvider(ctx, lp, issuer1)
+	_, err := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp.String(), issuer1, mintable1)
 	require.NoError(t, err)
 
-	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp)
+	// Attempt to revoke liquidity given by other issuer
+	_, err = keeper.RevokeLiquidityProvider(ctx, lp.String(), issuer2)
+	require.Error(t, err)
+
+	_, err = keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lp.String(), issuer2, mintable2)
+	require.NoError(t, err)
+
+	lpAccount := lpk.GetLiquidityProviderAccount(ctx, lp.String())
+	require.Len(t, lpAccount.Mintable, 4)
+
+	_, err = keeper.RevokeLiquidityProvider(ctx, lp.String(), issuer1)
+	require.NoError(t, err)
+
+	lpAccount = lpk.GetLiquidityProviderAccount(ctx, lp.String())
 	require.Len(t, lpAccount.Mintable, 2)
 
-	_, err = keeper.RevokeLiquidityProvider(ctx, lp, issuer2)
+	_, err = keeper.RevokeLiquidityProvider(ctx, lp.String(), issuer2)
 	require.NoError(t, err)
 	require.IsType(t, &authtypes.BaseAccount{}, ak.GetAccount(ctx, lp))
 }

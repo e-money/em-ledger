@@ -31,6 +31,11 @@ func (m msgServer) IncreaseMintable(c context.Context, msg *types.MsgIncreaseMin
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
 	}
 
+	_, err = sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:"+msg.LiquidityProvider)
+	}
+
 	result, err := m.k.IncreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, issuer, msg.MintableIncrease)
 	if err != nil {
 		return nil, err
@@ -48,6 +53,12 @@ func (m msgServer) DecreaseMintable(c context.Context, msg *types.MsgDecreaseMin
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
 	}
+
+	_, err = sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:"+msg.LiquidityProvider)
+	}
+
 	result, err := m.k.DecreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, issuer, msg.MintableDecrease)
 	if err != nil {
 		return nil, err
