@@ -93,7 +93,9 @@ func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	}
 
 	logger.Info("Liquidity provider mintable amount decreased", "account", liquidityProvider, "decrease", mintableDecrease)
-	lpAcc.DecreaseMintableAmount(mintableDecrease)
+	if err := lpAcc.DecreaseMintableAmount(mintableDecrease); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrNegativeMintableBalance, "%v", lpAcc.String())
+	}
 	k.lpKeeper.SetLiquidityProviderAccount(ctx, lpAcc)
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil

@@ -55,7 +55,7 @@ func (p LiquidityProviderAccount) String() string {
 		p.Address, p.Mintable)
 }
 
-func (p *LiquidityProviderAccount) GetAddress() (sdk.AccAddress, error) {
+func (p *LiquidityProviderAccount) GetAccAddress() (sdk.AccAddress, error) {
 	acc, err := sdk.AccAddressFromBech32(p.Address)
 	if err != nil {
 		return acc, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.Address)

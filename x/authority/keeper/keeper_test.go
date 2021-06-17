@@ -216,6 +216,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 		keyIssuer  = sdk.NewKVStoreKey(issuer.ModuleName)
+		keyLp  = sdk.NewKVStoreKey(liquidityprovider.ModuleName)
 
 		blockedAddr = make(map[string]bool)
 	)
@@ -226,6 +227,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 	ms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyLp, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.NoError(t, err)
@@ -243,7 +245,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		bk = bankkeeper.NewBaseKeeper(
 			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
-		lpk = liquidityprovider.NewKeeper(ak, bk)
+		lpk = liquidityprovider.NewKeeper(encConfig.Marshaler, keyLp, bk)
 		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{})
 	)
 
