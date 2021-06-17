@@ -5,6 +5,7 @@
 package liquidityprovider
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -55,6 +56,7 @@ func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Rout
 }
 
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
+	types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
 }
 
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
@@ -62,7 +64,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 }
 
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return nil
+	return cli.GetQueryCmd()
 }
 
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
@@ -115,6 +117,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}

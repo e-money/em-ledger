@@ -81,6 +81,12 @@
 - [em/liquidityprovider/v1/liquidityprovider.proto](#em/liquidityprovider/v1/liquidityprovider.proto)
     - [LiquidityProviderAccount](#em.liquidityprovider.v1.LiquidityProviderAccount)
   
+- [em/liquidityprovider/v1/query.proto](#em/liquidityprovider/v1/query.proto)
+    - [QueryMintableRequest](#em.liquidityprovider.v1.QueryMintableRequest)
+    - [QueryMintableResponse](#em.liquidityprovider.v1.QueryMintableResponse)
+  
+    - [Query](#em.liquidityprovider.v1.Query)
+  
 - [em/liquidityprovider/v1/tx.proto](#em/liquidityprovider/v1/tx.proto)
     - [MsgBurnTokens](#em.liquidityprovider.v1.MsgBurnTokens)
     - [MsgBurnTokensResponse](#em.liquidityprovider.v1.MsgBurnTokensResponse)
@@ -928,6 +934,62 @@
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/liquidityprovider/v1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/liquidityprovider/v1/query.proto
+
+
+
+<a name="em.liquidityprovider.v1.QueryMintableRequest"></a>
+
+### QueryMintableRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  | address defines the liquidity provider address to query mintable. |
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1.QueryMintableResponse"></a>
+
+### QueryMintableResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.liquidityprovider.v1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Mintable` | [QueryMintableRequest](#em.liquidityprovider.v1.QueryMintableRequest) | [QueryMintableResponse](#em.liquidityprovider.v1.QueryMintableResponse) |  | GET|/e-money/liquidityprovider/v1/mintable/{address}|
 
  <!-- end services -->
 

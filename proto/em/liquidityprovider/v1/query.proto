@@ -1,0 +1,27 @@
+syntax = "proto3";
+package em.liquidityprovider.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/e-money/em-ledger/x/liquidityprovider/types";
+
+service Query {
+  rpc Mintable(QueryMintableRequest) returns (QueryMintableResponse) {
+    option (google.api.http).get = "/e-money/liquidityprovider/v1/mintable/{address}";
+  };
+}
+
+message QueryMintableRequest {
+  // address defines the liquidity provider address to query mintable.
+  string address = 1;
+}
+
+message QueryMintableResponse {
+  repeated cosmos.base.v1beta1.Coin mintable = 1 [
+    (gogoproto.moretags) = "yaml:\"mintable\"",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false
+  ];
+}
