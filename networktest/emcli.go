@@ -140,6 +140,16 @@ func (cli Emcli) QueryBalanceDenom(account, denom string) (balance int, err erro
 	return
 }
 
+func (cli Emcli) QueryAccount(account string) (mintable int, err error) {
+	args := cli.addQueryFlags("query", "account", account)
+	_, err = execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, err
+	}
+
+	return
+}
+
 // NOTE Hardcoded to eeur for now.
 func (cli Emcli) QueryMintable(account string) (mintable int, err error) {
 	args := cli.addQueryFlags("query", "mintable", account)

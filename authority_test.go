@@ -217,14 +217,14 @@ var _ = Describe("Authority", func() {
 		It("former liquidity provider attempts to mint", func() {
 			balanceBefore, err := emcli.QueryBalance(LiquidityProvider.GetAddress())
 			Expect(err).ShouldNot(HaveOccurred())
-			_, err = emcli.QueryMintable(LiquidityProvider.GetAddress())
+			_, err = emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ToNot(HaveOccurred())
 
 			_, success, err := emcli.LiquidityProviderMint(LiquidityProvider, "10000eeur")
 			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 
-			_, err = emcli.QueryMintable(LiquidityProvider.GetAddress())
+			_, err = emcli.QueryAccount(LiquidityProvider.GetAddress())
 			Expect(err).ToNot(HaveOccurred())
 
 			balanceAfter, err := emcli.QueryBalance(LiquidityProvider.GetAddress())
