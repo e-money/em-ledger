@@ -12,6 +12,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/tendermint/tendermint/libs/log"
+	"sort"
 )
 
 type Keeper struct {
@@ -96,6 +97,10 @@ func (k Keeper) GetAllLiquidityProviderAccounts(ctx sdk.Context) []types.Liquidi
 			return false
 		},
 	)
+
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Address < res[j].Address
+	})
 
 	return res
 }

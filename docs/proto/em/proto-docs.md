@@ -82,6 +82,8 @@
     - [LiquidityProviderAccount](#em.liquidityprovider.v1.LiquidityProviderAccount)
   
 - [em/liquidityprovider/v1/query.proto](#em/liquidityprovider/v1/query.proto)
+    - [QueryListRequest](#em.liquidityprovider.v1.QueryListRequest)
+    - [QueryListResponse](#em.liquidityprovider.v1.QueryListResponse)
     - [QueryMintableRequest](#em.liquidityprovider.v1.QueryMintableRequest)
     - [QueryMintableResponse](#em.liquidityprovider.v1.QueryMintableResponse)
   
@@ -946,6 +948,31 @@
 
 
 
+<a name="em.liquidityprovider.v1.QueryListRequest"></a>
+
+### QueryListRequest
+
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1.QueryListResponse"></a>
+
+### QueryListResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `liquidity_providers` | [LiquidityProviderAccount](#em.liquidityprovider.v1.LiquidityProviderAccount) | repeated |  |
+
+
+
+
+
+
 <a name="em.liquidityprovider.v1.QueryMintableRequest"></a>
 
 ### QueryMintableRequest
@@ -989,6 +1016,7 @@
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `List` | [QueryListRequest](#em.liquidityprovider.v1.QueryListRequest) | [QueryListResponse](#em.liquidityprovider.v1.QueryListResponse) |  | GET|/e-money/liquidityprovider/v1/list|
 | `Mintable` | [QueryMintableRequest](#em.liquidityprovider.v1.QueryMintableRequest) | [QueryMintableResponse](#em.liquidityprovider.v1.QueryMintableResponse) |  | GET|/e-money/liquidityprovider/v1/mintable/{address}|
 
  <!-- end services -->

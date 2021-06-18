@@ -14,6 +14,47 @@ import (
 
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
+		Use:                        types.ModuleName,
+		Short:                      "Querying commands for the liquidity provider module",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
+	}
+
+	cmd.AddCommand(
+		GetListCmd(),
+		GetMintableCmd(),
+	)
+
+	return cmd
+}
+
+func GetListCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List liquidity providers",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.List(cmd.Context(), &types.QueryListRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func GetMintableCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "mintable",
 		Short: "List mintable coins",
 		Args:  cobra.ExactArgs(1),

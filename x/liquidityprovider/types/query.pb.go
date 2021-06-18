@@ -31,6 +31,86 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type QueryListRequest struct {
+}
+
+func (m *QueryListRequest) Reset()         { *m = QueryListRequest{} }
+func (m *QueryListRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryListRequest) ProtoMessage()    {}
+func (*QueryListRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9fb0e5094409d525, []int{0}
+}
+func (m *QueryListRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryListRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryListRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryListRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryListRequest.Merge(m, src)
+}
+func (m *QueryListRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryListRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryListRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryListRequest proto.InternalMessageInfo
+
+type QueryListResponse struct {
+	LiquidityProviders []LiquidityProviderAccount `protobuf:"bytes,1,rep,name=liquidity_providers,json=liquidityProviders,proto3" json:"liquidity_providers" yaml:"liquidity_providers"`
+}
+
+func (m *QueryListResponse) Reset()         { *m = QueryListResponse{} }
+func (m *QueryListResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryListResponse) ProtoMessage()    {}
+func (*QueryListResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9fb0e5094409d525, []int{1}
+}
+func (m *QueryListResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryListResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryListResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryListResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryListResponse.Merge(m, src)
+}
+func (m *QueryListResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryListResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryListResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryListResponse proto.InternalMessageInfo
+
+func (m *QueryListResponse) GetLiquidityProviders() []LiquidityProviderAccount {
+	if m != nil {
+		return m.LiquidityProviders
+	}
+	return nil
+}
+
 type QueryMintableRequest struct {
 	// address defines the liquidity provider address to query mintable.
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
@@ -40,7 +120,7 @@ func (m *QueryMintableRequest) Reset()         { *m = QueryMintableRequest{} }
 func (m *QueryMintableRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryMintableRequest) ProtoMessage()    {}
 func (*QueryMintableRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9fb0e5094409d525, []int{0}
+	return fileDescriptor_9fb0e5094409d525, []int{2}
 }
 func (m *QueryMintableRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -84,7 +164,7 @@ func (m *QueryMintableResponse) Reset()         { *m = QueryMintableResponse{} }
 func (m *QueryMintableResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryMintableResponse) ProtoMessage()    {}
 func (*QueryMintableResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9fb0e5094409d525, []int{1}
+	return fileDescriptor_9fb0e5094409d525, []int{3}
 }
 func (m *QueryMintableResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -121,6 +201,8 @@ func (m *QueryMintableResponse) GetMintable() github_com_cosmos_cosmos_sdk_types
 }
 
 func init() {
+	proto.RegisterType((*QueryListRequest)(nil), "em.liquidityprovider.v1.QueryListRequest")
+	proto.RegisterType((*QueryListResponse)(nil), "em.liquidityprovider.v1.QueryListResponse")
 	proto.RegisterType((*QueryMintableRequest)(nil), "em.liquidityprovider.v1.QueryMintableRequest")
 	proto.RegisterType((*QueryMintableResponse)(nil), "em.liquidityprovider.v1.QueryMintableResponse")
 }
@@ -130,32 +212,38 @@ func init() {
 }
 
 var fileDescriptor_9fb0e5094409d525 = []byte{
-	// 385 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0xcd, 0x8a, 0x13, 0x41,
-	0x10, 0xc7, 0xa7, 0x15, 0x35, 0x8e, 0x07, 0x61, 0x88, 0x18, 0x83, 0x4c, 0xc2, 0x78, 0xc9, 0x65,
-	0xba, 0x33, 0x11, 0x44, 0x3c, 0x26, 0x67, 0x41, 0x73, 0xf4, 0xd6, 0x93, 0x29, 0xc6, 0xc6, 0xe9,
-	0xae, 0xc9, 0x74, 0xcf, 0xe0, 0x28, 0x5e, 0x7c, 0x02, 0x21, 0x8f, 0xe0, 0x4d, 0xf0, 0x3d, 0x72,
-	0x0c, 0x78, 0xf1, 0x94, 0x5d, 0x92, 0x7d, 0x82, 0x7d, 0x82, 0x25, 0xf3, 0xb1, 0x2c, 0xbb, 0x59,
-	0xd8, 0x53, 0x7f, 0xd4, 0xbf, 0xaa, 0x7e, 0xff, 0x2a, 0xfb, 0x15, 0x48, 0x96, 0x88, 0x65, 0x2e,
-	0x22, 0x61, 0xca, 0x34, 0xc3, 0x42, 0x44, 0x90, 0xb1, 0x22, 0x60, 0xcb, 0x1c, 0xb2, 0x92, 0xa6,
-	0x19, 0x1a, 0x74, 0x9e, 0x83, 0xa4, 0x37, 0x44, 0xb4, 0x08, 0xfa, 0xdd, 0x18, 0x63, 0xac, 0x34,
-	0xec, 0x70, 0xab, 0xe5, 0x7d, 0x77, 0x81, 0x5a, 0xa2, 0x66, 0x21, 0xd7, 0xc0, 0x8a, 0x20, 0x04,
-	0xc3, 0x03, 0xb6, 0x40, 0xa1, 0x9a, 0xf8, 0xcb, 0x18, 0x31, 0x4e, 0x80, 0xf1, 0x54, 0x30, 0xae,
-	0x14, 0x1a, 0x6e, 0x04, 0x2a, 0x5d, 0x47, 0xbd, 0xb1, 0xdd, 0xfd, 0x78, 0xe8, 0xfd, 0x5e, 0x28,
-	0xc3, 0xc3, 0x04, 0xe6, 0xb0, 0xcc, 0x41, 0x1b, 0xa7, 0x67, 0x3f, 0xe2, 0x51, 0x94, 0x81, 0xd6,
-	0x3d, 0x32, 0x24, 0xa3, 0xc7, 0xf3, 0xf6, 0xe9, 0xad, 0x88, 0xfd, 0xec, 0x5a, 0x8a, 0x4e, 0x51,
-	0x69, 0x70, 0xbe, 0xd9, 0x1d, 0xd9, 0xfc, 0xf5, 0xc8, 0xf0, 0xfe, 0xe8, 0xc9, 0xe4, 0x05, 0xad,
-	0xe1, 0xe8, 0x01, 0x8e, 0x36, 0x70, 0x74, 0x86, 0x42, 0x4d, 0x67, 0xeb, 0xed, 0xc0, 0x3a, 0xdf,
-	0x0e, 0x9e, 0x96, 0x5c, 0x26, 0xef, 0xbc, 0x36, 0xd1, 0xfb, 0x73, 0x32, 0x18, 0xc5, 0xc2, 0x7c,
-	0xce, 0x43, 0xba, 0x40, 0xc9, 0x1a, 0x73, 0xf5, 0xe1, 0xeb, 0xe8, 0x0b, 0x33, 0x65, 0x0a, 0xba,
-	0xaa, 0xa1, 0xe7, 0x97, 0xfd, 0x26, 0x7f, 0x89, 0xfd, 0xa0, 0xa2, 0x72, 0x7e, 0x13, 0xbb, 0xd3,
-	0xa2, 0x39, 0x3e, 0xbd, 0x65, 0x98, 0xf4, 0x98, 0xeb, 0x3e, 0xbd, 0xab, 0xbc, 0x76, 0xec, 0xbd,
-	0xfd, 0xf9, 0xef, 0x6c, 0x75, 0x6f, 0xe2, 0x8c, 0x19, 0xf8, 0x12, 0x15, 0x94, 0xc7, 0xb7, 0xdb,
-	0x52, 0xb2, 0xef, 0xcd, 0x10, 0x7f, 0x4c, 0x3f, 0xac, 0x77, 0x2e, 0xd9, 0xec, 0x5c, 0x72, 0xba,
-	0x73, 0xc9, 0xaf, 0xbd, 0x6b, 0x6d, 0xf6, 0xae, 0xf5, 0x7f, 0xef, 0x5a, 0x9f, 0xde, 0x5c, 0x71,
-	0xdf, 0x56, 0x05, 0xe9, 0x27, 0x10, 0xc5, 0x90, 0xb1, 0xaf, 0x47, 0x3a, 0x54, 0x13, 0x09, 0x1f,
-	0x56, 0x0b, 0x7d, 0x7d, 0x11, 0x00, 0x00, 0xff, 0xff, 0x34, 0x08, 0x52, 0xf2, 0x64, 0x02, 0x00,
-	0x00,
+	// 484 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0xbd, 0x6e, 0xd4, 0x40,
+	0x10, 0xc7, 0x6f, 0xc3, 0x57, 0x58, 0x0a, 0x60, 0x09, 0x22, 0x58, 0xc8, 0x87, 0x16, 0x8a, 0x23,
+	0xd2, 0xed, 0xc6, 0x87, 0x84, 0x10, 0x1d, 0x97, 0x36, 0x48, 0xe1, 0x4a, 0x1a, 0xe4, 0x8f, 0x91,
+	0x59, 0x61, 0xef, 0xfa, 0xbc, 0xeb, 0x13, 0x06, 0xd1, 0x50, 0x20, 0xd1, 0x21, 0xa5, 0xa5, 0xa3,
+	0xe3, 0x0d, 0x78, 0x83, 0x94, 0x91, 0x68, 0xa8, 0x02, 0xba, 0xe3, 0x09, 0x78, 0x82, 0xc8, 0xf6,
+	0x3a, 0x8a, 0x2e, 0x71, 0x94, 0xca, 0xf6, 0xec, 0xcc, 0x7f, 0x7e, 0x33, 0x7f, 0x2f, 0x7e, 0x00,
+	0x29, 0x4f, 0xc4, 0xb4, 0x10, 0x91, 0x30, 0x65, 0x96, 0xab, 0x99, 0x88, 0x20, 0xe7, 0x33, 0x8f,
+	0x4f, 0x0b, 0xc8, 0x4b, 0x96, 0xe5, 0xca, 0x28, 0x72, 0x07, 0x52, 0x76, 0x22, 0x89, 0xcd, 0x3c,
+	0x67, 0x2d, 0x56, 0xb1, 0xaa, 0x73, 0x78, 0xf5, 0xd6, 0xa4, 0x3b, 0x6e, 0xa8, 0x74, 0xaa, 0x34,
+	0x0f, 0x7c, 0x0d, 0x7c, 0xe6, 0x05, 0x60, 0x7c, 0x8f, 0x87, 0x4a, 0x48, 0x7b, 0x7e, 0x2f, 0x56,
+	0x2a, 0x4e, 0x80, 0xfb, 0x99, 0xe0, 0xbe, 0x94, 0xca, 0xf8, 0x46, 0x28, 0xa9, 0xed, 0x29, 0xef,
+	0x22, 0x3a, 0x49, 0x50, 0x17, 0x50, 0x82, 0x6f, 0xbc, 0xac, 0x60, 0xb7, 0x85, 0x36, 0x13, 0x98,
+	0x16, 0xa0, 0x0d, 0xfd, 0x86, 0xf0, 0xcd, 0x63, 0x41, 0x9d, 0x29, 0xa9, 0x81, 0x7c, 0x46, 0xf8,
+	0xd6, 0x91, 0xca, 0xeb, 0x56, 0x46, 0xaf, 0xa3, 0xfb, 0x17, 0x06, 0xd7, 0x46, 0x1e, 0xeb, 0x18,
+	0x93, 0x6d, 0xb7, 0xc1, 0x1d, 0x1b, 0x7c, 0x1e, 0x86, 0xaa, 0x90, 0x66, 0x4c, 0xf7, 0x0e, 0xfa,
+	0xbd, 0xff, 0x07, 0x7d, 0xa7, 0xf4, 0xd3, 0xe4, 0x19, 0x3d, 0x45, 0x9b, 0x4e, 0x48, 0xb2, 0x5c,
+	0xad, 0xe9, 0x26, 0x5e, 0xab, 0xe9, 0x5e, 0x08, 0x69, 0xfc, 0x20, 0x01, 0x8b, 0x4d, 0xd6, 0xf1,
+	0x15, 0x3f, 0x8a, 0x72, 0xd0, 0x15, 0x13, 0x1a, 0x5c, 0x9d, 0xb4, 0x9f, 0x74, 0x17, 0xe1, 0xdb,
+	0x4b, 0x25, 0x76, 0xa8, 0xf7, 0x78, 0x35, 0xb5, 0x31, 0x3b, 0xc8, 0x5d, 0xd6, 0x18, 0xc0, 0x2a,
+	0x03, 0x98, 0x35, 0x80, 0x6d, 0x29, 0x21, 0xc7, 0x5b, 0x16, 0xf8, 0x7a, 0x03, 0xdc, 0x16, 0xd2,
+	0x1f, 0x7f, 0xfa, 0x83, 0x58, 0x98, 0x37, 0x45, 0xc0, 0x42, 0x95, 0x72, 0x6b, 0x60, 0xf3, 0x18,
+	0xea, 0xe8, 0x2d, 0x37, 0x65, 0x06, 0xba, 0xd6, 0xd0, 0x93, 0xa3, 0x7e, 0xa3, 0x9f, 0x2b, 0xf8,
+	0x52, 0x4d, 0x45, 0xbe, 0x20, 0x7c, 0xb1, 0xda, 0x35, 0x79, 0xd4, 0xb9, 0xc5, 0x65, 0x93, 0x9c,
+	0x8d, 0xf3, 0xa4, 0x36, 0x53, 0xd2, 0x8d, 0x4f, 0xbf, 0xfe, 0xed, 0xae, 0x3c, 0x24, 0x94, 0xc3,
+	0x30, 0x55, 0x12, 0xca, 0xae, 0x7f, 0x44, 0x1b, 0xf2, 0x1d, 0xe1, 0xd5, 0x76, 0x4d, 0x64, 0x78,
+	0x76, 0x93, 0x25, 0x07, 0x1c, 0x76, 0xde, 0x74, 0xcb, 0xf5, 0xb4, 0xe6, 0x1a, 0x91, 0xcd, 0xb3,
+	0xb9, 0xda, 0x8d, 0xf1, 0x0f, 0xd6, 0xd0, 0x8f, 0xe3, 0x9d, 0xbd, 0xb9, 0x8b, 0xf6, 0xe7, 0x2e,
+	0xfa, 0x3b, 0x77, 0xd1, 0xd7, 0x85, 0xdb, 0xdb, 0x5f, 0xb8, 0xbd, 0xdf, 0x0b, 0xb7, 0xf7, 0xea,
+	0xc9, 0x31, 0x27, 0x5a, 0x55, 0x48, 0x87, 0x09, 0x44, 0x31, 0xe4, 0xfc, 0xdd, 0x29, 0x1d, 0x6a,
+	0x77, 0x82, 0xcb, 0xf5, 0x7d, 0x78, 0x7c, 0x18, 0x00, 0x00, 0xff, 0xff, 0x9e, 0x3e, 0x5e, 0x85,
+	0xd4, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -170,6 +258,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryClient interface {
+	List(ctx context.Context, in *QueryListRequest, opts ...grpc.CallOption) (*QueryListResponse, error)
 	Mintable(ctx context.Context, in *QueryMintableRequest, opts ...grpc.CallOption) (*QueryMintableResponse, error)
 }
 
@@ -179,6 +268,15 @@ type queryClient struct {
 
 func NewQueryClient(cc grpc1.ClientConn) QueryClient {
 	return &queryClient{cc}
+}
+
+func (c *queryClient) List(ctx context.Context, in *QueryListRequest, opts ...grpc.CallOption) (*QueryListResponse, error) {
+	out := new(QueryListResponse)
+	err := c.cc.Invoke(ctx, "/em.liquidityprovider.v1.Query/List", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *queryClient) Mintable(ctx context.Context, in *QueryMintableRequest, opts ...grpc.CallOption) (*QueryMintableResponse, error) {
@@ -192,6 +290,7 @@ func (c *queryClient) Mintable(ctx context.Context, in *QueryMintableRequest, op
 
 // QueryServer is the server API for Query service.
 type QueryServer interface {
+	List(context.Context, *QueryListRequest) (*QueryListResponse, error)
 	Mintable(context.Context, *QueryMintableRequest) (*QueryMintableResponse, error)
 }
 
@@ -199,12 +298,33 @@ type QueryServer interface {
 type UnimplementedQueryServer struct {
 }
 
+func (*UnimplementedQueryServer) List(ctx context.Context, req *QueryListRequest) (*QueryListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
 func (*UnimplementedQueryServer) Mintable(ctx context.Context, req *QueryMintableRequest) (*QueryMintableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Mintable not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
 	s.RegisterService(&_Query_serviceDesc, srv)
+}
+
+func _Query_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.liquidityprovider.v1.Query/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).List(ctx, req.(*QueryListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Query_Mintable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -230,12 +350,76 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "List",
+			Handler:    _Query_List_Handler,
+		},
+		{
 			MethodName: "Mintable",
 			Handler:    _Query_Mintable_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "em/liquidityprovider/v1/query.proto",
+}
+
+func (m *QueryListRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryListRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryListRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryListResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryListResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryListResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.LiquidityProviders) > 0 {
+		for iNdEx := len(m.LiquidityProviders) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.LiquidityProviders[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *QueryMintableRequest) Marshal() (dAtA []byte, err error) {
@@ -316,6 +500,30 @@ func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *QueryListRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryListResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.LiquidityProviders) > 0 {
+		for _, e := range m.LiquidityProviders {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	return n
+}
+
 func (m *QueryMintableRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -349,6 +557,140 @@ func sovQuery(x uint64) (n int) {
 }
 func sozQuery(x uint64) (n int) {
 	return sovQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *QueryListRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryListRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryListRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryListResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryListResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryListResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LiquidityProviders", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LiquidityProviders = append(m.LiquidityProviders, LiquidityProviderAccount{})
+			if err := m.LiquidityProviders[len(m.LiquidityProviders)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *QueryMintableRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

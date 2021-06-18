@@ -210,8 +210,8 @@ var _ = Describe("Authority", func() {
 			Expect(success).To(BeTrue())
 
 			bz, err := emcli.QueryMintableJson(LiquidityProvider.GetAddress())
-			mintable := gjson.ParseBytes(bz).Get("mintable")
-			Expect(mintable.Exists()).To(BeFalse())
+			mintable := gjson.ParseBytes(bz).Get("mintable").Array()
+			Expect(mintable).To(HaveLen(0))
 		})
 
 		It("former liquidity provider attempts to mint", func() {
