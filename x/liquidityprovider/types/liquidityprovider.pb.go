@@ -37,34 +37,34 @@ type LiquidityProviderAccount struct {
 	Mintable github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,2,rep,name=mintable,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"mintable" yaml:"mintable"`
 }
 
-func (m *LiquidityProviderAccount) Reset()      { *m = LiquidityProviderAccount{} }
+func (acc *LiquidityProviderAccount) Reset()    { *acc = LiquidityProviderAccount{} }
 func (*LiquidityProviderAccount) ProtoMessage() {}
 func (*LiquidityProviderAccount) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90aea87a4022d1af, []int{0}
 }
-func (m *LiquidityProviderAccount) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (acc *LiquidityProviderAccount) XXX_Unmarshal(b []byte) error {
+	return acc.Unmarshal(b)
 }
-func (m *LiquidityProviderAccount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (acc *LiquidityProviderAccount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_LiquidityProviderAccount.Marshal(b, m, deterministic)
+		return xxx_messageInfo_LiquidityProviderAccount.Marshal(b, acc, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
+		n, err := acc.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
 		return b[:n], nil
 	}
 }
-func (m *LiquidityProviderAccount) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LiquidityProviderAccount.Merge(m, src)
+func (acc *LiquidityProviderAccount) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LiquidityProviderAccount.Merge(acc, src)
 }
-func (m *LiquidityProviderAccount) XXX_Size() int {
-	return m.Size()
+func (acc *LiquidityProviderAccount) XXX_Size() int {
+	return acc.Size()
 }
-func (m *LiquidityProviderAccount) XXX_DiscardUnknown() {
-	xxx_messageInfo_LiquidityProviderAccount.DiscardUnknown(m)
+func (acc *LiquidityProviderAccount) XXX_DiscardUnknown() {
+	xxx_messageInfo_LiquidityProviderAccount.DiscardUnknown(acc)
 }
 
 var xxx_messageInfo_LiquidityProviderAccount proto.InternalMessageInfo
@@ -103,30 +103,30 @@ var fileDescriptor_90aea87a4022d1af = []byte{
 	0x82, 0xb8, 0xaa, 0x64, 0xe5, 0x01, 0x00, 0x00,
 }
 
-func (m *LiquidityProviderAccount) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
+func (acc *LiquidityProviderAccount) Marshal() (dAtA []byte, err error) {
+	size := acc.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	n, err := acc.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
 	return dAtA[:n], nil
 }
 
-func (m *LiquidityProviderAccount) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
+func (acc *LiquidityProviderAccount) MarshalTo(dAtA []byte) (int, error) {
+	size := acc.Size()
+	return acc.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *LiquidityProviderAccount) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (acc *LiquidityProviderAccount) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Mintable) > 0 {
-		for iNdEx := len(m.Mintable) - 1; iNdEx >= 0; iNdEx-- {
+	if len(acc.Mintable) > 0 {
+		for iNdEx := len(acc.Mintable) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Mintable[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := acc.Mintable[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -137,10 +137,10 @@ func (m *LiquidityProviderAccount) MarshalToSizedBuffer(dAtA []byte) (int, error
 			dAtA[i] = 0x12
 		}
 	}
-	if len(m.Address) > 0 {
-		i -= len(m.Address)
-		copy(dAtA[i:], m.Address)
-		i = encodeVarintLiquidityprovider(dAtA, i, uint64(len(m.Address)))
+	if len(acc.Address) > 0 {
+		i -= len(acc.Address)
+		copy(dAtA[i:], acc.Address)
+		i = encodeVarintLiquidityprovider(dAtA, i, uint64(len(acc.Address)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -158,18 +158,18 @@ func encodeVarintLiquidityprovider(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *LiquidityProviderAccount) Size() (n int) {
-	if m == nil {
+func (acc *LiquidityProviderAccount) Size() (n int) {
+	if acc == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Address)
+	l = len(acc.Address)
 	if l > 0 {
 		n += 1 + l + sovLiquidityprovider(uint64(l))
 	}
-	if len(m.Mintable) > 0 {
-		for _, e := range m.Mintable {
+	if len(acc.Mintable) > 0 {
+		for _, e := range acc.Mintable {
 			l = e.Size()
 			n += 1 + l + sovLiquidityprovider(uint64(l))
 		}
@@ -183,7 +183,7 @@ func sovLiquidityprovider(x uint64) (n int) {
 func sozLiquidityprovider(x uint64) (n int) {
 	return sovLiquidityprovider(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *LiquidityProviderAccount) Unmarshal(dAtA []byte) error {
+func (acc *LiquidityProviderAccount) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -242,7 +242,7 @@ func (m *LiquidityProviderAccount) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Address = string(dAtA[iNdEx:postIndex])
+			acc.Address = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -273,8 +273,8 @@ func (m *LiquidityProviderAccount) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Mintable = append(m.Mintable, types.Coin{})
-			if err := m.Mintable[len(m.Mintable)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			acc.Mintable = append(acc.Mintable, types.Coin{})
+			if err := acc.Mintable[len(acc.Mintable)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

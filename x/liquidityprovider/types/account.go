@@ -19,51 +19,51 @@ func NewLiquidityProviderAccount(provAddr string, mintable sdk.Coins) (*Liquidit
 
 // Validate validates the liquidity provider monetary load (Mintable) conforms
 // to Cosmos' notion of Coin and provider address is a bech32 address.
-func (p LiquidityProviderAccount) Validate() error {
-	if err := p.Mintable.Validate(); err != nil {
+func (acc LiquidityProviderAccount) Validate() error {
+	if err := acc.Mintable.Validate(); err != nil {
 		return sdkerrors.Wrap(err, "mintable")
 	}
 
-	_, err := sdk.AccAddressFromBech32(p.Address)
+	_, err := sdk.AccAddressFromBech32(acc.Address)
 	if err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.Address)
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, acc.Address)
 	}
 
 	return nil
 }
 
-func (p *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
-	p.Mintable = p.Mintable.Add(increase...)
+func (acc *LiquidityProviderAccount) IncreaseMintableAmount(increase sdk.Coins) {
+	acc.Mintable = acc.Mintable.Add(increase...)
 }
 
-func (p *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) error {
-	if mintable, anyNegative := p.Mintable.SafeSub(decrease); !anyNegative {
-		p.Mintable = mintable
+func (acc *LiquidityProviderAccount) DecreaseMintableAmount(decrease sdk.Coins) error {
+	if mintable, anyNegative := acc.Mintable.SafeSub(decrease); !anyNegative {
+		acc.Mintable = mintable
 		return nil
 	}
 
 	return fmt.Errorf(
-		"mintable amount cannot be negative, %s - %s", p.Mintable.String(),
+		"mintable amount cannot be negative, %s - %s", acc.Mintable.String(),
 		decrease.String(),
 	)
 }
 
-func (p LiquidityProviderAccount) String() string {
+func (acc LiquidityProviderAccount) String() string {
 	return fmt.Sprintf(`Account:
   Address:       %s
   Mintable:      %s`,
-		p.Address, p.Mintable)
+		acc.Address, acc.Mintable)
 }
 
-func (p *LiquidityProviderAccount) GetAccAddress() (sdk.AccAddress, error) {
-	acc, err := sdk.AccAddressFromBech32(p.Address)
+func (acc *LiquidityProviderAccount) GetAccAddress() (sdk.AccAddress, error) {
+	accAddr, err := sdk.AccAddressFromBech32(acc.Address)
 	if err != nil {
-		return acc, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, p.Address)
+		return accAddr, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, acc.Address)
 	}
 
-	return acc, nil
+	return accAddr, nil
 }
 
-func (p *LiquidityProviderAccount) SetAddress(address string) {
-	p.Address = address
+func (acc *LiquidityProviderAccount) SetAddress(address string) {
+	acc.Address = address
 }

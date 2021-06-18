@@ -14,5 +14,6 @@ const (
 // IAVL Store prefixes
 var (
 	ProviderKeyPrefix   = []byte{0x00}
-	MintableKeyPrefix   = []byte{0x01}
+	// Perhaps needed for future access
+	// MintableKeyPrefix   = []byte{0x01}
 )

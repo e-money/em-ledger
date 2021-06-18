@@ -34,9 +34,9 @@ import (
 
 var (
 	accAddr1 = sdk.AccAddress(tmrand.Bytes(sdk.AddrLen))
-	addr1    = accAddr1.String()
+	addr     = accAddr1.String()
 
-	mintable1 = sdk.NewCoins(
+	defaultMintable = sdk.NewCoins(
 		sdk.NewCoin("eeur", sdk.NewIntWithDecimal(1000, 2)),
 	)
 
@@ -58,20 +58,20 @@ func TestCreateAndMint(t *testing.T) {
 	require.NoError(t, err)
 
 	// Turn account into a LP
-	_, err = keeper.CreateLiquidityProvider(ctx, addr1, mintable1)
+	_, err = keeper.CreateLiquidityProvider(ctx, addr, defaultMintable)
 	require.NoError(t, err)
 	account = ak.GetAccount(ctx, acc)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)))
-	keeper.MintTokens(ctx, addr1, toMint)
+	keeper.MintTokens(ctx, addr, toMint)
 
 	balances := bk.GetAllBalances(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint...).String(), balances.String())
 	assert.Equal(t, initialBalance.Add(toMint...), bk.GetSupply(ctx).GetTotal())
 
 	// Ensure that mintable amount available has been correspondingly reduced
-	lpAcc := keeper.GetLiquidityProviderAccount(ctx, addr1)
-	assert.Equal(t, mintable1.Sub(toMint), lpAcc.Mintable)
+	lpAcc := keeper.GetLiquidityProviderAccount(ctx, addr)
+	assert.Equal(t, defaultMintable.Sub(toMint), lpAcc.Mintable)
 
 	allLPs := keeper.GetAllLiquidityProviderAccounts(ctx)
 	require.Len(t, allLPs, 1)
@@ -87,12 +87,12 @@ func TestMintTooMuch(t *testing.T) {
 	require.NoError(t, err)
 
 	// Turn account into a LP
-	_, err = keeper.CreateLiquidityProvider(ctx, addr1, mintable1)
+	_, err = keeper.CreateLiquidityProvider(ctx, addr, defaultMintable)
 	require.NoError(t, err)
 	account = ak.GetAccount(ctx, acc)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(5000, 2)))
-	_, err = keeper.MintTokens(ctx, addr1, toMint)
+	_, err = keeper.MintTokens(ctx, addr, toMint)
 	require.Error(t, err, "5000eeur - 500000eeur is negative")
 
 	balances := bk.GetAllBalances(ctx, acc)
@@ -100,15 +100,15 @@ func TestMintTooMuch(t *testing.T) {
 	assert.Equal(t, initialBalance, bk.GetSupply(ctx).GetTotal())
 
 	// Ensure that the mintable amount of the account has not been modified by failed attempt to mint.
-	lpAcc := keeper.GetLiquidityProviderAccount(ctx, addr1)
-	assert.Equal(t, mintable1, lpAcc.Mintable)
+	lpAcc := keeper.GetLiquidityProviderAccount(ctx, addr)
+	assert.Equal(t, defaultMintable, lpAcc.Mintable)
 }
 
 func TestMintMultipleDenoms(t *testing.T) {
 	ctx, ak, bk, keeper := createTestComponents(t, initialBalance)
 
 	jpy := sdk.NewCoins(sdk.NewCoin("ejpy", sdk.NewInt(1000000)))
-	extendedMintable := mintable1.Add(jpy...)
+	extendedMintable := defaultMintable.Add(jpy...)
 
 	acc := accAddr1
 	account := ak.NewAccountWithAddress(ctx, acc)
@@ -117,7 +117,7 @@ func TestMintMultipleDenoms(t *testing.T) {
 	require.NoError(t, err)
 
 	// Turn account into a LP
-	_, err = keeper.CreateLiquidityProvider(ctx, addr1, extendedMintable)
+	_, err = keeper.CreateLiquidityProvider(ctx, addr, extendedMintable)
 	require.NoError(t, err)
 	account = ak.GetAccount(ctx, acc)
 
@@ -126,13 +126,13 @@ func TestMintMultipleDenoms(t *testing.T) {
 		sdk.NewCoin("ejpy", sdk.NewInt(500000)),
 	)
 
-	keeper.MintTokens(ctx, addr1, toMint)
+	keeper.MintTokens(ctx, addr, toMint)
 	balances := bk.GetAllBalances(ctx, acc)
 	assert.Equal(t, initialBalance.Add(toMint...), balances)
 	assert.Equal(t, initialBalance.Add(toMint...), bk.GetSupply(ctx).GetTotal())
 
 	// Ensure that mintable amount available has been correspondingly reduced
-	lpAcc := keeper.GetLiquidityProviderAccount(ctx, addr1)
+	lpAcc := keeper.GetLiquidityProviderAccount(ctx, addr)
 	assert.Equal(t, extendedMintable.Sub(toMint), lpAcc.Mintable)
 }
 
@@ -146,7 +146,7 @@ func TestMintWithoutLPAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	toMint := sdk.NewCoins(sdk.NewCoin("eeur", sdk.NewIntWithDecimal(500, 2)))
-	_, err = keeper.MintTokens(ctx, addr1, toMint)
+	_, err = keeper.MintTokens(ctx, addr, toMint)
 	require.Error(t, err, "5000eeur - 50000eeur is negative")
 
 	account = ak.GetAccount(ctx, acc)
@@ -168,7 +168,7 @@ func TestCreateAndRevoke(t *testing.T) {
 	require.NoError(t, err)
 
 	// Turn account into a LP
-	_, err = keeper.CreateLiquidityProvider(ctx, addr1, mintable1)
+	_, err = keeper.CreateLiquidityProvider(ctx, addr, defaultMintable)
 	require.NoError(t, err)
 	account = ak.GetAccount(ctx, acc)
 
@@ -194,7 +194,7 @@ func TestLiquidityProviderIO(t *testing.T) {
 	require.Equal(t, pub, account.GetPubKey())
 
 	// when serialize
-	_, err = keeper.CreateLiquidityProvider(ctx, acc.String(), mintable1)
+	_, err = keeper.CreateLiquidityProvider(ctx, acc.String(), defaultMintable)
 	require.NoError(t, err)
 
 	// then deserialize
@@ -216,7 +216,7 @@ func TestAccountNotFound(t *testing.T) {
 	ctx, ak, _, keeper := createTestComponents(t, initialBalance)
 
 	acc := accAddr1
-	_, err := keeper.CreateLiquidityProvider(ctx, addr1, mintable1)
+	_, err := keeper.CreateLiquidityProvider(ctx, addr, defaultMintable)
 	assert.NoError(t, err)
 	assert.Nil(t, ak.GetAccount(ctx, acc))
 
