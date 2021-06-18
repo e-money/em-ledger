@@ -57,7 +57,7 @@ func (k Keeper) getMissingBlocksForValidator(address sdk.ConsAddress) []time.Tim
 	key := []byte(fmt.Sprintf(dbKeyMissedByVal, address.String()))
 	bz, err := k.database.Get(key)
 	if err != nil {
-		panic(err) // TODO Better handling
+		panic(err)
 	}
 
 	if len(bz) == 0 {
@@ -96,7 +96,7 @@ func (k Keeper) deleteMissingBlocksForValidator(batch db.Batch, address sdk.Cons
 func (k Keeper) getBlockTimes() []time.Time {
 	bz, err := k.database.Get([]byte(dbKeyBlockTimes))
 	if err != nil {
-		panic(err) // TODO Better handling
+		panic(err)
 	}
 
 	if len(bz) == 0 {
@@ -105,7 +105,7 @@ func (k Keeper) getBlockTimes() []time.Time {
 
 	b := bytes.NewBuffer(bz)
 	blockTimes := make([]time.Time, 0)
-	dec := gob.NewDecoder(b) // todo (reviewer): you may want to use protobuf instead for consistency
+	dec := gob.NewDecoder(b)
 	_ = dec.Decode(&blockTimes)
 	return blockTimes
 }
@@ -115,12 +115,4 @@ func (k Keeper) setBlockTimes(batch db.Batch, blockTimes []time.Time) {
 	enc := gob.NewEncoder(bz)
 	_ = enc.Encode(blockTimes)
 	batch.Set([]byte(dbKeyBlockTimes), bz.Bytes())
-}
-
-// Adopted from cosmos-sdk/x/staking/keeper/slash.go
-func calculateSlashingAmount(power int64, slashFactor sdk.Dec) sdk.Int {
-	amount := sdk.TokensFromConsensusPower(power)
-	slashAmountDec := amount.ToDec().Mul(slashFactor)
-	slashAmount := slashAmountDec.TruncateInt()
-	return slashAmount
 }

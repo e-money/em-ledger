@@ -51,7 +51,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 	if sdk.OneDec().Sub(minSignedPerWindow).LT(missedRatio) {
 		validator := k.sk.ValidatorByConsAddr(ctx, consAddr)
 		if validator != nil && !validator.IsJailed() {
-
 			// Downtime confirmed: slash and jail the validator
 			logger.Info(fmt.Sprintf("Validator %s is below signed blocks threshold of %d during the last %s",
 				consAddr, k.MinSignedPerWindow(ctx), k.SignedBlocksWindowDuration(ctx)))
