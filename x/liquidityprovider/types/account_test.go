@@ -23,7 +23,7 @@ func TestBasic(t *testing.T) {
 	baseAcc := authtypes.NewBaseAccount(addr, priv.PubKey(), 1, 0)
 
 	mintable := sdk.NewCoin("eeur", sdk.NewIntWithDecimal(1000, 2))
-	lpAcc, err := NewLiquidityProviderAccount(baseAcc, sdk.NewCoins(mintable))
+	lpAcc, err := NewLiquidityProviderAccount(baseAcc.GetAddress().String(), sdk.NewCoins(mintable))
 
 	require.NoError(t, err)
 
@@ -38,13 +38,12 @@ func TestDecreaseMintable(t *testing.T) {
 	baseAcc := authtypes.NewBaseAccount(addr, priv.PubKey(), 1, 0)
 
 	mintable := MustParseCoins("100000eeur,700ejpy")
-	lpAcc, err := NewLiquidityProviderAccount(baseAcc, mintable)
+	lpAcc, err := NewLiquidityProviderAccount(baseAcc.GetAddress().String(), mintable)
 	require.NoError(t, err)
 
 	reduction := MustParseCoins("200000eeur,300ejpy")
-	assert.Panics(t, func() {
-		lpAcc.DecreaseMintableAmount(reduction)
-	})
+	err = lpAcc.DecreaseMintableAmount(reduction)
+	assert.Error(t, err)
 
 	lpAcc.DecreaseMintableAmount(MustParseCoins("90000eeur,300ejpy"))
 	assert.Equal(t, MustParseCoins("10000eeur,400ejpy"), lpAcc.Mintable)
@@ -63,7 +62,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 	var myAddr sdk.AccAddress = rand.Bytes(sdk.AddrLen)
 	nestedAcc := authtypes.NewBaseAccountWithAddress(myAddr)
 	mintableCoins := sdk.NewCoins(sdk.NewCoin("alx", sdk.NewInt(123)))
-	src, err := NewLiquidityProviderAccount(nestedAcc, mintableCoins)
+	src, err := NewLiquidityProviderAccount(nestedAcc.GetAddress().String(), mintableCoins)
 	require.NoError(t, err)
 
 	interfaceRegistry := types.NewInterfaceRegistry()
@@ -79,12 +78,11 @@ func TestMarshalUnmarshal(t *testing.T) {
 	err = marshaler.UnmarshalBinaryBare(bz, &dest)
 	require.NoError(t, err)
 	assert.Equal(t, src, &dest)
-	assert.Equal(t, myAddr, dest.GetAddress())
+	assert.Equal(t, myAddr.String(), dest.Address)
 }
 func TestValidate(t *testing.T) {
 	var (
 		randomAddress sdk.AccAddress = rand.Bytes(sdk.AddrLen)
-		randomPubKey                 = ed25519.GenPrivKey().PubKey()
 	)
 
 	specs := map[string]struct {
@@ -105,15 +103,10 @@ func TestValidate(t *testing.T) {
 			srcMintable: sdk.Coins{sdk.Coin{Denom: "invalid@#$^", Amount: sdk.OneInt()}},
 			expErr:      true,
 		},
-		"invalid account rejected: non matching pubkey": {
-			srcAccount:  authtypes.NewBaseAccount(randomAddress, randomPubKey, 1, 1),
-			srcMintable: sdk.Coins{sdk.NewCoin("foo", sdk.OneInt())},
-			expErr:      true,
-		},
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
-			lp, err := NewLiquidityProviderAccount(spec.srcAccount, spec.srcMintable)
+			lp, err := NewLiquidityProviderAccount(spec.srcAccount.GetAddress().String(), spec.srcMintable)
 			require.NoError(t, err)
 			gotErr := lp.Validate()
 			if spec.expErr {
