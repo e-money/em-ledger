@@ -26,7 +26,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 	specs := map[string]struct {
 		setup     func(ctx sdk.Context)
 		req       *types.MsgIncreaseMintable
-		mockFn    func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
 		expErr    bool
 		expEvents sdk.Events
 	}{
@@ -36,8 +36,8 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableIncrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
-				gotLiquidityProviderAddr = liquidityProvider
+			mockFn: func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+				gotLiquidityProviderAddr = liquidityProvider.String()
 				gotIssuer = issuer
 				gotMintableIncrease = mintableIncrease
 				return &sdk.Result{
@@ -88,7 +88,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableIncrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -128,7 +128,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 	specs := map[string]struct {
 		setup     func(ctx sdk.Context)
 		req       *types.MsgDecreaseMintable
-		mockFn    func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
 		expErr    bool
 		expEvents sdk.Events
 	}{
@@ -138,8 +138,8 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableDecrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
-				gotLiquidityProviderAddr = liquidityProvider
+			mockFn: func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+				gotLiquidityProviderAddr = liquidityProvider.String()
 				gotIssuer = issuer
 				gotMintableDecrease = mintableDecrease
 				return &sdk.Result{
@@ -190,7 +190,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableDecrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -342,27 +342,27 @@ func TestSetInflationRate(t *testing.T) {
 }
 
 type issuerKeeperMock struct {
-	IncreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
-	DecreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
-	RevokeLiquidityProviderFn                   func(ctx sdk.Context, liquidityProvider string, issuerAddress sdk.AccAddress) (*sdk.Result, error)
+	IncreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
+	DecreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
+	RevokeLiquidityProviderFn                   func(ctx sdk.Context, liquidityProvider, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	SetInflationRateFn                          func(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) (*sdk.Result, error)
 }
 
-func (m issuerKeeperMock) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+func (m issuerKeeperMock) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	if m.IncreaseMintableAmountOfLiquidityProviderFn == nil {
 		panic("not expected to be called")
 	}
 	return m.IncreaseMintableAmountOfLiquidityProviderFn(ctx, liquidityProvider, issuer, mintableIncrease)
 }
 
-func (m issuerKeeperMock) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+func (m issuerKeeperMock) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 	if m.DecreaseMintableAmountOfLiquidityProviderFn == nil {
 		panic("not expected to be called")
 	}
 	return m.DecreaseMintableAmountOfLiquidityProviderFn(ctx, liquidityProvider, issuer, mintableDecrease)
 }
 
-func (m issuerKeeperMock) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
+func (m issuerKeeperMock) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	if m.RevokeLiquidityProviderFn == nil {
 		panic("not expected to be called")
 	}

@@ -38,7 +38,7 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper, 
 	}
 }
 
-func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider,  issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer.String())
@@ -68,7 +68,7 @@ func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer.String())
@@ -102,7 +102,7 @@ func (k Keeper) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liqui
 
 }
 
-func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
+func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	issuer, err := k.mustBeIssuer(ctx, issuerAddress.String())
 	if err != nil {
 		return nil, sdkerrors.Wrap(types.ErrNotAnIssuer, issuerAddress.String())
@@ -110,7 +110,7 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider strin
 
 	lpAcc := k.lpKeeper.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if lpAcc == nil {
-		return nil, sdkerrors.Wrap(types.ErrNotLiquidityProvider, liquidityProvider)
+		return nil, sdkerrors.Wrap(types.ErrNotLiquidityProvider, liquidityProvider.String())
 	}
 
 	newMintableAmount := lpAcc.Mintable
@@ -120,12 +120,12 @@ func (k Keeper) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider strin
 
 	if len(newMintableAmount) == len(lpAcc.Mintable) {
 		// Nothing was changed. Issuer was not controlling this lp.
-		return nil, sdkerrors.Wrap(types.ErrNotLiquidityProvider, liquidityProvider)
+		return nil, sdkerrors.Wrap(types.ErrNotLiquidityProvider, liquidityProvider.String())
 	}
 
 	if len(newMintableAmount) == 0 {
 		// Mintable amount is zero, so demote to ordinary account
-		k.lpKeeper.RevokeLiquidityProviderAccount(ctx, lpAcc.Address)
+		k.lpKeeper.RevokeLiquidityProviderAccount(ctx, liquidityProvider)
 	} else {
 		// This liquidity provider has been granted a mintable amounts from multiple issuers so some amount remain.
 		lpAcc.Mintable = newMintableAmount
