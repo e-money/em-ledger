@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
 
@@ -70,8 +69,8 @@ func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 	k.MustBeAuthority(ctx, authority)
 
 	for _, denom := range denoms {
-		if !util.ValidateDenom(denom) {
-			return nil, sdkerrors.Wrapf(types.ErrInvalidDenom, "Invalid denom: %v", denom)
+		if err := sdk.ValidateDenom(denom); err != nil {
+			return nil, sdkerrors.Wrapf(types.ErrInvalidDenom, err.Error())
 		}
 	}
 
