@@ -16,7 +16,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 		issuerAddr               = randomAccAddress()
 		lpAddr                   = randomAccAddress()
 		gotIssuer                sdk.AccAddress
-		gotLiquidityProviderAddr sdk.AccAddress
+		gotLiquidityProviderAddr string
 		gotMintableIncrease      sdk.Coins
 	)
 
@@ -26,7 +26,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 	specs := map[string]struct {
 		setup     func(ctx sdk.Context)
 		req       *types.MsgIncreaseMintable
-		mockFn    func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
 		expErr    bool
 		expEvents sdk.Events
 	}{
@@ -36,7 +36,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableIncrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 				gotLiquidityProviderAddr = liquidityProvider
 				gotIssuer = issuer
 				gotMintableIncrease = mintableIncrease
@@ -88,7 +88,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableIncrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -106,7 +106,7 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr.String())
+			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr)
 			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
 			assert.Equal(t, spec.req.MintableIncrease, gotMintableIncrease)
 		})
@@ -118,7 +118,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 		issuerAddr               = randomAccAddress()
 		lpAddr                   = randomAccAddress()
 		gotIssuer                sdk.AccAddress
-		gotLiquidityProviderAddr sdk.AccAddress
+		gotLiquidityProviderAddr string
 		gotMintableDecrease      sdk.Coins
 	)
 
@@ -128,7 +128,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 	specs := map[string]struct {
 		setup     func(ctx sdk.Context)
 		req       *types.MsgDecreaseMintable
-		mockFn    func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
 		expErr    bool
 		expEvents sdk.Events
 	}{
@@ -138,7 +138,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableDecrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 				gotLiquidityProviderAddr = liquidityProvider
 				gotIssuer = issuer
 				gotMintableDecrease = mintableDecrease
@@ -190,7 +190,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 				LiquidityProvider: lpAddr.String(),
 				MintableDecrease:  sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
-			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -208,7 +208,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr.String())
+			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr)
 			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
 			assert.Equal(t, spec.req.MintableDecrease, gotMintableDecrease)
 		})
@@ -342,27 +342,27 @@ func TestSetInflationRate(t *testing.T) {
 }
 
 type issuerKeeperMock struct {
-	IncreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
-	DecreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
-	RevokeLiquidityProviderFn                   func(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
+	IncreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
+	DecreaseMintableAmountOfLiquidityProviderFn func(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
+	RevokeLiquidityProviderFn                   func(ctx sdk.Context, liquidityProvider string, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	SetInflationRateFn                          func(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) (*sdk.Result, error)
 }
 
-func (m issuerKeeperMock) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+func (m issuerKeeperMock) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	if m.IncreaseMintableAmountOfLiquidityProviderFn == nil {
 		panic("not expected to be called")
 	}
 	return m.IncreaseMintableAmountOfLiquidityProviderFn(ctx, liquidityProvider, issuer, mintableIncrease)
 }
 
-func (m issuerKeeperMock) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
+func (m issuerKeeperMock) DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error) {
 	if m.DecreaseMintableAmountOfLiquidityProviderFn == nil {
 		panic("not expected to be called")
 	}
 	return m.DecreaseMintableAmountOfLiquidityProviderFn(ctx, liquidityProvider, issuer, mintableDecrease)
 }
 
-func (m issuerKeeperMock) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
+func (m issuerKeeperMock) RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
 	if m.RevokeLiquidityProviderFn == nil {
 		panic("not expected to be called")
 	}

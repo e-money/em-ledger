@@ -597,6 +597,20 @@ func (k Keeper) getBestOrder(ctx sdk.Context, src, dst string) *types.Order {
 	return nil
 }
 
+// GetBestPrice returns the best priced passive order for source and
+// destination instruments. Returns nil when executePlan cannot find a best
+// plan.
+func (k Keeper) GetBestPrice(ctx sdk.Context, source, destination string) *sdk.Dec {
+	var bestPrice *sdk.Dec
+
+	bestPlan := k.createExecutionPlan(ctx, destination, source)
+	if !bestPlan.DestinationCapacity().IsZero() {
+		bestPrice = &bestPlan.Price
+	}
+
+	return bestPrice
+}
+
 func (k Keeper) GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) (res []*types.Order) {
 	store := ctx.KVStore(k.key)
 

@@ -10,9 +10,9 @@ import (
 var _ types.MsgServer = msgServer{}
 
 type issuerKeeper interface {
-	IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
-	DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
-	RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
+	IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error)
+	DecreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuer sdk.AccAddress, mintableDecrease sdk.Coins) (*sdk.Result, error)
+	RevokeLiquidityProvider(ctx sdk.Context, liquidityProvider string, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	SetInflationRate(ctx sdk.Context, issuer sdk.AccAddress, inflationRate sdk.Dec, denom string) (*sdk.Result, error)
 }
 
@@ -30,12 +30,13 @@ func (m msgServer) IncreaseMintable(c context.Context, msg *types.MsgIncreaseMin
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
 	}
-	liquidityProvider, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+
+	_, err = sdk.AccAddressFromBech32(msg.LiquidityProvider)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:"+msg.LiquidityProvider)
 	}
 
-	result, err := m.k.IncreaseMintableAmountOfLiquidityProvider(ctx, liquidityProvider, issuer, msg.MintableIncrease)
+	result, err := m.k.IncreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, issuer, msg.MintableIncrease)
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +53,13 @@ func (m msgServer) DecreaseMintable(c context.Context, msg *types.MsgDecreaseMin
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
 	}
-	liquidityProvider, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+
+	_, err = sdk.AccAddressFromBech32(msg.LiquidityProvider)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:"+msg.LiquidityProvider)
 	}
-	result, err := m.k.DecreaseMintableAmountOfLiquidityProvider(ctx, liquidityProvider, issuer, msg.MintableDecrease)
+
+	result, err := m.k.DecreaseMintableAmountOfLiquidityProvider(ctx, msg.LiquidityProvider, issuer, msg.MintableDecrease)
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +77,7 @@ func (m msgServer) RevokeLiquidityProvider(c context.Context, msg *types.MsgRevo
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "issuer")
 	}
-	liquidityProvider, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
-	}
-	result, err := m.k.RevokeLiquidityProvider(ctx, liquidityProvider, issuer)
+	result, err := m.k.RevokeLiquidityProvider(ctx, msg.LiquidityProvider, issuer)
 	if err != nil {
 		return nil, err
 	}

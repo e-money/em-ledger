@@ -13,12 +13,14 @@ message LiquidityProviderAccount {
   option (gogoproto.goproto_stringer) = false;
   option (gogoproto.equal) = false;
 
-  option (cosmos_proto.implements_interface) = "AccountI";
+  // Any string address representation with the accompanying supporting encoding
+  // and validation functions starting with bech32. However, in the
+  // interest of cultivating wider acceptance for this module other arbitrary
+  // address encodings outside the supported cosmos sdk formats perhaps would
+  // fit nicely with this loosely defined provider identity specifier.
+  string address = 1 [(gogoproto.moretags) = "yaml:\"address\""];
 
-  google.protobuf.Any account = 1
-      [ (cosmos_proto.accepts_interface) = "AccountI" ];
-
-  repeated cosmos.base.v1beta1.Coin mintable = 3 [
+  repeated cosmos.base.v1beta1.Coin mintable = 2 [
     (gogoproto.moretags) = "yaml:\"mintable\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false
