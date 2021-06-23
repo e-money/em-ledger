@@ -28,12 +28,12 @@ func (k Keeper) Mintable(c context.Context, req *types.QueryMintableRequest) (*t
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	_, err := sdk.AccAddressFromBech32(req.Address)
+	lqAcc, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:" + req.Address)
 	}
 
-	lp := k.GetLiquidityProviderAccount(sdk.UnwrapSDKContext(c), req.Address)
+	lp := k.GetLiquidityProviderAccount(sdk.UnwrapSDKContext(c), lqAcc)
 	if lp == nil {
 		return &types.QueryMintableResponse{
 			Mintable: sdk.NewCoins(),

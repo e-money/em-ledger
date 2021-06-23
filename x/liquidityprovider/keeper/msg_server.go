@@ -10,8 +10,8 @@ import (
 var _ types.MsgServer = msgServer{}
 
 type liquidityProvKeeper interface {
-	MintTokens(ctx sdk.Context, liquidityProvider string, amount sdk.Coins) (*sdk.Result, error)
-	BurnTokensFromBalance(ctx sdk.Context, liquidityProvider string, amount sdk.Coins) (*sdk.Result, error)
+	MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error)
+	BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error)
 }
 type msgServer struct {
 	k liquidityProvKeeper
@@ -23,11 +23,11 @@ func NewMsgServerImpl(keeper liquidityProvKeeper) types.MsgServer {
 
 func (m msgServer) MintTokens(c context.Context, msg *types.MsgMintTokens) (*types.MsgMintTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	_, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	acc, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
 	}
-	result, err := m.k.MintTokens(ctx, msg.LiquidityProvider, msg.Amount)
+	result, err := m.k.MintTokens(ctx, acc, msg.Amount)
 
 	if err != nil {
 		return nil, err
@@ -42,11 +42,11 @@ func (m msgServer) MintTokens(c context.Context, msg *types.MsgMintTokens) (*typ
 func (m msgServer) BurnTokens(c context.Context, msg *types.MsgBurnTokens) (*types.MsgBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	_, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
+	acc, err := sdk.AccAddressFromBech32(msg.LiquidityProvider)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
 	}
-	result, err := m.k.BurnTokensFromBalance(ctx, msg.LiquidityProvider, msg.Amount)
+	result, err := m.k.BurnTokensFromBalance(ctx, acc, msg.Amount)
 	if err != nil {
 		return nil, err
 	}

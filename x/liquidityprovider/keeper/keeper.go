@@ -45,12 +45,12 @@ func (k Keeper) SetLiquidityProviderAccount(
 }
 
 // GetLiquidityProviderAccount finds and deserializes a liquidity provider from the state.
-func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, address string) *types.LiquidityProviderAccount {
+func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, address sdk.AccAddress) *types.LiquidityProviderAccount {
 	var prov types.LiquidityProviderAccount
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
 
-	bz := store.Get([]byte(address))
+	bz := store.Get([]byte(address.String()))
 	if bz == nil {
 		return nil
 	}
@@ -59,9 +59,9 @@ func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, address string) *ty
 	return &prov
 }
 
-func (k Keeper) RevokeLiquidityProviderAccount(ctx sdk.Context, address string) {
+func (k Keeper) RevokeLiquidityProviderAccount(ctx sdk.Context, address sdk.AccAddress) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
-	store.Delete([]byte(address))
+	store.Delete([]byte(address.String()))
 }
 
 // IterateProviders provides an iterator over all stored liquidity providers.
@@ -105,10 +105,10 @@ func (k Keeper) GetAllLiquidityProviderAccounts(ctx sdk.Context) []types.Liquidi
 	return res
 }
 
-func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address string, mintable sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address sdk.AccAddress, mintable sdk.Coins) (*sdk.Result, error) {
 	logger := k.Logger(ctx)
 
-	lpAcc, err := types.NewLiquidityProviderAccount(address, mintable)
+	lpAcc, err := types.NewLiquidityProviderAccount(address.String(), mintable)
 	if err != nil {
 		return nil, err
 	}
@@ -122,20 +122,15 @@ func (k Keeper) CreateLiquidityProvider(ctx sdk.Context, address string, mintabl
 //				Banking functions
 // ------------------------------------------
 
-func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, address string, amount sdk.Coins) (*sdk.Result, error) {
-	prov := k.GetLiquidityProviderAccount(ctx, address)
+func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
+	prov := k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if prov == nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress,
-			"account %s is not a liquidity provider or does not exist", address,
+			"account %s is not a liquidity provider or does not exist", liquidityProvider.String(),
 		)
 	}
 
-	account, err := sdk.AccAddressFromBech32(address)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "account")
-	}
-
-	balances := k.bankKeeper.GetAllBalances(ctx, account)
+	balances := k.bankKeeper.GetAllBalances(ctx, liquidityProvider)
 	_, anynegative := balances.SafeSub(amount)
 	if anynegative {
 		return nil, sdkerrors.Wrapf(
@@ -144,7 +139,7 @@ func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, address string, amount sd
 		)
 	}
 
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, account, types.ModuleName, amount)
+	err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, liquidityProvider, types.ModuleName, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -160,14 +155,15 @@ func (k Keeper) BurnTokensFromBalance(ctx sdk.Context, address string, amount sd
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) MintTokens(ctx sdk.Context, address string, amount sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) MintTokens(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
 	logger := k.Logger(ctx)
 
-	prov := k.GetLiquidityProviderAccount(ctx, address)
+	prov := k.GetLiquidityProviderAccount(ctx, liquidityProvider)
 	if prov == nil {
 		return nil, sdkerrors.Wrapf(
 			sdkerrors.ErrUnknownAddress,
-			"account %s is not a liquidity provider or does not exist", address,
+			"account %s is not a liquidity provider or does not exist",
+			liquidityProvider,
 		)
 	}
 
@@ -189,13 +185,8 @@ func (k Keeper) MintTokens(ctx sdk.Context, address string, amount sdk.Coins) (*
 		return nil, err
 	}
 
-	account, err := sdk.AccAddressFromBech32(address)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "account")
-	}
-
 	err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, types.ModuleName, account, amount,
+		ctx, types.ModuleName, liquidityProvider, amount,
 	)
 	if err != nil {
 		return nil, err

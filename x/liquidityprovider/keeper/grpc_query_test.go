@@ -46,16 +46,16 @@ func TestQueryList(t *testing.T) {
 	}{
 		"all good": {
 			setupFunc: func() {
-				_, err := keeper.CreateLiquidityProvider(ctx, addr1, mintable1)
+				_, err := keeper.CreateLiquidityProvider(ctx,accAddr1, mintable1)
 				assert.NoError(t, err)
 
-				lp1 := keeper.GetLiquidityProviderAccount(ctx, addr1)
+				lp1 := keeper.GetLiquidityProviderAccount(ctx,accAddr1)
 				assert.NotNil(t, lp1)
 
-				_, err = keeper.CreateLiquidityProvider(ctx, addr2, mintable2)
+				_, err = keeper.CreateLiquidityProvider(ctx,accAddr2, mintable2)
 				assert.NoError(t, err)
 
-				lp2 := keeper.GetLiquidityProviderAccount(ctx, addr2)
+				lp2 := keeper.GetLiquidityProviderAccount(ctx,accAddr2)
 				assert.NotNil(t, lp2)
 			},
 			expLps: []types.LiquidityProviderAccount{
@@ -71,8 +71,8 @@ func TestQueryList(t *testing.T) {
 		},
 		"empty list": {
 			setupFunc: func() {
-				keeper.RevokeLiquidityProviderAccount(ctx, addr1)
-				keeper.RevokeLiquidityProviderAccount(ctx, addr2)
+				keeper.RevokeLiquidityProviderAccount(ctx,accAddr1)
+				keeper.RevokeLiquidityProviderAccount(ctx, accAddr2)
 			},
 			expLps: []types.LiquidityProviderAccount(nil),
 		},
@@ -113,10 +113,10 @@ func TestQueryMintable(t *testing.T) {
 		sdk.NewCoin("eeur", sdk.NewIntWithDecimal(1000, 2)),
 	)
 
-	_, err := keeper.CreateLiquidityProvider(ctx, addr, defaultMintable)
+	_, err := keeper.CreateLiquidityProvider(ctx, accAddr1, defaultMintable)
 	assert.NoError(t, err)
 
-	defaultLP := keeper.GetLiquidityProviderAccount(ctx, addr)
+	defaultLP := keeper.GetLiquidityProviderAccount(ctx, accAddr1)
 	assert.NotNil(t, defaultLP)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encConfig.InterfaceRegistry)
