@@ -8,7 +8,6 @@ package networktest
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -276,19 +275,11 @@ func IncChain(delta int64) (int64, error) {
 		return height, err
 	}
 
-	return IncChainWithExpiration(
+	return WaitForHeightWithTimeout(
 		height+delta,
 		// generous and unlikely to exhaust
-		time.Duration(delta*5)*time.Second,
+		time.Duration(delta)*5*time.Second,
 	)
-}
-
-func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error) {
-	newHeight, err := WaitForHeightWithTimeout(
-		height+1, sleepDur,
-	)
-
-	return newHeight, err
 }
 
 func ChainBlockHash() (string, error) {
@@ -318,7 +309,7 @@ func chainStatus() ([]byte, error) {
 }
 
 // WaitForHeightWithTimeout waits till the chain reaches the requested height
-// or times out whichever occurs first.
+// or times out, whichever occurs first.
 func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, error) {
 	// Half a sec + emd invoke + result processing
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -343,40 +334,6 @@ func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, er
 			if height >= requestedHeight {
 				return height, nil
 			}
-		}
-	}
-}
-
-// WaitForListenerWithTimeout waits till the chain is able to return an event
-// listener or times out.
-func WaitForListenerWithTimeout(t time.Duration) (listener EventListener, err error) {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	timeout := time.After(t)
-
-	for {
-		select {
-		case <-timeout:
-			ticker.Stop()
-			return EventListener{},
-			errors.New("timeout before receiving an event listener")
-		case <-ticker.C:
-			listener, err = NewEventListener()
-			if err != nil {
-				fmt.Print(".")
-				continue
-			}
-
-			newBlocker, err := listener.AwaitNewBlock()
-			if err != nil {
-				fmt.Print(".")
-				continue
-			}
-			if !newBlocker() {
-				fmt.Print(".")
-				continue
-			}
-
-			return listener, nil
 		}
 	}
 }
