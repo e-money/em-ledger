@@ -140,9 +140,19 @@ func (cli Emcli) QueryBalanceDenom(account, denom string) (balance int, err erro
 	return
 }
 
-// NOTE Hardcoded to eeur for now.
 func (cli Emcli) QueryAccount(account string) (mintable int, err error) {
 	args := cli.addQueryFlags("query", "account", account)
+	_, err = execCmdAndCollectResponse(args)
+	if err != nil {
+		return 0, err
+	}
+
+	return
+}
+
+// NOTE Hardcoded to eeur for now.
+func (cli Emcli) QueryMintable(account string) (mintable int, err error) {
+	args := cli.addQueryFlags("query", "liquidityprovider", "mintable", account)
 	bz, err := execCmdAndCollectResponse(args)
 	if err != nil {
 		return 0, err
@@ -165,6 +175,11 @@ func (cli Emcli) QueryTotalSupply() ([]byte, error) {
 
 func (cli Emcli) QueryAccountJson(account string) ([]byte, error) {
 	args := cli.addQueryFlags("query", "account", account)
+	return execCmdAndCollectResponse(args)
+}
+
+func (cli Emcli) QueryMintableJson(account string) ([]byte, error) {
+	args := cli.addQueryFlags("query", "liquidityprovider", "mintable", account)
 	return execCmdAndCollectResponse(args)
 }
 
@@ -365,7 +380,7 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {
-	fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
 	bz, err := exec.Command(EMCLI, arguments...).CombinedOutput()
 	// fmt.Println(" *** Output: ", string(bz))
 	return bz, err
