@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	nt "github.com/e-money/em-ledger/networktest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
@@ -42,7 +42,7 @@ var _ = Describe("Authority", func() {
 		})
 
 		It("Same key signs twice", func() {
-			time.Sleep(8 * time.Second) // Avoid querying while block height is 1
+			_, _ = nt.IncChain(1) // Avoid querying while block height is 1
 
 			jsonPath, err := ioutil.TempDir("", "")
 			Expect(err).To(BeNil())
