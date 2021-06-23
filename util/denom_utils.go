@@ -5,16 +5,10 @@
 package util
 
 import (
-	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
-
-func ValidateDenom(denom string) bool {
-	err := sdk.ValidateDenom(denom)
-	return err == nil
-}
 
 func ParseDenominations(denoms string) ([]string, error) {
 	res := make([]string, 0)
@@ -25,8 +19,8 @@ func ParseDenominations(denoms string) ([]string, error) {
 			continue
 		}
 
-		if !ValidateDenom(denom) {
-			return nil, fmt.Errorf("invalid denomination: %v", denom)
+		if err := sdk.ValidateDenom(denom); err != nil {
+			return nil, err
 		}
 
 		res = append(res, denom)

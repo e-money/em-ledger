@@ -5,12 +5,10 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/spf13/cobra"
 )
@@ -48,8 +46,8 @@ func getCmdSetInflation() *cobra.Command {
 			}
 
 			denom := args[1]
-			if !util.ValidateDenom(denom) {
-				return fmt.Errorf("invalid denomination: %v", denom)
+			if err := sdk.ValidateDenom(denom); err != nil {
+				return err
 			}
 
 			inflation, err := sdk.NewDecFromStr(args[2])
