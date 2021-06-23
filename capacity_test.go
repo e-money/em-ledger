@@ -24,7 +24,7 @@ import (
 	"github.com/tidwall/gjson"
 	"os"
 	"sync"
-	"time"
+	"sync/atomic"
 )
 
 var _ = Describe("Staking", func() {
@@ -40,66 +40,38 @@ var _ = Describe("Staking", func() {
 			It("creates a new testnet", createNewTestnet)
 
 			It("Creates a lot of send transactions", func() {
-				emcli := testnet.NewEmcli()
+				const trxCount = 400
 
-				time.Sleep(2 * time.Second)
+				var (
+					failedTxs int32 = 0
+					coin, _         = sdk.ParseCoinsNormalized("15000eeur")
+					chainID         = testnet.ChainID()
+					txhash          = make(chan string, 1024)
+				)
 
-				txhash := make(chan string, 1024)
+				senders := []nt.Key{Key1, Key2, Key3, Key3}
+				receivers := []nt.Key{Key2, Key1, Key1, Key2}
 
-				for i := 0; i < 100; i++ {
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("15000eeur")
-						txResponse, err := sendTx(Key1, Key2, coins, testnet.ChainID())
+				for i := 0; i < trxCount; i++ {
+
+					go func(from, to nt.Key) {
+						hash, err := sendTx(from, to, coin, chainID)
 						if err != nil {
+							atomic.AddInt32(&failedTxs, 1)
 							fmt.Println(err)
+							return
 						}
 
-						txhash <- txResponse.TxHash
-					}()
-
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("9000eeur")
-						txResponse, err := sendTx(Key2, Key1, coins, testnet.ChainID())
-						if err != nil {
-							fmt.Println(err)
-						}
-
-						txhash <- txResponse.TxHash
-					}()
-
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("4000eeur")
-						txResponse, err := sendTx(Key3, Key1, coins, testnet.ChainID())
-						if err != nil {
-							fmt.Println(err)
-						}
-
-						txhash <- txResponse.TxHash
-					}()
-
-					go func() {
-						coins, _ := sdk.ParseCoinsNormalized("7700eeur")
-						txResponse, err := sendTx(Key3, Key2, coins, testnet.ChainID())
-						if err != nil {
-							fmt.Println(err)
-						}
-
-						txhash <- txResponse.TxHash
-					}()
+						txhash <- hash
+					}(senders[i%4], receivers[i%4])
 				}
 
-				txHashes := make([]string, 0)
+				_, _ = nt.IncChain(1)
 
-				go func() {
-					for h := range txhash {
-						txHashes = append(txHashes, h)
-					}
-				}()
-
-				time.Sleep(30 * time.Second)
-
-				success, failure, errs := 0, 0, 0
-				for _, h := range txHashes {
+				emcli := testnet.NewEmcli()
+				success, failure, errs := 0, 0, int(failedTxs)
+				for ; success+failure+errs < trxCount;{
+					h := <-txhash
 					bz, err := emcli.QueryTransaction(h)
 					if err != nil {
 						errs++
@@ -115,7 +87,18 @@ var _ = Describe("Staking", func() {
 				}
 
 				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Errors: %v\n Total: %v\n", success, failure, errs, success+failure+errs)
-				Expect(success).To(Equal(400))
+				Expect(success).To(Equal(trxCount))
+
+				// Equivalent event listening handler
+				// listener, err := nt.NewEventListener()
+				// Expect(err).ToNot(HaveOccurred())
+				//
+				// Eventually(func() int {
+				//	 success, err = listener.SubTx(
+				//	 	mu, txHashes, trxCount-errs, expiration,
+				//	 )
+				//	 return int(success)
+				// }, expiration, time.Second).Should(Equal(trxCount))
 			})
 		})
 	})
@@ -130,20 +113,20 @@ var (
 	sequences = make(map[string]accountNoSequence)
 )
 
-func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResponse, error) {
+func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (string, error) {
 	sendMutex.Lock()
 	defer sendMutex.Unlock()
 
 	from, err := sdk.AccAddressFromBech32(fromKey.GetAddress())
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 
 	encodingConfig := emoney.MakeEncodingConfig()
 
 	httpClient, err := rpcclient.New("tcp://localhost:26657", "/websocket")
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 
 	clientCtx := client.Context{}.
@@ -169,7 +152,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	if accInfo, present = sequences[fromKey.GetAddress()]; !present {
 		accountNumber, sequence, err := authtypes.AccountRetriever{}.GetAccountNumberSequence(clientCtx, from)
 		if err != nil {
-			return sdk.TxResponse{}, err
+			return "", err
 		}
 
 		accInfo = accountNoSequence{
@@ -184,7 +167,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 		Amount:      amount,
 	}
 	if err := sendMsg.ValidateBasic(); err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 	flagSet := pflag.NewFlagSet("testing", pflag.PanicOnError)
 	txf := tx.NewFactoryCLI(clientCtx, flagSet).
@@ -198,8 +181,8 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (sdk.TxResp
 	var buf bytes.Buffer
 	err = tx.BroadcastTx(clientCtx.WithOutput(&buf), txf, sendMsg)
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return "", err
 	}
 	var resp sdk.TxResponse
-	return resp, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
+	return resp.TxHash, encodingConfig.Marshaler.UnmarshalJSON(buf.Bytes(), &resp)
 }
