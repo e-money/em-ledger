@@ -286,11 +286,15 @@ func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error)
 	newHeight, err := WaitForHeightWithTimeout(
 		height+1, sleepDur,
 	)
-  
+
+	if err != nil {
+		return height, err
+	}
+
 	return WaitForHeightWithTimeout(
-		height+delta,
+		newHeight,
 		// generous and unlikely to exhaust
-		time.Duration(delta)*5*time.Second,
+		5*time.Second,
 	)
 }
 
@@ -350,7 +354,7 @@ func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, er
 	}
 }
 
-func (t *Testnet)compileBinaries() error {
+func (t *Testnet) compileBinaries() error {
 	_, err := t.execCmdAndWait(makePath, "clean", "build-all")
 	if err != nil {
 		fmt.Println("Compilation step caused error: ", err)
@@ -358,7 +362,7 @@ func (t *Testnet)compileBinaries() error {
 	return err
 }
 
-func (t *Testnet)dockerComposeUp() (func() bool, error) {
+func (t *Testnet) dockerComposeUp() (func() bool, error) {
 	wait := func() bool {
 		_, err := WaitForHeightWithTimeout(1, 30*time.Second)
 		return err == nil
@@ -367,12 +371,12 @@ func (t *Testnet)dockerComposeUp() (func() bool, error) {
 	return wait, t.execCmdAndRun(dockerComposePath, []string{"up"}, scanner)
 }
 
-func (t *Testnet)dockerComposeDown() error {
+func (t *Testnet) dockerComposeDown() error {
 	_, err := t.execCmdAndWait(dockerComposePath, "kill")
 	return err
 }
 
-func (t *Testnet)execCmdAndRun(name string, arguments []string, scanner func(string)) error {
+func (t *Testnet) execCmdAndRun(name string, arguments []string, scanner func(string)) error {
 	cmd := exec.Command(name, arguments...)
 	err := writeoutput(cmd, scanner)
 	if err != nil {
@@ -382,7 +386,7 @@ func (t *Testnet)execCmdAndRun(name string, arguments []string, scanner func(str
 	return cmd.Start()
 }
 
-func (t *Testnet)execCmdAndWait(name string, arguments ...string) (string, error) {
+func (t *Testnet) execCmdAndWait(name string, arguments ...string) (string, error) {
 	cmd := exec.Command(name, arguments...)
 
 	// TODO Look into ways of not always setting this.
