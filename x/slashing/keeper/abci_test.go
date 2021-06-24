@@ -55,16 +55,12 @@ var (
 )
 
 func TestBeginBlocker(t *testing.T) {
-	ctx, keeper, accKeeper, bankKeeper, stakingKeeper, database := createTestComponents(t)
+	ctx, keeper, _, bankKeeper, stakingKeeper, database := createTestComponents(t)
 
 	power := int64(100)
 	amt := sdk.TokensFromConsensusPower(power)
 	addr1, pk1 := addrs[2], pks[2]
 	addr2, pk2 := addrs[1], pks[1]
-
-	// Verify that the penalty account is available and empty
-	penalties := bankKeeper.GetAllBalances(ctx, accKeeper.GetModuleAccount(ctx, types.PenaltyAccount).GetAddress())
-	require.True(t, penalties.IsZero())
 
 	// bond the validators
 	_, err := staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr1, pk1, amt))
@@ -79,14 +75,16 @@ func TestBeginBlocker(t *testing.T) {
 	)
 	require.Equal(t, amt, stakingKeeper.Validator(ctx, addr1).GetBondedTokens())
 
+	totalSupplyBefore := bankKeeper.GetSupply(ctx).GetTotal().AmountOf("stake")
+
 	val := abci.Validator{
 		Address: pk1.Address(),
-		Power:   amt.Int64(),
+		Power:   power,
 	}
 
 	val2 := abci.Validator{
 		Address: pk2.Address(),
-		Power:   amt.Int64(),
+		Power:   power,
 	}
 
 	// mark the validator as having signed
@@ -141,6 +139,7 @@ func TestBeginBlocker(t *testing.T) {
 		BeginBlocker(ctx, req, keeper)
 		batch.Write()
 	}
+
 	// for 500 blocks, mark the validator as having not signed. Other validator keeps signing.
 	for ; height < 1500; height++ {
 		now = now.Add(time.Minute)
@@ -173,11 +172,6 @@ func TestBeginBlocker(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, stakingtypes.Unbonding, validator.GetStatus())
 
-	// Verify that a fine has been added to the penalty account due to the jailing
-	penalties = bankKeeper.GetAllBalances(ctx, accKeeper.GetModuleAccount(ctx, types.PenaltyAccount).GetAddress())
-	require.False(t, penalties.IsZero())
-
-	// Verify that the penalty is distributed among the remaining validators
 	now = now.Add(5 * time.Minute)
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(now)
 	req = abci.RequestBeginBlock{
@@ -195,12 +189,11 @@ func TestBeginBlocker(t *testing.T) {
 	BeginBlocker(ctx, req, keeper)
 	batch.Write()
 
-	penalties = bankKeeper.GetAllBalances(ctx, accKeeper.GetModuleAccount(ctx, types.PenaltyAccount).GetAddress())
-	require.True(t, penalties.IsZero())
+	// Verify that slashed tokens are burned
+	slashingPenalty := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).TruncateInt()
+	totalSupplyAfter := bankKeeper.GetSupply(ctx).GetTotal().AmountOf("stake")
+	require.Equal(t, totalSupplyBefore.Sub(slashingPenalty), totalSupplyAfter)
 
-	// Penalty should now be in the fee account, ready to be distributed
-	feeAccountBalance := bankKeeper.GetAllBalances(ctx, accKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName).GetAddress())
-	require.False(t, feeAccountBalance.IsZero())
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountKeeper, bankkeeper.Keeper, stakingkeeper.Keeper, *dbm.MemDB) {
@@ -218,8 +211,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountK
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
-			types.ModuleName:               {authtypes.Minter},
-			types.PenaltyAccount:           nil,
+			sdkslashingtypes.ModuleName:    {authtypes.Minter},
 			stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 			stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 			authtypes.FeeCollectorName:     nil,
@@ -263,7 +255,7 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountK
 	totalSupply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens.MulRaw(int64(len(addrs)))))
 	bk.SetSupply(ctx, banktypes.NewSupply(totalSupply))
 
-	keeper := NewKeeper(encConfig.Marshaler, slashingKey, sk, pk.Subspace(types.ModuleName), bk, db, authtypes.FeeCollectorName)
+	keeper := NewKeeper(encConfig.Marshaler, slashingKey, sk, pk.Subspace(sdkslashingtypes.ModuleName), bk, db, authtypes.FeeCollectorName)
 	keeper.SetParams(ctx, types.DefaultParams())
 	sk.SetHooks(keeper.Hooks())
 	return ctx, keeper, ak, bk, sk, db

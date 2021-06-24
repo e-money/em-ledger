@@ -275,6 +275,18 @@ func IncChain(delta int64) (int64, error) {
 		return height, err
 	}
 
+	return IncChainWithExpiration(
+		height+delta,
+		// generous and unlikely to exhaust
+		time.Duration(delta*5)*time.Second,
+	)
+}
+
+func IncChainWithExpiration(height int64, sleepDur time.Duration) (int64, error) {
+	newHeight, err := WaitForHeightWithTimeout(
+		height+1, sleepDur,
+	)
+  
 	return WaitForHeightWithTimeout(
 		height+delta,
 		// generous and unlikely to exhaust
