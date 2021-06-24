@@ -49,7 +49,7 @@ var _ = Describe("Local Testnet", func() {
 			fmt.Printf("./build/emd  q market instrument eeur echf --node %v\n\n", node)
 
 			fmt.Println(" -- Run this command for a pre-configured local environment:")
-			fmt.Printf("EM_NODE=%v EM_HOME=%v EM_KEYRING_BACKEND=test EM_CHAIN_ID=%v PS1=\"$PS1 [testnet] \" sh\n", node, keystore, chainid)
+			fmt.Printf("EMD_NODE=%v EMD_HOME=%v EMD_KEYRING_BACKEND=test EMD_CHAIN_ID=%v EMD_KEYRING_DIR=%v PS1=\"$PS1 [testnet] $\" bash\n", node, keystore, chainid, keystore)
 		})
 	})
 })

@@ -69,7 +69,7 @@ func TestSerialize(t *testing.T) {
 	gs := &types.GenesisState{
 		Accounts: []types.GenesisAcc{
 			{
-				Account: randomAddress().String(),
+				Address: randomAddress().String(),
 				Mintable: sdk.Coins{
 					sdk.Coin{
 						Denom:  "eeur",
@@ -82,7 +82,7 @@ func TestSerialize(t *testing.T) {
 				},
 			},
 			{
-				Account: randomAddress().String(),
+				Address: randomAddress().String(),
 				Mintable: sdk.Coins{
 					sdk.Coin{
 						Denom:  "esek",

@@ -16,11 +16,12 @@ func defaultGenesisState() *types.GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, gs types.GenesisState) error {
 	for _, lp := range gs.Accounts {
-		addr, err := sdk.AccAddressFromBech32(lp.Account)
+		// Assuming a bech32 address
+		acc, err := sdk.AccAddressFromBech32(lp.Address)
 		if err != nil {
-			return sdkerrors.Wrapf(err, "address: %s", lp.Account)
+			return sdkerrors.Wrapf(err, "address: %s", lp.Address)
 		}
-		_, err = keeper.CreateLiquidityProvider(ctx, addr, lp.Mintable)
+		_, err = keeper.CreateLiquidityProvider(ctx, acc, lp.Mintable)
 		if err != nil {
 			return sdkerrors.Wrap(err, "liquidity provider")
 		}

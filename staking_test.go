@@ -11,7 +11,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/sjson"
-	"time"
 )
 
 var _ = Describe("Staking", func() {
@@ -45,9 +44,6 @@ var _ = Describe("Staking", func() {
 				if err != nil {
 					panic(err)
 				}
-
-				// Allow for a few blocks
-				time.Sleep(5 * time.Second)
 
 				slash, err := listener.AwaitSlash()
 				Expect(err).ToNot(HaveOccurred())

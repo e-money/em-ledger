@@ -4,7 +4,6 @@ import (
 	"context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,7 +41,7 @@ func (k Keeper) Instrument(c context.Context, req *types.QueryInstrumentRequest)
 	ctx := sdk.UnwrapSDKContext(c)
 
 	source, destination := req.Source, req.Destination
-	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
+	if sdk.ValidateDenom(source) != nil || sdk.ValidateDenom(destination) != nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
 	}
 
@@ -85,7 +84,7 @@ func queryInstruments(ctx sdk.Context, k *Keeper) *types.QueryInstrumentsRespons
 			Source:      v.Source,
 			Destination: v.Destination,
 			LastPrice:   v.LastPrice,
-			BestPrice:   getBestPrice(ctx, k, v.Source, v.Destination),
+			BestPrice:   k.GetBestPrice(ctx, v.Source, v.Destination),
 			LastTraded:  v.Timestamp,
 		}
 	}

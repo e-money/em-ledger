@@ -53,8 +53,8 @@ func (k Keeper) SendOrderToMarket(ctx sdk.Context, order market.Order) (*sdk.Res
 	return k.marketKeeper.NewOrderSingle(ctx, order)
 }
 
-func (k Keeper) GetMarketData(ctx sdk.Context) []market.MarketData {
-	return k.marketKeeper.GetInstruments(ctx)
+func (k Keeper) GetBestPrice(ctx sdk.Context, src, dst string) *sdk.Dec {
+	return k.marketKeeper.GetBestPrice(ctx, src, dst)
 }
 
 func (k Keeper) GetStakingTokenDenom(ctx sdk.Context) string {

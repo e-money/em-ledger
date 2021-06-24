@@ -14,8 +14,8 @@ import (
 
 func TestMintTokens(t *testing.T) {
 	var (
-		lpAddr                   = randomAccAddress()
-		gotLiquidityProviderAddr sdk.AccAddress
+		lpAddr                   = randomAddress()
+		gotLiquidityProviderAddr string
 		gotAmount                sdk.Coins
 	)
 
@@ -30,11 +30,11 @@ func TestMintTokens(t *testing.T) {
 	}{
 		"all good": {
 			req: &types.MsgMintTokens{
-				LiquidityProvider: lpAddr.String(),
+				LiquidityProvider: lpAddr,
 				Amount:            sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
 			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
-				gotLiquidityProviderAddr = liquidityProvider
+				gotLiquidityProviderAddr = liquidityProvider.String()
 				gotAmount = amount
 				return &sdk.Result{
 					Events: []abcitypes.Event{{
@@ -63,18 +63,18 @@ func TestMintTokens(t *testing.T) {
 		},
 		"Amount missing": {
 			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
-				gotLiquidityProviderAddr, gotAmount = liquidityProvider, amount
+				gotLiquidityProviderAddr, gotAmount = liquidityProvider.String(), amount
 				return &sdk.Result{}, nil
 			},
 			req: &types.MsgMintTokens{
-				LiquidityProvider: lpAddr.String(),
+				LiquidityProvider: lpAddr,
 			},
 			expErr:    false,
 			expEvents: []sdk.Event{},
 		},
 		"processing failure": {
 			req: &types.MsgMintTokens{
-				LiquidityProvider: lpAddr.String(),
+				LiquidityProvider: lpAddr,
 				Amount:            sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
 			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
@@ -95,7 +95,7 @@ func TestMintTokens(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr.String())
+			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr)
 			assert.Equal(t, spec.req.GetAmount(), gotAmount)
 		})
 	}
@@ -103,8 +103,8 @@ func TestMintTokens(t *testing.T) {
 
 func TestBurnTokens(t *testing.T) {
 	var (
-		lpAddr                   = randomAccAddress()
-		gotLiquidityProviderAddr sdk.AccAddress
+		lpAddr                   = randomAddress()
+		gotLiquidityProviderAddr string
 		gotAmount                sdk.Coins
 	)
 
@@ -119,11 +119,11 @@ func TestBurnTokens(t *testing.T) {
 	}{
 		"all good": {
 			req: &types.MsgBurnTokens{
-				LiquidityProvider: lpAddr.String(),
+				LiquidityProvider: lpAddr,
 				Amount:            sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
 			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
-				gotLiquidityProviderAddr = liquidityProvider
+				gotLiquidityProviderAddr = liquidityProvider.String()
 				gotAmount = amount
 				return &sdk.Result{
 					Events: []abcitypes.Event{{
@@ -152,18 +152,18 @@ func TestBurnTokens(t *testing.T) {
 		},
 		"Amount missing": {
 			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
-				gotLiquidityProviderAddr, gotAmount = liquidityProvider, amount
+				gotLiquidityProviderAddr, gotAmount = liquidityProvider.String(), amount
 				return &sdk.Result{}, nil
 			},
 			req: &types.MsgBurnTokens{
-				LiquidityProvider: lpAddr.String(),
+				LiquidityProvider: lpAddr,
 			},
 			expErr:    false,
 			expEvents: []sdk.Event{},
 		},
 		"processing failure": {
 			req: &types.MsgBurnTokens{
-				LiquidityProvider: lpAddr.String(),
+				LiquidityProvider: lpAddr,
 				Amount:            sdk.NewCoins(sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()}),
 			},
 			mockFn: func(ctx sdk.Context, liquidityProvider sdk.AccAddress, amount sdk.Coins) (*sdk.Result, error) {
@@ -184,7 +184,7 @@ func TestBurnTokens(t *testing.T) {
 			}
 			require.NoError(t, gotErr)
 			assert.Equal(t, spec.expEvents, eventManager.Events())
-			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr.String())
+			assert.Equal(t, spec.req.LiquidityProvider, gotLiquidityProviderAddr)
 			assert.Equal(t, spec.req.GetAmount(), gotAmount)
 		})
 	}
@@ -209,6 +209,6 @@ func (m lpKeeperMock) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider s
 	return m.BurnTokensFromBalanceFn(ctx, liquidityProvider, amount)
 }
 
-func randomAccAddress() sdk.AccAddress {
-	return rand.Bytes(sdk.AddrLen)
+func randomAddress() string {
+	return sdk.AccAddress(rand.Bytes(sdk.AddrLen)).String()
 }

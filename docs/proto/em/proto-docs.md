@@ -81,6 +81,14 @@
 - [em/liquidityprovider/v1/liquidityprovider.proto](#em/liquidityprovider/v1/liquidityprovider.proto)
     - [LiquidityProviderAccount](#em.liquidityprovider.v1.LiquidityProviderAccount)
   
+- [em/liquidityprovider/v1/query.proto](#em/liquidityprovider/v1/query.proto)
+    - [QueryListRequest](#em.liquidityprovider.v1.QueryListRequest)
+    - [QueryListResponse](#em.liquidityprovider.v1.QueryListResponse)
+    - [QueryMintableRequest](#em.liquidityprovider.v1.QueryMintableRequest)
+    - [QueryMintableResponse](#em.liquidityprovider.v1.QueryMintableResponse)
+  
+    - [Query](#em.liquidityprovider.v1.Query)
+  
 - [em/liquidityprovider/v1/tx.proto](#em/liquidityprovider/v1/tx.proto)
     - [MsgBurnTokens](#em.liquidityprovider.v1.MsgBurnTokens)
     - [MsgBurnTokensResponse](#em.liquidityprovider.v1.MsgBurnTokensResponse)
@@ -118,6 +126,8 @@
     - [MsgCancelOrderResponse](#em.market.v1.MsgCancelOrderResponse)
     - [MsgCancelReplaceLimitOrder](#em.market.v1.MsgCancelReplaceLimitOrder)
     - [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse)
+    - [MsgCancelReplaceMarketOrder](#em.market.v1.MsgCancelReplaceMarketOrder)
+    - [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse)
   
     - [Msg](#em.market.v1.Msg)
   
@@ -910,7 +920,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `account` | [google.protobuf.Any](#google.protobuf.Any) |  |  |
+| `address` | [string](#string) |  | Any string address representation with the accompanying supporting encoding and validation functions starting with bech32. However, in the interest of cultivating wider acceptance for this module other arbitrary address encodings outside the supported cosmos sdk formats perhaps would fit nicely with this loosely defined provider identity specifier. |
 | `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
@@ -922,6 +932,88 @@
  <!-- end enums -->
 
  <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="em/liquidityprovider/v1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## em/liquidityprovider/v1/query.proto
+
+
+
+<a name="em.liquidityprovider.v1.QueryListRequest"></a>
+
+### QueryListRequest
+
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1.QueryListResponse"></a>
+
+### QueryListResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `liquidity_providers` | [LiquidityProviderAccount](#em.liquidityprovider.v1.LiquidityProviderAccount) | repeated |  |
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1.QueryMintableRequest"></a>
+
+### QueryMintableRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  | address defines the liquidity provider address to query mintable. |
+
+
+
+
+
+
+<a name="em.liquidityprovider.v1.QueryMintableResponse"></a>
+
+### QueryMintableResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `mintable` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="em.liquidityprovider.v1.Query"></a>
+
+### Query
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `List` | [QueryListRequest](#em.liquidityprovider.v1.QueryListRequest) | [QueryListResponse](#em.liquidityprovider.v1.QueryListResponse) |  | GET|/e-money/liquidityprovider/v1/list|
+| `Mintable` | [QueryMintableRequest](#em.liquidityprovider.v1.QueryMintableRequest) | [QueryMintableResponse](#em.liquidityprovider.v1.QueryMintableResponse) |  | GET|/e-money/liquidityprovider/v1/mintable/{address}|
 
  <!-- end services -->
 
@@ -1387,6 +1479,37 @@
 
 
 
+
+<a name="em.market.v1.MsgCancelReplaceMarketOrder"></a>
+
+### MsgCancelReplaceMarketOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `owner` | [string](#string) |  |  |
+| `original_client_order_id` | [string](#string) |  |  |
+| `new_client_order_id` | [string](#string) |  |  |
+| `time_in_force` | [TimeInForce](#em.market.v1.TimeInForce) |  |  |
+| `source` | [string](#string) |  |  |
+| `destination` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+| `maximum_slippage` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="em.market.v1.MsgCancelReplaceMarketOrderResponse"></a>
+
+### MsgCancelReplaceMarketOrderResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -1405,6 +1528,7 @@
 | `AddMarketOrder` | [MsgAddMarketOrder](#em.market.v1.MsgAddMarketOrder) | [MsgAddMarketOrderResponse](#em.market.v1.MsgAddMarketOrderResponse) |  | |
 | `CancelOrder` | [MsgCancelOrder](#em.market.v1.MsgCancelOrder) | [MsgCancelOrderResponse](#em.market.v1.MsgCancelOrderResponse) |  | |
 | `CancelReplaceLimitOrder` | [MsgCancelReplaceLimitOrder](#em.market.v1.MsgCancelReplaceLimitOrder) | [MsgCancelReplaceLimitOrderResponse](#em.market.v1.MsgCancelReplaceLimitOrderResponse) |  | |
+| `CancelReplaceMarketOrder` | [MsgCancelReplaceMarketOrder](#em.market.v1.MsgCancelReplaceMarketOrder) | [MsgCancelReplaceMarketOrderResponse](#em.market.v1.MsgCancelReplaceMarketOrderResponse) |  | |
 
  <!-- end services -->
 

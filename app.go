@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -56,6 +55,8 @@ import (
 	bep3 "github.com/e-money/bep3/module"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/auth/ante"
+	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/e-money/em-ledger/x/queries"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
@@ -239,7 +240,8 @@ func NewApp(
 		distrtypes.StoreKey, emslashing.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		issuer.StoreKey, authority.StoreKey, market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
+		lptypes.StoreKey, issuer.StoreKey, authority.StoreKey,
+		market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
 		inflation.StoreKey, bep3.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -337,7 +339,7 @@ func NewApp(
 	app.evidenceKeeper = *evidenceKeeper
 
 	app.inflationKeeper = inflation.NewKeeper(app.appCodec, keys[inflation.StoreKey], app.bankKeeper, app.accountKeeper, app.stakingKeeper, buyback.AccountName, authtypes.FeeCollectorName)
-	app.lpKeeper = liquidityprovider.NewKeeper(app.accountKeeper, app.bankKeeper)
+	app.lpKeeper = liquidityprovider.NewKeeper(app.appCodec, keys[lptypes.StoreKey], app.bankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper)
 	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app)
 	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
@@ -419,7 +421,7 @@ func NewApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
-			app.accountKeeper, app.bankKeeper, ante.DefaultSigVerificationGasConsumer,
+			app.accountKeeper, app.bankKeeper, app.stakingKeeper,
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)

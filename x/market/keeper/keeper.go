@@ -7,7 +7,6 @@ package keeper
 import (
 	"fmt"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-
 	"math"
 	"sync"
 	"time"
@@ -25,6 +24,8 @@ const (
 	gasPriceCancelReplaceOrder = uint64(25000)
 	gasPriceCancelOrder        = uint64(12500)
 )
+
+var _ marketKeeper = &Keeper{}
 
 type Keeper struct {
 	key        sdk.StoreKey
@@ -109,23 +110,34 @@ func (k *Keeper) createExecutionPlan(ctx sdk.Context, SourceDenom, DestinationDe
 	return bestPlan
 }
 
-func (k *Keeper) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
+// GetSrcFromSlippage expresses the maximum source amount to spend to buy the
+// requested dst amount. Taking the corresponding source amount
+// (dst amount/last market price) and adding the slippage percentage is the
+// resulting value. The maxSlippage decimal expresses a percentage (1 is 100%).
+func (k *Keeper) GetSrcFromSlippage(
+	ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec,
+) (sdk.Coin, error) {
+	// ValidateBasic() for the 2 Market messages has validated the src/dst coins
+	if maxSlippage.LT(sdk.ZeroDec()) {
+		return sdk.Coin{}, sdkerrors.Wrapf(
+			types.ErrInvalidSlippage,
+			"cannot specify negative slippage %s", maxSlippage.String(),
+		)
+	}
+
 	// If the order allows for slippage, adjust the source amount accordingly.
 	md := k.GetInstrument(ctx, srcDenom, dst.Denom)
 	if md == nil || md.LastPrice == nil {
-		return nil, sdkerrors.Wrapf(types.ErrNoMarketDataAvailable, "%v/%v", srcDenom, dst.Denom)
+		return sdk.Coin{}, sdkerrors.Wrapf(
+			types.ErrNoMarketDataAvailable, "%v/%v", srcDenom, dst.Denom,
+		)
 	}
 
 	source := dst.Amount.ToDec().Quo(*md.LastPrice)
 	source = source.Mul(sdk.NewDec(1).Add(maxSlippage))
 
 	slippageSource := sdk.NewCoin(srcDenom, source.RoundInt())
-	order, err := types.NewOrder(ctx.BlockTime(), timeInForce, slippageSource, dst, owner, clientOrderId)
-	if err != nil {
-		return nil, err
-	}
-
-	return k.NewOrderSingle(ctx, order)
+	return slippageSource, nil
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
@@ -271,10 +283,10 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, stepSourceFilled.RoundInt())
 			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
 			if err != nil {
-				fmt.Println(nextDestinationFilledCoin, nextSourceFilledCoin)
-			} else {
-				types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
+				panic(err)
 			}
+
+			types.EmitFillEvent(ctx, *passiveOrder, false, stepSourceFilled.RoundInt(), stepDestinationFilled.RoundInt())
 
 			if passiveOrder.IsFilled() {
 				k.deleteOrder(ctx, passiveOrder)
@@ -362,7 +374,7 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
-func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
+func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -375,7 +387,12 @@ func (k *Keeper) CancelReplaceOrder(ctx sdk.Context, newOrder types.Order, origC
 
 	// Verify that instrument is the same.
 	if origOrder.Source.Denom != newOrder.Source.Denom || origOrder.Destination.Denom != newOrder.Destination.Denom {
-		return nil, sdkerrors.Wrap(types.ErrOrderInstrumentChanged, "")
+		return nil, sdkerrors.Wrap(
+			types.ErrOrderInstrumentChanged, fmt.Sprintf(
+				"source %s != %s Or dest %s != %s", origOrder.Source, newOrder.Source,
+				origOrder.Destination.Denom, newOrder.Destination.Denom,
+			),
+		)
 	}
 
 	// Has the previous order already achieved the goal on the source side?
@@ -578,6 +595,20 @@ func (k Keeper) getBestOrder(ctx sdk.Context, src, dst string) *types.Order {
 	}
 
 	return nil
+}
+
+// GetBestPrice returns the best priced passive order for source and
+// destination instruments. Returns nil when executePlan cannot find a best
+// plan.
+func (k Keeper) GetBestPrice(ctx sdk.Context, source, destination string) *sdk.Dec {
+	var bestPrice *sdk.Dec
+
+	bestPlan := k.createExecutionPlan(ctx, destination, source)
+	if !bestPlan.DestinationCapacity().IsZero() {
+		bestPrice = &bestPlan.Price
+	}
+
+	return bestPrice
 }
 
 func (k Keeper) GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) (res []*types.Order) {

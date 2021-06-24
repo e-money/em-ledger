@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -55,7 +54,7 @@ func queryInstrumentHandlerFn(cliCtx client.Context) http.HandlerFunc {
 		vars := mux.Vars(r)
 		src, dst := vars["src"], vars["dst"]
 
-		if !util.ValidateDenom(src) || !util.ValidateDenom(dst) {
+		if sdk.ValidateDenom(src) != nil || sdk.ValidateDenom(dst) != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}

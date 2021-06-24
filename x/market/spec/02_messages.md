@@ -88,3 +88,45 @@ newOrder.SourceFilled = origOrder.SourceFilled
 newOrder.SourceRemaining = newOrder.Source.Amount.Sub(newOrder.SourceFilled)
 newOrder.DestinationFilled = origOrder.DestinationFilled
 ```
+
+## MsgCancelReplaceMarketOrder
+
+The MsgCancelReplaceMarketOrder message is helpful to adjust prices and slippage for previous market orders while 
+remaining in the market. Please note, The new Market order is converted to limit order on receipt: The limit price is 
+determined using the last traded price of its instrument, with the *adjusted* slippage value applied resulting in the 
+updated limit price.
+
+```go
+// MsgCancelReplaceMarketOrder represents a message to cancel an existing order and replace it with a market order.
+MsgCancelReplaceMarketOrder struct {
+  Owner             sdk.AccAddress `json:"owner" yaml:"owner"`
+  OrigClientOrderId string         `json:"original_client_order_id" yaml:"original_client_order_id"`
+  NewClientOrderId  string         `json:"new_client_order_id" yaml:"new_client_order_id"`
+  TimeInForce       string         `json:"time_in_force" yaml:"time_in_force"`
+  Source            string         `protobuf:"bytes,5,opt,name=source,proto3" json:"source,omitempty" yaml:"source"`
+  Destination       sdk.Coin       `json:"destination" yaml:"destination"`
+  MaxSlippage       sdk.Dec        `protobuf:"bytes,7,opt,name=maximum_slippage,json=maximumSlippage,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"maximum_slippage" yaml:"maximum_slippage"`
+}
+```
+
+The unfilled part of the original order is canceled and replaced with a new market order, taking into consideration how 
+much of the original order was filled:
+
+```go
+// Has the previous order already achieved the goal on the source side?
+if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
+  return nil, sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
+}
+if origOrder.DestinationFilled.GTE(msg.Destination.Amount) {
+    return nil, sdkerrors.Wrap(
+        types.ErrNoSourceRemaining, fmt.Sprintf("has already been filled filled:%s >= %s",
+        	origOrder.Destination.Amount.String(), msg.Destination.Amount.String()),
+    )
+}
+[...]
+
+// Adjust remaining according to how much of the replaced order was filled:
+destinationFilled := origOrder.DestinationFilled
+dstRemaining := msg.Destination.Amount.Sub(destinationFilled)
+remDstCoin := sdk.NewCoin(msg.Destination.Denom, dstRemaining)
+```

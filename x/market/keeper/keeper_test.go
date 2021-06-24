@@ -45,6 +45,12 @@ func init() {
 	emtypes.ConfigureSDK()
 }
 
+// equality for nearly equal floats due to rounding or irrational values.
+func epsEqual(a, b sdk.Dec) bool {
+	eps := sdk.NewDecWithPrec(1, sdk.Precision)
+	return a.Sub(b).LTE(eps) && b.Sub(a).LTE(eps)
+}
+
 func TestBasicTrade(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 
@@ -78,8 +84,11 @@ func TestBasicTrade(t *testing.T) {
 	instruments = k.GetInstruments(ctx)
 	require.Len(t, instruments, 2)
 	p := order1.Price()
-	t.Skip("Alex - deactivated before migration. fails with rounding after this line")
-	require.Equal(t, instruments[0].LastPrice.String(), p.String())
+
+	require.Truef(
+		t, epsEqual(*instruments[0].LastPrice, p), "last market price %s should equal plan price %s",
+		instruments[0].LastPrice.String(), p.String(),
+	)
 	require.Equal(t, *instruments[0].Timestamp, ctx.BlockTime())
 
 	// Ensure that gas usage is not higher due to the order being matched.
@@ -96,11 +105,8 @@ func TestBasicTrade(t *testing.T) {
 	require.Equal(t, "50", bal2.AmountOf("eur").String())
 	require.Equal(t, "7340", bal2.AmountOf("usd").String())
 
-	// require.Len(t, k.instruments, 1)
 
-	// i := k.instruments[0]
-	// remainingOrder := i.Orders.LeftKey().(*types.Order)
-	// require.Equal(t, int64(50), remainingOrder.SourceRemaining.Int64())
+	require.Equal(t, int64(60), order2.SourceRemaining.Int64())
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
 }
@@ -193,15 +199,14 @@ func TestMarketOrderSlippage1(t *testing.T) {
 	// Make a market order that allows slippage
 
 	slippage := sdk.NewDecWithPrec(50, 2)
-	_, err = k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
-		slippage,
-		acc1.GetAddress(),
-		types.TimeInForce_GoodTillCancel,
-		cid(),
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(200))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
 	)
+	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
 
 	// Check that the balance matches the first two orders being executed while the third did not fall within the slippage
@@ -213,16 +218,296 @@ func TestMarketOrderSlippage1(t *testing.T) {
 
 	// Ensure that the order can not exceed account balance
 	slippage = sdk.NewDecWithPrec(500, 2)
-	_, err = k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
-		slippage,
-		acc1.GetAddress(),
-		types.TimeInForce_GoodTillCancel,
-		cid(),
+	slippageSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
 	)
+	require.NoError(t, err)
+	limitOrder = order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
 	require.True(t, types.ErrAccountBalanceInsufficient.Is(err))
+}
+
+func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "500gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+	var o types.Order
+	var err error
+
+	// Establish market price by executing a 1:1 trade
+	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Make a market order that allows slippage
+	slippage := sdk.NewDecWithPrec(100, 2)
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(100))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
+	require.NoError(t, err)
+
+	clientID := limitOrder.ClientOrderID
+	foundOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.NotNil(t, foundOrder, "Market order should exist")
+	// 100% slippage to double source
+	require.True(t, foundOrder.Source.IsEqual(sdk.NewCoin("gbp", sdk.NewInt(200))))
+
+	// Gave 1 gbp and gained a eur
+	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
+
+	newClientID := cid()
+	slippageSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.NewDecWithPrec(0, 2),
+	)
+	require.NoError(t, err)
+	order, err := types.NewOrder(
+		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, slippageSource, dest, acc1.GetAddress(),
+		newClientID,
+	)
+	require.NoError(t, err)
+
+	_, err = k.CancelReplaceLimitOrder(ctx, order, clientID)
+	require.NoError(t, err)
+
+	expOrder := &types.Order{
+		ID:                3,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Owner:             acc1.GetAddress().String(),
+		ClientOrderID:     newClientID,
+		// Zero slippage same amount
+		Source:            sdk.NewCoin("gbp", sdk.NewInt(100)),
+		SourceRemaining:   sdk.NewInt(100),
+		SourceFilled:      sdk.ZeroInt(),
+		Destination:       dest,
+		DestinationFilled: sdk.ZeroInt(),
+		Created:           ctx.BlockTime(),
+	}
+	require.NoError(t, err)
+
+	origOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.Nil(t, origOrder, "Original market order should not exist")
+
+	foundOrder = k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), newClientID,
+	)
+	require.Equal(t, expOrder, foundOrder)
+
+	// no impact
+	acc1Bal = bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
+}
+
+func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "100gbp")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "100eur")
+
+	var o types.Order
+	var err error
+
+	// Establish market price by executing a 2:1 trade
+	o = order(ctx.BlockTime(), acc2, "20eur", "10gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc1, "10gbp", "20eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+	acc1b := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("20eur,90gbp").String(), acc1b.String())
+
+	// Make a market newOrder that allows slippage
+	slippage := sdk.NewDecWithPrec(0, 2)
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(10))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
+	require.NoError(t, err)
+
+	clientID := limitOrder.ClientOrderID
+
+	acc1b = bk.GetAllBalances(ctx, acc1.GetAddress())
+
+	// Gave 1 gbp and gained a eur
+	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("20eur,90gbp").String(), acc1Bal.String())
+
+	foundOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.NotNil(t, foundOrder, "Market newOrder should exist")
+	// 0% slippage same as ratio (1eur/2gbp) * 10 => 5gbp
+	require.True(t, foundOrder.Source.IsEqual(sdk.NewCoin("gbp", sdk.NewInt(5))))
+
+	newClientID := cid()
+	mcrm := &types.MsgCancelReplaceMarketOrder{
+		Owner:             acc1.GetAddress().String(),
+		OrigClientOrderId: clientID,
+		NewClientOrderId:  newClientID,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Source:            "gbp",
+		Destination:       sdk.NewCoin("eur", sdk.NewInt(10)),
+		MaxSlippage:       sdk.NewDecWithPrec(100, 2),
+	}
+
+	dest = sdk.NewCoin("eur", sdk.NewInt(10))
+
+	slippageSource, err = k.GetSrcFromSlippage(
+		ctx, "gbp", dest, sdk.NewDecWithPrec(100, 2),
+	)
+	require.NoError(t, err)
+
+	newOrder, err := types.NewOrder(
+		ctx.BlockTime(),
+		types.TimeInForce_GoodTillCancel,
+		slippageSource,
+		dest,
+		acc1.GetAddress(),
+		newClientID,
+	)
+	require.NoError(t, err)
+
+	_, err = k.CancelReplaceLimitOrder(ctx, newOrder, clientID)
+	require.NoError(t, err)
+	expOrder := &types.Order{
+		ID:                3,
+		TimeInForce:       types.TimeInForce_GoodTillCancel,
+		Owner:             acc1.GetAddress().String(),
+		ClientOrderID:     newClientID,
+		// 100 % slippage should result 2 * (1/2) => 10 gbp -> 10 eur
+		Source:            sdk.NewCoin(mcrm.Source, sdk.NewInt(10)),
+		SourceRemaining:   sdk.NewInt(10),
+		SourceFilled:      sdk.ZeroInt(),
+		Destination:       mcrm.Destination,
+		DestinationFilled: sdk.ZeroInt(),
+		Created:           ctx.BlockTime(),
+	}
+	require.NoError(t, err)
+
+	origOrder := k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), clientID,
+	)
+	require.Nil(t, origOrder, "Original market newOrder should not exist")
+
+	foundOrder = k.GetOrderByOwnerAndClientOrderId(
+		ctx, acc1.GetAddress().String(), newClientID,
+	)
+	require.Equal(t, expOrder, foundOrder)
+
+	// no impact
+	acc1Bal = bk.GetAllBalances(ctx, acc1.GetAddress())
+	require.Equal(t, coins("20eur,90gbp").String(), acc1Bal.String())
+}
+
+func TestGetSrcFromSlippage(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+
+	var (
+		acc1 = createAccount(ctx, ak, bk, randomAddress(), "500gbp")
+		acc2 = createAccount(ctx, ak, bk, randomAddress(), "500eur")
+
+		o   types.Order
+		err error
+		srcDenom string
+		slippedSource, dest sdk.Coin
+	)
+
+	srcDenom = "jpy"
+	dest = sdk.NewCoin("eur", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
+	)
+	require.Error(t, err, "No trades yet with jpy")
+
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("dek", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
+	)
+	require.Error(t, err, "No trades yet with dek")
+
+	slippage := sdk.NewDec(-2)
+
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.Error(t, err)
+	require.True(t, types.ErrInvalidSlippage.Is(err))
+
+	// Establish market price by executing a 1:1 trade
+	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	// Add liquidity
+	o = order(ctx.BlockTime(), acc2, "100eur", "100gbp")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(100))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t, slippedSource.String(), sdk.NewCoin(srcDenom, dest.Amount).String(),
+		"0% slippage -> source amount or last market price",
+	)
+
+	// 100%
+	slippage = sdk.NewDec(1)
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(1))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t, sdk.NewCoin(srcDenom, sdk.NewInt(2)).String(),
+		slippedSource.String(),
+		"100% slippage -> 1+100% source amount",
+	)
+
+	// 20%
+	slippage = sdk.OneDec().Quo(sdk.NewDec(5))
+	srcDenom = "gbp"
+	dest = sdk.NewCoin("eur", sdk.NewInt(10))
+	slippedSource, err = k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, slippage,
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t, sdk.NewCoin(srcDenom, sdk.NewInt(12)).String(), slippedSource.String(),
+		"20% slippage -> 10+20%=>12 amount",
+	)
 }
 
 func TestFillOrKillMarketOrder1(t *testing.T) {
@@ -260,16 +545,15 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	)
 
 	// Create a fill or kill order that cannot be satisfied by the current market
-	result, err := k.NewMarketOrderWithSlippage(
-		ctx,
-		"gbp",
-		sdk.NewCoin("eur", sdk.NewInt(200)),
-		sdk.ZeroDec(),
-		acc1.GetAddress(),
-		types.TimeInForce_FillOrKill,
-		cid(),
+	srcDenom := "gbp"
+	dest := sdk.NewCoin("eur", sdk.NewInt(200))
+	slippageSource, err := k.GetSrcFromSlippage(
+		ctx, srcDenom, dest, sdk.ZeroDec(),
 	)
-
+	require.NoError(t, err)
+	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
+	limitOrder.TimeInForce = types.TimeInForce_FillOrKill
+	result, err := k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
 	require.Len(t, result.Events, 1)
 	require.Equal(t, types.EventTypeMarket, result.Events[0].Type)
@@ -616,7 +900,7 @@ func TestCancelOrders1(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestCancelReplaceOrder(t *testing.T) {
+func TestKeeperCancelReplaceLimitOrder(t *testing.T) {
 	ctx, k, ak, bk := createTestComponents(t)
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "20000eur")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "45000usd")
@@ -631,7 +915,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	gasMeter := sdk.NewGasMeter(math.MaxUint64)
 	order2cid := cid()
 	order2, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
-	res, err := k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
+	res, err := k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
 	require.True(t, err == nil, res.Log)
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
@@ -646,12 +930,12 @@ func TestCancelReplaceOrder(t *testing.T) {
 
 	order3, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
 	// Wrong client order id for previous order submitted.
-	_, err = k.CancelReplaceOrder(ctx, order3, order1cid)
+	_, err = k.CancelReplaceLimitOrder(ctx, order3, order1cid)
 	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
 
 	// Changing instrument of order
 	gasMeter = sdk.NewGasMeter(math.MaxUint64)
-	_, err = k.CancelReplaceOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
 	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
 	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
 
@@ -675,7 +959,7 @@ func TestCancelReplaceOrder(t *testing.T) {
 	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
 	order4cid := cid()
 	order4, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
-	res, err = k.CancelReplaceOrder(ctx, order4, order2cid)
+	res, err = k.CancelReplaceLimitOrder(ctx, order4, order2cid)
 	require.True(t, err == nil, res.Log)
 
 	{
@@ -693,7 +977,90 @@ func TestCancelReplaceOrder(t *testing.T) {
 	require.True(t, err == nil, res.Log)
 
 	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
-	_, err = k.CancelReplaceOrder(ctx, order6, order4cid)
+	_, err = k.CancelReplaceLimitOrder(ctx, order6, order4cid)
+	require.True(t, types.ErrNoSourceRemaining.Is(err))
+
+	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
+}
+
+func TestKeeperCancelReplaceMarketOrder(t *testing.T) {
+	ctx, k, ak, bk := createTestComponents(t)
+	acc1 := createAccount(ctx, ak, bk, randomAddress(), "20000eur")
+	acc2 := createAccount(ctx, ak, bk, randomAddress(), "45000usd")
+
+	totalSupply := snapshotAccounts(ctx, bk)
+
+	order1cid := cid()
+	order1, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500eur"), coin("1200usd"), acc1.GetAddress(), order1cid)
+	_, err := k.NewOrderSingle(ctx, order1)
+	require.NoError(t, err)
+
+	gasMeter := sdk.NewGasMeter(math.MaxUint64)
+	order2cid := cid()
+	order2, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("5000eur"), coin("17000usd"), acc1.GetAddress(), order2cid)
+	res, err := k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order2, order1cid)
+	require.True(t, err == nil, res.Log)
+	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order2cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("5000eur"), orders[0].Source)
+		require.Equal(t, coin("17000usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(5000), orders[0].SourceRemaining)
+	}
+
+	order3, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("500chf"), coin("1700usd"), acc1.GetAddress(), cid())
+	// Wrong client order id for previous order submitted.
+	_, err = k.CancelReplaceLimitOrder(ctx, order3, order1cid)
+	require.True(t, types.ErrClientOrderIdNotFound.Is(err))
+
+	// Changing instrument of order
+	gasMeter = sdk.NewGasMeter(math.MaxUint64)
+	_, err = k.CancelReplaceLimitOrder(ctx.WithGasMeter(gasMeter), order3, order2cid)
+	require.True(t, types.ErrOrderInstrumentChanged.Is(err))
+	require.Equal(t, gasPriceCancelReplaceOrder, gasMeter.GasConsumed())
+
+	o := order(ctx.BlockTime(), acc2, "2600usd", "300eur")
+	_, err = k.NewOrderSingle(ctx, o)
+	require.NoError(t, err)
+
+	bal1 := bk.GetAllBalances(ctx, acc1.GetAddress())
+	bal2 := bk.GetAllBalances(ctx, acc2.GetAddress())
+
+	require.Equal(t, int64(300), bal2.AmountOf("eur").Int64())
+	require.Equal(t, int64(1020), bal1.AmountOf("usd").Int64())
+
+	filled := sdk.ZeroInt()
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		filled = orders[0].Source.Amount.Sub(orders[0].SourceRemaining)
+	}
+
+	// CancelReplace and verify that previously filled amount is subtracted from the resulting order
+	order4cid := cid()
+	order4, _ := types.NewOrder(ctx.BlockTime(), types.TimeInForce_GoodTillCancel, coin("10000eur"), coin("35050usd"), acc1.GetAddress(), order4cid)
+	res, err = k.CancelReplaceLimitOrder(ctx, order4, order2cid)
+	require.True(t, err == nil, res.Log)
+
+	{
+		orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
+		require.Len(t, orders, 1)
+		require.Equal(t, order4cid, orders[0].ClientOrderID)
+		require.Equal(t, coin("10000eur"), orders[0].Source)
+		require.Equal(t, coin("35050usd"), orders[0].Destination)
+		require.Equal(t, sdk.NewInt(10000).Sub(filled), orders[0].SourceRemaining)
+	}
+
+	// CancelReplace with an order that asks for a larger source than the replaced order has remaining
+	order5 := order(ctx.BlockTime(), acc2, "42000usd", "8000eur")
+	k.NewOrderSingle(ctx, order5)
+	require.True(t, err == nil, res.Log)
+
+	order6 := order(ctx.BlockTime(), acc1, "8000eur", "30000usd")
+	_, err = k.CancelReplaceLimitOrder(ctx, order6, order4cid)
 	require.True(t, types.ErrNoSourceRemaining.Is(err))
 
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())

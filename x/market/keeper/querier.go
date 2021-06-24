@@ -7,7 +7,6 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/market/types"
 	"sort"
 
@@ -83,7 +82,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 
 	source, destination := path[0], path[1]
 
-	if !util.ValidateDenom(source) || !util.ValidateDenom(destination) {
+	if sdk.ValidateDenom(source) != nil || sdk.ValidateDenom(destination) != nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "Invalid denoms: %v %v", source, destination)
 	}
 
@@ -117,18 +116,4 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 	}
 
 	return json.Marshal(resp)
-}
-
-// getBestPrice returns the best priced passive order for source and
-// destination instruments. Returns nil when executePlan cannot find a best
-// plan.
-func getBestPrice(ctx sdk.Context, k *Keeper, source, destination string) *sdk.Dec {
-	var bestPrice *sdk.Dec
-
-	bestPlan := k.createExecutionPlan(ctx, destination, source)
-	if !bestPlan.DestinationCapacity().IsZero() {
-		bestPrice = &bestPlan.Price
-	}
-
-	return bestPrice
 }
