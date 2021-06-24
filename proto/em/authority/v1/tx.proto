@@ -13,13 +13,15 @@ service Msg {
   rpc DestroyIssuer(MsgDestroyIssuer) returns (MsgDestroyIssuerResponse);
 
   rpc SetGasPrices(MsgSetGasPrices) returns (MsgSetGasPricesResponse);
+
+  rpc ReplaceAuthority(MsgReplaceAuthority) returns (MsgReplaceAuthorityResponse);
 }
 
 message MsgCreateIssuer {
   string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
   string issuer = 2 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
   repeated string denominations = 3
-      [ (gogoproto.moretags) = "yaml:\"denoms\"" ];
+  [ (gogoproto.moretags) = "yaml:\"denoms\"" ];
 }
 
 message MsgCreateIssuerResponse {}
@@ -41,3 +43,13 @@ message MsgSetGasPrices {
 }
 
 message MsgSetGasPricesResponse {}
+
+message MsgReplaceAuthority {
+  string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
+  repeated string new_authorities = 2 [ (gogoproto.moretags) = "yaml:\"new_authorities\"" ];
+  uint32 threshold = 3 [(gogoproto.moretags) = "yaml:\"threshold\""];
+}
+
+message MsgReplaceAuthorityResponse {
+  string new_authority_address = 1 [ (gogoproto.moretags) = "yaml:\"new_authority_address\"" ];
+}

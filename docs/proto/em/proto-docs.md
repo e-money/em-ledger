@@ -22,6 +22,8 @@
     - [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse)
     - [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer)
     - [MsgDestroyIssuerResponse](#em.authority.v1.MsgDestroyIssuerResponse)
+    - [MsgReplaceAuthority](#em.authority.v1.MsgReplaceAuthority)
+    - [MsgReplaceAuthorityResponse](#em.authority.v1.MsgReplaceAuthorityResponse)
     - [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices)
     - [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse)
   
@@ -332,6 +334,38 @@
 
 
 
+<a name="em.authority.v1.MsgReplaceAuthority"></a>
+
+### MsgReplaceAuthority
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  |
+| `new_authorities` | [string](#string) | repeated |  |
+| `threshold` | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="em.authority.v1.MsgReplaceAuthorityResponse"></a>
+
+### MsgReplaceAuthorityResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `new_authority_address` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="em.authority.v1.MsgSetGasPrices"></a>
 
 ### MsgSetGasPrices
@@ -374,6 +408,7 @@
 | `CreateIssuer` | [MsgCreateIssuer](#em.authority.v1.MsgCreateIssuer) | [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse) |  | |
 | `DestroyIssuer` | [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer) | [MsgDestroyIssuerResponse](#em.authority.v1.MsgDestroyIssuerResponse) |  | |
 | `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse) |  | |
+| `ReplaceAuthority` | [MsgReplaceAuthority](#em.authority.v1.MsgReplaceAuthority) | [MsgReplaceAuthorityResponse](#em.authority.v1.MsgReplaceAuthorityResponse) |  | |
 
  <!-- end services -->
 

@@ -5,9 +5,20 @@
 package cli
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	"gopkg.in/yaml.v2"
+	"io"
+	"sort"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -132,4 +143,197 @@ func getCmdDestroyIssuer() *cobra.Command {
 	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
+}
+
+func getCmdReplaceAuthCommand() *cobra.Command {
+	const (
+		flagMultisig          = "multisig"
+		flagMultiSigThreshold = "threshold"
+		mnemonicEntropySize   = 256
+		authKeyName           = "authorityKey"
+	)
+
+	cmd := &cobra.Command{
+		Use:   "replace-auth [authority_key_or_address] --authorities [address1,address2,...addressn] --threshold [2-n]",
+		Short: "Replace the authority key",
+		Example: "emd tx authority replace-auth [authority_key_or_address] --authorities emoney1lagqmceycrfpkyu7y6ayrk6jyvru5mkrezacpw,emoney1gjudpa2cmwd27cjzespu2khrvy2ukje6zfevk5,emoney1mn2y0d9ugjxqevpn6k5e20wy62kcawp5523sgc --threshold 2",
+		Long: `Replace the authority key by specifying the existing user addresses 
+for the new authority multisig account and multisig threshold. A new authority 
+key will be generated. The key will be stored under the authority keyname. If 
+run with --dry-run, a key would be generated but not stored to the local keystore.
+Use the --authorities flag with existing keystore users for generating the new 
+multisig authority address.
+`,
+		Args:    cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f := cmd.Flags()
+			err := f.Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
+			f.StringSlice(flagMultisig, nil, "List of authorities key names stored in keyring to construct the new public multisig authority key")
+			f.Uint32(flagMultiSigThreshold, 2, "K out of N required authority signatures.")
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			kb := clientCtx.Keyring
+			multisigKeys, _ := cmd.Flags().GetStringSlice(flagMultisig)
+			if len(multisigKeys) == 0 {
+				return errors.New("missing input multisig keys")
+			}
+
+			var pks []cryptotypes.PubKey
+			multisigThreshold, _ := cmd.Flags().GetInt(flagMultiSigThreshold)
+			if err := validateMultisigThreshold(multisigThreshold, len(multisigKeys)); err != nil {
+				return err
+			}
+
+			for _, keyname := range multisigKeys {
+				k, err := kb.Key(keyname)
+				if err != nil {
+					return err
+				}
+
+				pks = append(pks, k.GetPubKey())
+			}
+
+			sort.Slice(
+				pks, func(i, j int) bool {
+					return bytes.Compare(pks[i].Address(), pks[j].Address()) < 0
+				},
+			)
+
+			pk := multisig.NewLegacyAminoPubKey(multisigThreshold, pks)
+			if _, err := kb.SaveMultisig(authKeyName, pk); err != nil {
+				return err
+			}
+
+			//// read entropy seed straight from tmcrypto.Rand and convert to mnemonic
+			//entropySeed, err := bip39.NewEntropy(mnemonicEntropySize)
+			//if err != nil {
+			//	return err
+			//}
+			//
+			//mnemonic, err := bip39.NewMnemonic(entropySeed)
+			//if err != nil {
+			//	return err
+			//}
+			//
+			//info, err := kb.NewAccount(authKeyName, mnemonic, "", hdPath, algo)
+			//if err != nil {
+			//	return err
+			//}
+
+			msg := &types.MsgReplaceAuthority{
+				Authority:      clientCtx.GetFromAddress().String(),
+				NewAuthorities: nil,
+				Threshold:      0,
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+type bechKeyOutFn func(keyInfo keyring.Info) (keyring.KeyOutput, error)
+
+func validateMultisigThreshold(k, nKeys int) error {
+	if k <= 0 {
+		return fmt.Errorf("threshold must be a positive integer")
+	}
+	if nKeys < k {
+		return fmt.Errorf(
+			"threshold k of n multisignature: %d < %d", nKeys, k)
+	}
+	return nil
+}
+
+// available output formats.
+const (
+	OutputFormatText = "text"
+	OutputFormatJSON = "json"
+)
+
+func printCreate(cmd *cobra.Command, info keyring.Info, showMnemonic bool, mnemonic string, outputFormat string) error {
+	switch outputFormat {
+	case OutputFormatText:
+		cmd.PrintErrln()
+		printKeyInfo(cmd.OutOrStdout(), info, keyring.Bech32KeyOutput, outputFormat)
+
+		// print mnemonic unless requested not to.
+		if showMnemonic {
+			fmt.Fprintln(cmd.ErrOrStderr(), "\n**Important** write this mnemonic phrase in a safe place.")
+			fmt.Fprintln(cmd.ErrOrStderr(), "It is the only way to recover your account if you ever forget your password.")
+			fmt.Fprintln(cmd.ErrOrStderr(), "")
+			fmt.Fprintln(cmd.ErrOrStderr(), mnemonic)
+		}
+	case OutputFormatJSON:
+		out, err := keyring.Bech32KeyOutput(info)
+		if err != nil {
+			return err
+		}
+
+		if showMnemonic {
+			out.Mnemonic = mnemonic
+		}
+
+		jsonString, err := keys.KeysCdc.MarshalJSON(out)
+		if err != nil {
+			return err
+		}
+
+		cmd.Println(string(jsonString))
+
+	default:
+		return fmt.Errorf("invalid output format %s", outputFormat)
+	}
+
+	return nil
+}
+
+// MkAccKeyOutput create a KeyOutput in with "acc" Bech32 prefixes. If the
+// public key is a multisig public key, then the threshold and constituent
+// public keys will be added.
+func MkAccKeyOutput(keyInfo keyring.Info) keyring.KeyOutput {
+	pk := keyInfo.GetPubKey()
+	addr := sdk.AccAddress(pk.Address())
+	return keyring.NewKeyOutput(keyInfo.GetName(), keyInfo.GetType().String(), addr.String(), pk.String())
+}
+
+func printKeyInfo(w io.Writer, keyInfo keyring.Info, bechKeyOut bechKeyOutFn, output string) {
+	ko, err := bechKeyOut(keyInfo)
+	if err != nil {
+		panic(err)
+	}
+
+	switch output {
+	case OutputFormatText:
+		printTextInfos(w, []keyring.KeyOutput{ko})
+
+	case OutputFormatJSON:
+
+		out, err := keys.KeysCdc.MarshalJSON(ko)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Fprintln(w, string(out))
+	}
+}
+
+func printTextInfos(w io.Writer, kos []keyring.KeyOutput) {
+	out, err := yaml.Marshal(&kos)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprintln(w, string(out))
 }
