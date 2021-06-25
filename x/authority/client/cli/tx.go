@@ -12,6 +12,8 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -28,7 +30,7 @@ import (
 func GetTxCmd() *cobra.Command {
 	authorityCmds := &cobra.Command{
 		Use:                "authority",
-		Short:              "Manage liquidity providers",
+		Short:              "Manage authority tasks",
 		DisableFlagParsing: false,
 	}
 
@@ -36,6 +38,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdCreateIssuer(),
 		getCmdDestroyIssuer(),
 		getCmdSetGasPrices(),
+		GetCmdReplaceAuthority(),
 	)
 
 	return authorityCmds
@@ -145,56 +148,82 @@ func getCmdDestroyIssuer() *cobra.Command {
 	return cmd
 }
 
-func getCmdReplaceAuthCommand() *cobra.Command {
+func GetCmdReplaceAuthority() *cobra.Command {
 	const (
-		flagMultisig          = "multisig"
+		flagAuthorities       = "authorities"
 		flagMultiSigThreshold = "threshold"
 		mnemonicEntropySize   = 256
 		authKeyName           = "authorityKey"
 	)
 
 	cmd := &cobra.Command{
-		Use:   "replace-auth [authority_key_or_address] --authorities [address1,address2,...addressn] --threshold [2-n]",
+		Use:   "replace [authority_key_or_address] addr1,addr2,addr3 multisig-threshold",
 		Short: "Replace the authority key",
-		Example: "emd tx authority replace-auth [authority_key_or_address] --authorities emoney1lagqmceycrfpkyu7y6ayrk6jyvru5mkrezacpw,emoney1gjudpa2cmwd27cjzespu2khrvy2ukje6zfevk5,emoney1mn2y0d9ugjxqevpn6k5e20wy62kcawp5523sgc --threshold 2",
-		Long: `Replace the authority key by specifying the existing user addresses 
-for the new authority multisig account and multisig threshold. A new authority 
-key will be generated. The key will be stored under the authority keyname. If 
-run with --dry-run, a key would be generated but not stored to the local keystore.
-Use the --authorities flag with existing keystore users for generating the new 
-multisig authority address.
+		Example: "emd tx authority replace emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv emoney1lagqmceycrfpkyu7y6ayrk6jyvru5mkrezacpw,emoney1gjudpa2cmwd27cjzespu2khrvy2ukje6zfevk5,emoney1mn2y0d9ugjxqevpn6k5e20wy62kcawp5523sgc 2",
+		Long: `Replace the authority key by entering the list of addresses comprising the new authority multisig key 
+and multisig threshold such that K out of N required authority signatures. A new authority key will be generated. 
+The key will be stored in the chain state. If run with --dry-run, a key would be generated but not stored to the 
+chain state. Use the --authorities flag with existing keystore users for generating the new multisig authority address.
 `,
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("***")
+			fmt.Println("***")
+			fmt.Println("args:", len(args), args)
+			for i, arg := range args {
+				fmt.Print(i, ":", arg)
+			}
+			fmt.Println()
+
 			f := cmd.Flags()
+			var (
+				authAddresses []string
+				multisigThreshold int
+			)
+
 			err := f.Set(flags.FlagFrom, args[0])
 			if err != nil {
-				return err
+				//return err
+				panic(err)
 			}
-			f.StringSlice(flagMultisig, nil, "List of authorities key names stored in keyring to construct the new public multisig authority key")
-			f.Uint32(flagMultiSigThreshold, 2, "K out of N required authority signatures.")
+
+			authAddresses = strings.Split(args[1], ",")
+			multisigThreshold, err = strconv.Atoi(args[2])
+			if err != nil {
+				//return err
+				panic(err)
+			}
+
+			//// generate only for later signing
+			//err = f.Set(flags.FlagGenerateOnly, "true")
+			//if err != nil {
+			//	return err
+			//}
+			//
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
-				return err
+				//return err
+				panic(err)
 			}
 
 			kb := clientCtx.Keyring
-			multisigKeys, _ := cmd.Flags().GetStringSlice(flagMultisig)
-			if len(multisigKeys) == 0 {
-				return errors.New("missing input multisig keys")
+			if len(authAddresses) == 0{
+				//return errors.New("missing input multisig keys")
+				panic(errors.New("missing input multisig keys"))
 			}
 
 			var pks []cryptotypes.PubKey
-			multisigThreshold, _ := cmd.Flags().GetInt(flagMultiSigThreshold)
-			if err := validateMultisigThreshold(multisigThreshold, len(multisigKeys)); err != nil {
-				return err
+			if err := validateMultisigThreshold(multisigThreshold, len(authAddresses)); err != nil {
+				//return err
+				panic(err)
 			}
 
-			for _, keyname := range multisigKeys {
+			for _, keyname := range authAddresses {
 				k, err := kb.Key(keyname)
 				if err != nil {
-					return err
+					//return err
+					panic(err)
 				}
 
 				pks = append(pks, k.GetPubKey())
@@ -208,23 +237,24 @@ multisig authority address.
 
 			pk := multisig.NewLegacyAminoPubKey(multisigThreshold, pks)
 			if _, err := kb.SaveMultisig(authKeyName, pk); err != nil {
-				return err
+				//return err
+				panic(err)
 			}
 
 			//// read entropy seed straight from tmcrypto.Rand and convert to mnemonic
 			//entropySeed, err := bip39.NewEntropy(mnemonicEntropySize)
 			//if err != nil {
-			//	return err
+			////	return err
 			//}
 			//
 			//mnemonic, err := bip39.NewMnemonic(entropySeed)
 			//if err != nil {
-			//	return err
+			////	return err
 			//}
 			//
 			//info, err := kb.NewAccount(authKeyName, mnemonic, "", hdPath, algo)
 			//if err != nil {
-			//	return err
+			////	return err
 			//}
 
 			msg := &types.MsgReplaceAuthority{
@@ -234,10 +264,13 @@ multisig authority address.
 			}
 
 			if err := msg.ValidateBasic(); err != nil {
-				return err
+				//return err
+				panic(err)
 			}
 
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			panic(errors.New("just before broadcasting"))
+
+			// return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
