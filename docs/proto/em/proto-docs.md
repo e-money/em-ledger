@@ -343,6 +343,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |  |
+| `new_authority` | [string](#string) |  |  |
 | `new_authorities` | [string](#string) | repeated |  |
 | `threshold` | [uint32](#uint32) |  |  |
 

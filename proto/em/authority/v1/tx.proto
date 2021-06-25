@@ -46,8 +46,9 @@ message MsgSetGasPricesResponse {}
 
 message MsgReplaceAuthority {
   string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
-  repeated string new_authorities = 2 [ (gogoproto.moretags) = "yaml:\"new_authorities\"" ];
-  uint32 threshold = 3 [(gogoproto.moretags) = "yaml:\"threshold\""];
+  string new_authority = 2 [ (gogoproto.moretags) = "yaml:\"new_authority\"" ];
+  repeated string new_authorities = 3 [ (gogoproto.moretags) = "yaml:\"new_authorities\"" ];
+  uint32 threshold = 4 [(gogoproto.moretags) = "yaml:\"threshold\""];
 }
 
 message MsgReplaceAuthorityResponse {
