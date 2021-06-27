@@ -152,22 +152,27 @@ func (s *IntegrationTestSuite) TestMultisign() {
 	val1 := *s.network.Validators[0]
 
 	// Generate 2 accounts and a multisig.
-	account1, err := val1.ClientCtx.Keyring.Key("newAccount1")
-	s.Require().NoError(err)
+	const (
+		acc1UID = "newAccount1"
+		acc2UID = "newAccount2"
+		msigUID = "multi"
+	)
 
-	account2, err := val1.ClientCtx.Keyring.Key("newAccount2")
+	account1, err := val1.ClientCtx.Keyring.Key(acc1UID)
 	s.Require().NoError(err)
+	fmt.Println(account1.GetAddress().String())
 
-	multisigInfo, err := val1.ClientCtx.Keyring.Key("multi")
+	account2, err := val1.ClientCtx.Keyring.Key(acc2UID)
 	s.Require().NoError(err)
+	fmt.Println(account2.GetAddress().String())
+
+	multisigInfo, err := val1.ClientCtx.Keyring.Key(msigUID)
+	s.Require().NoError(err)
+	fmt.Println(multisigInfo.GetAddress().String())
 
 	args := []string{
 		multisigInfo.GetAddress().String(),
-		fmt.Sprintf(
-			"%s,%s", account1.GetAddress().String(),
-			account2.GetAddress().String(),
-		),
-		"2",
+		fmt.Sprintf("%s,%s", acc1UID, acc2UID),	"2",
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
