@@ -51,16 +51,17 @@ func (k Keeper) SetAuthority(ctx sdk.Context, authority sdk.AccAddress) {
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
-func (k Keeper) GetAuthority(ctx sdk.Context) sdk.AccAddress {
+func (k Keeper) GetAuthority(ctx sdk.Context) (sdk.AccAddress, error) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyAuthorityAccAddress))
 	var authority types.Authority
 	k.cdc.MustUnmarshalBinaryBare(bz, &authority)
 	acc, err := sdk.AccAddressFromBech32(authority.Address)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
-	return acc
+
+	return acc, nil
 }
 
 func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
@@ -125,7 +126,10 @@ func (k Keeper) destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerA
 }
 
 func (k Keeper) ValidateAuthority(ctx sdk.Context, address sdk.AccAddress) error {
-	authority := k.GetAuthority(ctx)
+	authority, err := k.GetAuthority(ctx)
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, err.Error())
+	}
 	if authority == nil {
 		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, address.String())
 	}

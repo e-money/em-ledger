@@ -32,6 +32,10 @@ func newHandler(k Keeper) sdk.Handler {
 			res, err := msgServer.SetGasPrices(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 
+		case *types.MsgReplaceAuthority:
+			res, err := msgServer.ReplaceAuthority(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg)
 		}

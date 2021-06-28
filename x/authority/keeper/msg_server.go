@@ -86,20 +86,27 @@ func (m msgServer) SetGasPrices(goCtx context.Context, msg *types.MsgSetGasPrice
 }
 
 func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplaceAuthority) (*types.MsgReplaceAuthorityResponse, error) {
+	fmt.Println("*** ")
+	fmt.Println("*** Entered ReplaceAuthority")
+	fmt.Println("*** ")
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	authorityAcc, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority: "+ msg.Authority)
 	}
 
+	fmt.Println("*** ")
+	fmt.Println("*** Before validating authorities")
+	fmt.Println("*** ")
+
 	newAuthorityAcc, err := sdk.AccAddressFromBech32(msg.NewAuthority)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "new authority: "+msg.NewAuthority)
 	}
 
-	if msg.Threshold == 0 {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "zero threshold")
-	}
+	fmt.Println("*** ")
+	fmt.Println("*** Before changing store")
+	fmt.Println("*** ")
 
 	result, err := m.k.replaceAuthority(ctx, authorityAcc, newAuthorityAcc)
 	if err != nil {
