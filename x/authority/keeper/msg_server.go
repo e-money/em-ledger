@@ -101,23 +101,6 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "zero threshold")
 	}
 
-	newAuthCount := len(msg.NewAuthorities)
-	if newAuthCount < 1 || newAuthCount < int(msg.Threshold) {
-		return nil, sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest, fmt.Sprintf(
-				"number of authorities: %d is zero or lt threshold: %d",
-				newAuthCount, msg.Threshold,
-			),
-		)
-	}
-
-	for _, newAuthAddr := range msg.NewAuthorities {
-		_, err := sdk.AccAddressFromBech32(newAuthAddr)
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "new authority: " + newAuthAddr)
-		}
-	}
-
 	result, err := m.k.replaceAuthority(ctx, authorityAcc, newAuthorityAcc)
 	if err != nil {
 		return nil, err

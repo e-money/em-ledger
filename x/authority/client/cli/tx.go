@@ -5,26 +5,18 @@
 package cli
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	"gopkg.in/yaml.v2"
-	"io"
-	"sort"
-	"strconv"
-	"strings"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+	"io"
 )
 
 func GetTxCmd() *cobra.Command {
@@ -157,120 +149,35 @@ func GetCmdReplaceAuthority() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "replace [authority_key_or_address] addr1,addr2,addr3 multisig-threshold",
-		Short: "Replace the authority key",
-		Example: "emd tx authority replace emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv emoney1lagqmceycrfpkyu7y6ayrk6jyvru5mkrezacpw,emoney1gjudpa2cmwd27cjzespu2khrvy2ukje6zfevk5,emoney1mn2y0d9ugjxqevpn6k5e20wy62kcawp5523sgc 2",
-		Long: `Replace the authority key by entering the list of addresses comprising the new authority multisig key 
-and multisig threshold such that K out of N required authority signatures. A new authority key will be generated. 
-The key will be stored in the chain state. If run with --dry-run, a key would be generated but not stored to the 
-chain state. Use the --authorities flag with existing keystore users for generating the new multisig authority address.
-`,
-		Args:    cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("***")
-			fmt.Println("***")
-			fmt.Println("args:", len(args), args)
-			for i, arg := range args {
-				fmt.Print(i, ":", arg)
-			}
-			fmt.Println()
-
+		Use:     "replace [authority_key_or_address] new_authority_address",
+		Short:   "Replace the authority key",
+		Example: "emd tx authority replace emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv emoney1hq6tnhqg4t7358f3vd9crru93lv0cgekdxrtgv",
+		Long:    "Replace the authority key by entering the new multisig address",
+		Args:    cobra.ExactArgs(2),
+		RunE:    func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
-			var (
-				authAddresses []string
-				multisigThreshold int
-			)
 
+			// Set from the existing authority key
 			err := f.Set(flags.FlagFrom, args[0])
 			if err != nil {
-				//return err
-				panic(err)
+				return err
 			}
-
-			authAddresses = strings.Split(args[1], ",")
-			multisigThreshold, err = strconv.Atoi(args[2])
-			if err != nil {
-				//return err
-				panic(err)
-			}
-
-			//// generate only for later signing
-			//err = f.Set(flags.FlagGenerateOnly, "true")
-			//if err != nil {
-			//	return err
-			//}
-			//
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
-				//return err
-				panic(err)
+				return err
 			}
-
-			kb := clientCtx.Keyring
-			if len(authAddresses) == 0{
-				//return errors.New("missing input multisig keys")
-				panic(errors.New("missing input multisig keys"))
-			}
-
-			var pks []cryptotypes.PubKey
-			if err := validateMultisigThreshold(multisigThreshold, len(authAddresses)); err != nil {
-				//return err
-				panic(err)
-			}
-
-			for _, keyname := range authAddresses {
-				k, err := kb.Key(keyname)
-				if err != nil {
-					//return err
-					panic(err)
-				}
-
-				pks = append(pks, k.GetPubKey())
-			}
-
-			sort.Slice(
-				pks, func(i, j int) bool {
-					return bytes.Compare(pks[i].Address(), pks[j].Address()) < 0
-				},
-			)
-
-			pk := multisig.NewLegacyAminoPubKey(multisigThreshold, pks)
-			if _, err := kb.SaveMultisig(authKeyName, pk); err != nil {
-				//return err
-				panic(err)
-			}
-
-			//// read entropy seed straight from tmcrypto.Rand and convert to mnemonic
-			//entropySeed, err := bip39.NewEntropy(mnemonicEntropySize)
-			//if err != nil {
-			////	return err
-			//}
-			//
-			//mnemonic, err := bip39.NewMnemonic(entropySeed)
-			//if err != nil {
-			////	return err
-			//}
-			//
-			//info, err := kb.NewAccount(authKeyName, mnemonic, "", hdPath, algo)
-			//if err != nil {
-			////	return err
-			//}
 
 			msg := &types.MsgReplaceAuthority{
-				Authority:      clientCtx.GetFromAddress().String(),
-				NewAuthorities: nil,
-				Threshold:      0,
+				Authority:    clientCtx.GetFromAddress().String(),
+				NewAuthority: args[1],
 			}
 
 			if err := msg.ValidateBasic(); err != nil {
-				//return err
-				panic(err)
+				return err
 			}
 
-			panic(errors.New("just before broadcasting"))
-
-			// return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)

@@ -69,6 +69,10 @@ func (msg MsgReplaceAuthority) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
 	}
 
+	if _, err := sdk.AccAddressFromBech32(msg.NewAuthority); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid new authority address (%s)", err)
+	}
+
 	return nil
 }
 

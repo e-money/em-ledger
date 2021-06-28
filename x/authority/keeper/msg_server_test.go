@@ -289,6 +289,7 @@ type authorityKeeperMock struct {
 	createIssuerfn  func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error)
 	destroyIssuerfn func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	SetGasPricesfn  func(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
+	replaceAuthorityfn func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 }
 
 func (a authorityKeeperMock) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
@@ -310,4 +311,12 @@ func (a authorityKeeperMock) SetGasPrices(ctx sdk.Context, authority sdk.AccAddr
 		panic("not expected to be called")
 	}
 	return a.SetGasPricesfn(ctx, authority, gasprices)
+}
+
+func (a authorityKeeperMock) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
+	if a.replaceAuthorityfn == nil {
+		panic("not expected to be called")
+	}
+
+	return a.replaceAuthorityfn(ctx, authority, newAuthority)
 }

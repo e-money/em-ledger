@@ -90,8 +90,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data j
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+	auth, err := am.keeper.GetAuthority(ctx)
+	if err != nil {
+		return nil
+	}
 	genesis := &types.GenesisState{
-		AuthorityKey: am.keeper.GetAuthority(ctx).String(),
+		AuthorityKey: auth.String(),
 		MinGasPrices: am.keeper.GetGasPrices(ctx),
 	}
 	return cdc.MustMarshalJSON(genesis)
