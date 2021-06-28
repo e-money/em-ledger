@@ -41,15 +41,15 @@ func init() {
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	require.Panics(t, func() {
-		// Keeper must panic if no authority has been specified
-		keeper.GetAuthority(ctx)
-	})
+	acc, err := keeper.GetAuthority(ctx)
+	require.Error(t, err, "error due to authority not being set yet")
+	require.Nil(t, acc, "authority not being set yet and is nil")
 
-	acc, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+	acc, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	keeper.SetAuthority(ctx, acc)
 
-	authority := keeper.GetAuthority(ctx)
+	authority, err := keeper.GetAuthority(ctx)
+	require.NoError(t, err, "authority is set")
 	require.Equal(t, acc, authority)
 }
 
@@ -61,22 +61,18 @@ func TestMustBeAuthority(t *testing.T) {
 		acc2         = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 	)
 
-	require.Panics(t, func() {
-		// Must panic due to authority not being set yet.
-		keeper.MustBeAuthority(ctx, accAuthority)
-	})
+	err := keeper.ValidateAuthority(ctx, accAuthority)
+	require.Error(t, err, "authority not being set yet")
 
 	keeper.SetAuthority(ctx, accAuthority)
-	keeper.MustBeAuthority(ctx, accAuthority)
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err, "authority is set")
 
-	require.Panics(t, func() {
-		keeper.MustBeAuthority(ctx, acc2)
-	})
+	err = keeper.ValidateAuthority(ctx, acc2)
+	require.Error(t, err, "acc2 as authority not being set yet")
 
 	// Authority can only be specified once, preferably during genesis
-	require.Panics(t, func() {
-		keeper.SetAuthority(ctx, acc2)
-	})
+	keeper.SetAuthority(ctx, acc2)
 }
 
 func TestCreateAndRevokeIssuer(t *testing.T) {

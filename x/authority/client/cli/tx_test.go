@@ -1,8 +1,11 @@
 package cli_test
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/e-money/em-ledger/x/authority/client/cli"
+	"github.com/e-money/em-ledger/x/authority/types"
+	"sort"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -16,7 +19,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtest "github.com/cosmos/cosmos-sdk/x/auth/client/testutil"
 	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -32,6 +34,8 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
 	cfg := network.DefaultConfig()
+	cfg.LegacyAmino.RegisterConcrete(&types.MsgReplaceAuthority{}, "MsgReplaceAuthority", nil)
+	cfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil),&types.MsgReplaceAuthority{})
 	cfg.NumValidators = 2
 
 	s.cfg = cfg
@@ -86,15 +90,15 @@ func (s *IntegrationTestSuite) TestCLIMultisign() {
 		fmt.Sprintf("--gas=%d", flags.DefaultGasLimit),
 	)
 
-	s.Require().NoError(s.network.WaitForNextBlock())
-
-	resp, err := bankcli.QueryBalancesExec(val1.ClientCtx, multisigInfo.GetAddress())
-	s.Require().NoError(err)
-
-	var balRes banktypes.QueryAllBalancesResponse
-	err = val1.ClientCtx.JSONMarshaler.UnmarshalJSON(resp.Bytes(), &balRes)
-	s.Require().NoError(err)
-	s.Require().Equal(sendTokens.Amount, balRes.Balances.AmountOf(s.cfg.BondDenom))
+	//s.Require().NoError(s.network.WaitForNextBlock())
+	//
+	//resp, err := bankcli.QueryBalancesExec(val1.ClientCtx, multisigInfo.GetAddress())
+	//s.Require().NoError(err)
+	//
+	//var balRes banktypes.QueryAllBalancesResponse
+	//err = val1.ClientCtx.JSONMarshaler.UnmarshalJSON(resp.Bytes(), &balRes)
+	//s.Require().NoError(err)
+	//s.Require().Equal(sendTokens.Amount, balRes.Balances.AmountOf(s.cfg.BondDenom))
 
 	// Generate multisig transaction.
 	multiGeneratedTx, err := bankcli.MsgSendExec(
@@ -116,13 +120,19 @@ func (s *IntegrationTestSuite) TestCLIMultisign() {
 
 	// Sign with account1
 	val1.ClientCtx.HomeDir = strings.Replace(val1.ClientCtx.HomeDir, "simd", "simcli", 1)
-	account1Signature, err := authtest.TxSignExec(val1.ClientCtx, account1.GetAddress(), multiGeneratedTxFile.Name(), "--multisig", multisigInfo.GetAddress().String())
+	account1Signature, err := authtest.TxSignExec(
+		val1.ClientCtx, account1.GetAddress(), multiGeneratedTxFile.Name(),
+		"--multisig", multisigInfo.GetAddress().String(),
+	)
 	s.Require().NoError(err)
 
 	sign1File := testutil.WriteToNewTempFile(s.T(), account1Signature.String())
 
 	// Sign with account1
-	account2Signature, err := authtest.TxSignExec(val1.ClientCtx, account2.GetAddress(), multiGeneratedTxFile.Name(), "--multisig", multisigInfo.GetAddress().String())
+	account2Signature, err := authtest.TxSignExec(
+		val1.ClientCtx, account2.GetAddress(), multiGeneratedTxFile.Name(),
+		"--multisig", multisigInfo.GetAddress().String(),
+	)
 	s.Require().NoError(err)
 
 	sign2File := testutil.WriteToNewTempFile(s.T(), account2Signature.String())
@@ -153,59 +163,91 @@ func (s *IntegrationTestSuite) TestMultisign() {
 
 	// Generate 2 accounts and a multisig.
 	const (
-		acc1UID = "newAccount1"
-		acc2UID = "newAccount2"
-		msigUID = "multi"
+		acc1UID    = "newAccount1"
+		acc2UID    = "newAccount2"
+		acc3UID    = "newAccount3"
+		msigUID    = "multi"
+		newMsigUID = "newMulti"
 	)
 
 	account1, err := val1.ClientCtx.Keyring.Key(acc1UID)
 	s.Require().NoError(err)
-	fmt.Println(account1.GetAddress().String())
+	fmt.Println("acc 1:", account1.GetAddress().String())
 
 	account2, err := val1.ClientCtx.Keyring.Key(acc2UID)
 	s.Require().NoError(err)
-	fmt.Println(account2.GetAddress().String())
+	fmt.Println("acc 2:", account2.GetAddress().String())
 
-	multisigInfo, err := val1.ClientCtx.Keyring.Key(msigUID)
+	authMultiSigAcc, err := val1.ClientCtx.Keyring.Key(msigUID)
 	s.Require().NoError(err)
-	fmt.Println(multisigInfo.GetAddress().String())
+	s.Require().Equal(keyring.TypeMulti, authMultiSigAcc.GetType())
+	fmt.Println("multi:", authMultiSigAcc.GetAddress().String())
 
-	args := []string{
-		multisigInfo.GetAddress().String(),
-		fmt.Sprintf("%s,%s", acc1UID, acc2UID),	"2",
+	var (
+		pks            []cryptotypes.PubKey
+		authorityAddrs []string
+	)
+
+	// create the new multisig authority key adding a 3rd key
+	kb := val1.ClientCtx.Keyring
+	account3, _, err := kb.NewMnemonic(acc3UID, keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
+	s.Require().NoError(err)
+	s.Require().NotNil(account3)
+
+	// test getting it from the keystore
+	account3, err = val1.ClientCtx.Keyring.Key(acc3UID)
+	s.Require().NoError(err)
+	s.Require().NotNil(account3)
+	fmt.Println("acc 3:", account3.GetAddress().String())
+
+	authkeys := []string{acc1UID, acc2UID, acc3UID}
+	multisigThreshold := len(authkeys) - 1
+	// generate new multisig authority key
+	for _, keyname := range authkeys{
+		k, err := kb.Key(keyname)
+		s.Require().NoError(err)
+
+		pks = append(pks, k.GetPubKey())
+		authorityAddrs = append(authorityAddrs, k.GetAddress().String())
+	}
+
+	sort.Slice(
+		pks, func(i, j int) bool {
+			return bytes.Compare(pks[i].Address(), pks[j].Address()) < 0
+		},
+	)
+
+	pk := kmultisig.NewLegacyAminoPubKey(multisigThreshold, pks)
+	newAuthMultiSigAcc, err := kb.SaveMultisig(newMsigUID, pk)
+	s.Require().NoError(err)
+	s.Require().Equal(keyring.TypeMulti, newAuthMultiSigAcc.GetType())
+
+	fmt.Println("New authority multisig key:", newAuthMultiSigAcc.GetAddress().String())
+
+	// persist multisig acount
+	sendTokens := sdk.NewInt64Coin(s.cfg.BondDenom, 10)
+	_, err = bankcli.MsgSendExec(
+		val1.ClientCtx,
+		val1.Address,
+		authMultiSigAcc.GetAddress(),
+		sdk.NewCoins(sendTokens),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 		fmt.Sprintf("--gas=%d", flags.DefaultGasLimit),
-	}
+	)
 
-	_, err = sdkcli.ExecTestCLICmd(val1.ClientCtx, cli.GetCmdReplaceAuthority(),args)
-	s.Require().NoError(err)
-
-	s.Require().NoError(s.network.WaitForNextBlock())
-
-	//resp, err := bankcli.QueryBalancesExec(val1.ClientCtx, multisigInfo.GetAddress())
-	//s.Require().NoError(err)
-
-	//var balRes banktypes.QueryAllBalancesResponse
-	//err = val1.ClientCtx.JSONMarshaler.UnmarshalJSON(resp.Bytes(), &balRes)
-	//s.Require().NoError(err)
-	// s.Require().Equal(sendTokens.Amount, balRes.Balances.AmountOf(s.cfg.BondDenom))
-
-	/************************************************************
-	// Generate multisig transaction.
-	multiGeneratedTx, err := bankcli.MsgSendExec(
-		val1.ClientCtx,
-		multisigInfo.GetAddress(),
-		val1.Address,
-		sdk.NewCoins(
-			sdk.NewInt64Coin(s.cfg.BondDenom, 5),
-		),
+	// Generate the unsigned multisig transaction json with the existing authority key.
+	args := []string{
+		authMultiSigAcc.GetAddress().String(),
+		newAuthMultiSigAcc.GetAddress().String(),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 		fmt.Sprintf("--%s=true", flags.FlagGenerateOnly),
-	)
+	}
+
+	multiGeneratedTx, err := sdkcli.ExecTestCLICmd(val1.ClientCtx, cli.GetCmdReplaceAuthority(),args)
 	s.Require().NoError(err)
 
 	// Save tx to file
@@ -213,23 +255,38 @@ func (s *IntegrationTestSuite) TestMultisign() {
 
 	// Sign with account1
 	val1.ClientCtx.HomeDir = strings.Replace(val1.ClientCtx.HomeDir, "simd", "simcli", 1)
-	account1Signature, err := authtest.TxSignExec(val1.ClientCtx, account1.GetAddress(), multiGeneratedTxFile.Name(), "--multisig", multisigInfo.GetAddress().String())
+	account1Signature, err := authtest.TxSignExec(
+		val1.ClientCtx, account1.GetAddress(), multiGeneratedTxFile.Name(),
+		"--multisig", authMultiSigAcc.GetAddress().String(),
+	)
 	s.Require().NoError(err)
 
 	sign1File := testutil.WriteToNewTempFile(s.T(), account1Signature.String())
 
-	// Sign with account1
-	account2Signature, err := authtest.TxSignExec(val1.ClientCtx, account2.GetAddress(), multiGeneratedTxFile.Name(), "--multisig", multisigInfo.GetAddress().String())
+	// Sign with account2
+	account2Signature, err := authtest.TxSignExec(
+		val1.ClientCtx, account2.GetAddress(), multiGeneratedTxFile.Name(),
+		"--multisig", authMultiSigAcc.GetAddress().String(),
+	)
 	s.Require().NoError(err)
 
 	sign2File := testutil.WriteToNewTempFile(s.T(), account2Signature.String())
 
 	// Does not work in offline mode.
-	_, err = authtest.TxMultiSignExec(val1.ClientCtx, multisigInfo.GetName(), multiGeneratedTxFile.Name(), "--offline", sign1File.Name(), sign2File.Name())
-	s.Require().EqualError(err, "couldn't verify signature: unable to verify single signer signature")
+	_, err = authtest.TxMultiSignExec(
+		val1.ClientCtx, authMultiSigAcc.GetName(), multiGeneratedTxFile.Name(),
+		"--offline", sign1File.Name(), sign2File.Name(),
+	)
+	s.Require().EqualError(
+		err,
+		"couldn't verify signature: unable to verify single signer signature",
+	)
 
 	val1.ClientCtx.Offline = false
-	multiSigWith2Signatures, err := authtest.TxMultiSignExec(val1.ClientCtx, multisigInfo.GetName(), multiGeneratedTxFile.Name(), sign1File.Name(), sign2File.Name())
+	multiSigWith2Signatures, err := authtest.TxMultiSignExec(
+		val1.ClientCtx, authMultiSigAcc.GetName(), multiGeneratedTxFile.Name(),
+		sign1File.Name(), sign2File.Name(),
+	)
 	s.Require().NoError(err)
 
 	// Write the output to disk
@@ -243,8 +300,6 @@ func (s *IntegrationTestSuite) TestMultisign() {
 	s.Require().NoError(err)
 
 	s.Require().NoError(s.network.WaitForNextBlock())
-
-	********************************************/
 }
 
 func TestIntegrationTestSuite(t *testing.T) {
