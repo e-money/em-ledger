@@ -100,10 +100,9 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 1)
 
-	require.Panics(t, func() {
-		// Make sure only authority key can destroy an issuer
-		keeper.destroyIssuer(ctx, issuer1, issuer2)
-	})
+	// Make sure only authority key can destroy an issuer
+	_, err = keeper.destroyIssuer(ctx, issuer1, issuer2)
+	require.Error(t, err)
 
 	_, err = keeper.destroyIssuer(ctx, accAuthority, issuer2)
 	require.Error(t, err)
@@ -151,9 +150,8 @@ func TestManageGasPrices1(t *testing.T) {
 
 	coins, _ := sdk.ParseDecCoins("0.0005eeur,0.000001echf")
 
-	require.Panics(t, func() {
-		keeper.SetGasPrices(ctx, accRandom, coins)
-	})
+	_, err := keeper.SetGasPrices(ctx, accRandom, coins)
+	require.Error(t, err)
 
 	res, err := keeper.SetGasPrices(ctx, accAuthority, sdk.NewDecCoins())
 	require.True(t, err == nil, res.Log)

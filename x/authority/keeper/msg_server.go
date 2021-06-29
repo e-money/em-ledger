@@ -104,7 +104,14 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "new authority: "+msg.NewAuthority)
 	}
 
-	fmt.Println("*** ")
+	if authorityAcc.Equals(newAuthorityAcc) {
+		return nil, sdkerrors.Wrap(
+			sdkerrors.ErrInvalidRequest, fmt.Sprintf(
+				"new authority %s is the same as the incumbent %s",
+				msg.NewAuthority, msg.Authority,
+			))
+	}
+
 	fmt.Println("*** Before changing store")
 	fmt.Println("*** ")
 

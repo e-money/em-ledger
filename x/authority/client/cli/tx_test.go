@@ -3,6 +3,7 @@ package cli_test
 import (
 	"bytes"
 	"fmt"
+	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
 	"github.com/e-money/em-ledger/x/authority/client/cli"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"sort"
@@ -18,7 +19,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtest "github.com/cosmos/cosmos-sdk/x/auth/client/testutil"
-	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -64,101 +64,7 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	s.network.Cleanup()
 }
 
-func (s *IntegrationTestSuite) TestCLIMultisign() {
-	val1 := *s.network.Validators[0]
-
-	// Generate 2 accounts and a multisig.
-	account1, err := val1.ClientCtx.Keyring.Key("newAccount1")
-	s.Require().NoError(err)
-
-	account2, err := val1.ClientCtx.Keyring.Key("newAccount2")
-	s.Require().NoError(err)
-
-	multisigInfo, err := val1.ClientCtx.Keyring.Key("multi")
-	s.Require().NoError(err)
-
-	// Send coins from validator to multisig.
-	sendTokens := sdk.NewInt64Coin(s.cfg.BondDenom, 10)
-	_, err = bankcli.MsgSendExec(
-		val1.ClientCtx,
-		val1.Address,
-		multisigInfo.GetAddress(),
-		sdk.NewCoins(sendTokens),
-		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
-		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
-		fmt.Sprintf("--gas=%d", flags.DefaultGasLimit),
-	)
-
-	//s.Require().NoError(s.network.WaitForNextBlock())
-	//
-	//resp, err := bankcli.QueryBalancesExec(val1.ClientCtx, multisigInfo.GetAddress())
-	//s.Require().NoError(err)
-	//
-	//var balRes banktypes.QueryAllBalancesResponse
-	//err = val1.ClientCtx.JSONMarshaler.UnmarshalJSON(resp.Bytes(), &balRes)
-	//s.Require().NoError(err)
-	//s.Require().Equal(sendTokens.Amount, balRes.Balances.AmountOf(s.cfg.BondDenom))
-
-	// Generate multisig transaction.
-	multiGeneratedTx, err := bankcli.MsgSendExec(
-		val1.ClientCtx,
-		multisigInfo.GetAddress(),
-		val1.Address,
-		sdk.NewCoins(
-			sdk.NewInt64Coin(s.cfg.BondDenom, 5),
-		),
-		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
-		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
-		fmt.Sprintf("--%s=true", flags.FlagGenerateOnly),
-	)
-	s.Require().NoError(err)
-
-	// Save tx to file
-	multiGeneratedTxFile := testutil.WriteToNewTempFile(s.T(), multiGeneratedTx.String())
-
-	// Sign with account1
-	val1.ClientCtx.HomeDir = strings.Replace(val1.ClientCtx.HomeDir, "simd", "simcli", 1)
-	account1Signature, err := authtest.TxSignExec(
-		val1.ClientCtx, account1.GetAddress(), multiGeneratedTxFile.Name(),
-		"--multisig", multisigInfo.GetAddress().String(),
-	)
-	s.Require().NoError(err)
-
-	sign1File := testutil.WriteToNewTempFile(s.T(), account1Signature.String())
-
-	// Sign with account1
-	account2Signature, err := authtest.TxSignExec(
-		val1.ClientCtx, account2.GetAddress(), multiGeneratedTxFile.Name(),
-		"--multisig", multisigInfo.GetAddress().String(),
-	)
-	s.Require().NoError(err)
-
-	sign2File := testutil.WriteToNewTempFile(s.T(), account2Signature.String())
-
-	// Does not work in offline mode.
-	_, err = authtest.TxMultiSignExec(val1.ClientCtx, multisigInfo.GetName(), multiGeneratedTxFile.Name(), "--offline", sign1File.Name(), sign2File.Name())
-	s.Require().EqualError(err, "couldn't verify signature: unable to verify single signer signature")
-
-	val1.ClientCtx.Offline = false
-	multiSigWith2Signatures, err := authtest.TxMultiSignExec(val1.ClientCtx, multisigInfo.GetName(), multiGeneratedTxFile.Name(), sign1File.Name(), sign2File.Name())
-	s.Require().NoError(err)
-
-	// Write the output to disk
-	signedTxFile := testutil.WriteToNewTempFile(s.T(), multiSigWith2Signatures.String())
-
-	_, err = authtest.TxValidateSignaturesExec(val1.ClientCtx, signedTxFile.Name())
-	s.Require().NoError(err)
-
-	val1.ClientCtx.BroadcastMode = flags.BroadcastBlock
-	_, err = authtest.TxBroadcastExec(val1.ClientCtx, signedTxFile.Name())
-	s.Require().NoError(err)
-
-	s.Require().NoError(s.network.WaitForNextBlock())
-}
-
-func (s *IntegrationTestSuite) TestMultisign() {
+func (s *IntegrationTestSuite) TestReplaceAuth() {
 	val1 := *s.network.Validators[0]
 
 	// Generate 2 accounts and a multisig.
@@ -224,7 +130,7 @@ func (s *IntegrationTestSuite) TestMultisign() {
 
 	fmt.Println("New authority multisig key:", newAuthMultiSigAcc.GetAddress().String())
 
-	// persist multisig acount
+	// set the multisig acount in the state
 	sendTokens := sdk.NewInt64Coin(s.cfg.BondDenom, 10)
 	_, err = bankcli.MsgSendExec(
 		val1.ClientCtx,

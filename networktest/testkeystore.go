@@ -286,7 +286,6 @@ func initializeKeystore(kb keyring.Keyring) {
 }
 
 func createMultisig(kb keyring.Keyring, keyName string, keys []string, threshold int, err error) keyring.Info{
-	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
 	pks := make([]cryptotypes.PubKey, len(keys))
 	for i, keyname := range keys{
 		keyinfo, err := kb.Key(keyname)

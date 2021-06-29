@@ -134,5 +134,60 @@ var _ = Describe("Authority", func() {
 			Expect(err).To(BeNil())
 			Expect(amount).To(Equal(sdk.NewDecWithPrec(6, 4)))
 		})
+
+		It("Replace Authority", func() {
+			authorityAddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
+			newAuthorityAddress := sdk.AccAddress(keystore.MultiKey2.GetPublicKey().Address()).String()
+
+			sendReplaceAuthTx(authorityAddress, newAuthorityAddress, []nt.Key{key1, key2})
+		})
 	})
 })
+
+func sendReplaceAuthTx(authorityAddress, newAuthorityAddress string, keys []nt.Key) {
+	var (
+		emcli = testnet.NewEmcli()
+	)
+
+	jsonPath, err := ioutil.TempDir("", "")
+	Expect(err).To(BeNil())
+	defer os.RemoveAll(jsonPath)
+
+	tx, err := emcli.CustomCommand(
+		"tx", "authority", "replace", authorityAddress,
+		newAuthorityAddress, "--generate-only", "--from",
+		authorityAddress,
+	)
+	Expect(err).To(BeNil())
+
+	transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
+	err = ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+
+	tx, err = emcli.SignTranscation(
+		transactionPath, keys[0].GetAddress(), authorityAddress,
+	)
+	signaturePath1 := fmt.Sprintf("%v/sign%v.json", jsonPath, 0)
+	err = ioutil.WriteFile(signaturePath1, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+	tx, err = emcli.SignTranscation(
+		transactionPath, keys[1].GetAddress(), authorityAddress,
+	)
+	signaturePath2 := fmt.Sprintf("%v/sign%v.json", jsonPath, 1)
+	err = ioutil.WriteFile(signaturePath2, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+	sigPaths := []string{signaturePath1, signaturePath2}
+
+	// Combine the two signatures
+	tx, err = emcli.CustomCommand(
+		"tx", "multisign", transactionPath, "multikey", sigPaths[0],
+		sigPaths[1],
+	)
+	Expect(err).To(BeNil())
+	err = ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+
+	tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
+	Expect(err).To(BeNil())
+	Expect(gjson.Parse(tx).Get("logs.0.success").Exists()).To(Equal(false))
+}
