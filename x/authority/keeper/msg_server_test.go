@@ -283,6 +283,103 @@ func TestSetGasPrices(t *testing.T) {
 		})
 	}
 }
+func TestReplaceAuth(t *testing.T) {
+	var (
+		authorityAddr                 = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		newAuthorityAddr              = mustParseAddress("emoney1hq6tnhqg4t7358f3vd9crru93lv0cgekdxrtgv")
+		gotAuthority, gotNewAuthority sdk.AccAddress
+	)
+
+	keeper := authorityKeeperMock{}
+	svr := NewMsgServerImpl(&keeper)
+
+	specs := map[string]struct {
+		req       *types.MsgReplaceAuthority
+		mockFn    func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
+		expErr    bool
+		expEvents sdk.Events
+	}{
+		"all good": {
+			req: &types.MsgReplaceAuthority{
+				Authority: authorityAddr.String(),
+				NewAuthority: newAuthorityAddr.String(),
+			},
+			mockFn: func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
+				gotAuthority, gotNewAuthority = authority, newAuthority
+				return &sdk.Result{
+					Events: []abcitypes.Event{{
+						Type:       "testing",
+						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+					}},
+				}, nil
+			},
+			expEvents: sdk.Events{{
+				Type:       "testing",
+				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+			}},
+		},
+		"authority non-changing": {
+			req: &types.MsgReplaceAuthority{
+				Authority: authorityAddr.String(),
+				NewAuthority: authorityAddr.String(),
+			},
+			expErr: true,
+		},
+		"authority missing": {
+			req: &types.MsgReplaceAuthority{
+				NewAuthority: newAuthorityAddr.String(),
+			},
+			expErr: true,
+		},
+		"new authority missing": {
+			req: &types.MsgReplaceAuthority{
+				Authority: newAuthorityAddr.String(),
+			},
+			expErr: true,
+		},
+		"authority invalid": {
+			req: &types.MsgReplaceAuthority{
+				Authority: "invalid",
+				NewAuthority: newAuthorityAddr.String(),
+			},
+			expErr: true,
+		},
+		"new authority invalid": {
+			req: &types.MsgReplaceAuthority{
+				Authority: authorityAddr.String(),
+				NewAuthority: "invalid",
+			},
+			expErr: true,
+		},
+		"processing failure": {
+			req: &types.MsgReplaceAuthority{
+				Authority: authorityAddr.String(),
+				NewAuthority: newAuthorityAddr.String(),
+			},
+			mockFn: func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
+				return nil, errors.New("testing")
+			},
+			expErr: true,
+		},
+	}
+
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			keeper.replaceAuthorityfn = spec.mockFn
+			eventManager := sdk.NewEventManager()
+			ctx := sdk.Context{}.WithContext(context.Background()).WithEventManager(eventManager)
+			_, gotErr := svr.ReplaceAuthority(sdk.WrapSDKContext(ctx), spec.req)
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+			assert.Equal(t, spec.expEvents, eventManager.Events())
+			assert.Equal(t, spec.req.Authority, gotAuthority.String())
+			assert.Equal(t, spec.req.NewAuthority, gotNewAuthority.String())
+		})
+	}
+}
 
 // mock implementation of authorityKeeper interface
 type authorityKeeperMock struct {
