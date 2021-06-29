@@ -168,6 +168,47 @@ func TestManageGasPrices1(t *testing.T) {
 	require.True(t, types.ErrUnknownDenom.Is(err))
 }
 
+func TestReplaceAuthority(t *testing.T) {
+	ctx, keeper, _, _ := createTestComponents(t)
+
+	var (
+		accAuthority    = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accNewAuthority = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+	)
+
+	err := keeper.ValidateAuthority(ctx, accAuthority)
+	require.Error(t, err)
+
+	keeper.SetAuthority(ctx, accAuthority)
+
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err)
+
+	gotAuth, err := keeper.GetAuthority(ctx)
+	require.NoError(t, err)
+	require.Equal(t, accAuthority, gotAuth)
+
+	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
+	require.NoError(t, err)
+
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+
+	gotAuth, err = keeper.GetAuthority(ctx)
+	require.NoError(t, err)
+	require.Equal(t, accNewAuthority, gotAuth)
+
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+
+	// reverse authority
+	_, err = keeper.replaceAuthority(ctx, accNewAuthority, accAuthority)
+	require.NoError(t, err)
+
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err)
+}
+
 func TestManageGasPrices2(t *testing.T) {
 	encConfig := MakeTestEncodingConfig()
 	ctx, keeper, _, gpk := createTestComponentWithEncodingConfig(t, encConfig)
