@@ -14,6 +14,7 @@ import (
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -104,7 +105,6 @@ func TestBasicTrade(t *testing.T) {
 
 	require.Equal(t, "50", bal2.AmountOf("eur").String())
 	require.Equal(t, "7340", bal2.AmountOf("usd").String())
-
 
 	require.Equal(t, int64(60), order2.SourceRemaining.Int64())
 
@@ -284,10 +284,10 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 	require.NoError(t, err)
 
 	expOrder := &types.Order{
-		ID:                3,
-		TimeInForce:       types.TimeInForce_GoodTillCancel,
-		Owner:             acc1.GetAddress().String(),
-		ClientOrderID:     newClientID,
+		ID:            3,
+		TimeInForce:   types.TimeInForce_GoodTillCancel,
+		Owner:         acc1.GetAddress().String(),
+		ClientOrderID: newClientID,
 		// Zero slippage same amount
 		Source:            sdk.NewCoin("gbp", sdk.NewInt(100)),
 		SourceRemaining:   sdk.NewInt(100),
@@ -391,10 +391,10 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 	_, err = k.CancelReplaceLimitOrder(ctx, newOrder, clientID)
 	require.NoError(t, err)
 	expOrder := &types.Order{
-		ID:                3,
-		TimeInForce:       types.TimeInForce_GoodTillCancel,
-		Owner:             acc1.GetAddress().String(),
-		ClientOrderID:     newClientID,
+		ID:            3,
+		TimeInForce:   types.TimeInForce_GoodTillCancel,
+		Owner:         acc1.GetAddress().String(),
+		ClientOrderID: newClientID,
 		// 100 % slippage should result 2 * (1/2) => 10 gbp -> 10 eur
 		Source:            sdk.NewCoin(mcrm.Source, sdk.NewInt(10)),
 		SourceRemaining:   sdk.NewInt(10),
@@ -427,9 +427,9 @@ func TestGetSrcFromSlippage(t *testing.T) {
 		acc1 = createAccount(ctx, ak, bk, randomAddress(), "500gbp")
 		acc2 = createAccount(ctx, ak, bk, randomAddress(), "500eur")
 
-		o   types.Order
-		err error
-		srcDenom string
+		o                   types.Order
+		err                 error
+		srcDenom            string
 		slippedSource, dest sdk.Coin
 	)
 
@@ -1129,30 +1129,33 @@ func TestUnknownAsset(t *testing.T) {
 
 func TestLoadFromStore(t *testing.T) {
 	// Create order book with a number of passive orders.
-	ctx, k1, ak, bk := createTestComponents(t)
+	ctx, k, ak, bk := createTestComponents(t)
 
 	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
 	acc2 := createAccount(ctx, ak, bk, randomAddress(), "7400usd")
 
-	o := order(ctx.BlockTime(), acc1, "1000eur", "1200usd")
-	_, err := k1.NewOrderSingle(ctx, o)
+	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "1000eur", "1200usd"))
 	require.NoError(t, err)
 
-	o = order(ctx.BlockTime(), acc2, "5000usd", "3500chf")
-	_, err = k1.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "5000usd", "3500chf"))
 	require.NoError(t, err)
 
-	_, k2, _, _ := createTestComponents(t)
+	require.NotNil(t, k.getBestOrder(ctx, "eur", "usd"))
+	k.clearMemoryStore(ctx)
+	require.Nil(t, k.getBestOrder(ctx, "eur", "usd"))
 
-	k2.key = k1.key
-	// Create new keeper and let it inherit the store of the previous keeper
-	k2.initializeFromStore(ctx)
+	k.initializeFromStore(ctx)
+	require.NotNil(t, k.getBestOrder(ctx, "eur", "usd"))
+}
 
-	// Verify that all orders are loaded correctly into the book
-	// require.Len(t, k2.instruments, len(k1.instruments))
+// clearMemoryStore simulates a node being restarted, and losing the contents stored in the mem KV stores.
+func (k *Keeper) clearMemoryStore(ctx sdk.Context) {
+	indiceStore := ctx.KVStore(k.keyIndices)
 
-	// require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc1.GetAddress()).Size())
-	// require.Equal(t, 1, k2.accountOrders.GetAllOrders(acc2.GetAddress()).Size())
+	itr := indiceStore.ReverseIterator(nil, nil)
+	for ; itr.Valid(); itr.Next() {
+		indiceStore.Delete(itr.Key())
+	}
 }
 
 func TestVestingAccount(t *testing.T) {
@@ -1427,10 +1430,10 @@ func TestTimeInForceIO(t *testing.T) {
 	require.NoError(t, err)
 
 	msgCRL := &types.MsgCancelReplaceLimitOrder{
-		TimeInForce:   types.TimeInForce_FillOrKill,
-		Owner:         msg.Owner,
-		Source:        sdk.NewCoin("echf", sdk.NewInt(50000)),
-		Destination:   sdk.NewCoin("eeur", sdk.NewInt(60000)),
+		TimeInForce:       types.TimeInForce_FillOrKill,
+		Owner:             msg.Owner,
+		Source:            sdk.NewCoin("echf", sdk.NewInt(50000)),
+		Destination:       sdk.NewCoin("eeur", sdk.NewInt(60000)),
 		OrigClientOrderId: "foobar",
 		NewClientOrderId:  "newOrder",
 	}
@@ -1460,7 +1463,7 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 
 	var (
 		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
-		keyIndices = sdk.NewKVStoreKey(types.StoreKeyIdx)
+		keyIndices = storetypes.NewMemoryStoreKey(types.StoreKeyIdx)
 		keyAuthCap = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
 		keyBank    = sdk.NewKVStoreKey(banktypes.ModuleName)
@@ -1471,9 +1474,10 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 	)
 
 	db := dbm.NewMemDB()
+	db2 := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(keyMarket, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(keyIndices, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyIndices, sdk.StoreTypeMemory, db2)
 	ms.MountStoreWithDB(keyAuthCap, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyBank, sdk.StoreTypeIAVL, db)

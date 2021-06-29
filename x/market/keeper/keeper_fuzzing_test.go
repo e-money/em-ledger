@@ -5,8 +5,11 @@
 package keeper
 
 import (
+	crand "crypto/rand"
 	"fmt"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"math"
+	"math/big"
 	"math/rand"
 	"runtime/debug"
 	"testing"
@@ -29,14 +32,16 @@ const (
 //}
 
 func TestFuzzing1(t *testing.T) {
-	seed := time.Now().Unix()
+	seed, err := crand.Int(crand.Reader, big.NewInt(math.MaxInt64))
+	require.NoError(t, err)
 	fmt.Println("Using seed", seed)
-	r := rand.New(rand.NewSource(seed))
+	r := rand.New(rand.NewSource(seed.Int64()))
 
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("seed", seed, "caused a panic:", r)
 			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			t.Helper()
 			t.Fail()
 		}
 	}()
@@ -80,7 +85,7 @@ func TestFuzzing1(t *testing.T) {
 	for _, instr := range testdata {
 		allOrders = append(
 			allOrders, generateOrders(
-				ctx.BlockTime(), instr.src, instr.dst, instr.price,	instr.seller, r)...)
+				ctx.BlockTime(), instr.src, instr.dst, instr.price, instr.seller, r)...)
 	}
 
 	r.Shuffle(len(allOrders), func(i, j int) {

@@ -226,8 +226,13 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveOrder.SourceRemaining.ToDec())
 
 		// Do not purchase more destination tokens than the order warrants
-		aggressiveDestinationRemaining := aggressiveOrder.Destination.Amount.Sub(aggressiveOrder.DestinationFilled).ToDec().Quo(plan.Price)
-		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveDestinationRemaining)
+		aggressiveDestinationRemaining := aggressiveOrder.Destination.Amount.Sub(aggressiveOrder.DestinationFilled).ToDec().Quo(plan.Price).RoundInt()
+		stepDestinationFilled = sdk.MinDec(stepDestinationFilled, aggressiveDestinationRemaining.ToDec())
+
+		if stepDestinationFilled.LT(sdk.OneDec()) {
+			// Executing this trade would transfer less than one token, so do not attempt it.
+			break
+		}
 
 		// Track aggressive fill for event
 		aggressiveSourceFilled := sdk.ZeroInt()
@@ -240,8 +245,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 
 			// Use the passive order's price in the market.
 			stepSourceFilled := stepDestinationFilled.Quo(passiveOrder.Price())
-			if stepSourceFilled.LT(sdk.NewDec(1)) {
-				stepSourceFilled = sdk.NewDec(1)
+			if stepSourceFilled.LT(sdk.OneDec()) {
+				stepSourceFilled = sdk.OneDec()
 			}
 
 			// Update the aggressive order during the plan's final step.
@@ -257,6 +262,9 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			}
 
 			if passiveOrder.Source.Denom == aggressiveOrder.Destination.Denom {
+				// In rare cases, the price improvement may cause extra tokens to be bought. Buy at most what is needed to fill the order.
+				stepSourceFilled = sdk.MinDec(stepSourceFilled, aggressiveOrder.Destination.Amount.Sub(aggressiveOrder.DestinationFilled).ToDec())
+
 				aggressiveDestinationFilled = aggressiveDestinationFilled.Add(stepSourceFilled.RoundInt())
 				aggressiveOrder.DestinationFilled = aggressiveOrder.DestinationFilled.Add(stepSourceFilled.RoundInt())
 
@@ -281,8 +289,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 			// Settle traded tokens
 			nextDestinationFilledCoin := sdk.NewCoin(passiveOrder.Destination.Denom, stepDestinationFilled.RoundInt())
 			nextSourceFilledCoin := sdk.NewCoin(passiveOrder.Source.Denom, stepSourceFilled.RoundInt())
-			err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner)
-			if err != nil {
+			if err := k.transferTradedAmounts(ctx, nextDestinationFilledCoin, nextSourceFilledCoin, passiveOrder.Owner, aggressiveOrder.Owner); err != nil {
 				panic(err)
 			}
 
@@ -343,28 +350,29 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 
 func (k *Keeper) initializeFromStore(ctx sdk.Context) {
 	k.appstateInit.Do(func() {
-		// TODO Reinstate this when the mem store arrives in v0.40 of the Cosmos SDK.
-		//// Load the last known market state from app state.
-		//store := ctx.KVStore(k.key)
-		//idxStore := ctx.KVStore(k.keyIndices)
-		//
-		//ownersPrefix := types.GetOwnersPrefix()
-		//it := store.Iterator(ownersPrefix, nil)
-		//if it.Valid() {
-		//	defer it.Close()
-		//}
-		//
-		//for ; it.Valid(); it.Next() {
-		//
-		//	o := &types.Order{}
-		//	err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
-		//	if err != nil {
-		//		panic(err)
-		//	}
-		//
-		//	key := types.GetPricingKey(o.Source.Denom, o.Destination.Denom, o.Price(), o.ID)
-		//	idxStore.Set(key, util.Uint64ToBytes(o.ID))
-		//}
+		// Load the last known market state from app state.
+		store := ctx.KVStore(k.key)
+		idxStore := ctx.KVStore(k.keyIndices)
+
+		if idxStore.Iterator(nil, nil).Valid() {
+			ctx.Logger().Info("index store was expected to be empty")
+		}
+
+		it := store.Iterator(types.GetOwnersPrefix(), nil)
+		if it.Valid() {
+			defer it.Close()
+		}
+
+		for ; it.Valid(); it.Next() {
+			o := &types.Order{}
+			err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
+			if err != nil {
+				panic(err)
+			}
+
+			key := types.GetPriorityKey(o.Source.Denom, o.Destination.Denom, o.Price(), o.ID)
+			idxStore.Set(key, it.Value())
+		}
 	})
 }
 
