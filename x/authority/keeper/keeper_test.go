@@ -5,6 +5,8 @@
 package keeper
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -23,7 +25,6 @@ import (
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 
@@ -41,15 +42,17 @@ func init() {
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	acc, err := keeper.GetAuthority(ctx)
+	acc, formerAuth, err := keeper.GetAuthority(ctx)
 	require.Error(t, err, "error due to authority not being set yet")
+	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
 	require.Nil(t, acc, "authority not being set yet and is nil")
 
 	acc, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	keeper.SetAuthority(ctx, acc)
 
-	authority, err := keeper.GetAuthority(ctx)
+	authority, formerAuth, err := keeper.GetAuthority(ctx)
 	require.NoError(t, err, "authority is set")
+	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, acc, authority)
 }
 
@@ -86,13 +89,26 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 
 	keeper.SetAuthority(ctx, accAuthority)
 
-	_, err := keeper.createIssuer(ctx, accAuthority, issuer1, []string{"eeur", "ejpy"})
+	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
+}
+
+func CreateAndRevokeIssuer(
+	ctx sdk.Context, t *testing.T, keeper Keeper,
+	accAuthority, issuer1, issuer2 sdk.AccAddress, ik issuer.Keeper,
+) {
+	_, err := keeper.createIssuer(
+		ctx, accAuthority, issuer1, []string{"eeur", "ejpy"},
+	)
 	require.NoError(t, err)
 
-	_, err = keeper.createIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"})
+	_, err = keeper.createIssuer(
+		ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"},
+	)
 	require.Error(t, err) // Must fail due to duplicate token denomination
 
-	_, err = keeper.createIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp"})
+	_, err = keeper.createIssuer(
+		ctx, accAuthority, issuer2, []string{"echf", "egbp"},
+	)
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 2)
 
@@ -111,6 +127,58 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 	_, err = keeper.destroyIssuer(ctx, accAuthority, issuer1)
 	require.NoError(t, err)
 	require.Empty(t, ik.GetIssuers(ctx))
+}
+
+func TestReplaceAuthUseBothAuthorities(t *testing.T) {
+	ctx, keeper, ik, _ := createTestComponents(t)
+
+	var (
+		accAuthority    = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accNewAuthority = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		issuer1         = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		issuer2         = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
+	)
+
+	keeper.SetAuthority(ctx, accAuthority)
+
+	_, err := keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
+	require.NoError(t, err)
+
+	// replace authority and use the new authority
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority, issuer1, issuer2, ik)
+
+	// but the former is still in effect
+	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
+
+	// move forward but not enough to expire the former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.GraceChangeDuration / 2))
+
+	// no change for the new authority
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority, issuer1, issuer2, ik)
+
+	//the former authority is still in effect
+	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
+
+	// move forward to expire the former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.GraceChangeDuration / 2))
+
+	// no change for the new authority
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority, issuer1, issuer2, ik)
+
+	// the former authority has expired
+	// trying a single transaction with the former authority errs
+	_, err = keeper.createIssuer(
+		ctx, accAuthority, issuer1, []string{"eeur", "ejpy"},
+	)
+	require.Error(t, err)
+
+	// can still revert to the old authority
+	_, err = keeper.replaceAuthority(ctx, accNewAuthority, accAuthority)
+	require.NoError(t, err)
+
+	// former authority is current again
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err)
 }
 
 func TestAddMultipleDenomsSameIssuer(t *testing.T) {
@@ -184,29 +252,55 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, err := keeper.GetAuthority(ctx)
+	gotAuth, formerAuth, err := keeper.GetAuthority(ctx)
 	require.NoError(t, err)
+	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, accAuthority, gotAuth)
 
 	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
 	require.NoError(t, err)
 
+	// validation should work for either authority
 	err = keeper.ValidateAuthority(ctx, accNewAuthority)
 	require.NoError(t, err)
-
-	gotAuth, err = keeper.GetAuthority(ctx)
+	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
+
+	gotAuth, formerAuth, err = keeper.GetAuthority(ctx)
+	require.NoError(t, err)
+	require.Equal(t, accAuthority.String(), formerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
 
 	err = keeper.ValidateAuthority(ctx, accNewAuthority)
 	require.NoError(t, err)
 
 	// reverse authority
-	_, err = keeper.replaceAuthority(ctx, accNewAuthority, accAuthority)
+	accNewAuthority, accAuthority = accAuthority, accNewAuthority
+	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
 	require.NoError(t, err)
 
+	gotAuth, formerAuth, err = keeper.GetAuthority(ctx)
+	require.NoError(t, err)
+	require.Equal(t, accAuthority.String(), formerAuth.String())
+	require.Equal(t, accNewAuthority, gotAuth)
+
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
+
+	// test expiration of former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.GraceChangeDuration))
+	gotAuth, formerAuth, err = keeper.GetAuthority(ctx)
+	require.NoError(t, err)
+	require.Empty(t, formerAuth, "former Authority expired")
+	require.Equal(t, accNewAuthority, gotAuth)
+
+	// validation should be valid for only for new authority
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.Error(t, err)
 }
 
 func TestManageGasPrices2(t *testing.T) {
@@ -251,7 +345,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 		keyIssuer  = sdk.NewKVStoreKey(issuer.ModuleName)
-		keyLp  = sdk.NewKVStoreKey(liquidityprovider.ModuleName)
+		keyLp      = sdk.NewKVStoreKey(liquidityprovider.ModuleName)
 
 		blockedAddr = make(map[string]bool)
 	)

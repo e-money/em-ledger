@@ -161,6 +161,8 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
+| `former_address` | [string](#string) |  |  |
+| `last_modified` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 

@@ -5,9 +5,9 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
@@ -44,24 +44,39 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper is
 	}
 }
 
-func (k Keeper) SetAuthority(ctx sdk.Context, authority sdk.AccAddress) {
+func (k Keeper) SetAuthority(ctx sdk.Context, newAuthority sdk.AccAddress) {
+	var formerAuthorityAddr string
+	// state authority is now the former
+	formerAuthorityAcc, _, err := k.GetAuthority(ctx)
+	if err == nil && formerAuthorityAcc != nil {
+		formerAuthorityAddr = formerAuthorityAcc.String()
+	}
+
 	store := ctx.KVStore(k.storeKey)
 
-	bz := k.cdc.MustMarshalBinaryBare(&types.Authority{Address: authority.String()})
+	bz := k.cdc.MustMarshalBinaryBare(&types.Authority{
+		Address:       newAuthority.String(),
+		FormerAddress: formerAuthorityAddr,
+		LastModified:  ctx.BlockTime(),
+	})
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
-func (k Keeper) GetAuthority(ctx sdk.Context) (sdk.AccAddress, error) {
+func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress, formerAuthority sdk.AccAddress, err error) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyAuthorityAccAddress))
-	var authority types.Authority
-	k.cdc.MustUnmarshalBinaryBare(bz, &authority)
-	acc, err := sdk.AccAddressFromBech32(authority.Address)
+	var authoritySet types.Authority
+	k.cdc.MustUnmarshalBinaryBare(bz, &authoritySet)
+	authority, err = sdk.AccAddressFromBech32(authoritySet.Address)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return acc, nil
+	if authoritySet.LastModified.Add(types.GraceChangeDuration).After(ctx.BlockTime()) {
+		formerAuthority, _ = sdk.AccAddressFromBech32(authoritySet.FormerAddress)
+	}
+
+	return authority, formerAuthority, nil
 }
 
 func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
@@ -126,15 +141,20 @@ func (k Keeper) destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerA
 }
 
 func (k Keeper) ValidateAuthority(ctx sdk.Context, address sdk.AccAddress) error {
-	authority, err := k.GetAuthority(ctx)
+	authority, formerAuth, err := k.GetAuthority(ctx)
 	if err != nil {
 		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, err.Error())
 	}
+
 	if authority == nil {
 		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, address.String())
 	}
 
-	if !authority.Equals(address) {
+	if formerAuth == nil {
+		formerAuth = authority
+	}
+
+	if !authority.Equals(address) && !formerAuth.Equals(address) {
 		return sdkerrors.Wrap(types.ErrNotAuthority, address.String())
 	}
 

@@ -4,6 +4,8 @@
 
 package types
 
+import "time"
+
 const (
 	ModuleName   = "authority"
 	StoreKey     = ModuleName
@@ -12,4 +14,6 @@ const (
 
 	// Query endpoints supported by the authority querier
 	QueryGasPrices = "gasprices"
+
+	GraceChangeDuration = 24 * time.Hour
 )
