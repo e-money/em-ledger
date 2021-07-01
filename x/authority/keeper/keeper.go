@@ -116,7 +116,10 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrice
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(keyGasPrices), bz)
 
-	k.gpk.SetMinimumGasPrices(newPrices.String())
+	if err := k.gpk.SetMinimumGasPrices(newPrices.String()); err != nil {
+		return nil, err
+	}
+
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
@@ -172,6 +175,11 @@ func (k Keeper) initGasPrices(ctx sdk.Context) {
 func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
 	if err := k.ValidateAuthority(ctx, authority); err != nil {
 		return nil, err
+	}
+
+	stateAuthority, _, _ := k.GetAuthority(ctx)
+	if stateAuthority.Equals(newAuthority) {
+		return nil, sdkerrors.Wrap(types.ErrSameAuthorityConfigured, stateAuthority.String())
 	}
 
 	k.SetAuthority(ctx, newAuthority)
