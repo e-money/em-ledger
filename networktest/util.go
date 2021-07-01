@@ -7,10 +7,14 @@
 package networktest
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/e-money/em-ledger/x/issuer/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -56,6 +60,29 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 	}
 
 	return
+}
+
+func AuthCreatesIssuer(emcli Emcli, Authority, Issuer Key) bool {
+	_, success, err := emcli.AuthorityCreateIssuer(
+		Authority, Issuer, "eeur", "ejpy",
+	)
+	if err != nil || !success {
+		return false
+	}
+
+	bz, err := emcli.QueryIssuers()
+	if err != nil {
+		return false
+	}
+
+	var resp types.QueryIssuersResponse
+	if err = json.Unmarshal(bz, &resp); err != nil {
+		return false
+	}
+
+	denoms := strings.Join(resp.Issuers[0].Denoms, ",")
+
+	return len(resp.Issuers) == 1 && strings.Contains(denoms, "eeur") && strings.Contains(denoms, "ejpy")
 }
 
 func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) signing.Tx {

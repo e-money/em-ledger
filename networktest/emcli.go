@@ -327,6 +327,10 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 		return "", false, fmt.Errorf("tx appears to have failed %v", string(bz))
 	}
 
+	if strings.Contains(logs.Raw, "failed") {
+		return "", false, fmt.Errorf("tx failed: %s", logs.Raw)
+	}
+
 	return txhashjson.Str, true, nil
 }
 

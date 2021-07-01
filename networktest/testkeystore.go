@@ -176,7 +176,6 @@ func NewKeystore(reusableLocation, reusableIsUp bool) (*KeyStore, error) {
 		Key5:      newKey(Key5, keybase),
 		Key6:      newKey(Key6, keybase),
 		MultiKey:  newKey(MultiKey, keybase),
-		MultiKey2:  newKey(MultiKey2, keybase),
 		Validators: []Key{
 			newKey("validator0", keybase),
 			newKey("validator1", keybase),
@@ -281,13 +280,12 @@ func initializeKeystore(kb keyring.Keyring) {
 	ac7, _ := kb.NewAccount("key6", mnemonic7, "", keyDerivationPath, hd.Secp256k1)
 	fmt.Printf("Created account %s from mnemonic: %s\n", ac7.GetAddress(), mnemonic7)
 
-	createMultisig(kb, MultiKey, []string{"key1", "key2", "key3"}, 2, err)
-	createMultisig(kb, MultiKey2, []string{"key1", "key3", "key5"}, 2, err)
+	createMultisig(kb, MultiKey, []string{"key1", "key2", "key3"}, 2)
 }
 
-func createMultisig(kb keyring.Keyring, keyName string, keys []string, threshold int, err error) keyring.Info{
+func createMultisig(kb keyring.Keyring, keyName string, keys []string, threshold int) keyring.Info {
 	pks := make([]cryptotypes.PubKey, len(keys))
-	for i, keyname := range keys{
+	for i, keyname := range keys {
 		keyinfo, err := kb.Key(keyname)
 		if err != nil {
 			panic(err)
