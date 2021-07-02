@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -86,14 +87,11 @@ func (m msgServer) SetGasPrices(goCtx context.Context, msg *types.MsgSetGasPrice
 }
 
 func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplaceAuthority) (*types.MsgReplaceAuthorityResponse, error) {
-	fmt.Println("*** Entered ReplaceAuthority")
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	authorityAcc, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority: "+ msg.Authority)
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority: "+msg.Authority)
 	}
-
-	fmt.Println("*** Before validating authorities")
 
 	newAuthorityAcc, err := sdk.AccAddressFromBech32(msg.NewAuthority)
 	if err != nil {
@@ -107,8 +105,6 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 				msg.NewAuthority, msg.Authority,
 			))
 	}
-
-	fmt.Println("*** Before changing store")
 
 	result, err := m.k.replaceAuthority(ctx, authorityAcc, newAuthorityAcc)
 	if err != nil {
