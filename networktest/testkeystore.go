@@ -33,7 +33,6 @@ const (
 	Key5             = "key5"
 	Key6             = "key6"
 	MultiKey         = "multikey"
-	MultiKey2        = "multikey2"
 	LocalNetReuse    = "localnet_reuse"
 	startForReUseEnv = "REUSE"
 )
@@ -52,7 +51,7 @@ type (
 		Key5,
 		Key6 Key
 
-		MultiKey, MultiKey2 Key
+		MultiKey Key
 
 		Validators []Key
 	}

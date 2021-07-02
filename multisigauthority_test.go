@@ -77,7 +77,7 @@ var _ = Describe("Authority", func() {
 		})
 
 		It("Replace Authority", func() {
-			// from multisig to singlesig
+			// authority switches from multisig to singlesig
 			authorityAddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 			newAuthorityAddress := sdk.AccAddress(keystore.Authority.GetPublicKey().Address()).String()
 
@@ -85,14 +85,14 @@ var _ = Describe("Authority", func() {
 				newAuthorityAddress, "--generate-only", "--from",
 				authorityAddress)
 
-			// create/revoke issuer with new authority
+			// create/revoke issuer with the new authority
 			ok := nt.AuthCreatesIssuer(emcli, keystore.Authority, key1)
 			Expect(ok).To(BeTrue())
 			_, success, err := emcli.AuthorityDestroyIssuer(keystore.Authority, key1)
 			Expect(success).To(BeTrue())
 			Expect(err).ToNot(HaveOccurred())
 
-			// from singlesig back to original multisig
+			// authority switches from singlesig back to original multisig
 			authorityAddress, newAuthorityAddress = newAuthorityAddress, authorityAddress
 
 			_, err = emcli.CustomCommand(
@@ -101,7 +101,7 @@ var _ = Describe("Authority", func() {
 			)
 			Expect(err).To(BeNil())
 
-			// create/revoke issuer try with both former and new authority
+			// create/revoke issuer with both the former and the new authority
 			// former singlesig first
 			ok = nt.AuthCreatesIssuer(emcli, keystore.Authority, key1)
 			Expect(ok).To(BeTrue())
@@ -109,7 +109,7 @@ var _ = Describe("Authority", func() {
 			Expect(success).To(BeTrue())
 			Expect(err).ToNot(HaveOccurred())
 
-			// current multisig authority
+			// current multisig authority now
 			// create-issuer
 			execAuthMSigTx(
 				newAuthorityAddress, []nt.Key{key1, key2}, "tx", "authority",
@@ -140,15 +140,6 @@ var _ = Describe("Authority", func() {
 			execAuthMSigTx(authorityAddress, []nt.Key{key1, key2}, "tx", "authority", "set-gas-prices", authorityAddress,
 				newMinGasPrices.String(), "--generate-only", "--from", authorityAddress)
 
-			// Manipulate threshold!
-			//val := gjson.Parse(tx).Get(emoney.NewAppsignatures.0.pub_key.value.threshold").Raw
-			//fmt.Println("threshold :", val)
-
-			//{
-			//	bz, _ := sjson.SetBytes([]byte(tx), emoney.NewAppsignatures.0.pub_key.value.threshold", "1")
-			//	tx = string(bz)
-			//}
-
 			bz, err := emcli.QueryMinGasPrices()
 			Expect(err).To(BeNil())
 
@@ -165,6 +156,7 @@ var _ = Describe("Authority", func() {
 	})
 })
 
+// execAuthMSigTx signs and broadcasts a multisig trx using the emcli.CustomCommand.
 func execAuthMSigTx(authorityAddress string, keys []nt.Key, cmdArgs ...string) {
 	var (
 		emcli = testnet.NewEmcli()
