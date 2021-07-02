@@ -2,11 +2,10 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
-	db "github.com/tendermint/tm-db"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/tendermint/tendermint/crypto"
+	db "github.com/tendermint/tm-db"
 )
 
 func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr crypto.Address, power int64, signed bool, blockCount int64, slashable bool) {
@@ -19,11 +18,25 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 
 	if !signed {
 		missedBlocks = append(missedBlocks, ctx.BlockTime())
+
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeLiveness,
+				sdk.NewAttribute(types.AttributeKeyAddress, consAddr.String()),
+				sdk.NewAttribute(types.AttributeKeyMissedBlocks, fmt.Sprintf("%d", len(missedBlocks))),
+				sdk.NewAttribute(types.AttributeKeyHeight, fmt.Sprintf("%d", height)),
+			),
+		)
+
+		logger.Debug(
+			"absent validator",
+			"height", height,
+			"validator", consAddr.String(),
+			"missed", len(missedBlocks),
+		)
 	}
 
 	k.setMissingBlocksForValidator(batch, consAddr, missedBlocks)
-
-	// todo (reviewer) : the sdk module emits an types.EventTypeLiveness when not signed
 
 	// Validator is only slashable if the signed block window is full (was truncated)
 	if !slashable {
@@ -32,15 +45,12 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 
 	missedBlockCount := sdk.NewInt(int64(len(missedBlocks))).ToDec()
 	missedRatio := missedBlockCount.QuoInt64(blockCount)
-
-	// TODO Only do this if missing is true?
 	minSignedPerWindow := k.MinSignedPerWindow(ctx)
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
 	if sdk.OneDec().Sub(minSignedPerWindow).LT(missedRatio) {
 		validator := k.sk.ValidatorByConsAddr(ctx, consAddr)
 		if validator != nil && !validator.IsJailed() {
-
 			// Downtime confirmed: slash and jail the validator
 			logger.Info(fmt.Sprintf("Validator %s is below signed blocks threshold of %d during the last %s",
 				consAddr, k.MinSignedPerWindow(ctx), k.SignedBlocksWindowDuration(ctx)))
@@ -62,7 +72,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, batch db.Batch, addr c
 				),
 			)
 
-			k.slashValidator(ctx, batch, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
+			k.sk.Slash(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
 			k.sk.Jail(ctx, consAddr)
 
 			// fetch signing info

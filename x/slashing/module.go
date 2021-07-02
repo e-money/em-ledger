@@ -40,7 +40,7 @@ var _ module.AppModuleBasic = AppModuleBasic{}
 
 // Name returns the slashing module's name.
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return sdkslashingtypes.ModuleName
 }
 
 // RegisterLegacyAminoCodec registers the slashing module's types for the given codec.
@@ -119,7 +119,7 @@ func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, ak sdkslashingtypes
 
 // Name returns the slashing module's name.
 func (AppModule) Name() string {
-	return types.ModuleName
+	return sdkslashingtypes.ModuleName
 }
 
 // RegisterInvariants registers the slashing module invariants.
@@ -127,12 +127,12 @@ func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route returns the message routing key for the slashing module.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, sdkslashing.NewHandler(am.keeper.Keeper))
+	return sdk.NewRoute(sdkslashingtypes.RouterKey, sdkslashing.NewHandler(am.keeper.Keeper))
 }
 
 // QuerierRoute returns the slashing module's querier route name.
 func (AppModule) QuerierRoute() string {
-	return types.QuerierRoute
+	return sdkslashingtypes.QuerierRoute
 }
 
 // LegacyQuerierHandler returns the slashing module sdk.Querier.

@@ -10,8 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"time"
-
 	"github.com/e-money/em-ledger/x/issuer/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -37,8 +35,6 @@ var _ = Describe("Authority", func() {
 		It("creates a new testnet", createNewTestnet)
 
 		It("creates an issuer", func() {
-			time.Sleep(5 * time.Second)
-
 			_, success, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "eeur", "ejpy")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).To(BeTrue())

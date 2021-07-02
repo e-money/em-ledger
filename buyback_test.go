@@ -11,6 +11,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	nt "github.com/e-money/em-ledger/networktest"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/gjson"
 
@@ -58,7 +59,7 @@ var _ = Describe("Buyback", func() {
 		var bz []byte
 
 		for i := 0; i < 20; i++ { // await
-			time.Sleep(500 * time.Millisecond)
+			_, _ = nt.IncChain(1)
 			buybackBalance = queryBuybackBalance()
 			if len(buybackBalance) > 0 {
 				break
@@ -76,7 +77,8 @@ var _ = Describe("Buyback", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(success).To(BeTrue())
 
-		time.Sleep(4 * time.Second)
+		_, err = nt.IncChain(1)
+		Expect(err).ToNot(HaveOccurred())
 
 		supplyAfter, err := emcli.QueryTotalSupply()
 		Expect(err).ToNot(HaveOccurred())

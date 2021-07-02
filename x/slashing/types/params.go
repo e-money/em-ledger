@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DefaultParamspace                 = ModuleName
+	DefaultParamspace                 = slashingtypes.ModuleName
 	DefaultSignedBlocksWindowDuration = time.Hour
 	DefaultDowntimeJailDuration       = DefaultSignedBlocksWindowDuration
 )
