@@ -148,7 +148,7 @@ Example:
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	cmd.Flags().String(flag_TimeInForce, "IOC", flag_TimeInForceDescription)
+	cmd.Flags().String(flag_TimeInForce, "GTC", flag_TimeInForceDescription)
 	return cmd
 
 }
