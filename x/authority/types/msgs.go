@@ -13,7 +13,7 @@ var (
 	_ sdk.Msg = &MsgCreateIssuer{}
 	_ sdk.Msg = &MsgDestroyIssuer{}
 	_ sdk.Msg = &MsgSetGasPrices{}
-	_ sdk.Msg = &MsgSetGasPrices{}
+	_ sdk.Msg = &MsgReplaceAuthority{}
 )
 
 func (msg MsgDestroyIssuer) Type() string { return "destroy_issuer" }
