@@ -73,9 +73,6 @@ func TestMustBeAuthority(t *testing.T) {
 
 	err = keeper.ValidateAuthority(ctx, acc2)
 	require.Error(t, err, "acc2 as authority not being set yet")
-
-	// Authority can only be specified once, preferably during genesis
-	keeper.SetAuthority(ctx, acc2)
 }
 
 func TestCreateAndRevokeIssuer(t *testing.T) {
@@ -135,7 +132,7 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	var (
 		accAuthority    = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 		accNewAuthority = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
-		issuer1         = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		issuer1         = mustParseAddress("emoney1tnv07qdsrumx2hhrvhmeh4yuxr5kkgk2m7qr9e")
 		issuer2         = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
