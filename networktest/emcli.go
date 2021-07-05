@@ -6,6 +6,7 @@ package networktest
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -327,6 +328,10 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 		return "", false, fmt.Errorf("tx appears to have failed %v", string(bz))
 	}
 
+	if strings.Contains(logs.Raw, "failed") {
+		return "", false, fmt.Errorf("tx failed: %s", logs.Raw)
+	}
+
 	return txhashjson.Str, true, nil
 }
 
@@ -351,6 +356,14 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 	bz, err := cmd.Output()
 	if err != nil {
 		return "", err
+	}
+
+	_, ok, err := extractTxHash(bz)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.New("transaction failed")
 	}
 
 	return string(bz), nil
