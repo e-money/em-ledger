@@ -26,7 +26,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, state types.GenesisState) error
 	if err != nil {
 		return sdkerrors.Wrap(err, "authority key")
 	}
-	keeper.SetAuthority(ctx, authKey)
+	keeper.BootstrapAuthority(ctx, authKey)
 	keeper.SetGasPrices(ctx, authKey, state.MinGasPrices)
 	return nil
 }

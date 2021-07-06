@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -44,21 +45,31 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper is
 	}
 }
 
-func (k Keeper) SetAuthority(ctx sdk.Context, newAuthority sdk.AccAddress) {
-	var formerAuthorityAddr string
-	// state authority is now the former
-	formerAuthorityAcc, _, err := k.GetAuthority(ctx)
-	if err == nil && formerAuthorityAcc != nil {
-		formerAuthorityAddr = formerAuthorityAcc.String()
+// BootstrapAuthority is meant for the genesis commit of the chain authority.
+// Once the authority is set, invoking this function again will panic.
+func (k Keeper) BootstrapAuthority(ctx sdk.Context, newAuthority sdk.AccAddress) {
+	authorityAcc, _, _ := k.GetAuthority(ctx)
+
+	// set authority only if it is not set up.
+	if authorityAcc != nil && !authorityAcc.Empty() {
+		panic(errors.New("authority is set and sealed"))
 	}
 
+	k.saveAuthorities(ctx, newAuthority, "")
+}
+
+func (k Keeper) saveAuthorities(
+	ctx sdk.Context, newAuthority sdk.AccAddress, formerAuthorityAddr string,
+) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := k.cdc.MustMarshalBinaryBare(&types.Authority{
-		Address:       newAuthority.String(),
-		FormerAddress: formerAuthorityAddr,
-		LastModified:  ctx.BlockTime(),
-	})
+	bz := k.cdc.MustMarshalBinaryBare(
+		&types.Authority{
+			Address:       newAuthority.String(),
+			FormerAddress: formerAuthorityAddr,
+			LastModified:  ctx.BlockTime(),
+		},
+	)
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
@@ -177,12 +188,14 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 		return nil, err
 	}
 
-	stateAuthority, _, _ := k.GetAuthority(ctx)
-	if stateAuthority.Equals(newAuthority) {
-		return nil, sdkerrors.Wrap(types.ErrSameAuthorityConfigured, stateAuthority.String())
+	var formerAuthorityAddr string
+	// state authority is now the former
+	formerAuthorityAcc, _, err := k.GetAuthority(ctx)
+	if err == nil && formerAuthorityAcc != nil {
+		formerAuthorityAddr = formerAuthorityAcc.String()
 	}
 
-	k.SetAuthority(ctx, newAuthority)
+	k.saveAuthorities(ctx, newAuthority, formerAuthorityAddr)
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

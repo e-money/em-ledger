@@ -39,6 +39,27 @@ func init() {
 	apptypes.ConfigureSDK()
 }
 
+func TestBootstrapAuthority(t *testing.T) {
+	ctx, keeper, _, _ := createTestComponents(t)
+
+	authority, formerAuth, err := keeper.GetAuthority(ctx)
+	require.Error(t, err, "error due to authority not being set yet")
+	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
+	require.Nil(t, authority, "authority not being set yet and is nil")
+
+	firstAuthority := mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+	keeper.BootstrapAuthority(ctx, firstAuthority)
+	require.Panics(t, func() {
+		// Keeper must panic if attempting to bootstrap another authority
+		keeper.BootstrapAuthority(ctx, mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu"))
+	})
+
+	authority, formerAuth, err = keeper.GetAuthority(ctx)
+	require.NoError(t, err, "authority is bootstrapped")
+	require.Empty(t, formerAuth, "former authority not being set yet")
+	require.Equal(t, authority, firstAuthority)
+}
+
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
@@ -48,7 +69,7 @@ func TestAuthorityBasicPersistence(t *testing.T) {
 	require.Nil(t, acc, "authority not being set yet and is nil")
 
 	acc, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
-	keeper.SetAuthority(ctx, acc)
+	keeper.BootstrapAuthority(ctx, acc)
 
 	authority, formerAuth, err := keeper.GetAuthority(ctx)
 	require.NoError(t, err, "authority is set")
@@ -67,7 +88,7 @@ func TestMustBeAuthority(t *testing.T) {
 	err := keeper.ValidateAuthority(ctx, accAuthority)
 	require.Error(t, err, "authority not being set yet")
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err, "authority is set")
 
@@ -84,7 +105,7 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 		issuer2      = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
 }
@@ -136,7 +157,7 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 		issuer2         = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	_, err := keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
 	require.NoError(t, err)
@@ -186,7 +207,7 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 		accIssuer    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	_, err := keeper.createIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
 	require.NoError(t, err)
@@ -208,7 +229,7 @@ func TestManageGasPrices1(t *testing.T) {
 		accRandom    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	gasPrices := keeper.GetGasPrices(ctx)
 	require.True(t, gasPrices.Empty())
@@ -244,7 +265,7 @@ func TestReplaceAuthority(t *testing.T) {
 	err := keeper.ValidateAuthority(ctx, accAuthority)
 	require.Error(t, err)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
