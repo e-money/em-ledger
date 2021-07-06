@@ -10,9 +10,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/e-money/em-ledger/networktest"
 	"strings"
 	"time"
+
+	"github.com/e-money/em-ledger/networktest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -94,25 +95,19 @@ var _ = Describe("BEP3 Swap", func() {
 		)
 
 		It("Uses the wrong secret", func() {
-			var (
-				height int64
-				err    error
-			)
-			height, err = networktest.GetHeight()
-
 			randomNumber := make([]byte, 32)
-			_, err = rand.Read(randomNumber)
+			_, err := rand.Read(randomNumber)
 
 			Expect(err).ToNot(HaveOccurred())
 			wrongSecret := hex.EncodeToString(randomNumber)
 
-			height = incChainHeight(height)
+			networktest.IncChain(1)
 
 			output, err := emcli.BEP3Claim(
 				key1, swapId, wrongSecret,
 			)
-			Expect(err).ToNot(HaveOccurred())
-			height, err = networktest.GetHeight()
+			Expect(err).To(HaveOccurred())
+			networktest.IncChain(1)
 
 			jsonOutput := gjson.Parse(output)
 			Expect(jsonOutput.Get("codespace").Str).To(Equal("bep3"))
@@ -248,7 +243,7 @@ var _ = Describe("BEP3 Swap", func() {
 
 func incChainHeight(height int64) int64 {
 	// Will not exhaust it in most cases
-	var timeOutDur = 8 *time.Second
+	var timeOutDur = 8 * time.Second
 
 	newHeight, err := networktest.WaitForHeightWithTimeout(
 		height+1, timeOutDur,
