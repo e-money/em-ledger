@@ -296,9 +296,9 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, formerAuth, err := keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err := keeper.getAuthority(ctx)
 	require.NoError(t, err)
-	require.Empty(t, formerAuth, "former authority not being set yet")
+	require.Empty(t, respFormerAuth, "former authority not being set yet")
 	require.Equal(t, accAuthority, gotAuth)
 
 	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
@@ -310,34 +310,36 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, formerAuth, err = keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err)
-	require.Equal(t, accAuthority.String(), formerAuth.String())
+	require.Equal(t, accAuthority.String(), respFormerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
 
 	err = keeper.ValidateAuthority(ctx, accNewAuthority)
 	require.NoError(t, err)
+
+	formerAuthFromBeforeHasRemainedInEffect := accAuthority.String()
 
 	// reverse authority
 	accNewAuthority, accAuthority = accAuthority, accNewAuthority
 	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
 	require.NoError(t, err)
 
-	gotAuth, formerAuth, err = keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err)
-	require.Equal(t, accAuthority.String(), formerAuth.String())
+	require.Equal(t, formerAuthFromBeforeHasRemainedInEffect, respFormerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
 
 	err = keeper.ValidateAuthority(ctx, accNewAuthority)
 	require.NoError(t, err)
-	err = keeper.ValidateAuthority(ctx, accAuthority)
+	err = keeper.ValidateAuthority(ctx, mustParseAddress(formerAuthFromBeforeHasRemainedInEffect))
 	require.NoError(t, err)
 
 	// test expiration of former authority
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration))
-	gotAuth, formerAuth, err = keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err)
-	require.Empty(t, formerAuth, "former Authority expired")
+	require.Empty(t, respFormerAuth, "former Authority expired")
 	require.Equal(t, accNewAuthority, gotAuth)
 
 	// validation should be valid for only for new authority

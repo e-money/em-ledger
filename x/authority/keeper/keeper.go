@@ -80,7 +80,7 @@ func (k Keeper) getAuthority(ctx sdk.Context) (authority sdk.AccAddress, formerA
 		return nil, nil, err
 	}
 
-	if authoritySet.LastModified.Add(types.GraceChangeDuration).After(ctx.BlockTime()) {
+	if authoritySet.LastModified.Add(types.AuthorityTransitionDuration).After(ctx.BlockTime()) {
 		// within the transition period we keep the former address
 		formerAuthority, _ = sdk.AccAddressFromBech32(authoritySet.FormerAddress)
 	}
