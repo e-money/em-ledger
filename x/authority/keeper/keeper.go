@@ -45,8 +45,8 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper is
 	}
 }
 
-// BootstrapAuthority is meant for the genesis commit of the chain authority.
-// Once the authority is set, invoking this function again will panic.
+// BootstrapAuthority solely exists for the genesis establishment of the chain
+// authority. Once the authority is set, invoking this function again will panic.
 func (k Keeper) BootstrapAuthority(ctx sdk.Context, newAuthority sdk.AccAddress) {
 	authorityAcc, _, _ := k.GetAuthority(ctx)
 
