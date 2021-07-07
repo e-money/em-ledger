@@ -3,11 +3,18 @@ package em.authority.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/authority/types";
 
 message Authority {
   string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
+  string former_address = 2 [ (gogoproto.moretags) = "yaml:\"former_address\"" ];
+  google.protobuf.Timestamp last_modified = 3 [
+    (gogoproto.moretags) = "yaml:\"last_modified\"",
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false
+  ];
 }
 
 message GasPrices {

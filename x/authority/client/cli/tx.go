@@ -17,7 +17,7 @@ import (
 func GetTxCmd() *cobra.Command {
 	authorityCmds := &cobra.Command{
 		Use:                "authority",
-		Short:              "Manage liquidity providers",
+		Short:              "Manage authority tasks",
 		DisableFlagParsing: false,
 	}
 
@@ -25,6 +25,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdCreateIssuer(),
 		getCmdDestroyIssuer(),
 		getCmdSetGasPrices(),
+		GetCmdReplaceAuthority(),
 	)
 
 	return authorityCmds
@@ -127,6 +128,43 @@ func getCmdDestroyIssuer() *cobra.Command {
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func GetCmdReplaceAuthority() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "replace [authority_key_or_address] new_authority_address",
+		Short:   "Replace the authority key",
+		Example: "emd tx authority replace emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv emoney1hq6tnhqg4t7358f3vd9crru93lv0cgekdxrtgv",
+		Long: `Replace the authority key with a new multisig address. 
+For a 24-hour grace period the former authority key is equivalent to the new one.`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f := cmd.Flags()
+
+			err := f.Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := &types.MsgReplaceAuthority{
+				Authority:    clientCtx.GetFromAddress().String(),
+				NewAuthority: args[1],
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

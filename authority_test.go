@@ -7,10 +7,10 @@
 package emoney_test
 
 import (
-	"encoding/json"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/issuer/types"
+	nt "github.com/e-money/em-ledger/networktest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidwall/gjson"
@@ -35,18 +35,8 @@ var _ = Describe("Authority", func() {
 		It("creates a new testnet", createNewTestnet)
 
 		It("creates an issuer", func() {
-			_, success, err := emcli.AuthorityCreateIssuer(Authority, Issuer, "eeur", "ejpy")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(success).To(BeTrue())
-
-			bz, err := emcli.QueryIssuers()
-			Expect(err).ShouldNot(HaveOccurred())
-
-			var resp types.QueryIssuersResponse // todo (Reviewer): note the response format has changed
-			json.Unmarshal(bz, &resp)
-
-			Expect(resp.Issuers).To(HaveLen(1))
-			Expect(resp.Issuers[0].Denoms).To(ConsistOf("eeur", "ejpy"))
+			ok := nt.AuthCreatesIssuer(emcli, Authority, Issuer)
+			Expect(ok).To(BeTrue())
 		})
 
 		It("imposter attempts to act as authority", func() {

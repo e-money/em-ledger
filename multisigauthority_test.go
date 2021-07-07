@@ -76,50 +76,69 @@ var _ = Describe("Authority", func() {
 			Expect(gjson.Parse(tx).Get("logs.0.success").Exists()).To(Equal(false))
 		})
 
-		It("set global gas prices", func() {
-			jsonPath, err := ioutil.TempDir("", "")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(jsonPath)
+		It("Replace Authority", func() {
+			// authority switches from multisig to singlesig
+			authorityAddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
+			newAuthorityAddress := sdk.AccAddress(keystore.Authority.GetPublicKey().Address()).String()
 
-			authorityaddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
+			execAuthMSigTx(authorityAddress, []nt.Key{key1, key2}, "tx", "authority", "replace", authorityAddress,
+				newAuthorityAddress, "--generate-only", "--from",
+				authorityAddress)
+
+			// create/revoke issuer with the new authority
+			ok := nt.AuthCreatesIssuer(emcli, keystore.Authority, key1)
+			Expect(ok).To(BeTrue())
+			_, success, err := emcli.AuthorityDestroyIssuer(keystore.Authority, key1)
+			Expect(success).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+
+			// authority switches from singlesig back to original multisig
+			authorityAddress, newAuthorityAddress = newAuthorityAddress, authorityAddress
+
+			_, err = emcli.CustomCommand(
+				"tx", "authority", "replace", authorityAddress,
+				newAuthorityAddress, "--from", authorityAddress,
+			)
+			Expect(err).To(BeNil())
+
+			// create/revoke issuer with both the former and the new authority
+			// former singlesig first
+			ok = nt.AuthCreatesIssuer(emcli, keystore.Authority, key1)
+			Expect(ok).To(BeTrue())
+			_, success, err = emcli.AuthorityDestroyIssuer(keystore.Authority, key1)
+			Expect(success).To(BeTrue())
+			Expect(err).ToNot(HaveOccurred())
+
+			// current multisig authority now
+			// create-issuer
+			execAuthMSigTx(
+				newAuthorityAddress, []nt.Key{key1, key2}, "tx", "authority",
+				"create-issuer", newAuthorityAddress,
+				key1.GetAddress(), "eeur,ejpy", "--generate-only", "--from",
+				newAuthorityAddress,
+			)
+
+			// destroy-issuer with current multisig authority
+			execAuthMSigTx(
+				newAuthorityAddress, []nt.Key{key1, key2}, "tx", "authority",
+				"destroy-issuer", newAuthorityAddress,
+				key1.GetAddress(), "--generate-only", "--from",
+				newAuthorityAddress,
+			)
+
+			// try with a non-authority account
+			ok = nt.AuthCreatesIssuer(emcli, keystore.Key2, key1)
+			Expect(ok).To(BeFalse())
+		})
+
+		It("set global gas prices", func() {
+			// former authority is still in effect
+			authorityAddress := sdk.AccAddress(Authority.GetPublicKey().Address()).String()
 
 			newMinGasPrices, _ := sdk.ParseDecCoins("0.0006eeur")
-			tx, err := emcli.CustomCommand("tx", "authority", "set-gas-prices", authorityaddress, newMinGasPrices.String(), "--generate-only", "--from", authorityaddress)
-			Expect(err).To(BeNil())
 
-			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
-			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
-
-			tx, err = emcli.SignTranscation(transactionPath, key1.GetAddress(), authorityaddress)
-			signature1Path := fmt.Sprintf("%v/sign1.json", jsonPath)
-			ioutil.WriteFile(signature1Path, []byte(tx), 0777)
-
-			tx, err = emcli.SignTranscation(transactionPath, key2.GetAddress(), authorityaddress)
-			Expect(err).To(BeNil())
-			signature2Path := fmt.Sprintf("%v/sign2.json", jsonPath)
-			ioutil.WriteFile(signature2Path, []byte(tx), 0777)
-
-			// Combine the two signatures
-			tx, err = emcli.CustomCommand("tx", "multisign", transactionPath, "multikey", signature1Path, signature2Path)
-
-			// Manipulate threshold!
-			//val := gjson.Parse(tx).Get(emoney.NewAppsignatures.0.pub_key.value.threshold").Raw
-			//fmt.Println("threshold :", val)
-
-			//{
-			//	bz, _ := sjson.SetBytes([]byte(tx), emoney.NewAppsignatures.0.pub_key.value.threshold", "1")
-			//	tx = string(bz)
-			//}
-
-			Expect(err).To(BeNil())
-			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
-
-			fmt.Println("Ready for broadcast:\n", tx)
-
-			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
-			fmt.Println("Output:\n", tx)
-			Expect(err).To(BeNil())
-			Expect(gjson.Parse(tx).Get("logs").Array()).To(Not(BeEmpty()))
+			execAuthMSigTx(authorityAddress, []nt.Key{key1, key2}, "tx", "authority", "set-gas-prices", authorityAddress,
+				newMinGasPrices.String(), "--generate-only", "--from", authorityAddress)
 
 			bz, err := emcli.QueryMinGasPrices()
 			Expect(err).To(BeNil())
@@ -136,3 +155,47 @@ var _ = Describe("Authority", func() {
 		})
 	})
 })
+
+// execAuthMSigTx signs and broadcasts a multisig trx using the emcli.CustomCommand.
+func execAuthMSigTx(authorityAddress string, keys []nt.Key, cmdArgs ...string) {
+	var (
+		emcli = testnet.NewEmcli()
+	)
+
+	jsonPath, err := ioutil.TempDir("", "")
+	Expect(err).To(BeNil())
+	defer os.RemoveAll(jsonPath)
+
+	cmdTx, err := emcli.CustomCommand(cmdArgs...)
+	Expect(err).To(BeNil())
+
+	transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
+	err = ioutil.WriteFile(transactionPath, []byte(cmdTx), 0777)
+	Expect(err).To(BeNil())
+
+	tx, err := emcli.SignTranscation(
+		transactionPath, keys[0].GetAddress(), authorityAddress,
+	)
+	signaturePath1 := fmt.Sprintf("%v/sign%v.json", jsonPath, 0)
+	err = ioutil.WriteFile(signaturePath1, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+	tx, err = emcli.SignTranscation(
+		transactionPath, keys[1].GetAddress(), authorityAddress,
+	)
+	signaturePath2 := fmt.Sprintf("%v/sign%v.json", jsonPath, 1)
+	err = ioutil.WriteFile(signaturePath2, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+
+	// Combine the two signatures
+	tx, err = emcli.CustomCommand(
+		"tx", "multisign", transactionPath, "multikey", signaturePath1,
+		signaturePath2,
+	)
+	Expect(err).To(BeNil())
+	err = ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+	Expect(err).To(BeNil())
+
+	tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
+	Expect(err).To(BeNil())
+	Expect(gjson.Parse(tx).Get("logs.0.success").Exists()).To(Equal(false))
+}

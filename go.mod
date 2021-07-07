@@ -24,6 +24,7 @@ require (
 	github.com/tidwall/sjson v1.0.4
 	google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f
 	google.golang.org/grpc v1.37.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 // https://docs.cosmos.network/v0.41/core/grpc_rest.html#grpc-server

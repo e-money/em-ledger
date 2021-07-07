@@ -14,7 +14,7 @@ func TestLegacyQuerier(t *testing.T) {
 
 	ctx, k, _, _ := createTestComponents(t)
 
-	k.SetAuthority(ctx, authority)
+	k.BootstrapAuthority(ctx, authority)
 	res, err := k.SetGasPrices(ctx, authority, gp)
 	require.True(t, err == nil, res.Log)
 
