@@ -42,7 +42,7 @@ func init() {
 func TestBootstrapAuthority(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	authority, formerAuth, err := keeper.GetAuthority(ctx)
+	authority, formerAuth, err := keeper.getAuthority(ctx)
 	require.Error(t, err, "error due to authority not being set yet")
 	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
 	require.Nil(t, authority, "authority not being set yet and is nil")
@@ -54,7 +54,7 @@ func TestBootstrapAuthority(t *testing.T) {
 		keeper.BootstrapAuthority(ctx, mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu"))
 	})
 
-	authority, formerAuth, err = keeper.GetAuthority(ctx)
+	authority, formerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err, "authority is bootstrapped")
 	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, authority, firstAuthority)
@@ -63,7 +63,7 @@ func TestBootstrapAuthority(t *testing.T) {
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	acc, formerAuth, err := keeper.GetAuthority(ctx)
+	acc, formerAuth, err := keeper.getAuthority(ctx)
 	require.Error(t, err, "error due to authority not being set yet")
 	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
 	require.Nil(t, acc, "authority not being set yet and is nil")
@@ -71,7 +71,7 @@ func TestAuthorityBasicPersistence(t *testing.T) {
 	acc, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	keeper.BootstrapAuthority(ctx, acc)
 
-	authority, formerAuth, err := keeper.GetAuthority(ctx)
+	authority, formerAuth, err := keeper.getAuthority(ctx)
 	require.NoError(t, err, "authority is set")
 	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, acc, authority)
@@ -151,37 +151,63 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	ctx, keeper, ik, _ := createTestComponents(t)
 
 	var (
-		accAuthority    = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
-		accNewAuthority = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
-		issuer1         = mustParseAddress("emoney1tnv07qdsrumx2hhrvhmeh4yuxr5kkgk2m7qr9e")
-		issuer2         = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
+		accAuthority     = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accNewAuthority1 = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		accNewAuthority2 = mustParseAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
+		issuer1          = mustParseAddress("emoney1tnv07qdsrumx2hhrvhmeh4yuxr5kkgk2m7qr9e")
+		issuer2          = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
 	keeper.BootstrapAuthority(ctx, accAuthority)
 
-	_, err := keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
+	// accAuthority becomes the fallback authority because there wasn't one already
+	_, err := keeper.replaceAuthority(ctx, accAuthority, accNewAuthority1)
 	require.NoError(t, err)
 
-	// replace authority and use the new authority
-	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority, issuer1, issuer2, ik)
+	// the new authority is active
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority1, issuer1, issuer2, ik)
 
-	// but the former is still in effect
+	// and the former is still in effect
 	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
 
 	// move forward but not enough to expire the former authority
-	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.GraceChangeDuration / 2))
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
 
 	// no change for the new authority
-	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority, issuer1, issuer2, ik)
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority1, issuer1, issuer2, ik)
 
 	//the former authority is still in effect
 	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
 
+	// make explicit who's the fallback authority
+	fallbackAuth := accAuthority
+
+	// replacing the authority during the transition period has no effect
+	// on the fallback authority
+	_, err = keeper.replaceAuthority(ctx, accNewAuthority1, accNewAuthority2)
+	require.NoError(t, err)
+
+	// accNewAuthority1 is no longer the current nor the fallback authority
+	// trying a single transaction with accNewAuthority1 errs
+	_, err = keeper.createIssuer(
+		ctx, accNewAuthority1, issuer1, []string{"eeur", "ejpy"},
+	)
+	require.Error(t, err)
+
+	//the former authority is still in effect during the transition period
+	CreateAndRevokeIssuer(ctx, t, keeper, fallbackAuth, issuer1, issuer2, ik)
+
+	// move forward but not enough to expire the former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
+
+	//the former authority is still in effect during the transition period
+	CreateAndRevokeIssuer(ctx, t, keeper, fallbackAuth, issuer1, issuer2, ik)
+
 	// move forward to expire the former authority
-	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.GraceChangeDuration / 2))
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
 
 	// no change for the new authority
-	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority, issuer1, issuer2, ik)
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority2, issuer1, issuer2, ik)
 
 	// the former authority has expired
 	// trying a single transaction with the former authority errs
@@ -190,8 +216,8 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	)
 	require.Error(t, err)
 
-	// can still revert to the old authority
-	_, err = keeper.replaceAuthority(ctx, accNewAuthority, accAuthority)
+	// can revert to the first authority
+	_, err = keeper.replaceAuthority(ctx, accNewAuthority2, accAuthority)
 	require.NoError(t, err)
 
 	// former authority is current again
@@ -270,7 +296,7 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, formerAuth, err := keeper.GetAuthority(ctx)
+	gotAuth, formerAuth, err := keeper.getAuthority(ctx)
 	require.NoError(t, err)
 	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, accAuthority, gotAuth)
@@ -284,7 +310,7 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, formerAuth, err = keeper.GetAuthority(ctx)
+	gotAuth, formerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err)
 	require.Equal(t, accAuthority.String(), formerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
@@ -297,7 +323,7 @@ func TestReplaceAuthority(t *testing.T) {
 	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
 	require.NoError(t, err)
 
-	gotAuth, formerAuth, err = keeper.GetAuthority(ctx)
+	gotAuth, formerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err)
 	require.Equal(t, accAuthority.String(), formerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
@@ -308,8 +334,8 @@ func TestReplaceAuthority(t *testing.T) {
 	require.NoError(t, err)
 
 	// test expiration of former authority
-	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.GraceChangeDuration))
-	gotAuth, formerAuth, err = keeper.GetAuthority(ctx)
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration))
+	gotAuth, formerAuth, err = keeper.getAuthority(ctx)
 	require.NoError(t, err)
 	require.Empty(t, formerAuth, "former Authority expired")
 	require.Equal(t, accNewAuthority, gotAuth)
