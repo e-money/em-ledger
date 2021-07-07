@@ -48,7 +48,7 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper is
 // BootstrapAuthority solely exists for the genesis establishment of the chain
 // authority. Once the authority is set, invoking this function again will panic.
 func (k Keeper) BootstrapAuthority(ctx sdk.Context, newAuthority sdk.AccAddress) {
-	authorityAcc, _, _ := k.getAuthority(ctx)
+	authorityAcc, _, _ := k.getAuthorities(ctx)
 
 	// set authority only if it is not set up.
 	if !authorityAcc.Empty() {
@@ -73,15 +73,19 @@ func (k Keeper) saveAuthorities(
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
-func (k Keeper) getAuthority(ctx sdk.Context) (authority sdk.AccAddress, formerAuthority sdk.AccAddress, err error) {
+func (k Keeper) getAuthorities(ctx sdk.Context) (authority, formerAuthority sdk.AccAddress, err error) {
 	authoritySet := k.GetAuthoritySet(ctx)
+
 	authority, err = sdk.AccAddressFromBech32(authoritySet.Address)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if authoritySet.LastModified.Add(types.AuthorityTransitionDuration).After(ctx.BlockTime()) {
-		// within the transition period we keep the former address
+	withinTransitionPeriod := authoritySet.LastModified.
+		Add(types.AuthorityTransitionDuration).
+		After(ctx.BlockTime())
+	if withinTransitionPeriod && authoritySet.FormerAddress != "" {
+		// we keep the former address
 		formerAuthority, _ = sdk.AccAddressFromBech32(authoritySet.FormerAddress)
 	}
 
@@ -161,7 +165,7 @@ func (k Keeper) destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerA
 }
 
 func (k Keeper) ValidateAuthority(ctx sdk.Context, address sdk.AccAddress) error {
-	authority, formerAuth, err := k.getAuthority(ctx)
+	authority, formerAuth, err := k.getAuthorities(ctx)
 	if err != nil {
 		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, err.Error())
 	}
@@ -194,16 +198,12 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 		return nil, err
 	}
 
-	authoritySet := k.GetAuthoritySet(ctx)
-
-	formerAuthorityAddress := authoritySet.FormerAddress
-	pastTransitionPeriod := authoritySet.LastModified.Add(types.AuthorityTransitionDuration).Before(ctx.BlockTime())
-	if pastTransitionPeriod || formerAuthorityAddress == "" {
-		// Change the fallback address past the transition period
-		formerAuthorityAddress = authoritySet.Address
+	_, formerAuthorityAddress, err := k.getAuthorities(ctx)
+	if err != nil || formerAuthorityAddress.Empty() {
+		formerAuthorityAddress = authority
 	}
 
-	k.saveAuthorities(ctx, newAuthority, formerAuthorityAddress)
+	k.saveAuthorities(ctx, newAuthority, formerAuthorityAddress.String())
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

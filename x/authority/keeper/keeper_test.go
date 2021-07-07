@@ -42,7 +42,7 @@ func init() {
 func TestBootstrapAuthority(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	authority, formerAuth, err := keeper.getAuthority(ctx)
+	authority, formerAuth, err := keeper.getAuthorities(ctx)
 	require.Error(t, err, "error due to authority not being set yet")
 	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
 	require.Nil(t, authority, "authority not being set yet and is nil")
@@ -54,7 +54,7 @@ func TestBootstrapAuthority(t *testing.T) {
 		keeper.BootstrapAuthority(ctx, mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu"))
 	})
 
-	authority, formerAuth, err = keeper.getAuthority(ctx)
+	authority, formerAuth, err = keeper.getAuthorities(ctx)
 	require.NoError(t, err, "authority is bootstrapped")
 	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, authority, firstAuthority)
@@ -63,7 +63,7 @@ func TestBootstrapAuthority(t *testing.T) {
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	acc, formerAuth, err := keeper.getAuthority(ctx)
+	acc, formerAuth, err := keeper.getAuthorities(ctx)
 	require.Error(t, err, "error due to authority not being set yet")
 	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
 	require.Nil(t, acc, "authority not being set yet and is nil")
@@ -71,7 +71,7 @@ func TestAuthorityBasicPersistence(t *testing.T) {
 	acc, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	keeper.BootstrapAuthority(ctx, acc)
 
-	authority, formerAuth, err := keeper.getAuthority(ctx)
+	authority, formerAuth, err := keeper.getAuthorities(ctx)
 	require.NoError(t, err, "authority is set")
 	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, acc, authority)
@@ -296,7 +296,7 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, respFormerAuth, err := keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err := keeper.getAuthorities(ctx)
 	require.NoError(t, err)
 	require.Empty(t, respFormerAuth, "former authority not being set yet")
 	require.Equal(t, accAuthority, gotAuth)
@@ -310,7 +310,7 @@ func TestReplaceAuthority(t *testing.T) {
 	err = keeper.ValidateAuthority(ctx, accAuthority)
 	require.NoError(t, err)
 
-	gotAuth, respFormerAuth, err = keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err = keeper.getAuthorities(ctx)
 	require.NoError(t, err)
 	require.Equal(t, accAuthority.String(), respFormerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
@@ -325,7 +325,7 @@ func TestReplaceAuthority(t *testing.T) {
 	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
 	require.NoError(t, err)
 
-	gotAuth, respFormerAuth, err = keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err = keeper.getAuthorities(ctx)
 	require.NoError(t, err)
 	require.Equal(t, formerAuthFromBeforeHasRemainedInEffect, respFormerAuth.String())
 	require.Equal(t, accNewAuthority, gotAuth)
@@ -337,7 +337,7 @@ func TestReplaceAuthority(t *testing.T) {
 
 	// test expiration of former authority
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration))
-	gotAuth, respFormerAuth, err = keeper.getAuthority(ctx)
+	gotAuth, respFormerAuth, err = keeper.getAuthorities(ctx)
 	require.NoError(t, err)
 	require.Empty(t, respFormerAuth, "former Authority expired")
 	require.Equal(t, accNewAuthority, gotAuth)
