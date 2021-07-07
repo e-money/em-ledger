@@ -51,7 +51,7 @@ func (k Keeper) BootstrapAuthority(ctx sdk.Context, newAuthority sdk.AccAddress)
 	authorityAcc, _, _ := k.GetAuthority(ctx)
 
 	// set authority only if it is not set up.
-	if authorityAcc != nil && !authorityAcc.Empty() {
+	if !authorityAcc.Empty() {
 		panic(errors.New("authority is set and sealed"))
 	}
 
@@ -84,6 +84,7 @@ func (k Keeper) GetAuthority(ctx sdk.Context) (authority sdk.AccAddress, formerA
 	}
 
 	if authoritySet.LastModified.Add(types.GraceChangeDuration).After(ctx.BlockTime()) {
+		// within the transition period we keep the former address
 		formerAuthority, _ = sdk.AccAddressFromBech32(authoritySet.FormerAddress)
 	}
 
@@ -188,10 +189,10 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 		return nil, err
 	}
 
-	var formerAuthorityAddr string
+	formerAuthorityAddr := ""
 	// state authority is now the former
 	formerAuthorityAcc, _, err := k.GetAuthority(ctx)
-	if err == nil && formerAuthorityAcc != nil {
+	if err == nil && !formerAuthorityAcc.Empty() {
 		formerAuthorityAddr = formerAuthorityAcc.String()
 	}
 

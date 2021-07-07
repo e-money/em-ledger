@@ -3,12 +3,13 @@ package keeper
 import (
 	"context"
 	"errors"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"testing"
 )
 
 func TestCreateIssuer(t *testing.T) {
@@ -301,7 +302,7 @@ func TestReplaceAuth(t *testing.T) {
 	}{
 		"all good": {
 			req: &types.MsgReplaceAuthority{
-				Authority: authorityAddr.String(),
+				Authority:    authorityAddr.String(),
 				NewAuthority: newAuthorityAddr.String(),
 			},
 			mockFn: func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
@@ -318,12 +319,24 @@ func TestReplaceAuth(t *testing.T) {
 				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
 			}},
 		},
-		"authority non-changing": {
+		"Same authority (fallback -> current)": {
 			req: &types.MsgReplaceAuthority{
-				Authority: authorityAddr.String(),
+				Authority:    authorityAddr.String(),
 				NewAuthority: authorityAddr.String(),
 			},
-			expErr: true,
+			mockFn: func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
+				gotAuthority, gotNewAuthority = authority, newAuthority
+				return &sdk.Result{
+					Events: []abcitypes.Event{{
+						Type:       "testing",
+						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+					}},
+				}, nil
+			},
+			expEvents: sdk.Events{{
+				Type:       "testing",
+				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+			}},
 		},
 		"authority missing": {
 			req: &types.MsgReplaceAuthority{
@@ -339,21 +352,21 @@ func TestReplaceAuth(t *testing.T) {
 		},
 		"authority invalid": {
 			req: &types.MsgReplaceAuthority{
-				Authority: "invalid",
+				Authority:    "invalid",
 				NewAuthority: newAuthorityAddr.String(),
 			},
 			expErr: true,
 		},
 		"new authority invalid": {
 			req: &types.MsgReplaceAuthority{
-				Authority: authorityAddr.String(),
+				Authority:    authorityAddr.String(),
 				NewAuthority: "invalid",
 			},
 			expErr: true,
 		},
 		"processing failure": {
 			req: &types.MsgReplaceAuthority{
-				Authority: authorityAddr.String(),
+				Authority:    authorityAddr.String(),
 				NewAuthority: newAuthorityAddr.String(),
 			},
 			mockFn: func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
@@ -383,9 +396,9 @@ func TestReplaceAuth(t *testing.T) {
 
 // mock implementation of authorityKeeper interface
 type authorityKeeperMock struct {
-	createIssuerfn  func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error)
-	destroyIssuerfn func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
-	SetGasPricesfn  func(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
+	createIssuerfn     func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error)
+	destroyIssuerfn    func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
+	SetGasPricesfn     func(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	replaceAuthorityfn func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 }
 
