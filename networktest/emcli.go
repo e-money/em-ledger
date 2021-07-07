@@ -6,6 +6,7 @@ package networktest
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -56,14 +57,22 @@ func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, er
 }
 
 func (cli Emcli) CustomCommand(params ...string) (string, error) {
+	// any non-broadcasting should not check the hash, code, logs result
+	re := regexp.MustCompile(`generate-only|sign`)
+	checkTxRes := true
+	for _, param := range params {
+		if re.MatchString(param) {
+			checkTxRes = false
+		}
+	}
 	args := cli.addTransactionFlags(params...)
-	return execCmdCollectOutput(args, KeyPwd)
+	return execCmdCollectOutput(args, KeyPwd, checkTxRes)
 }
 
 func (cli Emcli) AuthoritySetMinGasPricesMulti(from, minGasPrices string, params ...string) (string, error) {
 	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", from, minGasPrices)
 	args = append(args, params...)
-	return execCmdCollectOutput(args, KeyPwd)
+	return execCmdCollectOutput(args, KeyPwd, true)
 }
 
 func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, params ...string) (string, bool, error) {
@@ -234,7 +243,7 @@ func (cli Emcli) QueryDelegations(account string) ([]byte, error) {
 
 func (cli Emcli) SignTranscation(txPath, fromAddress, multisigAddress string) (string, error) {
 	args := cli.addTransactionFlags("tx", "sign", txPath, "--from", fromAddress, "--multisig", multisigAddress)
-	return execCmdCollectOutput(args, KeyPwd)
+	return execCmdCollectOutput(args, KeyPwd, false)
 }
 
 func (cli Emcli) IssuerIncreaseMintableAmount(issuer, liquidityprovider Key, amount string) (string, bool, error) {
@@ -291,7 +300,7 @@ func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
 
 func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherChainSender, coins string, TTL int) (string, string, string, error) {
 	args := cli.addTransactionFlags("tx", "bep3", "create", recipient, otherChainRecipient, otherChainSender, "now", coins, fmt.Sprint(TTL), "--from", creator.name)
-	output, err := execCmdCollectOutput(args, KeyPwd)
+	output, err := execCmdCollectOutput(args, KeyPwd, true)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -311,7 +320,7 @@ func (cli Emcli) BEP3Create(creator Key, recipient, otherChainRecipient, otherCh
 func (cli Emcli) BEP3Claim(claimant Key, swapId, secret string) (string, error) {
 	args := cli.addTransactionFlags("tx", "bep3", "claim", swapId, secret, "--from", claimant.name)
 
-	return execCmdCollectOutput(args, KeyPwd)
+	return execCmdCollectOutput(args, KeyPwd, true)
 }
 
 func extractTxHash(bz []byte) (txhash string, success bool, err error) {
@@ -334,7 +343,7 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	return txhashjson.Str, true, nil
 }
 
-func execCmdCollectOutput(arguments []string, input string) (string, error) {
+func execCmdCollectOutput(arguments []string, input string, checkTxRes bool) (string, error) {
 	cmd := exec.Command(EMCLI, arguments...)
 
 	stdin, err := cmd.StdinPipe()
@@ -355,6 +364,19 @@ func execCmdCollectOutput(arguments []string, input string) (string, error) {
 	bz, err := cmd.Output()
 	if err != nil {
 		return "", err
+	}
+
+	// --generate-only trx do not submit
+	if checkTxRes {
+		jsonStIndex := strings.IndexByte(string(bz), '{')
+
+		_, ok, err := extractTxHash(bz[jsonStIndex:])
+		if err != nil {
+			return string(bz), err
+		}
+		if !ok {
+			return "", errors.New("transaction failed")
+		}
 	}
 
 	return string(bz), nil

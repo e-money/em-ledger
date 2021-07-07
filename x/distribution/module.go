@@ -7,7 +7,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/distribution/client/cli"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/e-money/em-ledger/util"
+	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 )
@@ -43,10 +46,15 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	BeginBlocker(ctx, req, am.k, am.ak, am.bk, am.db)
 }
 
-// DefaultGenesis returns default genesis state as raw bytes for the distribution
-// module.
+// DefaultGenesis returns default genesis state as raw bytes for the distribution module.
 func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
 	state := distrtypes.DefaultGenesisState()
 	state.Params.CommunityTax = sdk.ZeroDec()
 	return cdc.MustMarshalJSON(state)
+}
+
+func (AppModuleBasic) GetTxCmd() *cobra.Command {
+	cmd := cli.NewTxCmd()
+	util.RemoveCobraCommands(cmd, "fund-community-pool")
+	return cmd
 }

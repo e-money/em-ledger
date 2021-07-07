@@ -72,7 +72,7 @@ var _ = Describe("Authority", func() {
 			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
 
 			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
-			Expect(err).To(BeNil())
+			Expect(err).NotTo(BeNil())
 			Expect(gjson.Parse(tx).Get("logs.0.success").Exists()).To(Equal(false))
 		})
 

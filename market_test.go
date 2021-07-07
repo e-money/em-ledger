@@ -55,7 +55,7 @@ var _ = Describe("Market", func() {
 
 		It("Crashing validator can catch up", func() {
 			var (
-				err    error
+				err error
 			)
 			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
 			Expect(err).ToNot(HaveOccurred())
@@ -103,7 +103,7 @@ var _ = Describe("Market", func() {
 
 			aBlockHash, err := networktest.ChainBlockHash()
 			Expect(err).ToNot(HaveOccurred())
-			fmt.Printf("Looking for emdnode2 to participate in %s block commit\n",aBlockHash)
+			fmt.Printf("Looking for emdnode2 to participate in %s block commit\n", aBlockHash)
 
 			// +10 blocks to allow node2 to catch up
 			_, _ = networktest.IncChain(10)
@@ -184,7 +184,7 @@ var _ = Describe("Market", func() {
 			ioutil.WriteFile(transactionPath, txBz, 0777)
 
 			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
-			Expect(err).To(BeNil())
+			Expect(err).NotTo(BeNil())
 			// Transaction must have failed due to insufficient gas
 			Expect(gjson.Parse(s).Get("logs.0.success").Exists()).To(Equal(false))
 
@@ -197,3 +197,4 @@ var _ = Describe("Market", func() {
 		})
 	})
 })
+
