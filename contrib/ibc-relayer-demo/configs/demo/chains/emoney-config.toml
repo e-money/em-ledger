@@ -1,0 +1,45 @@
+[global]
+# Valid strategies:
+#   'packets': restricts relaying to packets only, or
+#   'all': relay from all types of events
+strategy = 'packets'
+log_level = 'info'
+
+[telemetry]
+enabled = false
+host = '127.0.0.1'
+port = 3001
+
+[[chains]]
+id = 'ibc-0'
+rpc_addr = 'http://127.0.0.1:26657'
+grpc_addr = 'http://127.0.0.1:9090'
+websocket_addr = 'ws://127.0.0.1:26657/websocket'
+rpc_timeout = '10s'
+account_prefix = 'emoney'
+key_name = 'testkey'
+store_prefix = 'ibc'
+max_gas = 2000000
+# Specify by ratio to increase the gas estimate used to compute the fee,
+# to account for potential estimation error. Default: 0.1, ie. 10%.
+gas_adjustment = 0.1
+gas_price = { price = 0.001, denom = 'stake' }
+clock_drift = '5s'
+trusting_period = '14days'
+
+[[chains]]
+id = 'ibc-1'
+rpc_addr = 'http://127.0.0.1:26557'
+grpc_addr = 'http://127.0.0.1:9091'
+websocket_addr = 'ws://127.0.0.1:26557/websocket'
+rpc_timeout = '10s'
+account_prefix = 'emoney'
+key_name = 'testkey'
+store_prefix = 'ibc'
+max_gas = 2000000
+# Specify by ratio to increase the gas estimate used to compute the fee,
+# to account for potential estimation error. Default: 0.1, ie. 10%.
+gas_adjustment = 0.1
+gas_price = { price = 0.001, denom = 'stake' }
+clock_drift = '5s'
+trusting_period = '14days'
