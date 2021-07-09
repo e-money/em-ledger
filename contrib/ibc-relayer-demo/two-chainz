@@ -2,9 +2,11 @@
 # two-chainz creates two emd chains and configures the relayer to
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-EM_DATA="$(pwd)/data"
+# git clone git@github.com:informalsystems/ibc-rs.git ./informalsystems/ibc-rs
+# ~/go/src/github.com/informalsystems/ibc-rs
 RELAYER_DIR="$(dirname $SCRIPTDIR)"
 RELAYER_CONF="$HOME/.relayer"
+# make build to generate
 EMD="../../build/emd"
 
 # Ensure emd is installed
@@ -56,8 +58,8 @@ mkdir -p $EM_DATA && cd $EM_DATA && cd ../
 cd $RELAYER_DIR
 
 # Ensure relayer is installed
-if ! [ -x "$(which rly)" ]; then
-  echo "Error: relayer is not installed. Try running 'make build-em'" >&2
+if ! [ -x "$(which hermes)" ]; then
+  echo "Error: relayer is not installed. Follow instructions https://hermes.informal.systems/installation.html" >&2
   exit 1
 fi
 

@@ -11,7 +11,7 @@ host = '127.0.0.1'
 port = 3001
 
 [[chains]]
-id = 'ibc-0'
+id = 'e-money'
 rpc_addr = 'http://127.0.0.1:26657'
 grpc_addr = 'http://127.0.0.1:9090'
 websocket_addr = 'ws://127.0.0.1:26657/websocket'
@@ -28,12 +28,12 @@ clock_drift = '5s'
 trusting_period = '14days'
 
 [[chains]]
-id = 'ibc-1'
+id = 'gaia'
 rpc_addr = 'http://127.0.0.1:26557'
 grpc_addr = 'http://127.0.0.1:9091'
 websocket_addr = 'ws://127.0.0.1:26557/websocket'
 rpc_timeout = '10s'
-account_prefix = 'emoney'
+account_prefix = 'cosmos'
 key_name = 'testkey'
 store_prefix = 'ibc'
 max_gas = 2000000
