@@ -1,11 +1,11 @@
 # Makefile for the "emdnode" docker image.
 
-all: emdnode
+all: emdnode gaianode
 
 emdnode:
 	docker build --tag emoney/emdnode emdnode
 
-# todo (reviewer): please note the rest-server is not a command anymore. Please enable `api` section in `app.toml` instead
+gaiadnode:
+	docker build --tag emoney/gaiadnode gaia
 
-.PHONY: all emdnode
-
+.PHONY: all emdnode gaianode
