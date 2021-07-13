@@ -5,10 +5,10 @@
 ##
 ID=${ID:-0}
 LOG=${LOG:-gaiad.log}
-LOGLEVEL=info
+export LOGLEVEL=debug
 
 export GAIA_ID="gaia"
-export GAIADHOME="/gaiad/node${ID}"
+export GAIADHOME="/gaiad/gnode${ID}"
 export GAIA_DATA="${GAIADHOME}/data"
 export GAIA_RPC_PORT=26557
 export GAIA_GRPC_PORT=9091
