@@ -97,4 +97,4 @@ networks:
       driver: default
       config:
       -
-        subnet: 192.168.10.0/16
+        subnet: 192.168.10.0/24 # 254 hosts

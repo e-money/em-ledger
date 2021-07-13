@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  gaiadnode0:
+    container_name: gaiadnode0
+    image: "emoney/gaiadnode"
+    ports:
+      - "26556-26557:26556-26557" # peer-rpc
+      - "9091:9091" # grpc
+      - "6061:6061" # profiling
+    environment:
+      - ID=0
+      - LOG=${LOG:-gaiad.log}
+    logging:
+      options:
+        # 10 Megabytes max for log
+        max-size: "10m"
+        # keep 2 rotated log files
+        max-file: "2"
+    #      - LOGLEVEL=*:info
+#    volumes:
+#      - ../../../build:/gaiad:Z
+    volumes:
+      - type: bind
+        source: ../../../build
+        target: /gaiad
+    networks:
+      localnet:
+        ipv4_address: 192.168.11.2
+
+networks:
+  localnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        -
+          subnet: 192.168.11.0/24 # 254 hosts
