@@ -164,7 +164,7 @@ hermes -c ./emoney-config.toml query channel end $GAIA_ID transfer channel-0
 #----------------- token relays
 
 # Gaia sends samoleans to e-Money
-hermes -c ./emoney-config.toml tx raw ft-transfer $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0 5000 -o 1000 -n 1 -d samoleans
+hermes -c ./emoney-config.toml tx raw ft-transfer $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0 5000 -o 1000 -n 1 -d samoleans -r emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv
 
 # examine Gaia's commitment -- Seqs 1
 hermes -c ./emoney-config.toml query packet commitments $GAIA_ID transfer channel-0
