@@ -12,6 +12,7 @@ GAIA_SAMOLEANS=100000000000
 GAIA_P2P_PORT=26556
 GAIA_PROF_PORT=6061
 EMONEY_HOME=".."
+EMONEY_CHAIN_ID="localnet_reuse"
 EMONEY_DC_YML="$EMONEY_HOME/docker-compose.yml"
 
 # Ensure user understands what will be deleted
@@ -54,13 +55,12 @@ mkdir -p "$GAIA_DATA"
 #      - "1317:1317" # rest legacy
 #      - "9090:9090" # grpc query
 
-# e-money "$ONE_CHAIN" gaiad "$CHAIN_0_ID" ./data $GAIA_RPC_PORT 26656 6060 $GAIA_GRPC_PORT $GAIA_SAMOLEANS
-# gaia
+# start gaia
 ./one-chain gaiad $GAIA_ID $GAIA_DATA $GAIA_RPC_PORT $GAIA_P2P_PORT $GAIA_PROF_PORT $GAIA_GRPC_PORT $GAIA_SAMOLEANS
 
 # Check platform
 platform='unknown'
-unamestr=`uname`
+unamestr=$(uname)
 if [ "$unamestr" = 'Linux' ]; then
    platform='linux'
 fi
@@ -83,6 +83,131 @@ for (( i = 0; i < 4; i++ )); do
   fi
 done
 docker-compose -f $EMONEY_DC_YML start
-set +x
 
 ./keys-2-hermes.sh ./emoney-config.toml localnet_reuse gaia
+
+#----------------------- ibc primitives creation functions
+# $1 : destination chain id paying for the trx
+# $2 : source chain id
+
+CLIENT_ID="07-tendermint-0"
+CONNECTION_ID="connection-0"
+
+function create_client() {
+  local dst="$1"
+  local src="$2"
+
+  if ! hermes -c ./emoney-config.toml query client state "$dst" $CLIENT_ID ; then
+    hermes -c ./emoney-config.toml create client "$dst" "$src"
+  fi
+}
+
+# $1 : destination chain id paying for the trx
+# $2 : source chain id
+function init_conn() {
+  local dst="$1"
+  local src="$2"
+
+  if ! hermes -c ./emoney-config.toml query connection end "$dst" $CONNECTION_ID ; then
+    hermes -c ./emoney-config.toml tx raw conn-init "$dst" "$src" $CLIENT_ID $CLIENT_ID
+  fi
+}
+
+# $1 : destination chain id paying for the trx
+# $2 : source chain id
+function try_conn() {
+  local dst="$1"
+  local src="$2"
+
+  hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID
+}
+
+# $1 : destination chain id paying for the trx
+# $2 : source chain id
+function chan_init() {
+  local dst="$1"
+  local src="$2"
+
+  if ! hermes -c ./emoney-config.toml query channel end "$dst" transfer channel-0 ; then
+    hermes -c ./emoney-config.toml tx raw chan-open-init "$dst" "$src" $CONNECTION_ID transfer transfer -o UNORDERED
+  fi
+}
+
+#----------------- channel creation
+sleep 12 # give time to the e-money chain to sync
+create_client $EMONEY_CHAIN_ID $GAIA_ID
+create_client $GAIA_ID $EMONEY_CHAIN_ID
+
+#----------------- connection init
+init_conn $EMONEY_CHAIN_ID $GAIA_ID
+
+#----------------- connection try
+hermes -c ./emoney-config.toml tx raw conn-try $GAIA_ID $EMONEY_CHAIN_ID $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID
+
+#----------------- connection ack
+hermes -c ./emoney-config.toml tx raw conn-ack $EMONEY_CHAIN_ID $GAIA_ID $CLIENT_ID $CLIENT_ID -d $CONNECTION_ID -s $CONNECTION_ID
+
+#----------------- connection confirm
+hermes -c ./emoney-config.toml tx raw conn-confirm $GAIA_ID $EMONEY_CHAIN_ID $CLIENT_ID $CLIENT_ID -d $CONNECTION_ID -s $CONNECTION_ID
+
+#----------------- connections query
+hermes -c ./emoney-config.toml query connection end $EMONEY_CHAIN_ID $CONNECTION_ID
+hermes -c ./emoney-config.toml query connection end $GAIA_ID $CONNECTION_ID
+
+#----------------- channel handshake
+hermes -c ./emoney-config.toml tx raw chan-open-try $GAIA_ID $EMONEY_CHAIN_ID $CONNECTION_ID transfer transfer -s channel-0
+hermes -c ./emoney-config.toml tx raw chan-open-ack $EMONEY_CHAIN_ID $GAIA_ID $CONNECTION_ID transfer transfer -d channel-0 -s channel-0
+hermes -c ./emoney-config.toml tx raw chan-open-confirm $GAIA_ID $EMONEY_CHAIN_ID $CONNECTION_ID transfer transfer -d channel-0 -s channel-0
+hermes -c ./emoney-config.toml query channel end $EMONEY_CHAIN_ID transfer channel-0
+hermes -c ./emoney-config.toml query channel end $GAIA_ID transfer channel-0
+
+#----------------- token relays
+
+# Gaia sends samoleans to e-Money
+hermes -c ./emoney-config.toml tx raw ft-transfer $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0 5000 -o 1000 -n 1 -d samoleans
+
+# examine Gaia's commitment -- Seqs 1
+hermes -c ./emoney-config.toml query packet commitments $GAIA_ID transfer channel-0
+
+# view unreceived packets on e-Money -- Success 1
+hermes -c ./emoney-config.toml query packet unreceived-packets $EMONEY_CHAIN_ID transfer channel-0
+
+# send recv_packet on e-Money
+hermes -c ./emoney-config.toml tx raw packet-recv $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0
+
+# view unreceived packets on gaia -- []
+hermes -c ./emoney-config.toml query packet unreceived-packets $GAIA_ID transfer channel-0
+
+# send acknowledgement to Gaia of the relay
+hermes -c ./emoney-config.toml tx raw packet-ack $GAIA_ID $EMONEY_CHAIN_ID transfer channel-0
+
+# e-Money sends received samoleans back to Gaia
+hermes -c ./emoney-config.toml tx raw ft-transfer $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0 5000 -o 1000 -n 1 -d ibc/27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92B006199894CF1824DF9AC7C
+hermes -c ./emoney-config.toml tx raw packet-recv $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0
+hermes -c ./emoney-config.toml tx raw packet-ack  $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0
+
+# --------------------------------------------------
+# Starting with e-Money the relay now
+
+# e-Money sends ungm to Gaia
+hermes -c ./emoney-config.toml tx raw ft-transfer $GAIA_ID $EMONEY_CHAIN_ID transfer channel-0 5000 -o 1000 -n 1 -d ungm
+
+# examine e-Money's commitment -- Seqs 1
+hermes -c ./emoney-config.toml query packet commitments $EMONEY_CHAIN_ID transfer channel-0
+
+# view unreceived packets on gaia -- Success 1
+hermes -c ./emoney-config.toml query packet unreceived-packets $GAIA_ID transfer channel-0
+
+# send recv_packet on gaia
+hermes -c ./emoney-config.toml tx raw packet-recv $GAIA_ID $EMONEY_CHAIN_ID transfer channel-0
+
+# view unreceived packets on e-Money -- []
+hermes -c ./emoney-config.toml query packet unreceived-packets $EMONEY_CHAIN_ID transfer channel-0
+
+# send acknowledgement to e-Money of the relay
+hermes -c ./emoney-config.toml tx raw packet-ack $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0
+
+# gaia sends received ungm back to e-Money
+hermes -c ./emoney-config.toml tx raw ft-transfer $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0 2000 -o 1000 -n 1 -d ibc/93FF02E702BE88DE6309464BA7ABCC9932964FA348726B04B06EEE79ECB35768
+hermes -c ./emoney-config.toml tx raw packet-recv $EMONEY_CHAIN_ID $GAIA_ID transfer channel-0
+hermes -c ./emoney-config.toml tx raw packet-ack  $GAIA_ID $EMONEY_CHAIN_ID transfer channel-0

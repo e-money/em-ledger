@@ -23,7 +23,7 @@ max_gas = 2000000
 # Specify by ratio to increase the gas estimate used to compute the fee,
 # to account for potential estimation error. Default: 0.1, ie. 10%.
 gas_adjustment = 0.1
-gas_price = { price = 0.001, denom = 'stake' }
+gas_price = { price = 0.001, denom = 'ungm' }
 clock_drift = '5s'
 trusting_period = '14days'
 

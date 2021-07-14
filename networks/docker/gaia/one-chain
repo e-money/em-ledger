@@ -139,6 +139,8 @@ else
   # sed -i '' 's/info/debug/g' $CHAIN_DIR/$CHAIN_ID/config/config.toml
 fi
 
+set -x
+
 # Start gaia
 echo "Start gaia on grpc port: $GRPC_PORT..."
 $BINARY --home $CHAIN_DIR/$CHAIN_ID start --pruning=nothing --grpc.address="0.0.0.0:$GRPC_PORT" --log_level error > $CHAIN_DIR/$CHAIN_ID.log 2>&1 &
