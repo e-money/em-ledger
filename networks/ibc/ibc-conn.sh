@@ -3,7 +3,6 @@
 set -e
 
 GAIA_ID="gaia"
-EMONEY_HOME="../.."
 EMONEY_CHAIN_ID="localnet_reuse"
 
 #----------------------- ibc primitives creation functions
