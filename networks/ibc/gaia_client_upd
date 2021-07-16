@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+GAIA_ID="gaia"
+EMONEY_CHAIN_ID="localnet_reuse"
+
+#----------------------- ibc primitives creation functions
+CLIENT_ID="07-tendermint-0"
+CONNECTION_ID="connection-0"
+
+function client_update() {
+  local dst="$1"
+
+  if hermes -c ./emoney-config.toml query client state "$dst" $CLIENT_ID ; then
+    hermes -c ./emoney-config.toml tx raw update-client "$dst" $CLIENT_ID
+  fi
+}
+
+client_update $EMONEY_CHAIN_ID
