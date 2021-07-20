@@ -1,0 +1,16 @@
+syntax = "proto3";
+package emoney.emibctokens.swap;
+
+option go_package = "github.com/e-money/stargate/networks/emibctokens/x/swap/types";
+
+message SwapPacketData {
+    oneof packet {
+        NoData noData = 1;
+        // this line is used by starport scaffolding # ibc/packet/proto/field
+    }
+}
+
+message NoData {
+}
+
+// this line is used by starport scaffolding # ibc/packet/proto/message
