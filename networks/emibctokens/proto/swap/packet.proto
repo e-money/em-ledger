@@ -7,6 +7,7 @@ message SwapPacketData {
     oneof packet {
         NoData noData = 1;
         // this line is used by starport scaffolding # ibc/packet/proto/field
+				SendPacketData sendPacket = 2; // this line is used by starport scaffolding # ibc/packet/proto/field/number
     }
 }
 
@@ -14,3 +15,12 @@ message NoData {
 }
 
 // this line is used by starport scaffolding # ibc/packet/proto/message
+// SendPacketData defines a struct for the packet payload
+message SendPacketData {
+	  string amountDenom = 1;
+  string recipient = 2;
+}
+
+// SendPacketAck defines a struct for the packet acknowledgment
+message SendPacketAck {
+	}

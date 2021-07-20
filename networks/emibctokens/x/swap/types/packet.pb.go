@@ -25,6 +25,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type SwapPacketData struct {
 	// Types that are valid to be assigned to Packet:
 	//	*SwapPacketData_NoData
+	//	*SwapPacketData_SendPacket
 	Packet isSwapPacketData_Packet `protobuf_oneof:"packet"`
 }
 
@@ -70,8 +71,12 @@ type isSwapPacketData_Packet interface {
 type SwapPacketData_NoData struct {
 	NoData *NoData `protobuf:"bytes,1,opt,name=noData,proto3,oneof" json:"noData,omitempty"`
 }
+type SwapPacketData_SendPacket struct {
+	SendPacket *SendPacketData `protobuf:"bytes,2,opt,name=sendPacket,proto3,oneof" json:"sendPacket,omitempty"`
+}
 
-func (*SwapPacketData_NoData) isSwapPacketData_Packet() {}
+func (*SwapPacketData_NoData) isSwapPacketData_Packet()     {}
+func (*SwapPacketData_SendPacket) isSwapPacketData_Packet() {}
 
 func (m *SwapPacketData) GetPacket() isSwapPacketData_Packet {
 	if m != nil {
@@ -87,10 +92,18 @@ func (m *SwapPacketData) GetNoData() *NoData {
 	return nil
 }
 
+func (m *SwapPacketData) GetSendPacket() *SendPacketData {
+	if x, ok := m.GetPacket().(*SwapPacketData_SendPacket); ok {
+		return x.SendPacket
+	}
+	return nil
+}
+
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*SwapPacketData) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
 		(*SwapPacketData_NoData)(nil),
+		(*SwapPacketData_SendPacket)(nil),
 	}
 }
 
@@ -130,28 +143,126 @@ func (m *NoData) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NoData proto.InternalMessageInfo
 
+// this line is used by starport scaffolding # ibc/packet/proto/message
+// SendPacketData defines a struct for the packet payload
+type SendPacketData struct {
+	AmountDenom string `protobuf:"bytes,1,opt,name=amountDenom,proto3" json:"amountDenom,omitempty"`
+	Recipient   string `protobuf:"bytes,2,opt,name=recipient,proto3" json:"recipient,omitempty"`
+}
+
+func (m *SendPacketData) Reset()         { *m = SendPacketData{} }
+func (m *SendPacketData) String() string { return proto.CompactTextString(m) }
+func (*SendPacketData) ProtoMessage()    {}
+func (*SendPacketData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d0695bd3766370b, []int{2}
+}
+func (m *SendPacketData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SendPacketData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SendPacketData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SendPacketData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendPacketData.Merge(m, src)
+}
+func (m *SendPacketData) XXX_Size() int {
+	return m.Size()
+}
+func (m *SendPacketData) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendPacketData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendPacketData proto.InternalMessageInfo
+
+func (m *SendPacketData) GetAmountDenom() string {
+	if m != nil {
+		return m.AmountDenom
+	}
+	return ""
+}
+
+func (m *SendPacketData) GetRecipient() string {
+	if m != nil {
+		return m.Recipient
+	}
+	return ""
+}
+
+// SendPacketAck defines a struct for the packet acknowledgment
+type SendPacketAck struct {
+}
+
+func (m *SendPacketAck) Reset()         { *m = SendPacketAck{} }
+func (m *SendPacketAck) String() string { return proto.CompactTextString(m) }
+func (*SendPacketAck) ProtoMessage()    {}
+func (*SendPacketAck) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3d0695bd3766370b, []int{3}
+}
+func (m *SendPacketAck) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SendPacketAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SendPacketAck.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SendPacketAck) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendPacketAck.Merge(m, src)
+}
+func (m *SendPacketAck) XXX_Size() int {
+	return m.Size()
+}
+func (m *SendPacketAck) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendPacketAck.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendPacketAck proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*SwapPacketData)(nil), "emoney.emibctokens.swap.SwapPacketData")
 	proto.RegisterType((*NoData)(nil), "emoney.emibctokens.swap.NoData")
+	proto.RegisterType((*SendPacketData)(nil), "emoney.emibctokens.swap.SendPacketData")
+	proto.RegisterType((*SendPacketAck)(nil), "emoney.emibctokens.swap.SendPacketAck")
 }
 
 func init() { proto.RegisterFile("swap/packet.proto", fileDescriptor_3d0695bd3766370b) }
 
 var fileDescriptor_3d0695bd3766370b = []byte{
-	// 202 bytes of a gzipped FileDescriptorProto
+	// 284 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2c, 0x2e, 0x4f, 0x2c,
 	0xd0, 0x2f, 0x48, 0x4c, 0xce, 0x4e, 0x2d, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x4f,
 	0xcd, 0xcd, 0xcf, 0x4b, 0xad, 0xd4, 0x4b, 0xcd, 0xcd, 0x4c, 0x4a, 0x2e, 0xc9, 0xcf, 0x4e, 0xcd,
-	0x2b, 0xd6, 0x03, 0xa9, 0x52, 0x0a, 0xe5, 0xe2, 0x0b, 0x2e, 0x4f, 0x2c, 0x08, 0x00, 0x2b, 0x76,
-	0x49, 0x2c, 0x49, 0x14, 0xb2, 0xe4, 0x62, 0xcb, 0xcb, 0x07, 0xb1, 0x24, 0x18, 0x15, 0x18, 0x35,
-	0xb8, 0x8d, 0xe4, 0xf5, 0x70, 0xe8, 0xd5, 0xf3, 0x03, 0x2b, 0xf3, 0x60, 0x08, 0x82, 0x6a, 0x70,
-	0xe2, 0xe0, 0x62, 0x83, 0xd8, 0xaa, 0xc4, 0xc1, 0xc5, 0x06, 0x91, 0x75, 0x0a, 0x3f, 0xf1, 0x48,
-	0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x27, 0x3c, 0x96, 0x63, 0xb8, 0xf0,
-	0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86, 0x28, 0xdb, 0xf4, 0xcc, 0x92, 0x8c, 0xd2, 0x24, 0xbd,
-	0xe4, 0xfc, 0x5c, 0xfd, 0x54, 0x5d, 0xb0, 0x1d, 0xfa, 0xc5, 0x25, 0x89, 0x45, 0xe9, 0x89, 0x25,
-	0xa9, 0xfa, 0x79, 0xa9, 0x25, 0xe5, 0xf9, 0x45, 0xd9, 0xc5, 0xfa, 0x48, 0xb6, 0xea, 0x57, 0xe8,
-	0x83, 0x7d, 0x56, 0x52, 0x59, 0x90, 0x5a, 0x9c, 0xc4, 0x06, 0xf6, 0x99, 0x31, 0x20, 0x00, 0x00,
-	0xff, 0xff, 0x98, 0x89, 0x91, 0x61, 0xee, 0x00, 0x00, 0x00,
+	0x2b, 0xd6, 0x03, 0xa9, 0x52, 0x5a, 0xc0, 0xc8, 0xc5, 0x17, 0x5c, 0x9e, 0x58, 0x10, 0x00, 0x56,
+	0xed, 0x92, 0x58, 0x92, 0x28, 0x64, 0xc9, 0xc5, 0x96, 0x97, 0x0f, 0x62, 0x49, 0x30, 0x2a, 0x30,
+	0x6a, 0x70, 0x1b, 0xc9, 0xeb, 0xe1, 0xd0, 0xac, 0xe7, 0x07, 0x56, 0xe6, 0xc1, 0x10, 0x04, 0xd5,
+	0x20, 0xe4, 0xc9, 0xc5, 0x55, 0x9c, 0x9a, 0x97, 0x02, 0x31, 0x4c, 0x82, 0x09, 0xac, 0x5d, 0x1d,
+	0xa7, 0xf6, 0x60, 0xb8, 0x52, 0xa8, 0x31, 0x48, 0x9a, 0x9d, 0x38, 0xb8, 0xd8, 0x20, 0x3e, 0x50,
+	0xe2, 0xe0, 0x62, 0x83, 0x58, 0xa4, 0x14, 0xc0, 0xc5, 0x87, 0xaa, 0x47, 0x48, 0x81, 0x8b, 0x3b,
+	0x31, 0x37, 0xbf, 0x34, 0xaf, 0xc4, 0x25, 0x35, 0x2f, 0x3f, 0x17, 0xec, 0x60, 0xce, 0x20, 0x64,
+	0x21, 0x21, 0x19, 0x2e, 0xce, 0xa2, 0xd4, 0xe4, 0xcc, 0x82, 0xcc, 0xd4, 0x3c, 0x88, 0x8b, 0x38,
+	0x83, 0x10, 0x02, 0x4a, 0xfc, 0x5c, 0xbc, 0x08, 0x13, 0x1d, 0x93, 0xb3, 0x9d, 0xc2, 0x4f, 0x3c,
+	0x92, 0x63, 0xbc, 0xf0, 0x48, 0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x09, 0x8f, 0xe5, 0x18, 0x2e,
+	0x3c, 0x96, 0x63, 0xb8, 0xf1, 0x58, 0x8e, 0x21, 0xca, 0x36, 0x3d, 0xb3, 0x24, 0xa3, 0x34, 0x49,
+	0x2f, 0x39, 0x3f, 0x57, 0x3f, 0x55, 0x17, 0xec, 0x25, 0xfd, 0xe2, 0x92, 0xc4, 0xa2, 0xf4, 0xc4,
+	0x92, 0x54, 0xfd, 0xbc, 0xd4, 0x92, 0xf2, 0xfc, 0xa2, 0xec, 0x62, 0x7d, 0x24, 0x4f, 0xea, 0x57,
+	0xe8, 0x83, 0x23, 0xa2, 0xa4, 0xb2, 0x20, 0xb5, 0x38, 0x89, 0x0d, 0x1c, 0x11, 0xc6, 0x80, 0x00,
+	0x00, 0x00, 0xff, 0xff, 0xfe, 0x83, 0xb1, 0x09, 0x9d, 0x01, 0x00, 0x00,
 }
 
 func (m *SwapPacketData) Marshal() (dAtA []byte, err error) {
@@ -207,6 +318,27 @@ func (m *SwapPacketData_NoData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
+func (m *SwapPacketData_SendPacket) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SwapPacketData_SendPacket) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SendPacket != nil {
+		{
+			size, err := m.SendPacket.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintPacket(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
 func (m *NoData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -223,6 +355,66 @@ func (m *NoData) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *NoData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *SendPacketData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SendPacketData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SendPacketData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Recipient) > 0 {
+		i -= len(m.Recipient)
+		copy(dAtA[i:], m.Recipient)
+		i = encodeVarintPacket(dAtA, i, uint64(len(m.Recipient)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.AmountDenom) > 0 {
+		i -= len(m.AmountDenom)
+		copy(dAtA[i:], m.AmountDenom)
+		i = encodeVarintPacket(dAtA, i, uint64(len(m.AmountDenom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SendPacketAck) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SendPacketAck) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SendPacketAck) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -265,7 +457,45 @@ func (m *SwapPacketData_NoData) Size() (n int) {
 	}
 	return n
 }
+func (m *SwapPacketData_SendPacket) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SendPacket != nil {
+		l = m.SendPacket.Size()
+		n += 1 + l + sovPacket(uint64(l))
+	}
+	return n
+}
 func (m *NoData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *SendPacketData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.AmountDenom)
+	if l > 0 {
+		n += 1 + l + sovPacket(uint64(l))
+	}
+	l = len(m.Recipient)
+	if l > 0 {
+		n += 1 + l + sovPacket(uint64(l))
+	}
+	return n
+}
+
+func (m *SendPacketAck) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -344,6 +574,41 @@ func (m *SwapPacketData) Unmarshal(dAtA []byte) error {
 			}
 			m.Packet = &SwapPacketData_NoData{v}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SendPacket", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPacket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPacket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPacket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &SendPacketData{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Packet = &SwapPacketData_SendPacket{v}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipPacket(dAtA[iNdEx:])
@@ -392,6 +657,170 @@ func (m *NoData) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: NoData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPacket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPacket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SendPacketData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPacket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SendPacketData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SendPacketData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AmountDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPacket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthPacket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthPacket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AmountDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Recipient", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPacket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthPacket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthPacket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Recipient = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPacket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPacket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SendPacketAck) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPacket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SendPacketAck: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SendPacketAck: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

@@ -8,6 +8,18 @@ option go_package = "github.com/e-money/stargate/networks/emibctokens/x/swap/typ
 // Msg defines the Msg service.
 service Msg {
     // this line is used by starport scaffolding # proto/tx/rpc
+  rpc SendSend(MsgSendSend) returns (MsgSendSendResponse);
 }
 
 // this line is used by starport scaffolding # proto/tx/message
+message MsgSendSend {
+  string sender = 1;
+  string port = 2;
+  string channelID = 3;
+  uint64 timeoutTimestamp = 4;
+  string amountDenom = 5;
+  string recipient = 6;
+}
+
+message MsgSendSendResponse {
+}

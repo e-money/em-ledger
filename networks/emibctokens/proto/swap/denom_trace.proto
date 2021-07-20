@@ -1,0 +1,13 @@
+syntax = "proto3";
+package emoney.emibctokens.swap;
+
+option go_package = "github.com/e-money/stargate/networks/emibctokens/x/swap/types";
+
+message DenomTrace {
+  string creator = 1;
+  string index = 2; 
+  string port = 3; 
+  string channel = 4; 
+  string origin = 5; 
+}
+
