@@ -4,12 +4,41 @@ package emoney.emibctokens.swap;
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 // this line is used by starport scaffolding # 1
+import "swap/ibc_token.proto";
 
 option go_package = "github.com/e-money/stargate/networks/emibctokens/x/swap/types";
 
 // Query defines the gRPC querier service.
 service Query {
     // this line is used by starport scaffolding # 2
+
+	// Queries a ibcToken by index.
+	rpc IbcToken(QueryGetIbcTokenRequest) returns (QueryGetIbcTokenResponse) {
+		option (google.api.http).get = "/e-money/emibctokens/swap/ibcToken/{index}";
+	}
+
+	// Queries a list of ibcToken items.
+	rpc IbcTokenAll(QueryAllIbcTokenRequest) returns (QueryAllIbcTokenResponse) {
+		option (google.api.http).get = "/e-money/emibctokens/swap/ibcToken";
+	}
+
 }
 
 // this line is used by starport scaffolding # 3
+message QueryGetIbcTokenRequest {
+	  string index = 1;
+
+}
+
+message QueryGetIbcTokenResponse {
+	IbcToken ibcToken = 1;
+}
+
+message QueryAllIbcTokenRequest {
+	cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllIbcTokenResponse {
+	repeated IbcToken ibcToken = 1;
+	cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

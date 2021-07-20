@@ -1,7 +1,7 @@
 package types
 
 import (
-	// this line is used by starport scaffolding # genesis/types/import
+	"fmt"
 	host "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
 )
 
@@ -13,6 +13,7 @@ func DefaultGenesis() *GenesisState {
 	return &GenesisState{
 		PortId: PortID,
 		// this line is used by starport scaffolding # genesis/types/default
+		IbcTokenList: []*IbcToken{},
 	}
 }
 
@@ -24,6 +25,16 @@ func (gs GenesisState) Validate() error {
 	}
 
 	// this line is used by starport scaffolding # genesis/types/validate
+	// Check for duplicated index in ibcToken
+	ibcTokenIndexMap := make(map[string]struct{})
+
+	for _, elem := range gs.IbcTokenList {
+		index := string(IbcTokenKey(elem.Index))
+		if _, ok := ibcTokenIndexMap[index]; ok {
+			return fmt.Errorf("duplicated index for ibcToken")
+		}
+		ibcTokenIndexMap[index] = struct{}{}
+	}
 
 	return nil
 }

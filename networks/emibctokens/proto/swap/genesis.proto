@@ -2,11 +2,13 @@ syntax = "proto3";
 package emoney.emibctokens.swap;
 
 // this line is used by starport scaffolding # genesis/proto/import
+import "swap/ibc_token.proto";
 
 option go_package = "github.com/e-money/stargate/networks/emibctokens/x/swap/types";
 
 // GenesisState defines the swap module's genesis state.
 message GenesisState {
     // this line is used by starport scaffolding # genesis/proto/state
+		repeated IbcToken ibcTokenList = 2; // this line is used by starport scaffolding # genesis/proto/stateField
     string port_id = 1; // this line is used by starport scaffolding # genesis/proto/stateField
 }
