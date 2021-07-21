@@ -1,5 +1,6 @@
 # emibctokens
 **emibctokens** is a blockchain built using Cosmos SDK and Tendermint and created with [Starport](https://github.com/tendermint/starport).
+An experimental vanilla stargate IBC compatible chain supporting token transfers and a developing POC for a new token transfer implementation.
 
 ## Get started
 

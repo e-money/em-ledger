@@ -49,3 +49,6 @@ Ignore errors that do not halt the script. `run.sh` tests the existence of IBC p
 The gm script is a bootstrapping script for launching IBC compatible gaia n-node testnets.
 Being versatile it allows launching multiple gaia testnets.
 It offers start, stop, reset functionality similarly to docker-compose.
+
+### 3rd IBC testnet 
+Within the peer ../emibctokens folder there is a Stargate IBC compatible chain to test a 3rd hop if needed. It is a Starport created chain from scratch, however parallel to its IBC module there is a POC swap module in progress. In any case its tokens relay functions are operable. Please look into its **../emibctokens/readme.md** for details to launch it. 

@@ -1,11 +1,8 @@
 # Makefile for the "emdnode" docker image.
 
-all: emdnode gaianode
+all: emdnode
 
 emdnode:
 	docker build --tag emoney/emdnode emdnode
 
-gaiadnode:
-	docker build --tag emoney/gaiadnode gaia
-
-.PHONY: all emdnode gaianode
+.PHONY: all emdnode
