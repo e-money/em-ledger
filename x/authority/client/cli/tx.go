@@ -5,10 +5,13 @@
 package cli
 
 import (
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	types1 "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
@@ -159,6 +162,47 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 			msg := &types.MsgReplaceAuthority{
 				Authority:    clientCtx.GetFromAddress().String(),
 				NewAuthority: args[1],
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func GetCmdScheduleUpgrade() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "schedule-upg [authority_key_or_address] plan_name",
+		Short:   "Schedule a software upgrade.",
+		Example: "emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0-43",
+		Long:    `Schedule a software upgrade.`,
+		Args:    cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			f := cmd.Flags()
+
+			err := f.Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			plan := types1.Plan{
+				Name: args[1],
+				Time: time.Now(),
+			}
+
+			_ = &types.MsgScheduleUpgrade{
+				Authority: clientCtx.GetFromAddress().String(),
+				Plan:      plan,
 			}
 
 			if err := msg.ValidateBasic(); err != nil {
