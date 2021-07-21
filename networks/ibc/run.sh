@@ -39,7 +39,6 @@ fi
 
 # start gaia
 $GM start
-$GM hermes config
 $GM hermes keys
 
 # e-money node 0 ports
@@ -52,4 +51,8 @@ $GM hermes keys
 
 ./emkey-2-hermes.sh ./emoney-config.toml localnet_reuse
 
-./ibc-conn.sh
+./ibc-relay.sh
+
+$GM stop
+
+echo "The relay test completed successfully!"

@@ -16,7 +16,7 @@ function client_create() {
   local src="$2"
 
   if ! hermes -c ./emoney-config.toml query client state "$dst" $CLIENT_ID ; then
-    hermes -c ./emoney-config.toml tx raw create client "$dst" "$src"
+    hermes -c ./emoney-config.toml create client "$dst" "$src"
   fi
 }
 
