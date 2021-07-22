@@ -3,6 +3,8 @@ package keeper
 import (
 	"context"
 
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -15,6 +17,8 @@ type authorityKeeper interface {
 	destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
+	scheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
+	applyUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 }
 type msgServer struct {
 	k authorityKeeper
@@ -107,4 +111,18 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 	}
 
 	return &types.MsgReplaceAuthorityResponse{}, nil
+}
+
+func (m msgServer) ScheduleUpgrade(
+	ctx context.Context, upgrade *types.MsgScheduleUpgrade,
+) (*types.MsgScheduleUpgradeResponse, error) {
+
+	return &types.MsgScheduleUpgradeResponse{}, nil
+}
+
+func (m msgServer) ApplyUpgrade(
+	ctx context.Context, upgrade *types.MsgApplyUpgrade,
+) (*types.MsgApplyUpgradeResponse, error) {
+
+	return &types.MsgApplyUpgradeResponse{}, nil
 }

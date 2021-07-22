@@ -8,6 +8,8 @@ import (
 	"errors"
 	"sync"
 
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -206,4 +208,16 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 	k.saveAuthorities(ctx, newAuthority, formerAuthorityAddress.String())
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
+}
+
+func (k Keeper) scheduleUpgrade(
+	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
+) (*sdk.Result, error) {
+	panic("implement me")
+}
+
+func (k Keeper) applyUpgrade(
+	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
+) (*sdk.Result, error) {
+	panic("implement me")
 }

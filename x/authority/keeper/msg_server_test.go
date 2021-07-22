@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/assert"
@@ -400,6 +402,8 @@ type authorityKeeperMock struct {
 	destroyIssuerfn    func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	SetGasPricesfn     func(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	replaceAuthorityfn func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
+	scheduleUpgradefn  func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
+	applyUpgradefn     func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 }
 
 func (a authorityKeeperMock) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
@@ -429,4 +433,20 @@ func (a authorityKeeperMock) replaceAuthority(ctx sdk.Context, authority, newAut
 	}
 
 	return a.replaceAuthorityfn(ctx, authority, newAuthority)
+}
+
+func (a authorityKeeperMock) scheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+	if a.scheduleUpgradefn == nil {
+		panic("not expected to be called")
+	}
+
+	return a.scheduleUpgradefn(ctx, authority, plan)
+}
+
+func (a authorityKeeperMock) applyUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+	if a.applyUpgradefn == nil {
+		panic("not expected to be called")
+	}
+
+	return a.applyUpgradefn(ctx, authority, plan)
 }

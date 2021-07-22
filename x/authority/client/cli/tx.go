@@ -5,13 +5,16 @@
 package cli
 
 import (
+	"fmt"
 	"time"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	types1 "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	upgtypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
@@ -29,6 +32,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdDestroyIssuer(),
 		getCmdSetGasPrices(),
 		GetCmdReplaceAuthority(),
+		GetCmdScheduleUpgrade(),
 	)
 
 	return authorityCmds
@@ -177,39 +181,86 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 
 func GetCmdScheduleUpgrade() *cobra.Command {
 	cmd := &cobra.Command{
+		//Use:     "schedule-upg [authority_key_or_address] plan_name [upg_height] [upg_time] [upg_commit_hash]",
 		Use:     "schedule-upg [authority_key_or_address] plan_name",
 		Short:   "Schedule a software upgrade.",
-		Example: "emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0-43",
+		Example: "emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0.43 --upg_height 2001",
 		Long:    `Schedule a software upgrade.`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			const (
+				upgHeight     = "upg-upgHeightVal"
+				upgTime       = "upg-timeVal"
+				upgCommitHash = "upg_commit_hash"
+			)
+
+			var (
+				upgHeightVal, timeVal int64
+				upgCommitVal          string
+			)
+
 			f := cmd.Flags()
+
+			f.Int64VarP(&upgHeightVal, upgHeight, "h", 0, "upgrade block upgHeightVal")
+			f.Int64VarP(&timeVal, upgTime, "t", 0, "upgrade block timeVal (in Unix seconds) to upgrade")
+			f.StringVarP(&upgCommitVal, upgCommitHash, "g", "", "upgrade git upgCommitVal hash")
 
 			err := f.Set(flags.FlagFrom, args[0])
 			if err != nil {
 				return err
 			}
 
+			if upgHeightVal == 0 && timeVal == 0 && upgCommitVal == "" {
+				return sdkerrors.Wrapf(
+					sdkerrors.ErrInvalidRequest,
+					"need to specify --%s or --%s or --%s", upgHeight, upgTime,
+					upgCommitHash,
+				)
+			}
+
+			flagsSet := 0
+			if upgHeightVal != 0 {
+				flagsSet++
+			}
+			if timeVal != 0 {
+				flagsSet++
+			}
+			if upgCommitVal != "" {
+				flagsSet++
+			}
+			if flagsSet != 1 {
+				return sdkerrors.Wrapf(
+					sdkerrors.ErrInvalidRequest,
+					"specify only one of the flags: --%s or --%s or --%s", upgHeight, upgTime,
+					upgCommitHash,
+				)
+			}
+
+			upgTimeVal := time.Unix(timeVal, 0)
+
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			plan := types1.Plan{
-				Name: args[1],
-				Time: time.Now(),
-			}
-
-			_ = &types.MsgScheduleUpgrade{
+			msg := &types.MsgScheduleUpgrade{
 				Authority: clientCtx.GetFromAddress().String(),
-				Plan:      plan,
+				Plan: upgtypes.Plan{
+					Name:   args[1],
+					Time:   upgTimeVal,
+					Height: upgHeightVal,
+					Info:   upgCommitVal,
+				},
 			}
 
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			fmt.Println(msg)
+
+			//return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			return nil
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
