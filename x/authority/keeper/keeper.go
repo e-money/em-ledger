@@ -26,22 +26,28 @@ const (
 var _ authorityKeeper = Keeper{}
 
 type Keeper struct {
-	cdc        codec.BinaryMarshaler
-	storeKey   sdk.StoreKey
-	ik         issuer.Keeper
-	bankKeeper types.BankKeeper
-	gpk        types.GasPricesKeeper
+	cdc           codec.BinaryMarshaler
+	storeKey      sdk.StoreKey
+	ik            issuer.Keeper
+	bankKeeper    types.BankKeeper
+	upgradeKeeper types.UpgradeKeeper
+	gpk           types.GasPricesKeeper
 
 	gasPricesInit *sync.Once
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
+func NewKeeper(
+	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey,
+	issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper,
+	gasPricesKeeper types.GasPricesKeeper, upgradeKeeper types.UpgradeKeeper,
+) Keeper {
 	return Keeper{
-		cdc:        cdc,
-		ik:         issuerKeeper,
-		bankKeeper: bankKeeper,
-		gpk:        gasPricesKeeper,
-		storeKey:   storeKey,
+		cdc:           cdc,
+		ik:            issuerKeeper,
+		bankKeeper:    bankKeeper,
+		gpk:           gasPricesKeeper,
+		storeKey:      storeKey,
+		upgradeKeeper: upgradeKeeper,
 
 		gasPricesInit: new(sync.Once),
 	}
@@ -213,11 +219,24 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 func (k Keeper) scheduleUpgrade(
 	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
 ) (*sdk.Result, error) {
-	panic("implement me")
+
+	// create a no-op handler if one does not exist
+	if k.upgradeKeeper.HasHandler(plan.Name) {
+		k.upgradeKeeper.SetUpgradeHandler(plan.Name, func(ctx sdk.Context, plan upgradetypes.Plan) {})
+	}
+
+	if err := k.upgradeKeeper.ScheduleUpgrade(ctx, plan); err != nil {
+		return nil, err
+	}
+
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 func (k Keeper) applyUpgrade(
 	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
 ) (*sdk.Result, error) {
-	panic("implement me")
+
+	k.upgradeKeeper.ApplyUpgrade(ctx, plan)
+
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

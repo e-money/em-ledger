@@ -7,6 +7,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/exported"
+	"github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
 type (
@@ -16,5 +17,13 @@ type (
 
 	BankKeeper interface {
 		GetSupply(ctx sdk.Context) exported.SupplyI
+	}
+
+	UpgradeKeeper interface {
+		ApplyUpgrade(ctx sdk.Context, plan types.Plan)
+		GetUpgradePlan(ctx sdk.Context) (plan types.Plan, havePlan bool)
+		HasHandler(name string) bool
+		ScheduleUpgrade(ctx sdk.Context, plan types.Plan) error
+		SetUpgradeHandler(name string, upgradeHandler types.UpgradeHandler)
 	}
 )

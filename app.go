@@ -7,6 +7,12 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -65,11 +71,6 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"io"
-	"net/http"
-	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -342,7 +343,7 @@ func NewApp(
 	app.inflationKeeper = inflation.NewKeeper(app.appCodec, keys[inflation.StoreKey], app.bankKeeper, app.accountKeeper, app.stakingKeeper, buyback.AccountName, authtypes.FeeCollectorName)
 	app.lpKeeper = liquidityprovider.NewKeeper(app.appCodec, keys[lptypes.StoreKey], app.bankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper)
-	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app)
+	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app, app.upgradeKeeper)
 	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], memKeys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
 	app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
