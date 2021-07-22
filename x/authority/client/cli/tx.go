@@ -5,7 +5,6 @@
 package cli
 
 import (
-	"fmt"
 	"time"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -180,60 +179,36 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 }
 
 func GetCmdScheduleUpgrade() *cobra.Command {
+	const (
+		upgHeight     = "upg-height"
+		upgTime       = "upg-time"
+		upgCommitHash = "upg-commit-hash"
+	)
+
+	var (
+		upgHeightVal, timeVal int64
+		upgCommitVal          string
+	)
+
 	cmd := &cobra.Command{
-		//Use:     "schedule-upg [authority_key_or_address] plan_name [upg_height] [upg_time] [upg_commit_hash]",
-		Use:     "schedule-upg [authority_key_or_address] plan_name",
-		Short:   "Schedule a software upgrade.",
-		Example: "emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0.43 --upg_height 2001",
-		Long:    `Schedule a software upgrade.`,
-		Args:    cobra.ExactArgs(2),
+		Use:   "schedule-upg [authority_key_or_address] plan_name",
+		Short: "Schedule a software upgrade.",
+		Example: `emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0.43 --upg_height 2001
+emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 'New Staking Rewards 36%' --upg_time 1628956125 # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
+emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --upg_commit 6e8964b9a524e2ddd949c4afab5e1dfdcb9d588e`,
+		Long: `Schedule a software upgrade.`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			const (
-				upgHeight     = "upg-upgHeightVal"
-				upgTime       = "upg-timeVal"
-				upgCommitHash = "upg_commit_hash"
-			)
-
-			var (
-				upgHeightVal, timeVal int64
-				upgCommitVal          string
-			)
-
-			f := cmd.Flags()
-
-			f.Int64VarP(&upgHeightVal, upgHeight, "h", 0, "upgrade block upgHeightVal")
-			f.Int64VarP(&timeVal, upgTime, "t", 0, "upgrade block timeVal (in Unix seconds) to upgrade")
-			f.StringVarP(&upgCommitVal, upgCommitHash, "g", "", "upgrade git upgCommitVal hash")
-
-			err := f.Set(flags.FlagFrom, args[0])
+			err := cmd.Flags().Set(flags.FlagFrom, args[0])
 			if err != nil {
 				return err
 			}
 
-			if upgHeightVal == 0 && timeVal == 0 && upgCommitVal == "" {
-				return sdkerrors.Wrapf(
-					sdkerrors.ErrInvalidRequest,
-					"need to specify --%s or --%s or --%s", upgHeight, upgTime,
-					upgCommitHash,
-				)
-			}
-
-			flagsSet := 0
-			if upgHeightVal != 0 {
-				flagsSet++
-			}
-			if timeVal != 0 {
-				flagsSet++
-			}
-			if upgCommitVal != "" {
-				flagsSet++
-			}
-			if flagsSet != 1 {
-				return sdkerrors.Wrapf(
-					sdkerrors.ErrInvalidRequest,
-					"specify only one of the flags: --%s or --%s or --%s", upgHeight, upgTime,
-					upgCommitHash,
-				)
+			if err := validateUpgFlags(
+				upgHeightVal, timeVal, upgCommitVal, upgHeight, upgTime,
+				upgCommitHash,
+			); err != nil {
+				return err
 			}
 
 			upgTimeVal := time.Unix(timeVal, 0)
@@ -257,12 +232,52 @@ func GetCmdScheduleUpgrade() *cobra.Command {
 				return err
 			}
 
-			fmt.Println(msg)
-
-			//return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-			return nil
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	f := cmd.Flags()
+	f.Int64VarP(&upgHeightVal, upgHeight, "n", 0, "upgrade block height number")
+	f.Int64VarP(
+		&timeVal, upgTime, "t", 0, "upgrade block time (in Unix seconds)",
+	)
+	f.StringVarP(
+		&upgCommitVal, upgCommitHash, "g", "", "upgrade git commit hash",
+	)
+
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
+}
+
+func validateUpgFlags(
+	upgHeightVal int64, timeVal int64, upgCommitVal string, upgHeight string,
+	upgTime string, upgCommitHash string,
+) error {
+	if upgHeightVal == 0 && timeVal == 0 && upgCommitVal == "" {
+		return sdkerrors.Wrapf(
+			types.ErrMissingFlag,
+			"need to specify --%s or --%s or --%s", upgHeight, upgTime,
+			upgCommitHash,
+		)
+	}
+
+	flagsSet := 0
+	if upgHeightVal != 0 {
+		flagsSet++
+	}
+	if timeVal != 0 {
+		flagsSet++
+	}
+	if upgCommitVal != "" {
+		flagsSet++
+	}
+	if flagsSet != 1 {
+		return sdkerrors.Wrapf(
+			sdkerrors.ErrInvalidRequest,
+			"specify only one of the flags: --%s or --%s or --%s", upgHeight,
+			upgTime,
+			upgCommitHash,
+		)
+	}
+
+	return nil
 }
