@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -ev
+
+EMD=../../build/emd
+EMD_HOME=$PWD/..
+EMD_NODE=$EMD_HOME/.emd
+
+# do not do this in production
+rm -rf "$EMD_NODE"/config
+rm -rf "$EMD_NODE"/data
+rm -rf "$EMD_NODE"/keyring-test
+# do not delete cosmovisor if it exists
+
+$EMD init test --chain-id=test --home="$EMD_NODE" --overwrite
+$EMD keys add validator --keyring-backend=test --home="$EMD_NODE"
+$EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home=$EMD_NODE
+$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id=test
+$EMD collect-gentxs --home="$EMD_NODE"
+
+# establish authority emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t
+AUTH_SEED="fuel public electric luxury short upper quit edge ginger need olive gesture time useful stadium exhaust since team pond wool type flat focus narrow"
+(echo "$AUTH_SEED"; echo "$AUTH_SEED") | $EMD keys add authoritykey --recover --keyring-backend=test --home="$EMD_NODE"
+AUTHORITY_ADDR=$($EMD keys show authoritykey -a --keyring-backend=test --home="$EMD_NODE")
+AUTHORITY_ADDR_VAL=".app_state.authority.key=\"$AUTHORITY_ADDR\""
+jq $AUTHORITY_ADDR_VAL < "$EMD_NODE"/config/genesis.json > "$EMD_NODE"/config/tmp_genesis.json
+mv "$EMD_NODE"/config/tmp_genesis.json "$EMD_NODE"/config/genesis.json
+
+$EMD start --home="$EMD_NODE"
