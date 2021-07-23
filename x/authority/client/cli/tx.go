@@ -180,14 +180,14 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 
 func GetCmdScheduleUpgrade() *cobra.Command {
 	const (
-		upgHeight     = "upg-height"
-		upgTime       = "upg-time"
-		upgCommitHash = "upg-commit-hash"
+		upgHeight = "upg-height"
+		upgTime   = "upg-time"
+		upgInfo   = "upg-info"
 	)
 
 	var (
-		upgHeightVal, timeVal int64
-		upgCommitVal          string
+		upgHeightVal, upgTimeSecsVal int64
+		upgInfoVal                   string
 	)
 
 	cmd := &cobra.Command{
@@ -195,7 +195,7 @@ func GetCmdScheduleUpgrade() *cobra.Command {
 		Short: "Schedule a software upgrade.",
 		Example: `emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0.43 --upg_height 2001
 emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 'New Staking Rewards 36%' --upg_time 1628956125 # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
-emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --upg_commit 6e8964b9a524e2ddd949c4afab5e1dfdcb9d588e`,
+emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --upg_height 2001 --upg_info "https://e-money.com/mainnet-099-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e"`,
 		Long: `Schedule a software upgrade.`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -205,13 +205,12 @@ emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --
 			}
 
 			if err := validateUpgFlags(
-				upgHeightVal, timeVal, upgCommitVal, upgHeight, upgTime,
-				upgCommitHash,
+				upgHeight, upgHeightVal, upgTime, upgTimeSecsVal,
 			); err != nil {
 				return err
 			}
 
-			upgTimeVal := time.Unix(timeVal, 0)
+			upgTimeVal := time.Unix(upgTimeSecsVal, 0)
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -224,7 +223,7 @@ emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --
 					Name:   args[1],
 					Time:   upgTimeVal,
 					Height: upgHeightVal,
-					Info:   upgCommitVal,
+					Info:   upgInfoVal,
 				},
 			}
 
@@ -238,10 +237,10 @@ emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --
 	f := cmd.Flags()
 	f.Int64VarP(&upgHeightVal, upgHeight, "n", 0, "upgrade block height number")
 	f.Int64VarP(
-		&timeVal, upgTime, "t", 0, "upgrade block time (in Unix seconds)",
+		&upgTimeSecsVal, upgTime, "t", 0, "upgrade block time (in Unix seconds)",
 	)
 	f.StringVarP(
-		&upgCommitVal, upgCommitHash, "g", "", "upgrade git commit hash",
+		&upgInfoVal, upgInfo, "i", "", "upgrade info",
 	)
 
 	flags.AddTxFlagsToCmd(cmd)
@@ -249,14 +248,12 @@ emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --
 }
 
 func validateUpgFlags(
-	upgHeightVal int64, timeVal int64, upgCommitVal string, upgHeight string,
-	upgTime string, upgCommitHash string,
+	upgHeight string, upgHeightVal int64, upgTime string, timeVal int64,
 ) error {
-	if upgHeightVal == 0 && timeVal == 0 && upgCommitVal == "" {
+	if upgHeightVal == 0 && timeVal == 0 {
 		return sdkerrors.Wrapf(
 			types.ErrMissingFlag,
-			"need to specify --%s or --%s or --%s", upgHeight, upgTime,
-			upgCommitHash,
+			"need to specify --%s or --%s", upgHeight, upgTime,
 		)
 	}
 
@@ -267,15 +264,11 @@ func validateUpgFlags(
 	if timeVal != 0 {
 		flagsSet++
 	}
-	if upgCommitVal != "" {
-		flagsSet++
-	}
 	if flagsSet != 1 {
 		return sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidRequest,
-			"specify only one of the flags: --%s or --%s or --%s", upgHeight,
+			"specify only one of the flags: --%s or --%s", upgHeight,
 			upgTime,
-			upgCommitHash,
 		)
 	}
 
