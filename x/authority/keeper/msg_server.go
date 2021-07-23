@@ -17,8 +17,8 @@ type authorityKeeper interface {
 	destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
-	scheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
-	applyUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
+	scheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
+	applyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
 }
 type msgServer struct {
 	k authorityKeeper
@@ -114,8 +114,19 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 }
 
 func (m msgServer) ScheduleUpgrade(
-	ctx context.Context, upgrade *types.MsgScheduleUpgrade,
+	goCtx context.Context, upgrade *types.MsgScheduleUpgrade,
 ) (*types.MsgScheduleUpgradeResponse, error) {
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	result, err := m.k.scheduleUpgrade(ctx, upgrade.Plan)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range result.Events {
+		ctx.EventManager().EmitEvent(sdk.Event(e))
+	}
 
 	return &types.MsgScheduleUpgradeResponse{}, nil
 }

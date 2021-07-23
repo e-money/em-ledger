@@ -216,9 +216,7 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) scheduleUpgrade(
-	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
-) (*sdk.Result, error) {
+func (k Keeper) scheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
 
 	// create a no-op handler if one does not exist
 	if k.upgradeKeeper.HasHandler(plan.Name) {
@@ -232,9 +230,7 @@ func (k Keeper) scheduleUpgrade(
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) applyUpgrade(
-	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
-) (*sdk.Result, error) {
+func (k Keeper) applyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
 
 	k.upgradeKeeper.ApplyUpgrade(ctx, plan)
 
