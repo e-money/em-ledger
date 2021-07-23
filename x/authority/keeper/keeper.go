@@ -217,12 +217,6 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 }
 
 func (k Keeper) scheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
-
-	// create a no-op handler if one does not exist
-	if k.upgradeKeeper.HasHandler(plan.Name) {
-		k.upgradeKeeper.SetUpgradeHandler(plan.Name, func(ctx sdk.Context, plan upgradetypes.Plan) {})
-	}
-
 	if err := k.upgradeKeeper.ScheduleUpgrade(ctx, plan); err != nil {
 		return nil, err
 	}
