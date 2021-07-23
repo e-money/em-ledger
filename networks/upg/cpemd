@@ -1,0 +1,34 @@
+#!/bin/zsh
+
+set -e
+
+# cosmovisor constants
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+
+if [[ -d $PWD/.emd ]]; then
+  export DAEMON_HOME=$PWD/.emd
+elif [[ -d ../.emd ]]; then
+  pushd -q ../
+  export DAEMON_HOME=$PWD/.emd
+  popd -q
+else
+  echo ".emd folder not found neither in $PWD nor in parent. run startemd.sh to create node"
+  exit 1
+fi
+
+echo "node home: $DAEMON_HOME"
+
+EMD=$DAEMON_HOME/../../build/emd
+
+if [[ ! -f $DAEMON_HOME/cosmovisor/genesis/bin/emd ]]; then
+
+  mkdir -p "$DAEMON_HOME"/cosmovisor/genesis/bin
+  cp "$EMD" "$DAEMON_HOME"/cosmovisor/genesis/bin
+
+fi
+
+echo "legacy or current binary in "$DAEMON_HOME"/cosmovisor/genesis/bin"
+
+echo "current version: $(cosmovisor version)"
