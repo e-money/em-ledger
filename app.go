@@ -99,7 +99,8 @@ import (
 )
 
 const (
-	appName = "emoneyd"
+	appName            = "emoneyd"
+	testUpgradeHandler = "emdtest1"
 )
 
 var (
@@ -209,6 +210,8 @@ type EMoneyApp struct {
 
 	// the module manager
 	mm *module.Manager
+
+	upgradeHandlerFunc upgradetypes.UpgradeHandler
 }
 
 func (app *EMoneyApp) LegacyAmino() *codec.LegacyAmino {
@@ -347,6 +350,38 @@ func NewApp(
 	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], memKeys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
 	app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
+
+	/*
+	 * This is a test handler for trying out cosmovisor
+	 * Setting gas to One ungm
+	**/
+	app.upgradeHandlerFunc = func(ctx sdk.Context, plan upgradetypes.Plan) {
+		genesisAuth := app.authorityKeeper.GetAuthoritySet(ctx)
+		if genesisAuth.Address == "" {
+			panic("authority should be set in genesis")
+		}
+
+		authAcc, err := sdk.AccAddressFromBech32(genesisAuth.Address)
+		if err != nil {
+			panic(err)
+		}
+
+		newGas := sdk.DecCoins{
+			sdk.NewDecCoin("ungm", sdk.OneInt()),
+		}
+
+		_, err = app.authorityKeeper.SetGasPrices(ctx, authAcc, newGas)
+		if err != nil {
+			panic(err)
+		}
+
+		gasPrices := app.authorityKeeper.GetGasPrices(ctx)
+		if gasPrices.Empty() || !gasPrices.IsEqual(newGas) {
+			panic(fmt.Sprintf("expected Gas: %+v != store Gas: %+v", newGas, gasPrices))
+		}
+	}
+
+	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, app.upgradeHandlerFunc)
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.

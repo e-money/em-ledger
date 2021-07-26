@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/x/bank/types"
+
 	apptypes "github.com/e-money/em-ledger/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,6 +20,10 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
+
+func init() {
+	apptypes.ConfigureSDK()
+}
 
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	encCfg, db, app, _ := getEmSimApp(t, rand.Bytes(sdk.AddrLen))
@@ -107,11 +113,12 @@ func (et *emAppTests) initEmApp(t *testing.T) {
 		Time:   time.Now(),
 		Height: 10,
 	})
+
+	totalSupply := types.NewSupply(sdk.NewCoins(sdk.NewInt64Coin("ungm", 100000000000000000)))
+	et.app.bankKeeper.SetSupply(et.ctx, totalSupply)
 }
 
 func Test_Upgrade(t *testing.T) {
-	apptypes.ConfigureSDK()
-
 	tests := []struct {
 		suite        emAppTests
 		name         string
@@ -307,4 +314,19 @@ func Test_Upgrade(t *testing.T) {
 			},
 		)
 	}
+}
+
+func Test_UpgradeHandler(t *testing.T) {
+	emAppTest := emAppTests{}
+	emAppTest.initEmApp(t)
+
+	hasHandler := emAppTest.app.upgradeKeeper.HasHandler(testUpgradeHandler)
+	require.True(t, hasHandler, "has handler")
+
+	emAppTest.app.upgradeHandlerFunc(emAppTest.ctx, upgradetypes.Plan{})
+
+	gasPrices := emAppTest.app.authorityKeeper.GetGasPrices(emAppTest.ctx)
+	require.Equal(t, gasPrices, sdk.DecCoins{
+		sdk.NewDecCoin("ungm", sdk.OneInt()),
+	})
 }
