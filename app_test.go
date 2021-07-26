@@ -3,11 +3,8 @@ package emoney
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
-
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
 	apptypes "github.com/e-money/em-ledger/types"
 
@@ -23,7 +20,7 @@ import (
 )
 
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {
-	encCfg, db, app := getEmSimApp(t, rand.Bytes(sdk.AddrLen))
+	encCfg, db, app, _ := getEmSimApp(t, rand.Bytes(sdk.AddrLen))
 	app.Commit()
 
 	// Making a new app object with the db, so that initchain hasn't been called
@@ -37,12 +34,19 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	)
 }
 
-func getEmSimApp(t *testing.T, authorityAcc sdk.AccAddress) (EncodingConfig, *dbm.MemDB, *EMoneyApp) {
-	encCfg := MakeEncodingConfig()
+func getEmSimApp(
+	t *testing.T, authorityAcc sdk.AccAddress,
+) (encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string) {
+	t.Helper()
+
+	encCfg = MakeEncodingConfig()
 	db := dbm.NewMemDB()
+	homeDir := t.TempDir()
+	t.Log("home dir:", homeDir)
+
 	app := NewApp(
 		log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true,
-		map[int64]bool{}, t.TempDir(), 0, encCfg, EmptyAppOptions{},
+		map[int64]bool{}, homeDir, 0, encCfg, EmptyAppOptions{},
 	)
 
 	for acc := range maccPerms {
@@ -70,7 +74,7 @@ func getEmSimApp(t *testing.T, authorityAcc sdk.AccAddress) (EncodingConfig, *db
 		},
 	)
 
-	return encCfg, db, app
+	return encCfg, db, app, homeFolder
 }
 
 // EmptyAppOptions is a stub implementing AppOptions
@@ -89,17 +93,13 @@ type emAppTests struct {
 }
 
 func (et *emAppTests) initEmApp(t *testing.T) {
-	homeDir := filepath.Join(t.TempDir(), "x_upgrade_keeper_test")
+	t.Helper()
 
 	var err error
 	et.authority, err = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	require.NoError(t, err)
 
-	_, _, app := getEmSimApp(t, et.authority)
-	app.upgradeKeeper = upgradekeeper.NewKeeper( // recreate keeper in order to use a custom home path
-		make(map[int64]bool), app.GetKey(upgradetypes.StoreKey), app.AppCodec(), homeDir,
-	)
-	t.Log("home dir:", homeDir)
+	_, _, app, homeDir := getEmSimApp(t, et.authority)
 
 	et.homeDir = homeDir
 	et.app = app
