@@ -14,6 +14,8 @@
 - [em/authority/v1/query.proto](#em/authority/v1/query.proto)
     - [QueryGasPricesRequest](#em.authority.v1.QueryGasPricesRequest)
     - [QueryGasPricesResponse](#em.authority.v1.QueryGasPricesResponse)
+    - [QueryUpgradePlanRequest](#em.authority.v1.QueryUpgradePlanRequest)
+    - [QueryUpgradePlanResponse](#em.authority.v1.QueryUpgradePlanResponse)
   
     - [Query](#em.authority.v1.Query)
   
@@ -260,6 +262,31 @@
 
 
 
+
+<a name="em.authority.v1.QueryUpgradePlanRequest"></a>
+
+### QueryUpgradePlanRequest
+
+
+
+
+
+
+
+<a name="em.authority.v1.QueryUpgradePlanResponse"></a>
+
+### QueryUpgradePlanResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `plan` | [cosmos.upgrade.v1beta1.Plan](#cosmos.upgrade.v1beta1.Plan) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -275,6 +302,7 @@
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `GasPrices` | [QueryGasPricesRequest](#em.authority.v1.QueryGasPricesRequest) | [QueryGasPricesResponse](#em.authority.v1.QueryGasPricesResponse) |  | GET|/e-money/authority/v1/gasprices|
+| `UpgradePlan` | [QueryUpgradePlanRequest](#em.authority.v1.QueryUpgradePlanRequest) | [QueryUpgradePlanResponse](#em.authority.v1.QueryUpgradePlanResponse) |  | GET|/e-money/authority/v1/upgrade_plan|
 
  <!-- end services -->
 

@@ -408,6 +408,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyLp, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyUpg, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.NoError(t, err)

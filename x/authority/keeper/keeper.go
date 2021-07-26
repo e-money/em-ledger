@@ -216,7 +216,13 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) ScheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
+func (k Keeper) ScheduleUpgrade(
+	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
+) (*sdk.Result, error) {
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
+
 	if err := k.upgradeKeeper.ScheduleUpgrade(ctx, plan); err != nil {
 		return nil, err
 	}
@@ -224,7 +230,12 @@ func (k Keeper) ScheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.R
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) ApplyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
+func (k Keeper) ApplyUpgrade(
+	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
+) (*sdk.Result, error) {
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
 
 	k.upgradeKeeper.ApplyUpgrade(ctx, plan)
 

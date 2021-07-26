@@ -4,6 +4,7 @@ package em.authority.v1;
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "google/api/annotations.proto";
+import "cosmos/upgrade/v1beta1/upgrade.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/authority/types";
 
@@ -11,6 +12,10 @@ service Query {
   rpc GasPrices(QueryGasPricesRequest) returns (QueryGasPricesResponse) {
     option (google.api.http).get = "/e-money/authority/v1/gasprices";
   };
+
+  rpc UpgradePlan(QueryUpgradePlanRequest) returns (QueryUpgradePlanResponse){
+    option (google.api.http).get = "/e-money/authority/v1/upgrade_plan";
+  }
 }
 
 message QueryGasPricesRequest {}
@@ -21,6 +26,15 @@ message QueryGasPricesResponse {
   repeated cosmos.base.v1beta1.DecCoin min_gas_prices = 1 [
     (gogoproto.moretags) = "yaml:\"min_gas_prices\"",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message QueryUpgradePlanRequest {}
+
+message QueryUpgradePlanResponse {
+  cosmos.upgrade.v1beta1.Plan plan = 1 [
+    (gogoproto.moretags) = "yaml:\"plan\"",
     (gogoproto.nullable) = false
   ];
 }

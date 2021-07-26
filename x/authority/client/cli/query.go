@@ -22,6 +22,7 @@ func GetQueryCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		GetGasPricesCmd(),
+		GetUpgradePlanCmd(),
 	)
 
 	return cmd
@@ -40,6 +41,30 @@ func GetGasPricesCmd() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 			res, err := queryClient.GasPrices(cmd.Context(), &types.QueryGasPricesRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func GetUpgradePlanCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "upg-plan",
+		Short: "Query the current upgrade plan",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.UpgradePlan(cmd.Context(), &types.QueryUpgradePlanRequest{})
 			if err != nil {
 				return err
 			}

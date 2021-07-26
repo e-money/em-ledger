@@ -82,18 +82,20 @@ func (ao EmptyAppOptions) Get(o string) interface{} {
 }
 
 type emAppTests struct {
-	ctx     sdk.Context
-	homeDir string
-	app     *EMoneyApp
+	ctx       sdk.Context
+	homeDir   string
+	app       *EMoneyApp
+	authority sdk.AccAddress
 }
 
 func (et *emAppTests) initEmApp(t *testing.T) {
 	homeDir := filepath.Join(t.TempDir(), "x_upgrade_keeper_test")
 
-	authorityAddr, err := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+	var err error
+	et.authority, err = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	require.NoError(t, err)
 
-	_, _, app := getEmSimApp(t, authorityAddr)
+	_, _, app := getEmSimApp(t, et.authority)
 	app.upgradeKeeper = upgradekeeper.NewKeeper( // recreate keeper in order to use a custom home path
 		make(map[int64]bool), app.GetKey(upgradetypes.StoreKey), app.AppCodec(), homeDir,
 	)
@@ -161,11 +163,13 @@ func Test_Upgrade(t *testing.T) {
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 
-				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
-					Name:   "alt-good",
-					Info:   "new text here",
-					Height: 543210000,
-				})
+				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(
+					simApp.ctx, simApp.authority, upgradetypes.Plan{
+						Name:   "alt-good",
+						Info:   "new text here",
+						Height: 543210000,
+					},
+				)
 				require.NoError(t, err)
 			},
 			expPass: true,
@@ -178,11 +182,13 @@ func Test_Upgrade(t *testing.T) {
 				Height: 123450000,
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
-				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
-					Name:   "alt-good",
-					Info:   "new text here",
-					Height: 543210000,
-				})
+				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(
+					simApp.ctx, simApp.authority, upgradetypes.Plan{
+						Name:   "alt-good",
+						Info:   "new text here",
+						Height: 543210000,
+					},
+				)
 				require.NoError(t, err)
 			},
 			expPass: true,
@@ -195,11 +201,13 @@ func Test_Upgrade(t *testing.T) {
 				Height: 543210000,
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
-				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
-					Name:   "alt-good",
-					Info:   "new text here",
-					Height: 123450000,
-				})
+				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(
+					simApp.ctx, simApp.authority, upgradetypes.Plan{
+						Name:   "alt-good",
+						Info:   "new text here",
+						Height: 123450000,
+					},
+				)
 				require.NoError(t, err)
 			},
 			expPass: true,
@@ -243,14 +251,13 @@ func Test_Upgrade(t *testing.T) {
 			setupUpgCond: func(simEmApp emAppTests, plan *upgradetypes.Plan) {
 				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, _ upgradetypes.Plan) {})
 				_, err := simEmApp.app.authorityKeeper.ApplyUpgrade(
-					simEmApp.ctx, upgradetypes.Plan{
+					simEmApp.ctx, simEmApp.authority, upgradetypes.Plan{
 						Name:   "all-good",
 						Info:   "some text here",
 						Height: 123450000,
-					})
-				if err != nil {
-					panic(err)
-				}
+					},
+				)
+				require.NoError(t, err)
 			},
 			expPass: false,
 		},
@@ -266,7 +273,9 @@ func Test_Upgrade(t *testing.T) {
 
 				// schedule upgrade plan
 				var err error
-				_, err = tt.suite.app.authorityKeeper.ScheduleUpgrade(tt.suite.ctx, tt.plan)
+				_, err = tt.suite.app.authorityKeeper.ScheduleUpgrade(
+					tt.suite.ctx, tt.suite.authority, tt.plan,
+				)
 				schedPlan, hasPlan := tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
 
 				// validate plan side-effect
@@ -281,7 +290,9 @@ func Test_Upgrade(t *testing.T) {
 				// apply and confirm plan deletion
 				if err == nil {
 					tt.suite.app.upgradeKeeper.SetUpgradeHandler(tt.plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
-					_, err = tt.suite.app.authorityKeeper.ApplyUpgrade(tt.suite.ctx, tt.plan)
+					_, err = tt.suite.app.authorityKeeper.ApplyUpgrade(
+						tt.suite.ctx, tt.suite.authority, tt.plan,
+					)
 					schedPlan, hasPlan = tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
 					require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
 					require.NotEqualf(t, schedPlan, tt.plan, "queried %v == %v", schedPlan, tt.plan)
