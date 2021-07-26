@@ -403,6 +403,7 @@ type authorityKeeperMock struct {
 	SetGasPricesfn     func(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	replaceAuthorityfn func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	scheduleUpgradefn  func(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
+	getUpgradePlanfn   func(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
 	applyUpgradefn     func(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
 }
 
@@ -435,7 +436,7 @@ func (a authorityKeeperMock) replaceAuthority(ctx sdk.Context, authority, newAut
 	return a.replaceAuthorityfn(ctx, authority, newAuthority)
 }
 
-func (a authorityKeeperMock) scheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
+func (a authorityKeeperMock) ScheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
 	if a.scheduleUpgradefn == nil {
 		panic("not expected to be called")
 	}
@@ -443,7 +444,15 @@ func (a authorityKeeperMock) scheduleUpgrade(ctx sdk.Context, plan upgradetypes.
 	return a.scheduleUpgradefn(ctx, plan)
 }
 
-func (a authorityKeeperMock) applyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
+func (a authorityKeeperMock) GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool) {
+	if a.getUpgradePlanfn == nil {
+		panic("not expected to be called")
+	}
+
+	return a.getUpgradePlanfn(ctx)
+}
+
+func (a authorityKeeperMock) ApplyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error) {
 	if a.applyUpgradefn == nil {
 		panic("not expected to be called")
 	}

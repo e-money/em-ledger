@@ -81,13 +81,13 @@ func (ao EmptyAppOptions) Get(o string) interface{} {
 	return nil
 }
 
-type upgTests struct {
+type emAppTests struct {
 	ctx     sdk.Context
 	homeDir string
 	app     *EMoneyApp
 }
 
-func (ut *upgTests) initApp(t *testing.T) {
+func (et *emAppTests) initEmApp(t *testing.T) {
 	homeDir := filepath.Join(t.TempDir(), "x_upgrade_keeper_test")
 
 	authorityAddr, err := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -99,69 +99,69 @@ func (ut *upgTests) initApp(t *testing.T) {
 	)
 	t.Log("home dir:", homeDir)
 
-	ut.homeDir = homeDir
-	ut.app = app
-	ut.ctx = app.BaseApp.NewContext(false, tmproto.Header{
+	et.homeDir = homeDir
+	et.app = app
+	et.ctx = app.BaseApp.NewContext(false, tmproto.Header{
 		Time:   time.Now(),
 		Height: 10,
 	})
 }
 
-func Test_ScheduleUpgrade(t *testing.T) {
+func Test_Upgrade(t *testing.T) {
 	apptypes.ConfigureSDK()
 
 	tests := []struct {
-		suite        upgTests
+		suite        emAppTests
 		name         string
 		plan         upgradetypes.Plan
-		setupUpgCond func(simApp upgTests, plan *upgradetypes.Plan)
+		setupUpgCond func(simApp emAppTests, plan *upgradetypes.Plan)
 		expPass      bool
+		qrySched     bool
+		qryApply     bool
 	}{
 		{
-			suite: upgTests{},
-			name:  "successful time schedule",
+			name: "successful time schedule",
 			plan: upgradetypes.Plan{
 				Name: "all-good",
 				Info: "some text here",
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 				plan.Time = simApp.ctx.BlockTime().Add(time.Hour)
 			},
 			expPass: true,
 		},
 		{
-			suite: upgTests{},
-			name:  "successful height schedule",
+			name: "successful height schedule",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {},
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {},
 			expPass:      true,
 		},
 		{
-			suite: upgTests{},
-			name:  "successful schedule",
+			name: "setting both time and height schedule",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {},
-			expPass:      true,
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
+				plan.Time = simApp.ctx.BlockTime().Add(time.Hour)
+			},
+			expPass: false,
 		},
 		{
-			suite: upgTests{},
-			name:  "successful overwrite",
+			name: "successful overwrite",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 
-				err := simApp.app.upgradeKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
+				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
 					Name:   "alt-good",
 					Info:   "new text here",
 					Height: 543210000,
@@ -171,15 +171,14 @@ func Test_ScheduleUpgrade(t *testing.T) {
 			expPass: true,
 		},
 		{
-			suite: upgTests{},
-			name:  "successful overwrite",
+			name: "successful overwrite future with earlier date",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {
-				err := simApp.app.upgradeKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
+				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
 					Name:   "alt-good",
 					Info:   "new text here",
 					Height: 543210000,
@@ -189,70 +188,69 @@ func Test_ScheduleUpgrade(t *testing.T) {
 			expPass: true,
 		},
 		{
-			suite: upgTests{},
-			name:  "successful IBC overwrite with non IBC plan",
+			name: "successful overwrite earlier with future date",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
-				Height: 123450000,
+				Height: 543210000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {
-				err := simApp.app.upgradeKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
+				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(simApp.ctx, upgradetypes.Plan{
 					Name:   "alt-good",
 					Info:   "new text here",
-					Height: 543210000,
+					Height: 123450000,
 				})
 				require.NoError(t, err)
 			},
 			expPass: true,
 		},
 		{
-			suite: upgTests{},
-			name:  "unsuccessful schedule: invalid plan",
+			name: "unsuccessful schedule: missing plan name",
 			plan: upgradetypes.Plan{
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {},
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {},
 			expPass:      false,
 		},
 		{
-			suite: upgTests{},
-			name:  "unsuccessful time schedule: due date in past",
+			name: "unsuccessful time schedule: initialized, uninitialized due date in past",
 			plan: upgradetypes.Plan{
 				Name: "all-good",
 				Info: "some text here",
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 				plan.Time = simApp.ctx.BlockTime()
 			},
 			expPass: false,
 		},
 		{
-			suite: upgTests{},
-			name:  "unsuccessful height schedule: due date in past",
+			name: "unsuccessful height schedule: due date in past",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
 				Height: 1,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {},
+			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {},
 			expPass:      false,
 		},
 		{
-			suite: upgTests{},
-			name:  "unsuccessful schedule: schedule already executed",
+			name: "unsuccessful schedule: schedule already executed",
 			plan: upgradetypes.Plan{
 				Name:   "all-good",
 				Info:   "some text here",
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp upgTests, plan *upgradetypes.Plan) {
-				simApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, _ upgradetypes.Plan) {})
-				simApp.app.upgradeKeeper.ApplyUpgrade(simApp.ctx, upgradetypes.Plan{
-					Name:   "all-good",
-					Info:   "some text here",
-					Height: 123450000,
-				})
+			setupUpgCond: func(simEmApp emAppTests, plan *upgradetypes.Plan) {
+				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, _ upgradetypes.Plan) {})
+				_, err := simEmApp.app.authorityKeeper.ApplyUpgrade(
+					simEmApp.ctx, upgradetypes.Plan{
+						Name:   "all-good",
+						Info:   "some text here",
+						Height: 123450000,
+					})
+				if err != nil {
+					panic(err)
+				}
 			},
 			expPass: false,
 		},
@@ -260,16 +258,38 @@ func Test_ScheduleUpgrade(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				tt.suite.initApp(t)
+				tt.suite = emAppTests{}
+				tt.suite.initEmApp(t)
 
-				// setupUpgCond test case
+				// setup test case
 				tt.setupUpgCond(tt.suite, &tt.plan)
 
-				err := tt.suite.app.upgradeKeeper.ScheduleUpgrade(tt.suite.ctx, tt.plan)
+				// schedule upgrade plan
+				var err error
+				_, err = tt.suite.app.authorityKeeper.ScheduleUpgrade(tt.suite.ctx, tt.plan)
+				schedPlan, hasPlan := tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
+
+				// validate plan side-effect
+				if tt.expPass {
+					require.Truef(t, hasPlan, "hasPlan: %t there should be a plan", hasPlan)
+					require.Equalf(t, schedPlan, tt.plan, "queried %v != %v", schedPlan, tt.plan)
+				} else {
+					require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
+					require.NotEqualf(t, schedPlan, tt.plan, "queried %v == %v", schedPlan, tt.plan)
+				}
+
+				// apply and confirm plan deletion
+				if err == nil {
+					tt.suite.app.upgradeKeeper.SetUpgradeHandler(tt.plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
+					_, err = tt.suite.app.authorityKeeper.ApplyUpgrade(tt.suite.ctx, tt.plan)
+					schedPlan, hasPlan = tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
+					require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
+					require.NotEqualf(t, schedPlan, tt.plan, "queried %v == %v", schedPlan, tt.plan)
+				}
 
 				if (err != nil) == tt.expPass {
 					t.Errorf(
-						"scheduleUpgrade() error = %v, expPass %v", err, tt.expPass,
+						"Upgrade() error = %v, expPass %v", err, tt.expPass,
 					)
 					return
 				}

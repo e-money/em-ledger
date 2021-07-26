@@ -17,8 +17,9 @@ type authorityKeeper interface {
 	destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
-	scheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
-	applyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
+	ScheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
+	ApplyUpgrade(ctx sdk.Context, plan upgradetypes.Plan) (*sdk.Result, error)
+	GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
 }
 type msgServer struct {
 	k authorityKeeper
@@ -119,7 +120,7 @@ func (m msgServer) ScheduleUpgrade(
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	result, err := m.k.scheduleUpgrade(ctx, upgrade.Plan)
+	result, err := m.k.ScheduleUpgrade(ctx, upgrade.Plan)
 	if err != nil {
 		return nil, err
 	}
