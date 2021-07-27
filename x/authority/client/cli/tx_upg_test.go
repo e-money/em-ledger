@@ -1,13 +1,14 @@
 package cli_test
 
 import (
-	"bytes"
 	"fmt"
+	"strings"
+
 	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
 	"github.com/e-money/em-ledger/x/authority/client/cli"
 	"github.com/e-money/em-ledger/x/authority/types"
-	"sort"
-	"strings"
+
+	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -20,22 +21,21 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtest "github.com/cosmos/cosmos-sdk/x/auth/client/testutil"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
-type IntegrationTestSuite struct {
+type UpgTestSuite struct {
 	suite.Suite
 
 	cfg     network.Config
 	network *network.Network
 }
 
-func (s *IntegrationTestSuite) SetupSuite() {
+func (s *UpgTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
 	cfg := network.DefaultConfig()
-	cfg.LegacyAmino.RegisterConcrete(&types.MsgReplaceAuthority{}, "MsgReplaceAuthority", nil)
-	cfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil),&types.MsgReplaceAuthority{})
+	cfg.LegacyAmino.RegisterConcrete(&types.MsgScheduleUpgrade{}, "MsgScheduleUpgrade", nil)
+	cfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil), &types.MsgScheduleUpgrade{})
 	cfg.NumValidators = 2
 
 	s.cfg = cfg
@@ -51,6 +51,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	account2, _, err := kb.NewMnemonic("newAccount2", keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
 	s.Require().NoError(err)
 
+	// Create multisig authority key
 	multi := kmultisig.NewLegacyAminoPubKey(2, []cryptotypes.PubKey{account1.GetPubKey(), account2.GetPubKey()})
 	_, err = kb.SaveMultisig("multi", multi)
 	s.Require().NoError(err)
@@ -59,21 +60,19 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationTestSuite) TearDownSuite() {
+func (s *UpgTestSuite) TearDownSuite() {
 	s.T().Log("tearing down integration test suite")
 	s.network.Cleanup()
 }
 
-func (s *IntegrationTestSuite) TestReplaceAuth() {
+func (s *UpgTestSuite) TestScheduleUpgrade() {
 	val1 := *s.network.Validators[0]
 
 	// Generate 2 accounts and a multisig.
 	const (
-		acc1UID    = "newAccount1"
-		acc2UID    = "newAccount2"
-		acc3UID    = "newAccount3"
-		msigUID    = "multi"
-		newMsigUID = "newMulti"
+		acc1UID = "newAccount1"
+		acc2UID = "newAccount2"
+		msigUID = "multi"
 	)
 
 	account1, err := val1.ClientCtx.Keyring.Key(acc1UID)
@@ -89,48 +88,7 @@ func (s *IntegrationTestSuite) TestReplaceAuth() {
 	s.Require().Equal(keyring.TypeMulti, authMultiSigAcc.GetType())
 	fmt.Println("multi:", authMultiSigAcc.GetAddress().String())
 
-	var (
-		pks            []cryptotypes.PubKey
-		authorityAddrs []string
-	)
-
-	// create the new multisig authority key adding a 3rd key
-	kb := val1.ClientCtx.Keyring
-	account3, _, err := kb.NewMnemonic(acc3UID, keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
-	s.Require().NoError(err)
-	s.Require().NotNil(account3)
-
-	// test getting it from the keystore
-	account3, err = val1.ClientCtx.Keyring.Key(acc3UID)
-	s.Require().NoError(err)
-	s.Require().NotNil(account3)
-	fmt.Println("acc 3:", account3.GetAddress().String())
-
-	authkeys := []string{acc1UID, acc2UID, acc3UID}
-	multisigThreshold := len(authkeys) - 1
-	// generate new multisig authority key
-	for _, keyname := range authkeys{
-		k, err := kb.Key(keyname)
-		s.Require().NoError(err)
-
-		pks = append(pks, k.GetPubKey())
-		authorityAddrs = append(authorityAddrs, k.GetAddress().String())
-	}
-
-	sort.Slice(
-		pks, func(i, j int) bool {
-			return bytes.Compare(pks[i].Address(), pks[j].Address()) < 0
-		},
-	)
-
-	pk := kmultisig.NewLegacyAminoPubKey(multisigThreshold, pks)
-	newAuthMultiSigAcc, err := kb.SaveMultisig(newMsigUID, pk)
-	s.Require().NoError(err)
-	s.Require().Equal(keyring.TypeMulti, newAuthMultiSigAcc.GetType())
-
-	fmt.Println("New authority multisig key:", newAuthMultiSigAcc.GetAddress().String())
-
-	// set the multisig acount in the state
+	// set the multisig account in the state
 	sendTokens := sdk.NewInt64Coin(s.cfg.BondDenom, 10)
 	_, err = bankcli.MsgSendExec(
 		val1.ClientCtx,
@@ -146,14 +104,15 @@ func (s *IntegrationTestSuite) TestReplaceAuth() {
 	// Generate the unsigned multisig transaction json with the existing authority key.
 	args := []string{
 		authMultiSigAcc.GetAddress().String(),
-		newAuthMultiSigAcc.GetAddress().String(),
+		"test1",
+		fmt.Sprintf("--%s=100", cli.UpgHeight),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 		fmt.Sprintf("--%s=true", flags.FlagGenerateOnly),
 	}
 
-	multiGeneratedTx, err := sdkcli.ExecTestCLICmd(val1.ClientCtx, cli.GetCmdReplaceAuthority(),args)
+	multiGeneratedTx, err := sdkcli.ExecTestCLICmd(val1.ClientCtx, cli.GetCmdScheduleUpgrade(), args)
 	s.Require().NoError(err)
 
 	// Save tx to file
@@ -208,6 +167,6 @@ func (s *IntegrationTestSuite) TestReplaceAuth() {
 	s.Require().NoError(s.network.WaitForNextBlock())
 }
 
-func TestIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
+func TestUpgTestSuite(t *testing.T) {
+	suite.Run(t, new(UpgTestSuite))
 }
