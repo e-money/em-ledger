@@ -105,7 +105,6 @@ const (
 var (
 	DefaultNodeHome = os.ExpandEnv("$HOME/.emd")
 
-	// todo (reviewer) : please check the listed modules carefully. This are the defaults + em modules
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		genutil.AppModuleBasic{},

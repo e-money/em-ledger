@@ -179,29 +179,29 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 	return cmd
 }
 
-func GetCmdScheduleUpgrade() *cobra.Command {
-	const (
-		upgHeight = "upg-height"
-		upgTime   = "upg-time"
-		upgInfo   = "upg-info"
-	)
+const (
+	UpgHeight = "upg-height"
+	UpgTime   = "upg-time"
+	UpgInfo   = "upg-info"
+)
 
+func GetCmdScheduleUpgrade() *cobra.Command {
 	var (
 		upgHeightVal, upgTimeSecsVal int64
 		upgInfoVal                   string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "schedule-upg [authority_key_or_address] plan_name",
+		Use:   "upg-schedule [authority_key_or_address] plan_name",
 		Short: "Schedule a software upgrade.",
-		Example: `emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0.43 --upg_height 2001
-emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 'New Staking Rewards 36%' --upg_time 1628956125 # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
-emd tx schedule-upg emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --upg_height 2001 --upg_info "https://e-money.com/mainnet-099-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e"`,
+		Example: `emd tx authority upg-schedule --upg_height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t 0.43
+emd tx upg-schedule 'New Staking Rewards 36%' --upg_time 1628956125 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
+emd tx upg-schedule sdk-v0.43.0 --upg_height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t --upg_info "https://e-money.com/mainnet-099-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e"`,
 		Long: `Schedule a software upgrade by submitting a unique plan name that
  has been used before with either an absolute block height or block time. An 
 upgrade handler should be defined at the upgraded binary. Optionally If you set DAEMON_ALLOW_DOWNLOAD_BINARIES=on pass 
 the upgraded binary download url with the --upg-info flag i.e., --upg-info 'https://example.com/testnet-1001-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e'`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := cmd.Flags().Set(flags.FlagFrom, args[0])
 			if err != nil {
@@ -209,7 +209,7 @@ the upgraded binary download url with the --upg-info flag i.e., --upg-info 'http
 			}
 
 			if err := validateUpgFlags(
-				upgHeight, upgHeightVal, upgTime, upgTimeSecsVal,
+				UpgHeight, upgHeightVal, UpgTime, upgTimeSecsVal,
 			); err != nil {
 				return err
 			}
@@ -239,12 +239,12 @@ the upgraded binary download url with the --upg-info flag i.e., --upg-info 'http
 		},
 	}
 	f := cmd.Flags()
-	f.Int64VarP(&upgHeightVal, upgHeight, "n", 0, "upgrade block height number")
+	f.Int64VarP(&upgHeightVal, UpgHeight, "n", 0, "upgrade block height number")
 	f.Int64VarP(
-		&upgTimeSecsVal, upgTime, "t", 0, "upgrade block time (in Unix seconds)",
+		&upgTimeSecsVal, UpgTime, "t", 0, "upgrade block time (in Unix seconds)",
 	)
 	f.StringVarP(
-		&upgInfoVal, upgInfo, "i", "", "upgrade info",
+		&upgInfoVal, UpgInfo, "i", "", "upgrade info",
 	)
 
 	flags.AddTxFlagsToCmd(cmd)
@@ -266,11 +266,11 @@ func GetCmdApplyUpgrade() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "upg-apply [authority_key_or_address] plan_name",
 		Short: "Apply a software upgrade.",
-		Example: `emd tx upg-apply emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 0.43 --upg_height 2001
-emd tx upg-apply emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv 'New Staking Rewards 36%' --upg_time 1628956125 # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
-emd tx upg-apply emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv sdk-v0.43.0 --upg_height 2001 --upg_info "https://e-money.com/mainnet-099-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e"`,
+		Example: `emd tx authority upg-apply 0.43 --upg_height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t
+emd tx upg-apply 'New Staking Rewards 36%' --upg_time 1628956125 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
+emd tx upg-apply sdk-v0.43.0 --upg_height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t --upg_info "https://e-money.com/mainnet-099-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e"`,
 		Long: `Apply a software upgrade by submitting an already scheduled plan. An upgrade handler should have been submitted already.`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := cmd.Flags().Set(flags.FlagFrom, args[0])
 			if err != nil {
