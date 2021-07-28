@@ -2,6 +2,8 @@
 
 set -ev
 
+##### em-ledger single node genesis setup
+
 # locate emd binary starting either in em-ledger/networks or em-ledger/networks/utils
 if [[ -f $PWD/../../build/emd ]]; then
   pushd ../
@@ -47,4 +49,13 @@ AUTHORITY_ADDR_VAL=".app_state.authority.key=\"$AUTHORITY_ADDR\""
 jq $AUTHORITY_ADDR_VAL < "$EMD_NODE"/config/genesis.json > "$EMD_NODE"/config/tmp_genesis.json
 mv "$EMD_NODE"/config/tmp_genesis.json "$EMD_NODE"/config/genesis.json
 
-$EMD start --home="$EMD_NODE"
+##### Cosmovisor setup
+
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+export DAEMON_HOME=$EMD_NODE
+
+echo "node home: $DAEMON_HOME"
+
+cosmovisor start --home="$DAEMON_HOME"

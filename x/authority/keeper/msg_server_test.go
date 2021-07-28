@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -286,6 +287,135 @@ func TestSetGasPrices(t *testing.T) {
 		})
 	}
 }
+
+func TestScheduleUpgrade(t *testing.T) {
+	var (
+		authorityAddr = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		gotAuthority  sdk.AccAddress
+		gotPlan       upgradetypes.Plan
+	)
+
+	keeper := authorityKeeperMock{}
+	svr := NewMsgServerImpl(&keeper)
+
+	specs := map[string]struct {
+		req       *types.MsgScheduleUpgrade
+		mockFn    func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
+		expErr    bool
+		expEvents sdk.Events
+	}{
+		"all good": {
+			req: &types.MsgScheduleUpgrade{
+				Authority: authorityAddr.String(),
+				Plan: upgradetypes.Plan{
+					Name:   "plan8",
+					Height: 100,
+				},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+				gotAuthority, gotPlan = authority, plan
+				return &sdk.Result{
+					Events: []abcitypes.Event{{
+						Type:       "testing",
+						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+					}},
+				}, nil
+			},
+			expEvents: sdk.Events{{
+				Type:       "testing",
+				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+			}},
+		},
+		"authority missing": {
+			req: &types.MsgScheduleUpgrade{
+				Plan: upgradetypes.Plan{
+					Name:   "test1",
+					Height: 100,
+				},
+			},
+			expErr: true,
+		},
+		"authority invalid": {
+			req: &types.MsgScheduleUpgrade{
+				Authority: "invalid",
+				Plan: upgradetypes.Plan{
+					Name:   "test1",
+					Height: 100,
+				},
+			},
+			expErr: true,
+		},
+		"invalid height value": {
+			req: &types.MsgScheduleUpgrade{
+				Authority: authorityAddr.String(),
+				Plan: upgradetypes.Plan{
+					Name:   "test1",
+					Height: -100,
+				},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+				return nil, errors.New("testing")
+			},
+			expErr: true,
+		},
+		"missing time or height": {
+			req: &types.MsgScheduleUpgrade{
+				Authority: authorityAddr.String(),
+				Plan: upgradetypes.Plan{
+					Name: "test1",
+				},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+				return nil, errors.New("testing")
+			},
+			expErr: true,
+		},
+		"missing plan name": {
+			req: &types.MsgScheduleUpgrade{
+				Authority: authorityAddr.String(),
+				Plan: upgradetypes.Plan{
+					Height: 1,
+				},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+				return nil, errors.New("testing")
+			},
+			expErr: true,
+		},
+		"featuring both time and height": {
+			req: &types.MsgScheduleUpgrade{
+				Authority: authorityAddr.String(),
+				Plan: upgradetypes.Plan{
+					Name:   "test1",
+					Time:   time.Now(),
+					Height: 1,
+				},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
+				return nil, errors.New("testing")
+			},
+			expErr: true,
+		},
+	}
+
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			keeper.scheduleUpgradefn = spec.mockFn
+			eventManager := sdk.NewEventManager()
+			ctx := sdk.Context{}.WithContext(context.Background()).WithEventManager(eventManager)
+			_, gotErr := svr.ScheduleUpgrade(sdk.WrapSDKContext(ctx), spec.req)
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+			assert.Equal(t, spec.expEvents, eventManager.Events())
+			assert.Equal(t, spec.req.Authority, gotAuthority.String())
+			assert.Equal(t, spec.req.Plan, gotPlan)
+		})
+	}
+}
+
 func TestReplaceAuth(t *testing.T) {
 	var (
 		authorityAddr                 = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")

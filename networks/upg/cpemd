@@ -7,11 +7,18 @@ export DAEMON_NAME=emd
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export DAEMON_RESTART_AFTER_UPGRADE=true
 
+# locate .emd home folder starting either in em-ledger/networks or em-ledger/networks/upg
 if [[ -d $PWD/.emd ]]; then
   export DAEMON_HOME=$PWD/.emd
+  pushd -q ../
+  EM_LEDGER_LOC=$PWD
+  popd -q
 elif [[ -d ../.emd ]]; then
   pushd -q ../
   export DAEMON_HOME=$PWD/.emd
+  pushd -q ../
+  EM_LEDGER_LOC=$PWD
+  popd -q
   popd -q
 else
   echo ".emd folder not found neither in $PWD nor in parent. run startemd.sh to create node"
@@ -20,15 +27,10 @@ fi
 
 echo "node home: $DAEMON_HOME"
 
-EMD=$DAEMON_HOME/../../build/emd
+# copy soon to be the legacy binary
+mkdir -p "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/genesis/bin
+cp "$EM_LEDGER_LOC"/build/emd "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/genesis/bin
 
-if [[ ! -f $DAEMON_HOME/cosmovisor/genesis/bin/emd ]]; then
-
-  mkdir -p "$DAEMON_HOME"/cosmovisor/genesis/bin
-  cp "$EMD" "$DAEMON_HOME"/cosmovisor/genesis/bin
-
-fi
-
-echo "legacy or current binary in "$DAEMON_HOME"/cosmovisor/genesis/bin"
+echo "legacy or current binary in $EM_LEDGER_LOC/networks/.emd/cosmovisor/genesis/bin"
 
 echo "current version: $(cosmovisor version)"
