@@ -100,7 +100,7 @@ import (
 
 const (
 	appName            = "emoneyd"
-	testUpgradeHandler = "emdtest1"
+	testUpgradeHandler = "test-upg-0.1.0"
 )
 
 var (
