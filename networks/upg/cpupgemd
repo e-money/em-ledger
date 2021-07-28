@@ -1,7 +1,10 @@
 #!/bin/zsh
 
-# Copying the present/soon to be legacy binary in the cosmovisor genesis folder
-# Note the cosmovisor folder structure before the upgrade
+# Copying test upgrade binary in cosmovisor upgrade folder
+# This script is optional and not-needed if exercising the auto
+# download option with DAEMON_RESTART_AFTER_UPGRADE=true
+# -- or using the http download option as a backup option.
+
 # em-ledger/networks/.emd/cosmovisor
 # ├── current -> /home/user/go/src/github.com/e-money/em-ledger/networks/.emd/cosmovisor/genesis/bin/emd
 # ├── genesis
@@ -14,21 +17,17 @@
 
 set -e
 
-# cosmovisor constant
+UPG_EMD_LOC=/srv/ftp/test-upg-0.1.0
+
+# cosmovisor constants
 export DAEMON_NAME=emd
 
 # locate .emd home folder starting either in em-ledger/networks or em-ledger/networks/upg
 if [[ -d $PWD/.emd ]]; then
   export DAEMON_HOME=$PWD/.emd
-  pushd -q ../
-  EM_LEDGER_LOC=$PWD
-  popd -q
 elif [[ -d ../.emd ]]; then
   pushd -q ../
   export DAEMON_HOME=$PWD/.emd
-  pushd -q ../
-  EM_LEDGER_LOC=$PWD
-  popd -q
   popd -q
 else
   echo ".emd folder not found neither in $PWD nor in parent. run startemd.sh to create node"
@@ -37,11 +36,13 @@ fi
 
 echo "node home: $DAEMON_HOME"
 
-# copy soon to be the legacy binary
-mkdir -p "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/genesis/bin
-cp "$EM_LEDGER_LOC"/build/emd "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/genesis/bin
-mkdir -p "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/upgrades
+COSMOVISOR_UPG_LOC="$DAEMON_HOME"/networks/.emd/cosmovisor/upgrades/test-upg-0.1.0/bin
+echo "copying $UPG_EMD_LOC/emd -> $COSMOVISOR_UPG_LOC"
 
-echo "legacy or current binary in $EM_LEDGER_LOC/networks/.emd/cosmovisor/genesis/bin"
+# copy the upgrade binary
+mkdir -p "$COSMOVISOR_UPG_LOC"
+cp $UPG_EMD_LOC/emd "$COSMOVISOR_UPG_LOC"
+
+echo "copied upgrade binary in $COSMOVISOR_UPG_LOC"
 
 echo "current version: $(cosmovisor version)"

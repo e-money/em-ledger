@@ -1,0 +1,29 @@
+#!/bin/zsh
+
+set -e
+
+##### cosmovisor env vars setup
+
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+
+# locate emd binary starting either in em-ledger/networks or em-ledger/networks/utils
+if [[ -f $PWD/../../build/emd ]]; then
+  pushd ../ # to get absolute value
+  export DAEMON_HOME=$PWD/.emd
+  # return to networks
+  popd -q
+elif [[ -f $PWD/../build/emd ]]; then
+  export DAEMON_HOME=$PWD/.emd
+else
+  echo "emd binary not found neither in $PWD nor in parent. run make to create binary"
+  exit 1
+fi
+
+export EMD="$DAEMON_HOME"/cosmovisor/current/bin/emd
+
+echo "\$EMD: $(ls "$EMD")"
+echo "node home: $DAEMON_HOME"
+
+echo "cosmovisor version: $(cosmovisor version)"
