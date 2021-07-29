@@ -7,7 +7,7 @@
 ##
 ## Input parameters
 ##
-BINARY=/emoney/${BINARY:-emd-linux}
+BINARY=/emoney/${BINARY:-emd}
 ID=${ID:-0}
 LOG=${LOG:-emd.log}
 # LOGLEVEL=${LOGLEVEL:-emz:info,x/inflation:info,x/liquidityprovider:info,main:info,state:info,*:error}

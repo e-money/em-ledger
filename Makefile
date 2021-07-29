@@ -66,7 +66,7 @@ install:
 build-linux:
 	# Linux images for docker-compose
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
-	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux CGO_ENABLED=0 GOARCH=amd64 $(MAKE) build
+	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
 build-all: build-linux
 	$(MAKE) build
