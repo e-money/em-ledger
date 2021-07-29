@@ -33,9 +33,12 @@ export EMDHOME="/emoney/node${ID}"
 
 if [ -d "`dirname ${EMDHOME}/${LOG}`" ]; then
   "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --trace --pruning=nothing | tee "${EMDHOME}/${LOG}"
+export DAEMON_RESTART_AFTER_UPGRADE=true
+export DAEMON_HOME=$EMDHOME
+# link chain launcher to cosmovisor with linux emd binary
+export DAEMON_NAME=emd
 else
   "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --trace --pruning=nothing
 fi
 
 chmod 777 -R /emoney
-
