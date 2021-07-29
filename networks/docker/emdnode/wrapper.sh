@@ -10,9 +10,6 @@
 BINARY=/emoney/${BINARY:-emd}
 ID=${ID:-0}
 LOG=${LOG:-emd.log}
-# LOGLEVEL=${LOGLEVEL:-emz:info,x/inflation:info,x/liquidityprovider:info,main:info,state:info,*:error}
-# TODO (reviewer) : the SDK uses the zap logger now. without fine grained configuration options. There should be an open issue in the repo already
-LOGLEVEL=info
 ##
 ## Assert linux binary
 ##
@@ -31,14 +28,16 @@ fi
 ##
 export EMDHOME="/emoney/node${ID}"
 
-if [ -d "`dirname ${EMDHOME}/${LOG}`" ]; then
-  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --trace --pruning=nothing | tee "${EMDHOME}/${LOG}"
+# Cosmovisor values
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export DAEMON_RESTART_AFTER_UPGRADE=true
 export DAEMON_HOME=$EMDHOME
 # link chain launcher to cosmovisor with linux emd binary
 export DAEMON_NAME=emd
+if [ -d "$(dirname "${EMDHOME}"/"${LOG}")" ]; then
+  "$BINARY" --home "$EMDHOME" "$@" | tee "${EMDHOME}/${LOG}"
 else
-  "$BINARY" --home "$EMDHOME" "$@" --log_level ${LOGLEVEL} --trace --pruning=nothing
+  "$BINARY" --home "$EMDHOME" "$@"
 fi
 
 chmod 777 -R /emoney
