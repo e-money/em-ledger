@@ -69,6 +69,12 @@ build-linux:
 	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
 	chmod +x build/cosmovisor
+	$(MAKE) build-test-upg
+
+build-test-upg:
+	# linux upgrade binary for testing cosmovisor upgrade
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
+	chmod +x "build/emdupg"
 
 build-all: build-linux
 	$(MAKE) build

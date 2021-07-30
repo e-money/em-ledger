@@ -31,7 +31,6 @@ export EMDHOME="/emoney/node${ID}"
 # setup cosmovisor
 mkdir -p "$EMDHOME/cosmovisor/genesis/bin"
 cp /emoney/emd "$EMDHOME/cosmovisor/genesis/bin"
-mkdir -p "$EMDHOME/cosmovisor/upgrades"
 
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export DAEMON_RESTART_AFTER_UPGRADE=true
@@ -39,6 +38,9 @@ export DAEMON_HOME=$EMDHOME
 # link chain launcher to cosmovisor with linux emd binary
 export DAEMON_NAME=emd
 BINARY=/emoney/cosmovisor
+UPG_LOC="$EMDHOME"/cosmovisor/upgrades/test-upg-0.1.0/bin
+mkdir -p "$UPG_LOC"
+cp /emoney/emdupg "$UPG_LOC"/emd
 
 if [ -d "$(dirname "${EMDHOME}"/"${LOG}")" ]; then
   "$BINARY" --home "$EMDHOME" "$@" | tee "${EMDHOME}/${LOG}"
