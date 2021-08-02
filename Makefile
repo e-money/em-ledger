@@ -66,7 +66,7 @@ install:
 build-linux:
 	# Linux images for docker-compose
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
-	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
 	chmod +x build/cosmovisor
 	$(MAKE) build-test-upg
