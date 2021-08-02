@@ -69,6 +69,7 @@ func (cli Emcli) CustomCommand(params ...string) (string, error) {
 	for _, param := range params {
 		if re.MatchString(param) {
 			checkTxRes = false
+			break
 		}
 	}
 	args := cli.addTransactionFlags(params...)

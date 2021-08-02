@@ -101,14 +101,6 @@ var _ = Describe("Authority", func() {
 			)
 			Expect(err).To(BeNil())
 
-			// create/revoke issuer with both the former and the new authority
-			// former singlesig first
-			ok = nt.AuthCreatesIssuer(emcli, keystore.Authority, key1)
-			Expect(ok).To(BeTrue())
-			_, success, err = emcli.AuthorityDestroyIssuer(keystore.Authority, key1)
-			Expect(success).To(BeTrue())
-			Expect(err).ToNot(HaveOccurred())
-
 			// current multisig authority now
 			// create-issuer
 			execAuthMSigTx(
