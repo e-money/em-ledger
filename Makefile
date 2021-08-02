@@ -90,7 +90,7 @@ test:
 	go test -mod=readonly ./...
 
 bdd-test:
-	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go  market_test.go buyback_test.go capacity_test.go staking_test.go bep3swap_test.go
+	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go  market_test.go buyback_test.go capacity_test.go staking_test.go bep3swap_test.go upgrade_test.go
 
 github-ci: build-linux
 	$(MAKE) test
