@@ -5,11 +5,13 @@
 package networktest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -277,9 +279,12 @@ func initializeKeystore(kb keyring.Keyring) {
 	ac7, _ := kb.NewAccount("key6", mnemonic7, "", keyDerivationPath, hd.Secp256k1)
 	fmt.Printf("Created account %s from mnemonic: %s\n", ac7.GetAddress(), mnemonic7)
 
-	// Create a multisig key entry consisting of key1, key2 and key3 with a threshold of 2
-	pks := make([]cryptotypes.PubKey, 3)
-	for i, keyname := range []string{"key1", "key2", "key3"} {
+	createMultisig(kb, MultiKey, []string{"key1", "key2", "key3"}, 2)
+}
+
+func createMultisig(kb keyring.Keyring, keyName string, keys []string, threshold int) keyring.Info {
+	pks := make([]cryptotypes.PubKey, len(keys))
+	for i, keyname := range keys {
 		keyinfo, err := kb.Key(keyname)
 		if err != nil {
 			panic(err)
@@ -288,9 +293,18 @@ func initializeKeystore(kb keyring.Keyring) {
 		pks[i] = keyinfo.GetPubKey()
 	}
 
-	pk := multisig.NewLegacyAminoPubKey(2, pks)
-	_, err = kb.SaveMultisig("multikey", pk)
+	sort.Slice(
+		pks, func(i, j int) bool {
+			return bytes.Compare(pks[i].Address(), pks[j].Address()) < 0
+		},
+	)
+
+	pk := multisig.NewLegacyAminoPubKey(threshold, pks)
+
+	mSig, err := kb.SaveMultisig(keyName, pk)
 	if err != nil {
 		panic(err)
 	}
+
+	return mSig
 }

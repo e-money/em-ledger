@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -12,6 +13,7 @@ var _ types.MsgServer = msgServer{}
 type authorityKeeper interface {
 	createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error)
 	destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
+	replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 }
 type msgServer struct {
@@ -81,4 +83,28 @@ func (m msgServer) SetGasPrices(goCtx context.Context, msg *types.MsgSetGasPrice
 		ctx.EventManager().EmitEvent(sdk.Event(e))
 	}
 	return &types.MsgSetGasPricesResponse{}, nil
+}
+
+func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplaceAuthority) (*types.MsgReplaceAuthorityResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	authorityAcc, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority: "+msg.Authority)
+	}
+
+	newAuthorityAcc, err := sdk.AccAddressFromBech32(msg.NewAuthority)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "new authority: "+msg.NewAuthority)
+	}
+
+	result, err := m.k.replaceAuthority(ctx, authorityAcc, newAuthorityAcc)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range result.Events {
+		ctx.EventManager().EmitEvent(sdk.Event(e))
+	}
+
+	return &types.MsgReplaceAuthorityResponse{}, nil
 }

@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -90,8 +91,9 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data j
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+	authority := am.keeper.GetAuthoritySet(ctx)
 	genesis := &types.GenesisState{
-		AuthorityKey: am.keeper.GetAuthority(ctx).String(),
+		AuthorityKey: authority.Address,
 		MinGasPrices: am.keeper.GetGasPrices(ctx),
 	}
 	return cdc.MustMarshalJSON(genesis)

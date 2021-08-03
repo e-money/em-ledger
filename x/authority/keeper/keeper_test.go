@@ -5,6 +5,8 @@
 package keeper
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -23,7 +25,6 @@ import (
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 
@@ -38,18 +39,41 @@ func init() {
 	apptypes.ConfigureSDK()
 }
 
+func TestBootstrapAuthority(t *testing.T) {
+	ctx, keeper, _, _ := createTestComponents(t)
+
+	authority, formerAuth, err := keeper.getAuthorities(ctx)
+	require.Error(t, err, "error due to authority not being set yet")
+	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
+	require.Nil(t, authority, "authority not being set yet and is nil")
+
+	firstAuthority := mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+	keeper.BootstrapAuthority(ctx, firstAuthority)
+	require.Panics(t, func() {
+		// Keeper must panic if attempting to bootstrap another authority
+		keeper.BootstrapAuthority(ctx, mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu"))
+	})
+
+	authority, formerAuth, err = keeper.getAuthorities(ctx)
+	require.NoError(t, err, "authority is bootstrapped")
+	require.Empty(t, formerAuth, "former authority not being set yet")
+	require.Equal(t, authority, firstAuthority)
+}
+
 func TestAuthorityBasicPersistence(t *testing.T) {
 	ctx, keeper, _, _ := createTestComponents(t)
 
-	require.Panics(t, func() {
-		// Keeper must panic if no authority has been specified
-		keeper.GetAuthority(ctx)
-	})
+	acc, formerAuth, err := keeper.getAuthorities(ctx)
+	require.Error(t, err, "error due to authority not being set yet")
+	require.Nil(t, formerAuth, "former authority not being set yet and is nil")
+	require.Nil(t, acc, "authority not being set yet and is nil")
 
-	acc, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
-	keeper.SetAuthority(ctx, acc)
+	acc, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+	keeper.BootstrapAuthority(ctx, acc)
 
-	authority := keeper.GetAuthority(ctx)
+	authority, formerAuth, err := keeper.getAuthorities(ctx)
+	require.NoError(t, err, "authority is set")
+	require.Empty(t, formerAuth, "former authority not being set yet")
 	require.Equal(t, acc, authority)
 }
 
@@ -61,22 +85,15 @@ func TestMustBeAuthority(t *testing.T) {
 		acc2         = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 	)
 
-	require.Panics(t, func() {
-		// Must panic due to authority not being set yet.
-		keeper.MustBeAuthority(ctx, accAuthority)
-	})
+	err := keeper.ValidateAuthority(ctx, accAuthority)
+	require.Error(t, err, "authority not being set yet")
 
-	keeper.SetAuthority(ctx, accAuthority)
-	keeper.MustBeAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err, "authority is set")
 
-	require.Panics(t, func() {
-		keeper.MustBeAuthority(ctx, acc2)
-	})
-
-	// Authority can only be specified once, preferably during genesis
-	require.Panics(t, func() {
-		keeper.SetAuthority(ctx, acc2)
-	})
+	err = keeper.ValidateAuthority(ctx, acc2)
+	require.Error(t, err, "acc2 as authority not being set yet")
 }
 
 func TestCreateAndRevokeIssuer(t *testing.T) {
@@ -88,15 +105,28 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 		issuer2      = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
-	_, err := keeper.createIssuer(ctx, accAuthority, issuer1, []string{"eeur", "ejpy"})
+	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
+}
+
+func CreateAndRevokeIssuer(
+	ctx sdk.Context, t *testing.T, keeper Keeper,
+	accAuthority, issuer1, issuer2 sdk.AccAddress, ik issuer.Keeper,
+) {
+	_, err := keeper.createIssuer(
+		ctx, accAuthority, issuer1, []string{"eeur", "ejpy"},
+	)
 	require.NoError(t, err)
 
-	_, err = keeper.createIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"})
+	_, err = keeper.createIssuer(
+		ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"},
+	)
 	require.Error(t, err) // Must fail due to duplicate token denomination
 
-	_, err = keeper.createIssuer(ctx, accAuthority, issuer2, []string{"echf", "egbp"})
+	_, err = keeper.createIssuer(
+		ctx, accAuthority, issuer2, []string{"echf", "egbp"},
+	)
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 2)
 
@@ -104,10 +134,9 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 1)
 
-	require.Panics(t, func() {
-		// Make sure only authority key can destroy an issuer
-		keeper.destroyIssuer(ctx, issuer1, issuer2)
-	})
+	// Make sure only authority key can destroy an issuer
+	_, err = keeper.destroyIssuer(ctx, issuer1, issuer2)
+	require.Error(t, err)
 
 	_, err = keeper.destroyIssuer(ctx, accAuthority, issuer2)
 	require.Error(t, err)
@@ -118,6 +147,84 @@ func TestCreateAndRevokeIssuer(t *testing.T) {
 	require.Empty(t, ik.GetIssuers(ctx))
 }
 
+func TestReplaceAuthUseBothAuthorities(t *testing.T) {
+	ctx, keeper, ik, _ := createTestComponents(t)
+
+	var (
+		accAuthority     = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accNewAuthority1 = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+		accNewAuthority2 = mustParseAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
+		issuer1          = mustParseAddress("emoney1tnv07qdsrumx2hhrvhmeh4yuxr5kkgk2m7qr9e")
+		issuer2          = mustParseAddress("emoney1dgkjvr2kkrp0xc5qn66g23us779q2dmgle5aum")
+	)
+
+	keeper.BootstrapAuthority(ctx, accAuthority)
+
+	// accAuthority becomes the fallback authority because there wasn't one already
+	_, err := keeper.replaceAuthority(ctx, accAuthority, accNewAuthority1)
+	require.NoError(t, err)
+
+	// the new authority is active
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority1, issuer1, issuer2, ik)
+
+	// and the former is still in effect
+	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
+
+	// move forward but not enough to expire the former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
+
+	// no change for the new authority
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority1, issuer1, issuer2, ik)
+
+	//the former authority is still in effect
+	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
+
+	// make explicit who's the fallback authority
+	fallbackAuth := accAuthority
+
+	// replacing the authority during the transition period has no effect
+	// on the fallback authority
+	_, err = keeper.replaceAuthority(ctx, accNewAuthority1, accNewAuthority2)
+	require.NoError(t, err)
+
+	// accNewAuthority1 is no longer the current nor the fallback authority
+	// trying a single transaction with accNewAuthority1 errs
+	_, err = keeper.createIssuer(
+		ctx, accNewAuthority1, issuer1, []string{"eeur", "ejpy"},
+	)
+	require.Error(t, err)
+
+	//the former authority is still in effect during the transition period
+	CreateAndRevokeIssuer(ctx, t, keeper, fallbackAuth, issuer1, issuer2, ik)
+
+	// move forward but not enough to expire the former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
+
+	//the former authority is still in effect during the transition period
+	CreateAndRevokeIssuer(ctx, t, keeper, fallbackAuth, issuer1, issuer2, ik)
+
+	// move forward to expire the former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
+
+	// no change for the new authority
+	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority2, issuer1, issuer2, ik)
+
+	// the former authority has expired
+	// trying a single transaction with the former authority errs
+	_, err = keeper.createIssuer(
+		ctx, accAuthority, issuer1, []string{"eeur", "ejpy"},
+	)
+	require.Error(t, err)
+
+	// can revert to the first authority
+	_, err = keeper.replaceAuthority(ctx, accNewAuthority2, accAuthority)
+	require.NoError(t, err)
+
+	// former authority is current again
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err)
+}
+
 func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 	ctx, keeper, ik, _ := createTestComponents(t)
 
@@ -126,7 +233,7 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 		accIssuer    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	_, err := keeper.createIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
 	require.NoError(t, err)
@@ -148,16 +255,15 @@ func TestManageGasPrices1(t *testing.T) {
 		accRandom    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 	)
 
-	keeper.SetAuthority(ctx, accAuthority)
+	keeper.BootstrapAuthority(ctx, accAuthority)
 
 	gasPrices := keeper.GetGasPrices(ctx)
 	require.True(t, gasPrices.Empty())
 
 	coins, _ := sdk.ParseDecCoins("0.0005eeur,0.000001echf")
 
-	require.Panics(t, func() {
-		keeper.SetGasPrices(ctx, accRandom, coins)
-	})
+	_, err := keeper.SetGasPrices(ctx, accRandom, coins)
+	require.Error(t, err)
 
 	res, err := keeper.SetGasPrices(ctx, accAuthority, sdk.NewDecCoins())
 	require.True(t, err == nil, res.Log)
@@ -172,6 +278,75 @@ func TestManageGasPrices1(t *testing.T) {
 	coins, _ = sdk.ParseDecCoins("0.0005eeur,0.000001echf,0.0000001esek")
 	res, err = keeper.SetGasPrices(ctx, accAuthority, coins)
 	require.True(t, types.ErrUnknownDenom.Is(err))
+}
+
+func TestReplaceAuthority(t *testing.T) {
+	ctx, keeper, _, _ := createTestComponents(t)
+
+	var (
+		accAuthority    = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		accNewAuthority = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
+	)
+
+	err := keeper.ValidateAuthority(ctx, accAuthority)
+	require.Error(t, err)
+
+	keeper.BootstrapAuthority(ctx, accAuthority)
+
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err)
+
+	gotAuth, respFormerAuth, err := keeper.getAuthorities(ctx)
+	require.NoError(t, err)
+	require.Empty(t, respFormerAuth, "former authority not being set yet")
+	require.Equal(t, accAuthority, gotAuth)
+
+	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
+	require.NoError(t, err)
+
+	// validation should work for either authority
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.NoError(t, err)
+
+	gotAuth, respFormerAuth, err = keeper.getAuthorities(ctx)
+	require.NoError(t, err)
+	require.Equal(t, accAuthority.String(), respFormerAuth.String())
+	require.Equal(t, accNewAuthority, gotAuth)
+
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+
+	formerAuthFromBeforeHasRemainedInEffect := accAuthority.String()
+
+	// reverse authority
+	accNewAuthority, accAuthority = accAuthority, accNewAuthority
+	_, err = keeper.replaceAuthority(ctx, accAuthority, accNewAuthority)
+	require.NoError(t, err)
+
+	gotAuth, respFormerAuth, err = keeper.getAuthorities(ctx)
+	require.NoError(t, err)
+	require.Equal(t, formerAuthFromBeforeHasRemainedInEffect, respFormerAuth.String())
+	require.Equal(t, accNewAuthority, gotAuth)
+
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+	err = keeper.ValidateAuthority(ctx, mustParseAddress(formerAuthFromBeforeHasRemainedInEffect))
+	require.NoError(t, err)
+
+	// test expiration of former authority
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration))
+	gotAuth, respFormerAuth, err = keeper.getAuthorities(ctx)
+	require.NoError(t, err)
+	require.Empty(t, respFormerAuth, "former Authority expired")
+	require.Equal(t, accNewAuthority, gotAuth)
+
+	// validation should be valid for only for new authority
+	err = keeper.ValidateAuthority(ctx, accNewAuthority)
+	require.NoError(t, err)
+	err = keeper.ValidateAuthority(ctx, accAuthority)
+	require.Error(t, err)
 }
 
 func TestManageGasPrices2(t *testing.T) {
@@ -216,7 +391,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 		keyIssuer  = sdk.NewKVStoreKey(issuer.ModuleName)
-		keyLp  = sdk.NewKVStoreKey(liquidityprovider.ModuleName)
+		keyLp      = sdk.NewKVStoreKey(liquidityprovider.ModuleName)
 
 		blockedAddr = make(map[string]bool)
 	)

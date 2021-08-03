@@ -5,9 +5,10 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
+	"errors"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
@@ -19,6 +20,8 @@ const (
 	keyAuthorityAccAddress = "AuthorityAccountAddress"
 	keyGasPrices           = "GasPrices"
 )
+
+var _ authorityKeeper = Keeper{}
 
 type Keeper struct {
 	cdc        codec.BinaryMarshaler
@@ -42,31 +45,65 @@ func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper is
 	}
 }
 
-func (k Keeper) SetAuthority(ctx sdk.Context, authority sdk.AccAddress) {
-	store := ctx.KVStore(k.storeKey)
+// BootstrapAuthority solely exists for the genesis establishment of the chain
+// authority. Once the authority is set, invoking this function again will panic.
+func (k Keeper) BootstrapAuthority(ctx sdk.Context, newAuthority sdk.AccAddress) {
+	authorityAcc, _, _ := k.getAuthorities(ctx)
 
-	if store.Get([]byte(keyAuthorityAccAddress)) != nil {
-		panic("Authority was already specified")
+	// set authority only if it is not set up.
+	if !authorityAcc.Empty() {
+		panic(errors.New("authority is set and sealed"))
 	}
 
-	bz := k.cdc.MustMarshalBinaryBare(&types.Authority{Address: authority.String()})
+	k.saveAuthorities(ctx, newAuthority, "")
+}
+
+func (k Keeper) saveAuthorities(
+	ctx sdk.Context, newAuthority sdk.AccAddress, formerAuthorityAddr string,
+) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := k.cdc.MustMarshalBinaryBare(
+		&types.Authority{
+			Address:       newAuthority.String(),
+			FormerAddress: formerAuthorityAddr,
+			LastModified:  ctx.BlockTime(),
+		},
+	)
 	store.Set([]byte(keyAuthorityAccAddress), bz)
 }
 
-func (k Keeper) GetAuthority(ctx sdk.Context) sdk.AccAddress {
+func (k Keeper) getAuthorities(ctx sdk.Context) (authority, formerAuthority sdk.AccAddress, err error) {
+	authoritySet := k.GetAuthoritySet(ctx)
+
+	authority, err = sdk.AccAddressFromBech32(authoritySet.Address)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	withinTransitionPeriod := authoritySet.LastModified.
+		Add(types.AuthorityTransitionDuration).
+		After(ctx.BlockTime())
+	if withinTransitionPeriod && authoritySet.FormerAddress != "" {
+		// we keep the former address
+		formerAuthority, _ = sdk.AccAddressFromBech32(authoritySet.FormerAddress)
+	}
+
+	return authority, formerAuthority, nil
+}
+
+func (k Keeper) GetAuthoritySet(ctx sdk.Context) types.Authority {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyAuthorityAccAddress))
-	var authority types.Authority
-	k.cdc.MustUnmarshalBinaryBare(bz, &authority)
-	acc, err := sdk.AccAddressFromBech32(authority.Address)
-	if err != nil {
-		panic(err.Error())
-	}
-	return acc
+	var authoritySet types.Authority
+	k.cdc.MustUnmarshalBinaryBare(bz, &authoritySet)
+	return authoritySet
 }
 
 func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
-	k.MustBeAuthority(ctx, authority)
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
 
 	for _, denom := range denoms {
 		if err := sdk.ValidateDenom(denom); err != nil {
@@ -79,7 +116,9 @@ func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAd
 }
 
 func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrices sdk.DecCoins) (*sdk.Result, error) {
-	k.MustBeAuthority(ctx, authority)
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
 
 	if !newPrices.IsValid() {
 		return nil, sdkerrors.Wrapf(types.ErrInvalidGasPrices, "%v", newPrices)
@@ -98,7 +137,10 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrice
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(keyGasPrices), bz)
 
-	k.gpk.SetMinimumGasPrices(newPrices.String())
+	if err := k.gpk.SetMinimumGasPrices(newPrices.String()); err != nil {
+		return nil, err
+	}
+
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
@@ -115,22 +157,32 @@ func (k Keeper) GetGasPrices(ctx sdk.Context) sdk.DecCoins {
 }
 
 func (k Keeper) destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error) {
-	k.MustBeAuthority(ctx, authority)
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
 
 	return k.ik.RemoveIssuer(ctx, issuerAddress)
 }
 
-func (k Keeper) MustBeAuthority(ctx sdk.Context, address sdk.AccAddress) {
-	authority := k.GetAuthority(ctx)
+func (k Keeper) ValidateAuthority(ctx sdk.Context, address sdk.AccAddress) error {
+	authority, formerAuth, err := k.getAuthorities(ctx)
+	if err != nil {
+		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, err.Error())
+	}
+
 	if authority == nil {
-		panic(types.ErrNoAuthorityConfigured)
+		return sdkerrors.Wrap(types.ErrNoAuthorityConfigured, address.String())
 	}
 
-	if authority.Equals(address) {
-		return
+	if formerAuth == nil {
+		formerAuth = authority
 	}
 
-	panic(sdkerrors.Wrap(types.ErrNotAuthority, address.String()))
+	if !authority.Equals(address) && !formerAuth.Equals(address) {
+		return sdkerrors.Wrap(types.ErrNotAuthority, address.String())
+	}
+
+	return nil
 }
 
 // Gas prices are kept in-memory in the app structure. Make sure they are initialized on node restart.
@@ -139,4 +191,19 @@ func (k Keeper) initGasPrices(ctx sdk.Context) {
 		gps := k.GetGasPrices(ctx)
 		k.gpk.SetMinimumGasPrices(gps.String())
 	})
+}
+
+func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error) {
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
+
+	_, formerAuthorityAddress, err := k.getAuthorities(ctx)
+	if err != nil || formerAuthorityAddress.Empty() {
+		formerAuthorityAddress = authority
+	}
+
+	k.saveAuthorities(ctx, newAuthority, formerAuthorityAddress.String())
+
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }

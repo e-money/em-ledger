@@ -356,7 +356,7 @@ func (t *Testnet) dockerComposeUp() (func() bool, error) {
 }
 
 func (t *Testnet) dockerComposeDown() error {
-	_, err := t.execCmdAndWait(dockerComposePath, "kill")
+	_, err := t.execCmdAndWait(dockerComposePath, "down")
 	return err
 }
 
