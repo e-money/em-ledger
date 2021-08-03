@@ -40,7 +40,7 @@ export DAEMON_NAME=emd-linux
 BINARY=/emoney/cosmovisor
 UPG_LOC="$EMDHOME"/cosmovisor/upgrades/test-upg-0.1.0/bin
 mkdir -p "$UPG_LOC"
-cp /emoney/emdupg "$UPG_LOC"/emd-linux
+cp /emoney/emdupg-linux "$UPG_LOC"/emd-linux
 
 if [ -d "$(dirname "${EMDHOME}"/"${LOG}")" ]; then
   "$BINARY" --home "$EMDHOME" "$@" | tee "${EMDHOME}/${LOG}"

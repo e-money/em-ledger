@@ -1,9 +1,9 @@
 #!/bin/zsh
 
-# Copying the present/soon to be legacy binary in the cosmovisor genesis folder
+# Copying the upgrade and present/soon to be legacy binary in the cosmovisor genesis folder
 # Note the cosmovisor folder structure before the upgrade
-# em-ledger/networks/.emd/cosmovisor
-# ├── current -> /home/user/go/src/github.com/e-money/em-ledger/networks/.emd/cosmovisor/genesis/bin/emd
+# em-ledger/networks/upg/.emd/cosmovisor
+# ├── current -> /Users/user/go/src/github.com/e-money/em-ledger/networks/upg/.emd/cosmovisor/genesis/bin/emd
 # ├── genesis
 # │ └── bin
 # │     └── emd
@@ -17,31 +17,24 @@ set -e
 # cosmovisor constant
 export DAEMON_NAME=emd
 
-# locate .emd home folder starting either in em-ledger/networks or em-ledger/networks/upg
-if [[ -d $PWD/.emd ]]; then
-  export DAEMON_HOME=$PWD/.emd
-  pushd -q ../
-  EM_LEDGER_LOC=$PWD
-  popd -q
-elif [[ -d ../.emd ]]; then
-  pushd -q ../
-  export DAEMON_HOME=$PWD/.emd
-  pushd -q ../
-  EM_LEDGER_LOC=$PWD
-  popd -q
-  popd -q
-else
-  echo ".emd folder not found neither in $PWD nor in parent. run startemd.sh to create node"
-  exit 1
-fi
+mkdir -p .emd
+export DAEMON_HOME=$PWD/.emd
+pushd -q ../../
+EM_LEDGER_LOC=$PWD
+popd -q
 
 echo "node home: $DAEMON_HOME"
 
 # copy soon to be the legacy binary
-mkdir -p "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/genesis/bin
-cp "$EM_LEDGER_LOC"/build/emd "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/genesis/bin
-mkdir -p "$EM_LEDGER_LOC"/networks/.emd/cosmovisor/upgrades
+COSMOVISOR_HOME="$EM_LEDGER_LOC"/networks/upg/.emd/cosmovisor
+mkdir -p "$COSMOVISOR_HOME"/genesis/bin
+cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
+UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.1.0/bin
+mkdir -p "$UPG_LOC"
+cp "$EM_LEDGER_LOC"/build/emdupg "$UPG_LOC"/emd
 
-echo "legacy or current binary in $EM_LEDGER_LOC/networks/.emd/cosmovisor/genesis/bin"
-
+echo "legacy or current binary:"
+ls "$COSMOVISOR_HOME"/genesis/bin/emd
+echo "upgrade binary:"
+ls "$UPG_LOC"/emd
 echo "current version: $(cosmovisor version)"

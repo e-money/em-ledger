@@ -2,21 +2,15 @@
 
 set -ev
 
-# locate emd binary starting either in em-ledger/networks or em-ledger/networks/utils
+# locate emd binary
 if [[ -f $PWD/../../build/emd ]]; then
-  pushd ../
   EMD_NODE=$PWD/.emd
-  pushd -q ../build
-  EMD=$PWD/emd
-   # return to networks
-  popd -q
-elif [[ -f $PWD/../build/emd ]]; then
-  EMD_NODE=$PWD/.emd
-  pushd -q ../build
+  pushd -q ../../build
+  # save absolute path of emd required by cosmovisor
   EMD=$PWD/emd
   popd -q
 else
-  echo "emd binary not found neither in $PWD nor in parent. run make to create binary"
+  echo "emd binary not found in $PWD. Please run make to create the emd binary"
   exit 1
 fi
 

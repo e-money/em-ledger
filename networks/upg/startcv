@@ -6,21 +6,8 @@ set -ev
 export DAEMON_NAME=emd
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export DAEMON_RESTART_AFTER_UPGRADE=true
-# The following is setup at the end of this script
-# export DAEMON_HOME=
 
-#
-if [[ -f ./cpemd ]]; then
-  ./cpemd
-  set +e
-  rm ../.emd/cosmovisor/current
-  set +e
-else
-  upg/cpemd
-  set +e
-  rm .emd/cosmovisor/current
-  set -e
-fi
+./cpemd
 
 # optionally uncomment to copy future upgrade binary in location if
 # auto-downloading is not available as a primary or none at all
@@ -28,30 +15,14 @@ fi
 # locally: DAEMON_RESTART_AFTER_UPGRADE=true
 #./cpupgemd
 
-# locate emd binary starting either in em-ledger/networks or em-ledger/networks/utils
-if [[ -f $PWD/../../build/emd ]]; then
-  pushd ../
-  EMD_NODE=$PWD/.emd
-  pushd -q ../build
-  EMD=$PWD/emd
-   # return to networks
-  popd -q
-elif [[ -f $PWD/../build/emd ]]; then
-  EMD_NODE=$PWD/.emd
-  pushd -q ../build
-  EMD=$PWD/emd
-  popd -q
-else
-  echo "emd binary not found neither in $PWD nor in parent. run make to create binary"
-  exit 1
-fi
+EMD_NODE=$PWD/.emd
+EMD=../../build/emd
 
-# destructive
 # do not do this in production
+# do not delete cosmovisor if it exists
 rm -rf "$EMD_NODE"/config
 rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
-# do not delete cosmovisor if it exists
 
 $EMD unsafe-reset-all --home=$EMD_NODE
 

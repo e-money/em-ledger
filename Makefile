@@ -48,6 +48,14 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+
+emdupg:
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
+	chmod +x "build/emdupg"
+
+cosmovisor:
+	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
+
 lint:
 	golangci-lint run
 
@@ -69,14 +77,10 @@ build-linux:
 	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
 	chmod +x build/cosmovisor
-	$(MAKE) build-test-upg
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
+	chmod +x "build/emdupg-linux"
 
-build-test-upg:
-	# linux upgrade binary for testing cosmovisor upgrade
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
-	chmod +x "build/emdupg"
-
-build-all: build-linux
+build-all: build-linux emdupg
 	$(MAKE) build
 
 build-docker:
@@ -112,7 +116,7 @@ license:
 	GO111MODULE=off go get github.com/google/addlicense/
 	addlicense -f LICENSE .
 
-.PHONY: build build-linux clean test bdd-test build-docker license
+.PHONY: build build-linux emdupg cosmovisor clean test bdd-test build-docker license
 
 ###############################################################################
 ###                                Protobuf                                 ###
@@ -142,5 +146,3 @@ proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against-input $(HTTPS_GIT)#branch=master
 
 .PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking
-
-

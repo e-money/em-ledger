@@ -1,21 +1,22 @@
-#!/bin/zsh
+#!/bin/bash
+
+# $1 : choose a future block height to upgrade
 
 set -e
 
-# Preconditions:
-# git checkout upgrade-emd-test
-# make
-# copy to a convenient location
-# mkdir -p /srv/upgemd/test-upg-0.1.0
-# cp build/emd /srv/upgemd/test-upg-0.1.0
-# zip /srv/upgemd/test-upg-0.1.0/emd.zip /srv/upgemd/test-upg-0.1.0/emd
-# save sha value to clipboard
-# sha256sum /srv/upgemd/test-upg-0.1.0/emd.zip | xsel -i -b
-# cd /srv/upgemd
-# start a web server in the
-# python3 -m http.server 8765
+EMD=.emd/cosmovisor/current/bin/emd
 
-EMD="$DAEMON_HOME"/cosmovisor/current/bin/emd
+$EMD version
+$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
+$EMD q authority upg-plan --home=.emd --node tcp://localhost:26657 --chain-id test
 
-# choose a future nearby
-$EMD tx authority upg-schedule authoritykey test-upg-0.1.0 --upg-height 4 --upg-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.1.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}' --yes --from authoritykey --home="$DAEMON_HOME" --node tcp://localhost:26657 --chain-id test --keyring-backend test
+# schedule upgrade
+$EMD tx authority upg-schedule authoritykey test-upg-0.1.0 --upg-height "$1" --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id test --keyring-backend test
+
+# confirm upg plan
+$EMD q authority upg-plan --home=.emd --node tcp://localhost:26657 --chain-id test
+
+# ---------- after upgrade --------->
+$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
+#$EMD q authority upg-plan --home=.emd --node tcp://localhost:26657 --chain-id test # is nil again
+$EMD version # test-upg-0.0.1
