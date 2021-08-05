@@ -29,7 +29,7 @@ echo "node home: $DAEMON_HOME"
 COSMOVISOR_HOME="$EM_LEDGER_LOC"/networks/upg/.emd/cosmovisor
 
 # clean up previous sticky upgrade
-rm "$COSMOVISOR_HOME"/current
+rm -f "$COSMOVISOR_HOME"/current
 
 mkdir -p "$COSMOVISOR_HOME"/genesis/bin
 cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
