@@ -8,7 +8,7 @@
 # │ └── bin
 # │     └── emd
 # └── upgrades
-#     └── test-upg-0.1.0
+#     └── test-upg-0.2.0
 #         └── bin
 #             └── emd
 
@@ -27,9 +27,14 @@ echo "node home: $DAEMON_HOME"
 
 # copy soon to be the legacy binary
 COSMOVISOR_HOME="$EM_LEDGER_LOC"/networks/upg/.emd/cosmovisor
+
+# clean up previous sticky upgrade
+rm "$COSMOVISOR_HOME"/current
+
 mkdir -p "$COSMOVISOR_HOME"/genesis/bin
 cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
-UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.1.0/bin
+UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.2.0/bin
+
 mkdir -p "$UPG_LOC"
 if [ "$(uname)" = "Linux"  ]; then
   cp "$EM_LEDGER_LOC"/build/emdupg-linux "$UPG_LOC"/emd

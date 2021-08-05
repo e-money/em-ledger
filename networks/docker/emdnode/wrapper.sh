@@ -38,7 +38,7 @@ export DAEMON_HOME=$EMDHOME
 # link chain launcher to cosmovisor with linux emd binary
 export DAEMON_NAME=emd-linux
 BINARY=/emoney/cosmovisor
-UPG_LOC="$EMDHOME"/cosmovisor/upgrades/test-upg-0.1.0/bin
+UPG_LOC="$EMDHOME"/cosmovisor/upgrades/test-upg-0.2.0/bin
 mkdir -p "$UPG_LOC"
 cp /emoney/emdupg-linux "$UPG_LOC"/emd-linux
 

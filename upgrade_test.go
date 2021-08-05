@@ -23,7 +23,7 @@ var _ = Describe("Upgrade", func() {
 
 		It("upgrade nodes and confirm", func() {
 			const (
-				name = "test-upg-0.1.0"
+				name = "test-upg-0.2.0"
 			)
 
 			chainHeight, err := nt.GetHeight()

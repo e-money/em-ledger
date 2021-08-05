@@ -5,11 +5,11 @@ set -ev
 # Preconditions server auto download:
 # export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 # make emdupg
-# mkdir -p /srv/upgemd/test-upg-0.1.0
-# cp build/emdupg /srv/upgemd/test-upg-0.1.0
-# zip /srv/upgemd/test-upg-0.1.0/emd.zip /srv/upgemd/test-upg-0.1.0/emd
+# mkdir -p /srv/upgemd/test-upg-0.2.0
+# cp build/emdupg /srv/upgemd/test-upg-0.2.0
+# zip /srv/upgemd/test-upg-0.2.0/emd.zip /srv/upgemd/test-upg-0.2.0/emd
 # save sha value to clipboard
-# sha256sum /srv/upgemd/test-upg-0.1.0/emd.zip | xsel -i -b
+# sha256sum /srv/upgemd/test-upg-0.2.0/emd.zip | xsel -i -b
 # cd /srv/upgemd
 # start a web server in the
 # python3 -m http.server 8765
@@ -17,4 +17,4 @@ set -ev
 EMD=.emd/cosmovisor/current/bin/emd
 
 # choose a future height
-$EMD tx authority schedule-upgrade authoritykey test-upg-0.1.0 --upgrade-height 6 --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.1.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}' --yes --from authoritykey --home="$DAEMON_HOME" --node tcp://localhost:26657 --chain-id test --keyring-backend test
+$EMD tx authority schedule-upgrade authoritykey test-upg-0.2.0 --upgrade-height 6 --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.2.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}' --yes --from authoritykey --home="$DAEMON_HOME" --node tcp://localhost:26657 --chain-id test --keyring-backend test

@@ -7,8 +7,6 @@ export DAEMON_NAME=emd
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export DAEMON_RESTART_AFTER_UPGRADE=true
 
-./cpemd
-
 # optionally uncomment to copy future upgrade binary in location if
 # auto-downloading is not available as a primary or none at all
 # by default we assume it is on and the upgrade binary is not available
@@ -23,6 +21,8 @@ EMD=../../build/emd
 rm -rf "$EMD_NODE"/config
 rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
+
+./cpemd
 
 $EMD unsafe-reset-all --home=$EMD_NODE
 
