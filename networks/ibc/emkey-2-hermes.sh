@@ -26,8 +26,8 @@ if [ "$#" -gt 2 ]; then
   usage
 fi
 
-if ! [ -x "$(which hermes)" ]; then
-  echo "Error: hermes is not installed: install from https://hermes.informal.systems/installation.html" >&2
+if ! [ -f ./hermes ]; then
+  echo "Error: hermes is not found within the same folder: install from https://hermes.informal.systems/installation.html" >&2
   exit 1
 fi
 

@@ -7,9 +7,10 @@
 Install `gaiad` and place in path
 
 ``` shell
-git clone github.com/cosmos/gaia
+git clone https://github.com/cosmos/gaia
 git checkout v5.0.2 
-make build-gaia
+make build
+cp build/gaiad $GOBIN
 ```
 
 #### Hermes v6.0+
@@ -17,6 +18,7 @@ Please follow the instructions to install it
 https://hermes.informal.systems/installation.html
 
 Please copy the binary `hermes` in github.com/e-money/em-ledger/networks/ibc
+There is a dependency with gm requiring Hermes to be in the same folder.
 
 There is a `.gitignore` for it. 
 
@@ -39,7 +41,7 @@ cd networks/ibc
 Ignore errors that do not halt the script. `run.sh` tests the existence of IBC primitives before creating new ones and thus the errors within if test brackets. However, the script should complete in its **entirety**. 
 
 ### run.sh performs these functions:
-1. Launches gaia with 4- full-node + 1 validator-node
+1. Launches gaia with 4 full-node + 1 validator-node local testnet
 2. Imports the testnets keys into the hermes configuration
 3. Establishes the channel, port, connection handshakes
 4. Relays and Refunds tokens bi-directionally in both chains.
