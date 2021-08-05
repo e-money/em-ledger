@@ -18,7 +18,7 @@ Two new docker images defined in em-ledger/networks/docker:
 2. `emoney/test-upg` which builds a test upgrade mode with a trivial upgrade module handler changing the gas-fees as part of the upgrade migration process.
 
 Note these scripts at **em-ledger/networks/upg**:
-* `Readme.md` (this doc)
+* `README.md` (this doc)
 * `startcv` (starts a single e-money node with cosmovisor)
 * `upg-sched` schedule an upgrade by passing the upgrade block height 
 * `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
