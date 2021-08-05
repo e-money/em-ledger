@@ -31,7 +31,11 @@ mkdir -p "$COSMOVISOR_HOME"/genesis/bin
 cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
 UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.1.0/bin
 mkdir -p "$UPG_LOC"
-cp "$EM_LEDGER_LOC"/build/emdupg "$UPG_LOC"/emd
+if [ "$(uname)" = "Linux"  ]; then
+  cp "$EM_LEDGER_LOC"/build/emdupg-linux "$UPG_LOC"/emd
+else
+  cp "$EM_LEDGER_LOC"/build/emdupg "$UPG_LOC"/emd
+fi
 
 echo "legacy or current binary:"
 ls "$COSMOVISOR_HOME"/genesis/bin/emd
