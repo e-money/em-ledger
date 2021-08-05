@@ -20,8 +20,6 @@
     - [Query](#em.authority.v1.Query)
   
 - [em/authority/v1/tx.proto](#em/authority/v1/tx.proto)
-    - [MsgApplyUpgrade](#em.authority.v1.MsgApplyUpgrade)
-    - [MsgApplyUpgradeResponse](#em.authority.v1.MsgApplyUpgradeResponse)
     - [MsgCreateIssuer](#em.authority.v1.MsgCreateIssuer)
     - [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse)
     - [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer)
@@ -315,32 +313,6 @@
 
 
 
-<a name="em.authority.v1.MsgApplyUpgrade"></a>
-
-### MsgApplyUpgrade
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `authority` | [string](#string) |  |  |
-| `plan` | [cosmos.upgrade.v1beta1.Plan](#cosmos.upgrade.v1beta1.Plan) |  |  |
-
-
-
-
-
-
-<a name="em.authority.v1.MsgApplyUpgradeResponse"></a>
-
-### MsgApplyUpgradeResponse
-
-
-
-
-
-
-
 <a name="em.authority.v1.MsgCreateIssuer"></a>
 
 ### MsgCreateIssuer
@@ -495,7 +467,6 @@
 | `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse) |  | |
 | `ReplaceAuthority` | [MsgReplaceAuthority](#em.authority.v1.MsgReplaceAuthority) | [MsgReplaceAuthorityResponse](#em.authority.v1.MsgReplaceAuthorityResponse) |  | |
 | `ScheduleUpgrade` | [MsgScheduleUpgrade](#em.authority.v1.MsgScheduleUpgrade) | [MsgScheduleUpgradeResponse](#em.authority.v1.MsgScheduleUpgradeResponse) |  | |
-| `ApplyUpgrade` | [MsgApplyUpgrade](#em.authority.v1.MsgApplyUpgrade) | [MsgApplyUpgradeResponse](#em.authority.v1.MsgApplyUpgradeResponse) |  | |
 
  <!-- end services -->
 

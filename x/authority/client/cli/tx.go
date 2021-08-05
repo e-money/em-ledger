@@ -32,7 +32,6 @@ func GetTxCmd() *cobra.Command {
 		getCmdSetGasPrices(),
 		GetCmdReplaceAuthority(),
 		GetCmdScheduleUpgrade(),
-		GetCmdApplyUpgrade(),
 	)
 
 	return authorityCmds
@@ -245,75 +244,6 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 	)
 	f.StringVarP(
 		&upgInfoVal, UpgInfo, "i", "", "Upgrade info",
-	)
-
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-func GetCmdApplyUpgrade() *cobra.Command {
-	const (
-		upgHeight = "upgrade-height"
-		upgTime   = "upgrade-time"
-		upgInfo   = "upgrade-info"
-	)
-
-	var (
-		upgHeightVal, upgTimeSecsVal int64
-		upgInfoVal                   string
-	)
-
-	cmd := &cobra.Command{
-		Use:   "apply-upgrade [authority_key_or_address] plan_name",
-		Short: "Apply a software upgrade",
-		Example: `emd tx authority apply-upgrade 0.43 --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t
-emd tx authority apply-upgrade 'New Staking Rewards 36%' --upgrade-time 1628956125 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
-emd tx authority apply-upgrade sdk-v0.43.0 --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t --upgrade-info "https://e-money.com/mainnet-099-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e"`,
-		Long: `Apply a software upgrade by submitting an already scheduled plan. An upgrade handler should have been submitted already.`,
-		Args: cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			err := cmd.Flags().Set(flags.FlagFrom, args[0])
-			if err != nil {
-				return err
-			}
-
-			if err := validateUpgFlags(
-				upgHeight, upgHeightVal, upgTime, upgTimeSecsVal,
-			); err != nil {
-				return err
-			}
-
-			upgTimeVal := time.Unix(upgTimeSecsVal, 0)
-
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := &types.MsgApplyUpgrade{
-				Authority: clientCtx.GetFromAddress().String(),
-				Plan: upgtypes.Plan{
-					Name:   args[1],
-					Time:   upgTimeVal,
-					Height: upgHeightVal,
-					Info:   upgInfoVal,
-				},
-			}
-
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-		},
-	}
-	f := cmd.Flags()
-	f.Int64VarP(&upgHeightVal, upgHeight, "n", 0, "upgrade block height number")
-	f.Int64VarP(
-		&upgTimeSecsVal, upgTime, "t", 0, "upgrade block time (in Unix seconds)",
-	)
-	f.StringVarP(
-		&upgInfoVal, upgInfo, "i", "", "upgrade info",
 	)
 
 	flags.AddTxFlagsToCmd(cmd)
