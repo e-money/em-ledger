@@ -1,10 +1,7 @@
-FROM golang:1.16-alpine
+FROM golang:1.16-buster
 
 # checkout and build linux binary
-RUN apk update && \
-    apk add --update make && \
-    apk add git && \
-    cd /go/src && \
+RUN cd /go/src && \
     git clone https://github.com/e-money/em-ledger.git && \
     cd em-ledger && \
     git checkout test-upg-0.2.0 && \
