@@ -3,7 +3,7 @@ module github.com/e-money/em-ledger
 go 1.15
 
 require (
-	github.com/cosmos/cosmos-sdk v0.42.7
+	github.com/cosmos/cosmos-sdk v0.42.9
 	github.com/e-money/bep3 v0.3.4
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
