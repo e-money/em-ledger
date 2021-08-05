@@ -18,7 +18,6 @@ type authorityKeeper interface {
 	replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	ScheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
-	ApplyUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 	GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
 }
 type msgServer struct {
@@ -135,26 +134,4 @@ func (m msgServer) ScheduleUpgrade(
 	}
 
 	return &types.MsgScheduleUpgradeResponse{}, nil
-}
-
-func (m msgServer) ApplyUpgrade(
-	goCtx context.Context, msg *types.MsgApplyUpgrade,
-) (*types.MsgApplyUpgradeResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	authority, err := sdk.AccAddressFromBech32(msg.Authority)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
-	}
-
-	result, err := m.k.ApplyUpgrade(ctx, authority, msg.Plan)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, e := range result.Events {
-		ctx.EventManager().EmitEvent(sdk.Event(e))
-	}
-
-	return &types.MsgApplyUpgradeResponse{}, nil
 }

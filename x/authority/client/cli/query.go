@@ -54,7 +54,7 @@ func GetGasPricesCmd() *cobra.Command {
 
 func GetUpgradePlanCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "upg-plan",
+		Use:   "upgrade-plan",
 		Short: "Query the current upgrade plan",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {

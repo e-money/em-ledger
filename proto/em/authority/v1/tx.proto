@@ -18,8 +18,6 @@ service Msg {
   rpc ReplaceAuthority(MsgReplaceAuthority) returns (MsgReplaceAuthorityResponse);
 
   rpc ScheduleUpgrade(MsgScheduleUpgrade) returns (MsgScheduleUpgradeResponse);
-
-  rpc ApplyUpgrade(MsgApplyUpgrade) returns (MsgApplyUpgradeResponse);
 }
 
 message MsgCreateIssuer {
@@ -67,13 +65,3 @@ message MsgScheduleUpgrade {
 }
 
 message MsgScheduleUpgradeResponse {}
-
-message MsgApplyUpgrade {
-  string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
-  cosmos.upgrade.v1beta1.Plan plan = 2 [
-    (gogoproto.moretags) = "yaml:\"plan\"",
-    (gogoproto.nullable) = false
-  ];
-}
-
-message MsgApplyUpgradeResponse {}

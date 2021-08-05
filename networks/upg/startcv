@@ -2,32 +2,27 @@
 
 set -ev
 
-##### em-ledger single node genesis setup
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
 
-# locate emd binary starting either in em-ledger/networks or em-ledger/networks/utils
-if [[ -f $PWD/../../build/emd ]]; then
-  pushd ../
-  EMD_NODE=$PWD/.emd
-  pushd -q ../build
-  EMD=$PWD/emd
-   # return to networks
-  popd -q
-elif [[ -f $PWD/../build/emd ]]; then
-  EMD_NODE=$PWD/.emd
-  pushd -q ../build
-  EMD=$PWD/emd
-  popd -q
-else
-  echo "emd binary not found neither in $PWD nor in parent. run make to create binary"
-  exit 1
-fi
+./cpemd
 
-# destructive
+# optionally uncomment to copy future upgrade binary in location if
+# auto-downloading is not available as a primary or none at all
+# by default we assume it is on and the upgrade binary is not available
+# locally: DAEMON_RESTART_AFTER_UPGRADE=true
+#./cpupgemd
+
+EMD_NODE=$PWD/.emd
+EMD=../../build/emd
+
 # do not do this in production
+# do not delete cosmovisor if it exists
 rm -rf "$EMD_NODE"/config
 rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
-# do not delete cosmovisor if it exists
 
 $EMD unsafe-reset-all --home=$EMD_NODE
 
@@ -49,13 +44,10 @@ AUTHORITY_ADDR_VAL=".app_state.authority.key=\"$AUTHORITY_ADDR\""
 jq $AUTHORITY_ADDR_VAL < "$EMD_NODE"/config/genesis.json > "$EMD_NODE"/config/tmp_genesis.json
 mv "$EMD_NODE"/config/tmp_genesis.json "$EMD_NODE"/config/genesis.json
 
-##### Cosmovisor setup
-
-export DAEMON_NAME=emd
-export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
-export DAEMON_RESTART_AFTER_UPGRADE=true
 export DAEMON_HOME=$EMD_NODE
 
 echo "node home: $DAEMON_HOME"
+
+cosmovisor version
 
 cosmovisor start --home="$DAEMON_HOME"

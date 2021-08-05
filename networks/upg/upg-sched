@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# $1 : choose a future block height to upgrade
+
+set -e
+
+EMD=.emd/cosmovisor/current/bin/emd
+
+$EMD version
+$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
+$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test
+
+# schedule upgrade
+$EMD tx authority schedule-upgrade authoritykey test-upg-0.1.0 --upgrade-height "$1" --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id test --keyring-backend test
+
+# confirm upg plan
+$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test
+
+# ---------- after upgrade --------->
+$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
+#$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test # is nil again
+$EMD version # test-upg-0.0.1
