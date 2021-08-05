@@ -17,4 +17,4 @@ set -ev
 EMD=.emd/cosmovisor/current/bin/emd
 
 # choose a future height
-$EMD tx authority upg-schedule authoritykey test-upg-0.1.0 --upg-height 6 --upg-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.1.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}' --yes --from authoritykey --home="$DAEMON_HOME" --node tcp://localhost:26657 --chain-id test --keyring-backend test
+$EMD tx authority schedule-upgrade authoritykey test-upg-0.1.0 --upgrade-height 6 --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.1.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}' --yes --from authoritykey --home="$DAEMON_HOME" --node tcp://localhost:26657 --chain-id test --keyring-backend test

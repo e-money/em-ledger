@@ -52,8 +52,8 @@ func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) 
 }
 
 func (cli Emcli) AuthorityUpgSched(authority Key, planName string, height int64) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "authority", "upg-schedule",
-		authority.name, planName, "--upg-height", strconv.FormatInt(height, 10))
+	args := cli.addTransactionFlags("tx", "authority", "schedule-upgrade",
+		authority.name, planName, "--upgrade-height", strconv.FormatInt(height, 10))
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -89,7 +89,7 @@ func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, pa
 }
 
 func (cli Emcli) QueryUpgSched() ([]byte, error) {
-	args := cli.addQueryFlags("query", "authority", "upg-plan")
+	args := cli.addQueryFlags("query", "authority", "upgrade-plan")
 	return execCmdAndCollectResponse(args)
 }
 
