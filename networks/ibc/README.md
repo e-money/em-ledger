@@ -13,14 +13,15 @@ make build
 cp build/gaiad $GOBIN
 ```
 
-#### Hermes v6.0+
-Please follow the instructions to install it
-https://hermes.informal.systems/installation.html
+#### Hermes v0.6.2+
+Please download the latest Hermes 0.6.x binary release from the [hermes releases](https://github.com/informalsystems/ibc-rs/releases). As of this writing hermes 0.6.2 was the latest.
 
-Please copy the binary `hermes` in github.com/e-money/em-ledger/networks/ibc
-There is a dependency with gm requiring Hermes to be in the same folder.
+Copy the binary `hermes` in github.com/e-money/em-ledger/networks/ibc
+There is a dependency with the `gm` script in the same folder requiring the Hermes binary to be in the same folder.
 
-There is a `.gitignore` for it. 
+There is a `.gitignore` for the `hermes` binary.
+
+TODO look to the possibility of reusing hermes from the path.
 
 ### Launch e-money with predictable chain-id
 
