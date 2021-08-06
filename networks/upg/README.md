@@ -65,7 +65,7 @@ cd networks/upg
 
 # wait for the upgrade
 # check version, upgraded gas-prices
-.emd/cosmovisor/current/bin/emd version # test-upg-0.0.1
+.emd/cosmovisor/current/bin/emd version # test-upg-0.2.0
 .emd/cosmovisor/current/bin/emd q authority gas-prices
 min_gas_prices:
 - amount: "1.000000000000000000"
