@@ -522,8 +522,8 @@ configure() {
   sconfig "$HOME_DIR/config/config.toml" "rpc.pprof_laddr=0.0.0.0:${PPROF}" 1> /dev/null
   # Workaround for https://github.com/spf13/viper/issues/1132
   #   Viper does not support writing array of arrays so we clean out the variable
-  sconfig "$HOME_DIR/config/app.toml" -t stringSlice "telemetry.global-labels=panic gaiad" 1> /dev/null
-  sed -i.bak 's/  global-labels = \["panic","gaiad"\]/  global-labels = []/' "$HOME_DIR/config/app.toml"
+  # sconfig "$HOME_DIR/config/app.toml" -t stringSlice "telemetry.global-labels=panic gaiad" 1> /dev/null
+  # sed -i.bak 's/  global-labels = \["panic","gaiad"\]/  global-labels = []/' "$HOME_DIR/config/app.toml"
   # End of workaround
   sconfig "$HOME_DIR/config/app.toml" "api.address=tcp://0.0.0.0:${APP}" 1> /dev/null
   sconfig "$HOME_DIR/config/app.toml" "api.enable=true" 1> /dev/null
