@@ -32,7 +32,7 @@ var _ = Describe("Upgrade", func() {
 			const upgDelta = 5
 			upgHeight := chainHeight + upgDelta
 
-			_, success, err := emcli.AuthorityUpgSched(Authority, name,
+			_, success, err := emcli.UpgSchedByHeight(Authority, name,
 				upgHeight,
 			)
 			Expect(err).ToNot(HaveOccurred())

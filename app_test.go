@@ -3,8 +3,12 @@ package emoney
 import (
 	"encoding/json"
 	"os"
+	"sync"
 	"testing"
 	"time"
+
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	"github.com/e-money/em-ledger/x/authority"
 
 	apptypes "github.com/e-money/em-ledger/types"
 
@@ -18,6 +22,8 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
+
+var configOnce sync.Once
 
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	encCfg, db, app, _ := getEmSimApp(t, rand.Bytes(sdk.AddrLen))
@@ -58,7 +64,6 @@ func getEmSimApp(
 	}
 
 	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
-	//authorityState := authority.NewGenesisState(rand.Bytes(sdk.AddrLen), sdk.NewDecCoins())
 	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
 
 	genesisState["authority"] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
@@ -92,7 +97,7 @@ type emAppTests struct {
 	authority sdk.AccAddress
 }
 
-func (et *emAppTests) initEmApp(t *testing.T) {
+func (et emAppTests) initEmApp(t *testing.T) emAppTests {
 	t.Helper()
 
 	var err error
@@ -107,17 +112,19 @@ func (et *emAppTests) initEmApp(t *testing.T) {
 		Time:   time.Now(),
 		Height: 10,
 	})
+
+	return et
 }
 
 func Test_Upgrade(t *testing.T) {
-	apptypes.ConfigureSDK()
+	configOnce.Do(apptypes.ConfigureSDK)
 
 	tests := []struct {
 		suite        emAppTests
 		name         string
 		plan         upgradetypes.Plan
 		setupUpgCond func(simApp emAppTests, plan *upgradetypes.Plan)
-		expPass      bool
+		expSchedPass bool
 		qrySched     bool
 		qryApply     bool
 	}{
@@ -130,7 +137,7 @@ func Test_Upgrade(t *testing.T) {
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 				plan.Time = simApp.ctx.BlockTime().Add(time.Hour)
 			},
-			expPass: true,
+			expSchedPass: true,
 		},
 		{
 			name: "successful height schedule",
@@ -140,7 +147,7 @@ func Test_Upgrade(t *testing.T) {
 				Height: 123450000,
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {},
-			expPass:      true,
+			expSchedPass: true,
 		},
 		{
 			name: "setting both time and height schedule",
@@ -152,7 +159,7 @@ func Test_Upgrade(t *testing.T) {
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 				plan.Time = simApp.ctx.BlockTime().Add(time.Hour)
 			},
-			expPass: false,
+			expSchedPass: false,
 		},
 		{
 			name: "successful overwrite",
@@ -172,7 +179,7 @@ func Test_Upgrade(t *testing.T) {
 				)
 				require.NoError(t, err)
 			},
-			expPass: true,
+			expSchedPass: true,
 		},
 		{
 			name: "successful overwrite future with earlier date",
@@ -191,7 +198,7 @@ func Test_Upgrade(t *testing.T) {
 				)
 				require.NoError(t, err)
 			},
-			expPass: true,
+			expSchedPass: true,
 		},
 		{
 			name: "successful overwrite earlier with future date",
@@ -210,7 +217,7 @@ func Test_Upgrade(t *testing.T) {
 				)
 				require.NoError(t, err)
 			},
-			expPass: true,
+			expSchedPass: true,
 		},
 		{
 			name: "unsuccessful schedule: missing plan name",
@@ -218,7 +225,7 @@ func Test_Upgrade(t *testing.T) {
 				Height: 123450000,
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {},
-			expPass:      false,
+			expSchedPass: false,
 		},
 		{
 			name: "unsuccessful time schedule: initialized, uninitialized due date in past",
@@ -229,7 +236,7 @@ func Test_Upgrade(t *testing.T) {
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 				plan.Time = simApp.ctx.BlockTime()
 			},
-			expPass: false,
+			expSchedPass: false,
 		},
 		{
 			name: "unsuccessful height schedule: due date in past",
@@ -239,7 +246,7 @@ func Test_Upgrade(t *testing.T) {
 				Height: 1,
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {},
-			expPass:      false,
+			expSchedPass: false,
 		},
 		{
 			name: "unsuccessful schedule: schedule already executed",
@@ -259,14 +266,13 @@ func Test_Upgrade(t *testing.T) {
 				)
 				require.NoError(t, err)
 			},
-			expPass: false,
+			expSchedPass: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				tt.suite = emAppTests{}
-				tt.suite.initEmApp(t)
+				tt.suite = emAppTests{}.initEmApp(t)
 
 				// setup test case
 				tt.setupUpgCond(tt.suite, &tt.plan)
@@ -278,8 +284,9 @@ func Test_Upgrade(t *testing.T) {
 				)
 				schedPlan, hasPlan := tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
 
-				// validate plan side-effect
-				if tt.expPass {
+				// validate plan side effect
+				if tt.expSchedPass {
+					require.NoError(t, err, "Upgrade() error = %v, expSchedPass %v", err, tt.expSchedPass)
 					require.Truef(t, hasPlan, "hasPlan: %t there should be a plan", hasPlan)
 					require.Equalf(t, schedPlan, tt.plan, "queried %v != %v", schedPlan, tt.plan)
 				} else {
@@ -288,23 +295,112 @@ func Test_Upgrade(t *testing.T) {
 				}
 
 				// apply and confirm plan deletion
-				if err == nil {
-					tt.suite.app.upgradeKeeper.SetUpgradeHandler(tt.plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
-					_, err = tt.suite.app.authorityKeeper.ApplyUpgrade(
-						tt.suite.ctx, tt.suite.authority, tt.plan,
-					)
-					schedPlan, hasPlan = tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
-					require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
-					require.NotEqualf(t, schedPlan, tt.plan, "queried %v == %v", schedPlan, tt.plan)
-				}
-
-				if (err != nil) == tt.expPass {
-					t.Errorf(
-						"Upgrade() error = %v, expPass %v", err, tt.expPass,
-					)
-					return
+				if tt.expSchedPass {
+					executePlan(tt.suite.ctx, t, tt.suite.app.upgradeKeeper, tt.suite.app.authorityKeeper, tt.suite.authority, tt.plan)
 				}
 			},
 		)
 	}
+}
+
+func Test_UpgradeByTime(t *testing.T) {
+
+	configOnce.Do(apptypes.ConfigureSDK)
+
+	tests := []struct {
+		suite        emAppTests
+		name         string
+		plan         upgradetypes.Plan
+		blockTimes   []time.Time
+		setupUpgCond func(simApp emAppTests, blockTimes []time.Time, plan *upgradetypes.Plan)
+		expPass      bool
+		qrySched     bool
+		qryApply     bool
+	}{
+		{
+			name: "successful time plan + 1minute",
+			plan: upgradetypes.Plan{
+				Name: "all-good",
+				Info: "some text here",
+			},
+			setupUpgCond: func(simApp emAppTests, blockTimes []time.Time, plan *upgradetypes.Plan) {
+				const duration = 10 * time.Minute
+				plan.Time = simApp.ctx.BlockTime().Add(duration)
+				blockTimes = []time.Time{
+					simApp.ctx.BlockTime(),
+					simApp.ctx.BlockTime().Add(time.Minute),
+					plan.Time.Add(-time.Nanosecond),
+				}
+			},
+			expPass: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				tt.suite = emAppTests{}.initEmApp(t)
+
+				// setup test case
+				tt.setupUpgCond(tt.suite, tt.blockTimes, &tt.plan)
+
+				// schedule upgrade plan
+				var err error
+				_, err = tt.suite.app.authorityKeeper.ScheduleUpgrade(
+					tt.suite.ctx, tt.suite.authority, tt.plan,
+				)
+				schedPlan, hasPlan := tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
+
+				// validate plan side effect
+				if tt.expPass {
+					require.NoError(t, err, "Upgrade() error = %v, expSchedPass %v", err, tt.expPass)
+					require.Truef(
+						t, hasPlan, "hasPlan: %t there should be a plan",
+						hasPlan,
+					)
+					require.Equalf(
+						t, schedPlan, tt.plan, "queried %v != %v", schedPlan,
+						tt.plan,
+					)
+				} else {
+					require.Falsef(
+						t, hasPlan, "hasPlan: %t plan should not exist", hasPlan,
+					)
+					require.NotEqualf(
+						t, schedPlan, tt.plan, "queried %v == %v", schedPlan,
+						tt.plan,
+					)
+				}
+
+				// advance chain and confirm plan execution
+				tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
+				for _, blockTime := range tt.blockTimes {
+					tt.suite.ctx = tt.suite.ctx.WithBlockTime(blockTime)
+					require.Falsef(t, schedPlan.ShouldExecute(tt.suite.ctx), "premature timing for executing plan")
+				}
+				// move forward to execution time
+				tt.suite.ctx = tt.suite.ctx.WithBlockTime(schedPlan.Time)
+				require.Truef(t, schedPlan.ShouldExecute(tt.suite.ctx), "plan should be ripe for execution")
+
+				executePlan(
+					tt.suite.ctx, t, tt.suite.app.upgradeKeeper,
+					tt.suite.app.authorityKeeper, tt.suite.authority, tt.plan,
+				)
+			},
+		)
+	}
+}
+
+func executePlan(
+	ctx sdk.Context, t *testing.T, uk upgradekeeper.Keeper, ak authority.Keeper,
+	authority sdk.AccAddress, plan upgradetypes.Plan,
+) {
+	uk.SetUpgradeHandler(plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
+
+	_, err := ak.ApplyUpgrade(ctx, authority, plan)
+	require.NoError(t, err)
+
+	schedPlan, hasPlan := ak.GetUpgradePlan(ctx)
+	require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
+	require.NotEqualf(t, schedPlan, plan, "queried %v == %v", schedPlan, plan)
+	require.NoError(t, err, "ApplyUpgrade() error = %v", err)
 }

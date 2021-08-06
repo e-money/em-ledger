@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tidwall/gjson"
@@ -51,9 +52,15 @@ func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) 
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) AuthorityUpgSched(authority Key, planName string, height int64) (string, bool, error) {
+func (cli Emcli) UpgSchedByHeight(authority Key, planName string, height int64) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "schedule-upgrade",
 		authority.name, planName, "--upgrade-height", strconv.FormatInt(height, 10))
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) UpgSchedByTime(authority Key, planName string, time time.Time) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authority", "schedule-upgrade",
+		authority.name, planName, "--upgrade-height", strconv.FormatInt(time.Unix(), 10))
 	return execCmdWithInput(args, KeyPwd)
 }
 
