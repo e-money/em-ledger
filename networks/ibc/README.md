@@ -54,4 +54,7 @@ Being versatile it allows launching multiple gaia testnets.
 It offers start, stop, reset functionality similarly to docker-compose.
 
 ### 3rd IBC testnet 
-Within the peer ../emibctokens folder there is a Stargate IBC compatible chain to test a 3rd hop if needed. It is a Starport created chain from scratch, however parallel to its IBC module there is a POC swap module in progress. In any case its tokens relay functions are operable. Please look into its **../emibctokens/readme.md** for details to launch it. 
+Within the peer ../emibctokens folder there is a Stargate IBC compatible chain to test a 3rd hop if needed. It is a Starport created chain from scratch, however parallel to its IBC module there is a POC swap module in progress. In any case its tokens relay functions are operable. Please look into its **../emibctokens/readme.md** for details to launch it.
+
+### Test Cases
+[List as a docs.google.com/spreadsheets](https://docs.google.com/spreadsheets/d/16u6TO6a-XddMoYzI1RwEyWndKAV00lbV97_A-dHrWfQ/edit?usp=sharing)
