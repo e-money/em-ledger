@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -xe
 
 GM="./gm"
 GAIA_DATA="../gaia/gaia"

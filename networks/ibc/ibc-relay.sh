@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -xe
 
 GAIA_ID="gaia"
 EMONEY_CHAIN_ID="localnet_reuse"
