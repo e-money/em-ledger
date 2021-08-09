@@ -147,3 +147,4 @@ hermes -c ./emoney-config.toml query channel end $EMONEY_CHAIN_ID transfer chann
 hermes -c ./emoney-config.toml query channel end $GAIA_ID transfer channel-0
 
 echo "the IBC chains have initialized awaiting IBC transactions!"
+echo "Hermes relayer can be started with './hermes -c ./emoney-config.toml start'"
