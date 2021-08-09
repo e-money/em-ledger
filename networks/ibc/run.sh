@@ -3,21 +3,29 @@
 set -xe
 
 GM="./gm"
-GAIA_DATA="../gaia/gaia"
+GAIA_DATA="./gaia"
 EMONEY_HOME="../.."
 EMONEY_LOG="$EMONEY_HOME/build/node0/emd.log"
 
+if ! [ -f "./hermes" ] && ! [ -x "$(which hermes)" ]; then
+  echo "Error: hermes binary is not installed. Download it from https://github.com/informalsystems/ibc-rs/releases" >&2
+  exit 1
+fi
+
+# copy hermes from the path
+if ! [ -f "./hermes" ]; then
+  cp "$(which hermes)" ./
+fi
+
 # Ensure gaiad is installed
 if ! [ -x "$(which gaiad)" ]; then
-  echo "Error: gaiad is not installed. Install v5.0.2+ or clone github.com/cosmos/gaia and 'make build-gaia'" >&2
+  echo "Error: gaiad is not installed. Install v5.0.5+ or clone github.com/cosmos/gaia and 'make build-gaia'" >&2
   exit 1
 fi
 
 # Display software version
-echo "Requiring v5.0.2+, checking..."
+echo "Requiring v5.0.5+, checking..."
 echo "GAIA VERSION INFO: $(gaiad version --log_level info)"
-
-$GM status
 
 # Ensure user understands what will be deleted
 if [[ -d $GAIA_DATA ]] && [[ ! "$3" == "skip" ]]; then
@@ -28,6 +36,10 @@ if [[ -d $GAIA_DATA ]] && [[ ! "$3" == "skip" ]]; then
       exit 1
   fi
 fi
+
+# Nuclear Reset of Gaia
+killall -q gaiad || echo > /dev/null 2>&1
+rm -rf $GAIA_DATA
 
 $GM reset
 

@@ -2,13 +2,13 @@
 
 ### Components installation
 
-#### Gaia v5.0.2+
+#### Gaia v5.0.5+ (sdk 0.42.9 including fix for Cosmos #9800)
  
 Install `gaiad` and place in path
 
 ``` shell
 git clone https://github.com/cosmos/gaia
-git checkout v5.0.2 
+git checkout v5.0.5 
 make build
 cp build/gaiad $GOBIN
 ```
