@@ -1,0 +1,39 @@
+
+[gaia]
+  ports_start_at = 26757
+
+[global]
+  add_to_hermes = false
+  auto_maintain_config = true
+  gaiad_binary = "$GOPATH/bin/gaiad"
+  hdpath = ""
+  home_dir = "./"
+  ports_start_at = 26807
+  validator_mnemonic = "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
+  wallet_mnemonic = "then nuclear favorite advance plate glare shallow enhance replace embody list dose quick scale service sentence hover announce advance nephew phrase order useful this"
+
+  [global.hermes]
+    binary = "./hermes"
+    config = "./emoney-config.toml"
+    log_level = "info"
+    strategy = "packets"
+    telemetry_enabled = false
+    telemetry_host = "127.0.0.1"
+    telemetry_port = 3001
+
+[node0]
+  add_to_hermes = true
+  network = "gaia"
+  ports_start_at = 26767
+
+[node1]
+  network = "gaia"
+  ports_start_at = 26777
+
+[node2]
+  network = "gaia"
+  ports_start_at = 26787
+
+[node3]
+  network = "gaia"
+  ports_start_at = 26797

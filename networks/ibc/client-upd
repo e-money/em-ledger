@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+EMONEY_CHAIN_ID="localnet_reuse"
+
+# update IBC client state
+CLIENT_ID="07-tendermint-0"
+
+function client_update() {
+  local dst="$1"
+
+  if hermes -c ./emoney-config.toml query client state "$dst" $CLIENT_ID ; then
+    hermes -c ./emoney-config.toml tx raw update-client "$dst" $CLIENT_ID
+  fi
+}
+
+client_update $EMONEY_CHAIN_ID

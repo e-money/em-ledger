@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set +x
+
+usage() {
+  echo "Usage: $0 <hash>"
+  echo "Example IBC denomination hash ibc/27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92B006199894CF1824DF9AC7C"
+  echo "enter -> $0 27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92B006199894CF1824DF9AC7C"
+  echo "
+        denom_trace:
+          base_denom: ungm
+          path: transfer/channel-0
+  "
+  exit 1
+}
+
+missing() {
+  echo "Missing $1 parameter. Please check if all parameters were specified."
+  usage
+}
+
+if [ -z "$1" ]; then
+  missing "denom-hash"
+fi
+
+if [ "$#" -gt 1 ]; then
+  echo "Incorrect number of parameters."
+  usage
+fi
+
+gaiad q ibc-transfer denom-trace "$1" --node tcp://localhost:26757
