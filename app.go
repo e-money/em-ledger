@@ -386,6 +386,8 @@ func NewApp(
 	app.mm.SetOrderBeginBlockers(
 		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName,
+		// Cosmos #9800: capability module's begin blocker must come before any modules using capabilities (e.g. IBC)
+		capabilitytypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
 		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
 		bep3.ModuleName,
