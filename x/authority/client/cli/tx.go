@@ -194,7 +194,6 @@ func GetCmdScheduleUpgrade() *cobra.Command {
 		Use:   "schedule-upgrade [authority_key_or_address] plan_name",
 		Short: "Schedule a software upgrade",
 		Example: `emd tx authority schedule-upgrade someplan --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t 0.43
-emd tx authority schedule-upgrade 'New Staking Rewards 36%' --upgrade-time 1628956125 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t # Unix seconds for 2021-08-14 15:48:45 +0000 UTC
 emd tx authority schedule-upgrade sdk-v0.43.0 --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.2.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}'`,
 		Long: `Schedule a software upgrade by submitting a unique plan name that
  has not been used before with either an absolute block height or block time. An 
@@ -207,9 +206,7 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 				return err
 			}
 
-			if err := validateUpgFlags(
-				UpgHeight, upgHeightVal, UpgTime, upgTimeSecsVal,
-			); err != nil {
+			if err := validateUpgFlags(UpgHeight, upgHeightVal); err != nil {
 				return err
 			}
 
@@ -239,9 +236,6 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 	}
 	f := cmd.Flags()
 	f.Int64VarP(&upgHeightVal, UpgHeight, "n", 0, "Upgrade block height number")
-	f.Int64VarP(
-		&upgTimeSecsVal, UpgTime, "t", 0, "upgrade block time (in Unix seconds)",
-	)
 	f.StringVarP(
 		&upgInfoVal, UpgInfo, "i", "", "Upgrade info",
 	)
@@ -250,13 +244,11 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 	return cmd
 }
 
-func validateUpgFlags(
-	upgHeight string, upgHeightVal int64, upgTime string, timeVal int64,
-) error {
-	if upgHeightVal == 0 && timeVal == 0 {
+func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
+	if upgHeightVal == 0 {
 		return sdkerrors.Wrapf(
 			types.ErrMissingFlag,
-			"need to specify --%s or --%s", upgHeight, upgTime,
+			"need to specify --%s", upgHeight,
 		)
 	}
 
@@ -264,15 +256,10 @@ func validateUpgFlags(
 	if upgHeightVal != 0 {
 		flagsSet++
 	}
-	if timeVal != 0 {
-		flagsSet++
-	}
 	if flagsSet != 1 {
 		return sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidRequest,
-			"specify only one of the flags: --%s or --%s", upgHeight,
-			upgTime,
-		)
+			"specify only one of the flags: --%s", upgHeight)
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -122,6 +123,13 @@ func (m msgServer) ScheduleUpgrade(
 	authority, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
+	}
+
+	if msg.Plan.Time.Unix() != 0 {
+		return nil, sdkerrors.Wrap(
+			types.ErrPlanTimeIsSet,
+			fmt.Sprintf("Plan time: %s", msg.Plan.Time.String()),
+		)
 	}
 
 	result, err := m.k.ScheduleUpgrade(ctx, authority, msg.Plan)

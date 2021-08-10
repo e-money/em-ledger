@@ -358,7 +358,7 @@ func TestScheduleUpgrade(t *testing.T) {
 			},
 			expErr: true,
 		},
-		"missing time or height": {
+		"missing height": {
 			req: &types.MsgScheduleUpgrade{
 				Authority: authorityAddr.String(),
 				Plan: upgradetypes.Plan{
