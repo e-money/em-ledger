@@ -186,8 +186,8 @@ const (
 
 func GetCmdScheduleUpgrade() *cobra.Command {
 	var (
-		upgHeightVal, upgTimeSecsVal int64
-		upgInfoVal                   string
+		upgHeightVal int64
+		upgInfoVal   string
 	)
 
 	cmd := &cobra.Command{
@@ -210,8 +210,6 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 				return err
 			}
 
-			upgTimeVal := time.Unix(upgTimeSecsVal, 0)
-
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -221,7 +219,7 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 				Authority: clientCtx.GetFromAddress().String(),
 				Plan: upgtypes.Plan{
 					Name:   args[1],
-					Time:   upgTimeVal,
+					Time:   time.Unix(0, 0),
 					Height: upgHeightVal,
 					Info:   upgInfoVal,
 				},
