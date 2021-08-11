@@ -67,18 +67,20 @@ fmt:
 imp:
 	gci -w **/*.go
 
-
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
+
+build-test-upg:
+	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
+	chmod +x build/cosmovisor
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
+	chmod +x "build/emdupg-linux"
+	sed -i -e '/bep3.NewKeeper/r networks/upg/upgfunc.txt' app.go
 
 build-linux:
 	# Linux images for docker-compose
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
 	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
-	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
-	chmod +x build/cosmovisor
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
-	chmod +x "build/emdupg-linux"
 
 build-all: build-linux emdupg
 	$(MAKE) build

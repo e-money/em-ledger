@@ -1,0 +1,31 @@
+
+	/*
+	 * This is a test handler for trying out cosmovisor
+	 * Setting gas to One ungm
+	**/
+	const testUpgradeHandler = "test-upg-0.2.0"
+	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, func(ctx sdk.Context, plan upgradetypes.Plan) {
+		genesisAuth := app.authorityKeeper.GetAuthoritySet(ctx)
+		if genesisAuth.Address == "" {
+			panic("authority should be set in genesis")
+		}
+
+		authAcc, err := sdk.AccAddressFromBech32(genesisAuth.Address)
+		if err != nil {
+			panic(err)
+		}
+
+		newGas := sdk.DecCoins{
+			sdk.NewDecCoin("ungm", sdk.OneInt()),
+		}
+
+		_, err = app.authorityKeeper.SetGasPrices(ctx, authAcc, newGas)
+		if err != nil {
+			panic(err)
+		}
+
+		gasPrices := app.authorityKeeper.GetGasPrices(ctx)
+		if gasPrices.Empty() || !gasPrices.IsEqual(newGas) {
+			panic(fmt.Sprintf("expected Gas: %+v != store Gas: %+v", newGas, gasPrices))
+		}
+	})
