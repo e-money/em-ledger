@@ -257,14 +257,13 @@ func Test_Upgrade(t *testing.T) {
 			},
 			setupUpgCond: func(simEmApp emAppTests, plan *upgradetypes.Plan) {
 				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, _ upgradetypes.Plan) {})
-				_, err := simEmApp.app.authorityKeeper.ApplyUpgrade(
-					simEmApp.ctx, simEmApp.authority, upgradetypes.Plan{
+				simEmApp.app.upgradeKeeper.ApplyUpgrade(
+					simEmApp.ctx, upgradetypes.Plan{
 						Name:   "all-good",
 						Info:   "some text here",
 						Height: 123450000,
 					},
 				)
-				require.NoError(t, err)
 			},
 			expSchedPass: false,
 		},
@@ -296,7 +295,10 @@ func Test_Upgrade(t *testing.T) {
 
 				// apply and confirm plan deletion
 				if tt.expSchedPass {
-					executePlan(tt.suite.ctx, t, tt.suite.app.upgradeKeeper, tt.suite.app.authorityKeeper, tt.suite.authority, tt.plan)
+					executePlan(
+						tt.suite.ctx, t, tt.suite.app.upgradeKeeper,
+						tt.suite.app.authorityKeeper, tt.plan,
+					)
 				}
 			},
 		)
@@ -383,7 +385,7 @@ func Test_UpgradeByTime(t *testing.T) {
 
 				executePlan(
 					tt.suite.ctx, t, tt.suite.app.upgradeKeeper,
-					tt.suite.app.authorityKeeper, tt.suite.authority, tt.plan,
+					tt.suite.app.authorityKeeper, tt.plan,
 				)
 			},
 		)
@@ -392,15 +394,13 @@ func Test_UpgradeByTime(t *testing.T) {
 
 func executePlan(
 	ctx sdk.Context, t *testing.T, uk upgradekeeper.Keeper, ak authority.Keeper,
-	authority sdk.AccAddress, plan upgradetypes.Plan,
+	plan upgradetypes.Plan,
 ) {
 	uk.SetUpgradeHandler(plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
 
-	_, err := ak.ApplyUpgrade(ctx, authority, plan)
-	require.NoError(t, err)
+	uk.ApplyUpgrade(ctx, plan)
 
 	schedPlan, hasPlan := ak.GetUpgradePlan(ctx)
 	require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
 	require.NotEqualf(t, schedPlan, plan, "queried %v == %v", schedPlan, plan)
-	require.NoError(t, err, "ApplyUpgrade() error = %v", err)
 }

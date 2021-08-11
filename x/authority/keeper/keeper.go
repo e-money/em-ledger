@@ -230,18 +230,6 @@ func (k Keeper) ScheduleUpgrade(
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) ApplyUpgrade(
-	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
-) (*sdk.Result, error) {
-	if err := k.ValidateAuthority(ctx, authority); err != nil {
-		return nil, err
-	}
-
-	k.upgradeKeeper.ApplyUpgrade(ctx, plan)
-
-	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
-}
-
 func (k Keeper) GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool) {
 
 	return k.upgradeKeeper.GetUpgradePlan(ctx)
