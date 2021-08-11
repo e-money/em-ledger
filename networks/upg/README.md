@@ -7,7 +7,7 @@ Please note if you'd rather test the upgrade module within the **e-money local-t
 ```shell
 cd em-ledger
 make build-docker
-make build-linux
+make build-all
 go test -v --tags="bdd" bdd_test.go upgrade_test.go
 ```
 
@@ -22,6 +22,7 @@ Note these scripts at **em-ledger/networks/upg**:
 * `startcv` (starts a single e-money node with cosmovisor)
 * `upg-sched` schedule an upgrade by passing the upgrade block height 
 * `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
+* `upgfunc.txt` Go snippet to be inserted as the upgrade module handler in the *upgrade* binary.
 
 ### Components installation
 Build the revamped Docker, Linux artifacts

@@ -49,10 +49,6 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
 
-emdupg:
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
-	chmod +x "build/emdupg"
-
 cosmovisor:
 	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
 
@@ -73,16 +69,17 @@ install:
 build-test-upg:
 	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
 	chmod +x build/cosmovisor
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
+	chmod +x "build/emdupg"
 	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
 	chmod +x "build/emdupg-linux"
-	sed -i -e '/bep3.NewKeeper/r networks/upg/upgfunc.txt' app.go
 
 build-linux:
 	# Linux images for docker-compose
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
 	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
-build-all: build-linux emdupg
+build-all: build-linux build-test-upg
 	$(MAKE) build
 
 build-docker:
@@ -118,7 +115,7 @@ license:
 	GO111MODULE=off go get github.com/google/addlicense/
 	addlicense -f LICENSE .
 
-.PHONY: build build-linux emdupg cosmovisor clean test bdd-test build-docker license
+.PHONY: build build-linux build-test-upg cosmovisor clean test bdd-test build-docker license
 
 ###############################################################################
 ###                                Protobuf                                 ###
