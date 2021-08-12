@@ -90,6 +90,23 @@ services:
       localnet:
         ipv4_address: 192.168.10.5
 
+  gaianode0:
+    container_name: gaia-0
+    image: emoney/gaianode
+    # stdin_open: true
+    #   tty: true
+    ports:
+      - "26665-26666:26656-26657"
+      - "9091:9091" # grpc
+    environment:
+      - ID=0
+      - LOG=${LOG:-gaiad.log}
+    volumes:
+      - ./build/gaia:/gaia:z
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.10
+
 networks:
   localnet:
     driver: bridge
