@@ -43,9 +43,9 @@ mkdir -p "$UPG_LOC"
 cp /emoney/emdupg-linux "$UPG_LOC"/emd-linux
 
 if [ -d "$(dirname "${EMDHOME}"/"${LOG}")" ]; then
-  "$BINARY" --home "$EMDHOME" "$@" | tee "${EMDHOME}/${LOG}"
+  "$BINARY" --home "$EMDHOME" "$@" --pruning=nothing | tee "${EMDHOME}/${LOG}"
 else
-  "$BINARY" --home "$EMDHOME" "$@"
+  "$BINARY" --home "$EMDHOME" "$@" --pruning=nothing
 fi
 
 chmod 777 -R /emoney

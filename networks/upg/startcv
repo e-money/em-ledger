@@ -50,4 +50,4 @@ echo "node home: $DAEMON_HOME"
 
 cosmovisor version
 
-cosmovisor start --home="$DAEMON_HOME"
+cosmovisor start --pruning=nothing --home="$DAEMON_HOME"
