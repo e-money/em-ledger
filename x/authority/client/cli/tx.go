@@ -180,7 +180,6 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 
 const (
 	UpgHeight = "upgrade-height"
-	UpgTime   = "upgrade-time"
 	UpgInfo   = "upgrade-info"
 )
 
