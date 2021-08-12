@@ -36,6 +36,10 @@ func newHandler(k Keeper) sdk.Handler {
 			res, err := msgServer.ReplaceAuthority(sdk.WrapSDKContext(ctx), msg)
 			return sdk.WrapServiceResult(ctx, res, err)
 
+		case *types.MsgScheduleUpgrade:
+			res, err := msgServer.ScheduleUpgrade(sdk.WrapSDKContext(ctx), msg)
+			return sdk.WrapServiceResult(ctx, res, err)
+
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg)
 		}

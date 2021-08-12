@@ -14,6 +14,7 @@ var (
 	_ sdk.Msg = &MsgDestroyIssuer{}
 	_ sdk.Msg = &MsgSetGasPrices{}
 	_ sdk.Msg = &MsgReplaceAuthority{}
+	_ sdk.Msg = &MsgScheduleUpgrade{}
 )
 
 func (msg MsgDestroyIssuer) Type() string { return "destroy_issuer" }
@@ -23,6 +24,8 @@ func (msg MsgCreateIssuer) Type() string { return "create_issuer" }
 func (msg MsgSetGasPrices) Type() string { return "set_gas_prices" }
 
 func (msg MsgReplaceAuthority) Type() string { return "replace_authority" }
+
+func (msg MsgScheduleUpgrade) Type() string { return "schedule_upgrade" }
 
 func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
@@ -76,6 +79,18 @@ func (msg MsgReplaceAuthority) ValidateBasic() error {
 	return nil
 }
 
+func (msg MsgScheduleUpgrade) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+	}
+
+	if err := msg.Plan.ValidateBasic(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (msg MsgDestroyIssuer) GetSigners() []sdk.AccAddress {
 	from, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
@@ -108,6 +123,14 @@ func (msg MsgReplaceAuthority) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{from}
 }
 
+func (msg MsgScheduleUpgrade) GetSigners() []sdk.AccAddress {
+	from, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
+}
+
 func (msg MsgDestroyIssuer) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
@@ -124,6 +147,10 @@ func (msg MsgReplaceAuthority) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
+func (msg MsgScheduleUpgrade) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
+}
+
 func (msg MsgDestroyIssuer) Route() string { return ModuleName }
 
 func (msg MsgCreateIssuer) Route() string { return ModuleName }
@@ -131,3 +158,5 @@ func (msg MsgCreateIssuer) Route() string { return ModuleName }
 func (msg MsgSetGasPrices) Route() string { return ModuleName }
 
 func (msg MsgReplaceAuthority) Route() string { return ModuleName }
+
+func (msg MsgScheduleUpgrade) Route() string { return ModuleName }

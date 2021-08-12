@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"google.golang.org/grpc/codes"
@@ -17,4 +18,15 @@ func (k Keeper) GasPrices(c context.Context, req *types.QueryGasPricesRequest) (
 	ctx := sdk.UnwrapSDKContext(c)
 	gasPrices := k.GetGasPrices(ctx)
 	return &types.QueryGasPricesResponse{MinGasPrices: gasPrices}, nil
+}
+
+func (k Keeper) UpgradePlan(c context.Context, req *types.QueryUpgradePlanRequest) (*types.QueryUpgradePlanResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	ctx := sdk.UnwrapSDKContext(c)
+	plan, _ := k.GetUpgradePlan(ctx)
+
+	return &types.QueryUpgradePlanResponse{Plan: plan}, nil
 }

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"sync"
 
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -24,22 +26,28 @@ const (
 var _ authorityKeeper = Keeper{}
 
 type Keeper struct {
-	cdc        codec.BinaryMarshaler
-	storeKey   sdk.StoreKey
-	ik         issuer.Keeper
-	bankKeeper types.BankKeeper
-	gpk        types.GasPricesKeeper
+	cdc           codec.BinaryMarshaler
+	storeKey      sdk.StoreKey
+	ik            issuer.Keeper
+	bankKeeper    types.BankKeeper
+	upgradeKeeper types.UpgradeKeeper
+	gpk           types.GasPricesKeeper
 
 	gasPricesInit *sync.Once
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper, gasPricesKeeper types.GasPricesKeeper) Keeper {
+func NewKeeper(
+	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey,
+	issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper,
+	gasPricesKeeper types.GasPricesKeeper, upgradeKeeper types.UpgradeKeeper,
+) Keeper {
 	return Keeper{
-		cdc:        cdc,
-		ik:         issuerKeeper,
-		bankKeeper: bankKeeper,
-		gpk:        gasPricesKeeper,
-		storeKey:   storeKey,
+		cdc:           cdc,
+		ik:            issuerKeeper,
+		bankKeeper:    bankKeeper,
+		gpk:           gasPricesKeeper,
+		storeKey:      storeKey,
+		upgradeKeeper: upgradeKeeper,
 
 		gasPricesInit: new(sync.Once),
 	}
@@ -206,4 +214,23 @@ func (k Keeper) replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.Ac
 	k.saveAuthorities(ctx, newAuthority, formerAuthorityAddress.String())
 
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
+}
+
+func (k Keeper) ScheduleUpgrade(
+	ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan,
+) (*sdk.Result, error) {
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
+
+	if err := k.upgradeKeeper.ScheduleUpgrade(ctx, plan); err != nil {
+		return nil, err
+	}
+
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
+}
+
+func (k Keeper) GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool) {
+
+	return k.upgradeKeeper.GetUpgradePlan(ctx)
 }

@@ -3,6 +3,7 @@ package em.authority.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/upgrade/v1beta1/upgrade.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/authority/types";
 
@@ -15,6 +16,8 @@ service Msg {
   rpc SetGasPrices(MsgSetGasPrices) returns (MsgSetGasPricesResponse);
 
   rpc ReplaceAuthority(MsgReplaceAuthority) returns (MsgReplaceAuthorityResponse);
+
+  rpc ScheduleUpgrade(MsgScheduleUpgrade) returns (MsgScheduleUpgradeResponse);
 }
 
 message MsgCreateIssuer {
@@ -52,3 +55,13 @@ message MsgReplaceAuthority {
 message MsgReplaceAuthorityResponse {
   string new_authority_address = 1 [ (gogoproto.moretags) = "yaml:\"new_authority_address\"" ];
 }
+
+message MsgScheduleUpgrade {
+  string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
+  cosmos.upgrade.v1beta1.Plan plan = 2 [
+    (gogoproto.moretags) = "yaml:\"plan\"",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message MsgScheduleUpgradeResponse {}

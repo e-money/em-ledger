@@ -14,6 +14,8 @@
 - [em/authority/v1/query.proto](#em/authority/v1/query.proto)
     - [QueryGasPricesRequest](#em.authority.v1.QueryGasPricesRequest)
     - [QueryGasPricesResponse](#em.authority.v1.QueryGasPricesResponse)
+    - [QueryUpgradePlanRequest](#em.authority.v1.QueryUpgradePlanRequest)
+    - [QueryUpgradePlanResponse](#em.authority.v1.QueryUpgradePlanResponse)
   
     - [Query](#em.authority.v1.Query)
   
@@ -24,6 +26,8 @@
     - [MsgDestroyIssuerResponse](#em.authority.v1.MsgDestroyIssuerResponse)
     - [MsgReplaceAuthority](#em.authority.v1.MsgReplaceAuthority)
     - [MsgReplaceAuthorityResponse](#em.authority.v1.MsgReplaceAuthorityResponse)
+    - [MsgScheduleUpgrade](#em.authority.v1.MsgScheduleUpgrade)
+    - [MsgScheduleUpgradeResponse](#em.authority.v1.MsgScheduleUpgradeResponse)
     - [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices)
     - [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse)
   
@@ -256,6 +260,31 @@
 
 
 
+
+<a name="em.authority.v1.QueryUpgradePlanRequest"></a>
+
+### QueryUpgradePlanRequest
+
+
+
+
+
+
+
+<a name="em.authority.v1.QueryUpgradePlanResponse"></a>
+
+### QueryUpgradePlanResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `plan` | [cosmos.upgrade.v1beta1.Plan](#cosmos.upgrade.v1beta1.Plan) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -271,6 +300,7 @@
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `GasPrices` | [QueryGasPricesRequest](#em.authority.v1.QueryGasPricesRequest) | [QueryGasPricesResponse](#em.authority.v1.QueryGasPricesResponse) |  | GET|/e-money/authority/v1/gasprices|
+| `UpgradePlan` | [QueryUpgradePlanRequest](#em.authority.v1.QueryUpgradePlanRequest) | [QueryUpgradePlanResponse](#em.authority.v1.QueryUpgradePlanResponse) |  | GET|/e-money/authority/v1/upgrade_plan|
 
  <!-- end services -->
 
@@ -367,6 +397,32 @@
 
 
 
+<a name="em.authority.v1.MsgScheduleUpgrade"></a>
+
+### MsgScheduleUpgrade
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  |
+| `plan` | [cosmos.upgrade.v1beta1.Plan](#cosmos.upgrade.v1beta1.Plan) |  |  |
+
+
+
+
+
+
+<a name="em.authority.v1.MsgScheduleUpgradeResponse"></a>
+
+### MsgScheduleUpgradeResponse
+
+
+
+
+
+
+
 <a name="em.authority.v1.MsgSetGasPrices"></a>
 
 ### MsgSetGasPrices
@@ -410,6 +466,7 @@
 | `DestroyIssuer` | [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer) | [MsgDestroyIssuerResponse](#em.authority.v1.MsgDestroyIssuerResponse) |  | |
 | `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse) |  | |
 | `ReplaceAuthority` | [MsgReplaceAuthority](#em.authority.v1.MsgReplaceAuthority) | [MsgReplaceAuthorityResponse](#em.authority.v1.MsgReplaceAuthorityResponse) |  | |
+| `ScheduleUpgrade` | [MsgScheduleUpgrade](#em.authority.v1.MsgScheduleUpgrade) | [MsgScheduleUpgradeResponse](#em.authority.v1.MsgScheduleUpgradeResponse) |  | |
 
  <!-- end services -->
 

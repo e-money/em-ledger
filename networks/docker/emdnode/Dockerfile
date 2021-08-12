@@ -2,11 +2,11 @@
 #
 # Please contact partners@e-money.com for licensing related questions.
 
-FROM alpine:3.7
+FROM ubuntu:18.04
 
-RUN apk update && \
-    apk upgrade && \
-    apk --no-cache add curl jq file
+RUN apt-get update && \
+    apt-get -y upgrade && \
+    apt-get -y install curl jq file
 
 VOLUME  /emoney
 WORKDIR /emoney
@@ -16,4 +16,3 @@ CMD ["start"]
 STOPSIGNAL SIGTERM
 
 COPY wrapper.sh /usr/bin/wrapper.sh
-

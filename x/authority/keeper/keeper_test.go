@@ -7,6 +7,10 @@ package keeper
 import (
 	"testing"
 
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -392,6 +396,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 		keyIssuer  = sdk.NewKVStoreKey(issuer.ModuleName)
 		keyLp      = sdk.NewKVStoreKey(liquidityprovider.ModuleName)
+		keyUpg     = sdk.NewKVStoreKey(upgradetypes.StoreKey)
 
 		blockedAddr = make(map[string]bool)
 	)
@@ -403,6 +408,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 	ms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyIssuer, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyLp, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyUpg, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.NoError(t, err)
@@ -422,6 +428,8 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		)
 		lpk = liquidityprovider.NewKeeper(encConfig.Marshaler, keyLp, bk)
 		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{})
+
+		upgK = upgradekeeper.NewKeeper(map[int64]bool{}, keyUpg, encConfig.Marshaler, t.TempDir())
 	)
 
 	bk.SetSupply(ctx, banktypes.NewSupply(
@@ -431,7 +439,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		)))
 
 	gpk := new(mockGasPricesKeeper)
-	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk)
+	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK)
 
 	return ctx, keeper, ik, gpk
 }

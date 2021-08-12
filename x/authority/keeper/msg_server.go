@@ -2,6 +2,9 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -15,6 +18,8 @@ type authorityKeeper interface {
 	destroyIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	replaceAuthority(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
+	ScheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
+	GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
 }
 type msgServer struct {
 	k authorityKeeper
@@ -107,4 +112,34 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 	}
 
 	return &types.MsgReplaceAuthorityResponse{}, nil
+}
+
+func (m msgServer) ScheduleUpgrade(
+	goCtx context.Context, msg *types.MsgScheduleUpgrade,
+) (*types.MsgScheduleUpgradeResponse, error) {
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	authority, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
+	}
+
+	if msg.Plan.Time.Unix() != 0 {
+		return nil, sdkerrors.Wrap(
+			types.ErrPlanTimeIsSet,
+			fmt.Sprintf("Plan time: %s", msg.Plan.Time.String()),
+		)
+	}
+
+	result, err := m.k.ScheduleUpgrade(ctx, authority, msg.Plan)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range result.Events {
+		ctx.EventManager().EmitEvent(sdk.Event(e))
+	}
+
+	return &types.MsgScheduleUpgradeResponse{}, nil
 }

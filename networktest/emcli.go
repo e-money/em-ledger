@@ -51,6 +51,12 @@ func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) 
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) UpgSchedByHeight(authority Key, planName string, height int64) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authority", "schedule-upgrade",
+		authority.name, planName, "--upgrade-height", strconv.FormatInt(height, 10))
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "destroy-issuer", authority.name, issuer.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
@@ -63,6 +69,7 @@ func (cli Emcli) CustomCommand(params ...string) (string, error) {
 	for _, param := range params {
 		if re.MatchString(param) {
 			checkTxRes = false
+			break
 		}
 	}
 	args := cli.addTransactionFlags(params...)
@@ -79,6 +86,11 @@ func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, pa
 	args := cli.addTransactionFlags("tx", "authority", "set-gas-prices", authority.name, minGasPrices)
 	args = append(args, params...)
 	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) QueryUpgSched() ([]byte, error) {
+	args := cli.addQueryFlags("query", "authority", "upgrade-plan")
+	return execCmdAndCollectResponse(args)
 }
 
 func (cli Emcli) QueryBuybackBalance() ([]byte, error) {

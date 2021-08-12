@@ -26,6 +26,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgDestroyIssuer{}, "e-money/MsgDestroyIssuer", nil)
 	cdc.RegisterConcrete(&MsgSetGasPrices{}, "e-money/MsgSetGasPrices", nil)
 	cdc.RegisterConcrete(&MsgReplaceAuthority{}, "e-money/MsgReplaceAuthority", nil)
+	cdc.RegisterConcrete(&MsgScheduleUpgrade{}, "e-money/MsgScheduleUpgrade", nil)
 }
 
 func RegisterInterfaces(registry types.InterfaceRegistry) {
@@ -34,6 +35,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgDestroyIssuer{},
 		&MsgSetGasPrices{},
 		&MsgReplaceAuthority{},
+		&MsgScheduleUpgrade{},
 	)
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }

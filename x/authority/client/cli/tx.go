@@ -5,10 +5,15 @@
 package cli
 
 import (
+	"time"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	upgtypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
@@ -26,6 +31,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdDestroyIssuer(),
 		getCmdSetGasPrices(),
 		GetCmdReplaceAuthority(),
+		GetCmdScheduleUpgrade(),
 	)
 
 	return authorityCmds
@@ -170,4 +176,89 @@ For a 24-hour grace period the former authority key is equivalent to the new one
 	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
+}
+
+const (
+	UpgHeight = "upgrade-height"
+	UpgTime   = "upgrade-time"
+	UpgInfo   = "upgrade-info"
+)
+
+func GetCmdScheduleUpgrade() *cobra.Command {
+	var (
+		upgHeightVal int64
+		upgInfoVal   string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "schedule-upgrade [authority_key_or_address] plan_name",
+		Short: "Schedule a software upgrade",
+		Example: `emd tx authority schedule-upgrade someplan --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t 0.43
+emd tx authority schedule-upgrade sdk-v0.43.0 --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.2.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}'`,
+		Long: `Schedule a software upgrade by submitting a unique plan name that
+ has not been used before with either an absolute block height or block time. An 
+upgrade handler should be defined at the upgraded binary. Optionally If you set DAEMON_ALLOW_DOWNLOAD_BINARIES=on pass 
+the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.2.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}'`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := cmd.Flags().Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
+
+			if err := validateUpgFlags(UpgHeight, upgHeightVal); err != nil {
+				return err
+			}
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := &types.MsgScheduleUpgrade{
+				Authority: clientCtx.GetFromAddress().String(),
+				Plan: upgtypes.Plan{
+					Name:   args[1],
+					Time:   time.Unix(0, 0),
+					Height: upgHeightVal,
+					Info:   upgInfoVal,
+				},
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+	f := cmd.Flags()
+	f.Int64VarP(&upgHeightVal, UpgHeight, "n", 0, "Upgrade block height number")
+	f.StringVarP(
+		&upgInfoVal, UpgInfo, "i", "", "Upgrade info",
+	)
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
+	if upgHeightVal == 0 {
+		return sdkerrors.Wrapf(
+			types.ErrMissingFlag,
+			"need to specify --%s", upgHeight,
+		)
+	}
+
+	flagsSet := 0
+	if upgHeightVal != 0 {
+		flagsSet++
+	}
+	if flagsSet != 1 {
+		return sdkerrors.Wrapf(
+			sdkerrors.ErrInvalidRequest,
+			"specify only one of the flags: --%s", upgHeight)
+	}
+
+	return nil
 }
