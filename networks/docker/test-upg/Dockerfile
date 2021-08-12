@@ -5,10 +5,9 @@ ARG version
 
 # checkout and build linux binary
 RUN cd /go/src && \
-    git clone https://github.com/e-money/em-ledger.git && \
+    git clone --depth 1 --branch $branch https://github.com/e-money/em-ledger.git && \
     cd em-ledger && \
-    git checkout $branch && \
-   	sed -i -e '/bep3.NewKeeper/r networks/upg/upgfunc.txt' app.go && \
+    sed -i -e '/bep3.NewKeeper/r networks/upg/upgfunc.txt' app.go && \
     git tag $version && \
     BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 make build
 
