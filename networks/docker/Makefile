@@ -1,9 +1,12 @@
 # Makefile for the "emdnode" docker image.
 
-all: emdnode cosmovisor test-upg
+all: emdnode gaianode cosmovisor test-upg
 
 emdnode:
 	docker build --tag emoney/emdnode emdnode
+
+gaianode:
+	docker build gaianode --build-arg tag=v5.0.5 --tag emoney/gaianode
 
 cosmovisor:
 	docker build cosmovisor --tag emoney/cosmovisor
@@ -13,4 +16,4 @@ test-upg:
 
 # todo (reviewer): please note the rest-server is not a command anymore. Please enable `api` section in `app.toml` instead
 
-.PHONY: all emdnode cosmovisor test-upg
+.PHONY: all emdnode gaianode cosmovisor test-upg
