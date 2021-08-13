@@ -1,24 +1,13 @@
-FROM golang:1.16-buster AS build-env
+FROM ubuntu:18.04
 
 ARG tag
-
-# Set working directory for the build
-RUN mkdir -p /go/src/github.com/cosmos
-
-# shallow checkout and build linux binary
-RUN cd /go/src/github.com/cosmos && \
-    git clone --depth 1 --branch $tag https://github.com/cosmos/gaia.git && \
-    cd gaia && \
-    LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 make install
-
-FROM ubuntu:18.04
 
 RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get -y install curl jq file
 
-# Copy over binaries from the build-env
-COPY --from=build-env /go/bin/gaiad /usr/bin/gaiad
+RUN curl -L --output /usr/bin/gaiad "https://github.com/cosmos/gaia/releases/download/$tag/gaiad-$tag-linux-amd64" && \
+    chmod 777 /usr/bin/gaiad
 
 COPY ./wrapper.sh /usr/bin/wrapper.sh
 
