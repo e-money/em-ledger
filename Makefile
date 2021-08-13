@@ -49,9 +49,6 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
 
-cosmovisor:
-	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
-
 lint:
 	golangci-lint run
 
@@ -66,20 +63,12 @@ imp:
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
 
-build-test-upg:
-	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
-	chmod +x build/cosmovisor
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
-	chmod +x "build/emdupg"
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
-	chmod +x "build/emdupg-linux"
-
 build-linux:
 	# Linux images for docker-compose
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
 	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
-build-all: build-linux build-test-upg
+build-all: build-linux build/cosmovisor build/emdupg build/emdupg-linux
 	$(MAKE) build
 
 build-docker:
@@ -111,11 +100,27 @@ local-testnet-reset:
 clean:
 	rm -rf ./build ./data ./config
 
+##################### upgrade artifacts
+cosmovisor:
+	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
+
+build/cosmovisor:
+	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
+	chmod +x build/cosmovisor
+
+build/emdupg:
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
+	chmod +x "build/emdupg"
+
+build/emdupg-linux:
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg-linux"
+	chmod +x "build/emdupg-linux"
+
 license:
 	GO111MODULE=off go get github.com/google/addlicense/
 	addlicense -f LICENSE .
 
-.PHONY: build build-linux build-test-upg cosmovisor clean test bdd-test build-docker license
+.PHONY: build build-linux cosmovisor clean test bdd-test build-docker license
 
 ###############################################################################
 ###                                Protobuf                                 ###
