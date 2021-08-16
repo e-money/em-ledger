@@ -113,7 +113,7 @@ build/emdupg:
 	chmod +x "build/emdupg"
 
 build/emdupg-linux:
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg-linux"
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
 	chmod +x "build/emdupg-linux"
 
 license:
