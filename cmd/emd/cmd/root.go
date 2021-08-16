@@ -22,6 +22,7 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	emoney "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
+	migratecli "github.com/e-money/em-ledger/x/genutil/client/cli"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
@@ -78,7 +79,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig emoney.EncodingConfig) {
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(emoney.ModuleBasics, emoney.DefaultNodeHome),
 		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, emoney.DefaultNodeHome),
-		genutilcli.MigrateGenesisCmd(),
+		migratecli.MigrateGenesisCmd(),
 		genutilcli.GenTxCmd(emoney.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, emoney.DefaultNodeHome),
 		genutilcli.ValidateGenesisCmd(emoney.ModuleBasics),
 		AddGenesisAccountCmd(emoney.DefaultNodeHome),
