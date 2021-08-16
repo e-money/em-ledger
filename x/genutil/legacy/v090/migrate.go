@@ -27,7 +27,8 @@ import (
 	v038staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v038"
 	v040staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v040"
 	v038upgrade "github.com/cosmos/cosmos-sdk/x/upgrade/legacy/v038"
-	v09 "github.com/e-money/em-ledger/x/liquidityprovider/legacy/v09"
+	"github.com/e-money/em-ledger/x/authority"
+	v09authority "github.com/e-money/em-ledger/x/authority/legacy/v09"
 	v09liquidityprovider "github.com/e-money/em-ledger/x/liquidityprovider/legacy/v09"
 )
 
@@ -46,7 +47,7 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 	v036params.RegisterLegacyAminoCodec(v09Codec)
 	v038upgrade.RegisterLegacyAminoCodec(v09Codec)
 
-	v09.RegisterLegacyAminoCodec(v09Codec)
+	v09liquidityprovider.RegisterLegacyAminoCodec(v09Codec)
 
 	v040Codec := clientCtx.JSONMarshaler
 
@@ -96,11 +97,15 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		appState[v040auth.ModuleName] = v040Codec.MustMarshalJSON(v040auth.Migrate(authGenState))
 	}
 
-	// TODO Migrate Liquidity Provider
-	// TODO Migrate authority
-	// TODO Migrate inflation
-	// TODO Migrate issuer
-	// TODO Migrate market
+	// Migrate x/authority
+	if appState[authority.ModuleName] != nil {
+		var authorityGenState v09authority.GenesisState
+		v09Codec.MustUnmarshalJSON(appState[authority.ModuleName], &authorityGenState)
+
+		delete(appState, authority.ModuleName)
+
+		appState[authority.ModuleName] = v040Codec.MustMarshalJSON(v09authority.Migrate(authorityGenState))
+	}
 
 	// Migrate x/crisis.
 	if appState[v039crisis.ModuleName] != nil {
