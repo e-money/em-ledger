@@ -6,12 +6,15 @@ package keeper
 
 import (
 	"errors"
+	"fmt"
+	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer"
 
@@ -31,6 +34,7 @@ type Keeper struct {
 	ik            issuer.Keeper
 	bankKeeper    types.BankKeeper
 	upgradeKeeper types.UpgradeKeeper
+	paramsKeeper  types.ParamsKeeper
 	gpk           types.GasPricesKeeper
 
 	gasPricesInit *sync.Once
@@ -40,6 +44,7 @@ func NewKeeper(
 	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey,
 	issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper,
 	gasPricesKeeper types.GasPricesKeeper, upgradeKeeper types.UpgradeKeeper,
+	paramsKeeper types.ParamsKeeper,
 ) Keeper {
 	return Keeper{
 		cdc:           cdc,
@@ -48,6 +53,7 @@ func NewKeeper(
 		gpk:           gasPricesKeeper,
 		storeKey:      storeKey,
 		upgradeKeeper: upgradeKeeper,
+		paramsKeeper:  paramsKeeper,
 
 		gasPricesInit: new(sync.Once),
 	}
@@ -231,6 +237,33 @@ func (k Keeper) ScheduleUpgrade(
 }
 
 func (k Keeper) GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool) {
-
 	return k.upgradeKeeper.GetUpgradePlan(ctx)
+}
+
+func (k Keeper) SetParam(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
+	if err := k.ValidateAuthority(ctx, authority); err != nil {
+		return nil, err
+	}
+
+	for _, change := range changes {
+		ss, found := k.paramsKeeper.GetSubspace(change.Subspace)
+		if !found {
+			return nil, sdkerrors.Wrap(proposal.ErrUnknownSubspace, change.Subspace)
+		}
+
+		logger(ctx).Info(
+			fmt.Sprintf("attempt to set new parameter value; key: %s, value: %s", change.Key, change.Value),
+		)
+
+		if err := ss.Update(ctx, []byte(change.Key), []byte(change.Value)); err != nil {
+			return nil, sdkerrors.Wrapf(proposal.ErrSettingParameter, "key: %s, value: %s, err: %s", change.Key, change.Value, err.Error())
+		}
+	}
+
+	return nil, nil
+}
+
+// logger returns a module-specific logger.
+func logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "x/"+types.ModuleName)
 }
