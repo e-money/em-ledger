@@ -18,7 +18,10 @@ import (
 	v09 "github.com/e-money/em-ledger/x/genutil/legacy/v090"
 )
 
-const flagGenesisTime = "genesis-time"
+const (
+	flagGenesisTime        = "genesis-time"
+	flagNoConsensusUpgrade = "no-consensus-upgrade"
+)
 
 // Allow applications to extend and modify the migration process.
 //
@@ -93,6 +96,13 @@ $ %s migrate v0.9 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=20
 			// TODO: handler error from migrationFunc call
 			newGenState := migrationFunc(initialState, clientCtx)
 
+			noUpgrade, _ := cmd.Flags().GetBool(flagNoConsensusUpgrade)
+			if !noUpgrade {
+				genDoc.ConsensusParams.Evidence.MaxBytes = 4194304
+
+				upgradeModuleParams(clientCtx.JSONMarshaler, newGenState)
+			}
+
 			genDoc.AppState, err = json.Marshal(newGenState)
 			if err != nil {
 				return errors.Wrap(err, "failed to JSON marshal migrated genesis state")
@@ -132,6 +142,7 @@ $ %s migrate v0.9 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=20
 
 	cmd.Flags().String(flagGenesisTime, "", "override genesis_time with this flag")
 	cmd.Flags().String(flags.FlagChainID, "", "override chain_id with this flag")
+	cmd.Flags().Bool(flagNoConsensusUpgrade, false, "do not apply planned changes to consensus parameters")
 
 	return cmd
 }

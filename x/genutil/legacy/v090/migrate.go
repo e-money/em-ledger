@@ -19,17 +19,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
 	v036gov "github.com/cosmos/cosmos-sdk/x/gov/legacy/v036"
 	v040gov "github.com/cosmos/cosmos-sdk/x/gov/legacy/v040"
-	v039mint "github.com/cosmos/cosmos-sdk/x/mint/legacy/v039"
-	v040mint "github.com/cosmos/cosmos-sdk/x/mint/legacy/v040"
 	v036params "github.com/cosmos/cosmos-sdk/x/params/legacy/v036"
-	v039slashing "github.com/cosmos/cosmos-sdk/x/slashing/legacy/v039"
-	v040slashing "github.com/cosmos/cosmos-sdk/x/slashing/legacy/v040"
 	v038staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v038"
 	v040staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v040"
 	v038upgrade "github.com/cosmos/cosmos-sdk/x/upgrade/legacy/v038"
 	"github.com/e-money/em-ledger/x/authority"
 	v09authority "github.com/e-money/em-ledger/x/authority/legacy/v09"
 	v09liquidityprovider "github.com/e-money/em-ledger/x/liquidityprovider/legacy/v09"
+	v09slashing "github.com/e-money/em-ledger/x/slashing/legacy/v09"
 )
 
 func migrateGenutil(oldGenState v039genutil.GenesisState) *types.GenesisState {
@@ -38,7 +35,7 @@ func migrateGenutil(oldGenState v039genutil.GenesisState) *types.GenesisState {
 	}
 }
 
-// Migrate migrates exported state from v0.39 to a v0.40 genesis state.
+// Migrate migrates exported state from v0.9.x to a v1.0.x genesis state.
 func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 	v09Codec := codec.NewLegacyAmino()
 	v039auth.RegisterLegacyAminoCodec(v09Codec)
@@ -163,32 +160,18 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		appState[v040gov.ModuleName] = v040Codec.MustMarshalJSON(v040gov.Migrate(govGenState))
 	}
 
-	// Migrate x/mint.
-	if appState[v039mint.ModuleName] != nil {
-		// unmarshal relative source genesis application state
-		var mintGenState v039mint.GenesisState
-		v09Codec.MustUnmarshalJSON(appState[v039mint.ModuleName], &mintGenState)
-
-		// delete deprecated x/mint genesis state
-		delete(appState, v039mint.ModuleName)
-
-		// Migrate relative source genesis application state and marshal it into
-		// the respective key.
-		appState[v040mint.ModuleName] = v040Codec.MustMarshalJSON(v040mint.Migrate(mintGenState))
-	}
-
 	// Migrate x/slashing.
-	if appState[v039slashing.ModuleName] != nil {
+	if appState[v09slashing.ModuleName] != nil {
 		// unmarshal relative source genesis application state
-		var slashingGenState v039slashing.GenesisState
-		v09Codec.MustUnmarshalJSON(appState[v039slashing.ModuleName], &slashingGenState)
+		var slashingGenState v09slashing.GenesisState
+		v09Codec.MustUnmarshalJSON(appState[v09slashing.ModuleName], &slashingGenState)
 
 		// delete deprecated x/slashing genesis state
-		delete(appState, v039slashing.ModuleName)
+		delete(appState, v09slashing.ModuleName)
 
 		// Migrate relative source genesis application state and marshal it into
 		// the respective key.
-		appState[v040slashing.ModuleName] = v040Codec.MustMarshalJSON(v040slashing.Migrate(slashingGenState))
+		appState[v09slashing.ModuleName] = v040Codec.MustMarshalJSON(v09slashing.Migrate(slashingGenState))
 	}
 
 	// Migrate x/staking.

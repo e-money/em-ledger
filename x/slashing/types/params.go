@@ -19,9 +19,8 @@ var (
 )
 
 var (
-	//todo (reviewer): this was "SignedBlocksWindowDuration" before
-	KeySignedBlocksWindow = slashingtypes.KeySignedBlocksWindow
-
+	// This was "SignedBlocksWindowDuration" in v0.9.x releases.
+	KeySignedBlocksWindow      = slashingtypes.KeySignedBlocksWindow
 	KeyMinSignedPerWindow      = slashingtypes.KeyMinSignedPerWindow
 	KeyDowntimeJailDuration    = slashingtypes.KeyDowntimeJailDuration
 	KeySlashFractionDoubleSign = slashingtypes.KeySlashFractionDoubleSign
