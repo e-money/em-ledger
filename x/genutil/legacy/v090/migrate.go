@@ -17,8 +17,6 @@ import (
 	v040evidence "github.com/cosmos/cosmos-sdk/x/evidence/legacy/v040"
 	v039genutil "github.com/cosmos/cosmos-sdk/x/genutil/legacy/v039"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
-	v036gov "github.com/cosmos/cosmos-sdk/x/gov/legacy/v036"
-	v040gov "github.com/cosmos/cosmos-sdk/x/gov/legacy/v040"
 	v036params "github.com/cosmos/cosmos-sdk/x/params/legacy/v036"
 	v038staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v038"
 	v040staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v040"
@@ -39,7 +37,6 @@ func migrateGenutil(oldGenState v039genutil.GenesisState) *types.GenesisState {
 func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 	v09Codec := codec.NewLegacyAmino()
 	v039auth.RegisterLegacyAminoCodec(v09Codec)
-	v036gov.RegisterLegacyAminoCodec(v09Codec)
 	v036distr.RegisterLegacyAminoCodec(v09Codec)
 	v036params.RegisterLegacyAminoCodec(v09Codec)
 	v038upgrade.RegisterLegacyAminoCodec(v09Codec)
@@ -67,6 +64,14 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		// delete deprecated x/supply genesis state
 		delete(appState, v036supply.ModuleName)
 
+		// Remove Liquidity provider accounts before migrating acocunts.
+		for i, v09account := range authGenState.Accounts {
+			switch v09account := v09account.(type) {
+			case *v09liquidityprovider.LiquidityProviderAccount:
+				authGenState.Accounts[i] = v09account.BaseAccount
+			}
+		}
+
 		// Migrate relative source genesis application state and marshal it into
 		// the respective key.
 		appState[v040bank.ModuleName] = v040Codec.MustMarshalJSON(v040bank.Migrate(bankGenState, authGenState, supplyGenState))
@@ -85,7 +90,7 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		for i, v09account := range authGenState.Accounts {
 			switch v09account := v09account.(type) {
 			case *v09liquidityprovider.LiquidityProviderAccount:
-				authGenState.Accounts[i] = &v09account.BaseAccount
+				authGenState.Accounts[i] = v09account.BaseAccount
 			}
 		}
 
@@ -144,20 +149,6 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		// Migrate relative source genesis application state and marshal it into
 		// the respective key.
 		appState[v040evidence.ModuleName] = v040Codec.MustMarshalJSON(v040evidence.Migrate(evidenceGenState))
-	}
-
-	// Migrate x/gov.
-	if appState[v036gov.ModuleName] != nil {
-		// unmarshal relative source genesis application state
-		var govGenState v036gov.GenesisState
-		v09Codec.MustUnmarshalJSON(appState[v036gov.ModuleName], &govGenState)
-
-		// delete deprecated x/gov genesis state
-		delete(appState, v036gov.ModuleName)
-
-		// Migrate relative source genesis application state and marshal it into
-		// the respective key.
-		appState[v040gov.ModuleName] = v040Codec.MustMarshalJSON(v040gov.Migrate(govGenState))
 	}
 
 	// Migrate x/slashing.
