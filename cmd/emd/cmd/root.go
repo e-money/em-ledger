@@ -31,6 +31,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // NewRootCmd creates a new root command for emd. It is called once in the
@@ -57,7 +58,19 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd)
+			if err := server.InterceptConfigsPreRunHandler(cmd); err != nil {
+				return err
+			}
+
+			srvCtx := server.GetServerContextFromCmd(cmd)
+
+			srvCtx.Config.Consensus.CreateEmptyBlocksInterval = 60 * time.Second
+			srvCtx.Config.Consensus.CreateEmptyBlocks = false
+			srvCtx.Config.Consensus.TimeoutCommit = 500 * time.Millisecond
+			srvCtx.Config.Consensus.TimeoutPropose = 2 * time.Second
+			srvCtx.Config.Consensus.PeerGossipSleepDuration = 25 * time.Millisecond
+
+			return server.SetCmdServerContext(cmd, srvCtx)
 		},
 	}
 
