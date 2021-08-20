@@ -78,7 +78,6 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/buyback"
@@ -88,6 +87,8 @@ import (
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"github.com/e-money/em-ledger/x/market"
 	emslashing "github.com/e-money/em-ledger/x/slashing"
+	"github.com/e-money/em-ledger/x/staking"
+	historykeeper "github.com/e-money/em-ledger/x/staking/keeper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
@@ -171,6 +172,7 @@ type EMoneyApp struct {
 	// keepers
 	accountKeeper    authkeeper.AccountKeeper
 	bankKeeper       *embank.ProxyKeeper
+	historykeeper    historykeeper.HistoryKeeper
 	capabilityKeeper *capabilitykeeper.Keeper
 	distrKeeper      distrkeeper.Keeper
 	stakingKeeper    stakingkeeper.Keeper
@@ -271,6 +273,9 @@ func NewApp(
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], app.accountKeeper, app.bankKeeper, app.GetSubspace(stakingtypes.ModuleName),
 	)
+
+	app.historykeeper = historykeeper.NewHistoryKeeper(appCodec, keys[historykeeper.StoreKey], stakingKeeper)
+
 	app.distrKeeper = distrkeeper.NewKeeper(
 		appCodec, keys[distrtypes.StoreKey], app.GetSubspace(distrtypes.ModuleName), app.accountKeeper, app.bankKeeper,
 		&stakingKeeper, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
@@ -292,7 +297,7 @@ func NewApp(
 
 	// Create IBC Keeper
 	app.ibcKeeper = ibckeeper.NewKeeper(
-		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.stakingKeeper, scopedIBCKeeper,
+		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.historykeeper, scopedIBCKeeper,
 	)
 
 	// Create Transfer Keepers
@@ -340,7 +345,7 @@ func NewApp(
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
 		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
 		emslashing.NewAppModule(appCodec, app.slashingKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
-		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper),
+		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper, app.historykeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
 		evidence.NewAppModule(app.evidenceKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
@@ -361,11 +366,19 @@ func NewApp(
 	app.mm.SetOrderBeginBlockers(
 		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName,
-		// Cosmos #9800: capability module's begin blocker must come before any modules using capabilities (e.g. IBC)
+		//// Cosmos #9800: capability module's begin blocker must come before any modules using capabilities (e.g. IBC)
 		capabilitytypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
-		bep3.ModuleName,
+		evidencetypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibchost.ModuleName,
+
+		authority.ModuleName,
+		market.ModuleName,
+		inflation.ModuleName,
+		emslashing.ModuleName,
+		emdistr.ModuleName,
+		buyback.ModuleName,
+		//bep3.ModuleName, // <- TODO Forces app-state change in BeginBlock
 	)
 
 	// todo (reviewer): check which modules make sense
@@ -460,6 +473,7 @@ func (app *EMoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	app.currentBatch = app.database.NewBatch() // store in app state as ctx is different in end block
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	ctx = apptypes.WithCurrentBatch(ctx, app.currentBatch)
+	ctx = apptypes.WithDatabase(ctx, app.database)
 
 	return app.mm.BeginBlock(ctx, req)
 }
