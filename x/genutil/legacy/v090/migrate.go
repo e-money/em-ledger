@@ -23,8 +23,10 @@ import (
 	v038upgrade "github.com/cosmos/cosmos-sdk/x/upgrade/legacy/v038"
 	"github.com/e-money/em-ledger/x/authority"
 	v09authority "github.com/e-money/em-ledger/x/authority/legacy/v09"
+	"github.com/e-money/em-ledger/x/buyback"
 	v09liquidityprovider "github.com/e-money/em-ledger/x/liquidityprovider/legacy/v09"
 	v09slashing "github.com/e-money/em-ledger/x/slashing/legacy/v09"
+	"time"
 )
 
 func migrateGenutil(oldGenState v039genutil.GenesisState) *types.GenesisState {
@@ -185,12 +187,28 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		var genutilGenState v039genutil.GenesisState
 		v09Codec.MustUnmarshalJSON(appState[v039genutil.ModuleName], &genutilGenState)
 
-		// delete deprecated x/staking genesis state
+		// delete deprecated x/genutil genesis state
 		delete(appState, v039genutil.ModuleName)
 
 		// Migrate relative source genesis application state and marshal it into
 		// the respective key.
 		appState[ModuleName] = v040Codec.MustMarshalJSON(migrateGenutil(genutilGenState))
+	}
+
+	if appState[buyback.ModuleName] != nil {
+		var buybackGenState buyback.GenesisState
+		v09Codec.MustUnmarshalJSON(appState[buyback.ModuleName], &buybackGenState)
+
+		// Genesis format for the buyback module has not changed, but may be missing.
+		// Set a default value if that is the case.
+		if buybackGenState.Interval == "" {
+			buybackGenState.Interval = time.Hour.String()
+		}
+
+		// delete deprecated x/buyback genesis state
+		delete(appState, buyback.ModuleName)
+
+		appState[buyback.ModuleName] = v040Codec.MustMarshalJSON(&buybackGenState)
 	}
 
 	return appState
