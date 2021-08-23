@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -90,7 +91,13 @@ $ %s migrate v0.9 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=20
 
 			migrationFunc := GetMigrationCallback(target)
 			if migrationFunc == nil {
-				return fmt.Errorf("unknown migration function for version: %s", target)
+				migrations := make([]string, len(migrationMap))
+				for k, _ := range migrationMap {
+					migrations = append(migrations, k)
+				}
+
+				avail := fmt.Sprintf("Available migrations:%v", strings.Join(migrations, " "))
+				return fmt.Errorf("unknown migration function for version: %s\n%v", target, avail)
 			}
 
 			// TODO: handler error from migrationFunc call
