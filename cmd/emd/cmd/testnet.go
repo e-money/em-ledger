@@ -6,8 +6,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	bep3 "github.com/e-money/bep3/module"
-	bep3types "github.com/e-money/bep3/module/types"
+
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/buyback"
 	"github.com/e-money/em-ledger/x/inflation"
@@ -27,7 +26,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -292,7 +290,6 @@ func initGenFiles(
 	appGenState["authority"] = createAuthorityGenesis(authorityKey)
 	appGenState["inflation"] = createInflationGenesis()
 	appGenState["buyback"] = createBuybackGenesis()
-	appGenState["bep3"] = createTestBep3Genesis()
 
 	// set the accounts in the genesis state
 	var authGenState authtypes.GenesisState
@@ -480,79 +477,6 @@ func createAuthorityGenesis(akey sdk.AccAddress) json.RawMessage {
 	}
 
 	return json.RawMessage(bz)
-}
-
-func getDeputyAccount() keyring.Info {
-	mn := "play witness auto coast domain win tiny dress glare bamboo rent mule delay exact arctic vacuum laptop hidden siren sudden six tired fragile penalty"
-	memKb := keyring.NewInMemory()
-	deputyAccount, err := memKb.NewAccount("deputykey", mn, "", sdk.FullFundraiserPath, hd.Secp256k1)
-	if err != nil {
-		panic(err)
-	}
-	// emoney1lagqmceycrfpkyu7y6ayrk6jyvru5mkrezacpw
-	fmt.Printf("deputy address: %s\n", deputyAccount.GetAddress().String())
-
-	return deputyAccount
-}
-
-func createTestBep3Genesis() json.RawMessage {
-	depBech32Addr := getDeputyAccount().GetAddress().String()
-	fmt.Printf("Genesis bech32 deputy address: %s\n", depBech32Addr)
-
-	// bep3 genesis for supported bep3Coins
-	bep3Denoms, bep3Coins := getBep3Coins()
-	gen := bep3types.DefaultGenesisState()
-	gen.Params.AssetParams = make([]bep3types.AssetParam, len(bep3Denoms))
-	gen.Supplies.AssetSupplies = make([]bep3types.AssetSupply, len(bep3Denoms))
-
-	limit := sdk.NewInt(int64(bep3.MaxSupplyLimit))
-	for idx, denom := range bep3Denoms {
-		bep3Coins[idx] = sdk.NewCoin(denom, limit)
-
-		gen.Supplies.AssetSupplies[idx] = bep3types.AssetSupply{
-			IncomingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
-			OutgoingSupply:           sdk.NewCoin(denom, sdk.ZeroInt()),
-			CurrentSupply:            sdk.NewCoin(denom, limit.QuoRaw(2)),
-			TimeLimitedCurrentSupply: sdk.NewCoin(denom, sdk.ZeroInt()),
-			TimeElapsed:              0,
-		}
-		gen.Params.AssetParams[idx] =
-			bep3types.AssetParam{
-				Denom:  denom,
-				CoinID: int64(idx) + 1,
-				SupplyLimit: bep3types.SupplyLimit{
-					Limit:          limit,
-					TimeLimited:    false,
-					TimePeriod:     int64(time.Hour * 24),
-					TimeBasedLimit: sdk.ZeroInt(),
-				},
-				Active:          true,
-				DeputyAddress:   depBech32Addr,
-				FixedFee:        sdk.NewInt(bep3types.DeputyFee),
-				MinSwapAmount:   sdk.OneInt(),
-				MaxSwapAmount:   limit,
-				SwapTimestamp:   time.Now().Unix(),
-				SwapTimeSpanMin: 24 * 3 * 60, // 3 days in minutes
-			}
-	}
-
-	cdc := codec.NewAminoCodec(codec.NewLegacyAmino())
-	bep3Js := cdc.MustMarshalJSON(gen)
-
-	return bep3Js
-}
-
-func getBep3Coins() ([]string, sdk.Coins) {
-	// bep3 genesis for supported coins
-	bep3Denoms := []string{"echf", "edkk", "eeur", "enok", "esek", "ungm"}
-	coins := make(sdk.Coins, len(bep3Denoms))
-	amount := sdk.NewInt(int64(bep3.MaxSupplyLimit))
-
-	for idx, denom := range bep3Denoms {
-		coins[idx] = sdk.NewCoin(denom, amount)
-	}
-
-	return bep3Denoms, coins
 }
 
 func addPredefinedTestAccounts(keystorepath string) (authtypes.GenesisAccounts, []banktypes.Balance) {
