@@ -99,7 +99,7 @@ import (
 
 const (
 	appName            = "emoneyd"
-	testUpgradeHandler = "test-upg-0.2.0"
+	testUpgradeHandler = "test-upg-0.3.0"
 )
 
 var (
