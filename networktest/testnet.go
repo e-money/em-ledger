@@ -339,7 +339,7 @@ func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, er
 }
 
 func (t *Testnet) compileBinaries() error {
-	_, err := t.execCmdAndWait(makePath, "clean", "build-all")
+	_, err := t.execCmdAndWait(makePath, "clean", "build-fast-consensus")
 	if err != nil {
 		fmt.Println("Compilation step caused error: ", err)
 	}

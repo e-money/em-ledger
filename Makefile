@@ -3,6 +3,7 @@ export GO111MODULE=on
 VERSION = $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT  = $(shell git log -1 --format='%H')
 LEDGER_ENABLED ?= true
+FAST_CONSENSUS ?= false
 
 # process build tags
 build_tags = netgo
@@ -44,6 +45,11 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
 
+
+ifeq ($(FAST_CONSENSUS),true)
+	ldflags += -X github.com/e-money/em-ledger/cmd/emd/cmd.CreateEmptyBlocksInterval=2s
+endif
+
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 build:
@@ -81,6 +87,9 @@ build-linux:
 
 build-all: build-linux build-test-upg
 	$(MAKE) build
+
+build-fast-consensus:
+	FAST_CONSENSUS=true $(MAKE) build-all
 
 build-docker:
 	$(MAKE) -C networks/docker/ all
@@ -144,4 +153,4 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against-input $(HTTPS_GIT)#branch=master
 
-.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking
+.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking build-fast-consensus

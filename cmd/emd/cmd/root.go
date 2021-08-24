@@ -34,6 +34,10 @@ import (
 	"time"
 )
 
+var (
+	CreateEmptyBlocksInterval = "60s"
+)
+
 // NewRootCmd creates a new root command for emd. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
@@ -64,7 +68,12 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 
 			srvCtx := server.GetServerContextFromCmd(cmd)
 
-			srvCtx.Config.Consensus.CreateEmptyBlocksInterval = 60 * time.Second
+			d, err := time.ParseDuration(CreateEmptyBlocksInterval)
+			if err != nil {
+				panic(err)
+			}
+
+			srvCtx.Config.Consensus.CreateEmptyBlocksInterval = d
 			srvCtx.Config.Consensus.CreateEmptyBlocks = false
 			srvCtx.Config.Consensus.TimeoutCommit = 500 * time.Millisecond
 			srvCtx.Config.Consensus.TimeoutPropose = 2 * time.Second

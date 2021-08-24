@@ -446,7 +446,7 @@ func getAuthorityKey(param string, keystorePath string) sdk.AccAddress {
 }
 
 func createBuybackGenesis() json.RawMessage {
-	gen := buyback.NewGenesisState(time.Millisecond)
+	gen := buyback.NewGenesisState(time.Hour)
 
 	bz, err := json.Marshal(gen)
 	if err != nil {

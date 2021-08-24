@@ -8,6 +8,7 @@ package emoney_test
 
 import (
 	"encoding/json"
+	"github.com/tidwall/sjson"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -46,6 +47,12 @@ var _ = Describe("Buyback", func() {
 
 				// Disable ejpy inflation to be able to accurately detect fee distributions to the buyback module
 				bz = setInflation(bz, "ejpy", sdk.ZeroDec())
+
+				// Set buyback module to act on every block
+				bz, err := sjson.SetBytes(bz, "app_state.buyback.interval", time.Millisecond.String())
+				if err != nil {
+					panic(err)
+				}
 
 				return bz
 			})
@@ -86,7 +93,7 @@ var _ = Describe("Buyback", func() {
 		ngmSupplyBefore, _ := sdk.NewIntFromString(gjson.GetBytes(supplyBefore, "supply.#(denom==\"ungm\").amount").Str)
 		ngmSupplyAfter, _ := sdk.NewIntFromString(gjson.GetBytes(supplyAfter, "supply.#(denom==\"ungm\").amount").Str)
 
-		Expect(ngmSupplyBefore.Sub(ngmSupplyAfter)).To(Equal(sdk.NewInt(4000)))
+		Expect(ngmSupplyBefore.Sub(ngmSupplyAfter).String()).To(Equal(sdk.NewInt(4000).String()))
 
 	})
 
