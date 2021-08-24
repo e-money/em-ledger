@@ -58,7 +58,6 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	bep3 "github.com/e-money/bep3/module"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/auth/ante"
@@ -133,7 +132,6 @@ var (
 		authority.AppModule{},
 		market.AppModule{},
 		buyback.AppModule{},
-		bep3.AppModule{},
 		queries.AppModule{},
 	)
 
@@ -150,7 +148,6 @@ var (
 		emslashing.ModuleName:        nil, // TODO Remove this line?
 		liquidityprovider.ModuleName: {authtypes.Minter, authtypes.Burner},
 		buyback.ModuleName:           {authtypes.Burner},
-		bep3.ModuleName:              {authtypes.Burner, authtypes.Minter},
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -205,7 +202,6 @@ type EMoneyApp struct {
 	authorityKeeper authority.Keeper
 	marketKeeper    *market.Keeper
 	buybackKeeper   buyback.Keeper
-	bep3Keeper      bep3.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -245,7 +241,7 @@ func NewApp(
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		lptypes.StoreKey, issuer.StoreKey, authority.StoreKey,
 		market.StoreKey, buyback.StoreKey,
-		inflation.StoreKey, bep3.StoreKey,
+		inflation.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -348,7 +344,6 @@ func NewApp(
 	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app, &app.upgradeKeeper)
 	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], memKeys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
-	app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
 
 	/*
 	 * This is a test handler for trying out cosmovisor
@@ -413,7 +408,6 @@ func NewApp(
 		market.NewAppModule(app.marketKeeper),
 		buyback.NewAppModule(app.buybackKeeper, app.bankKeeper),
 		inflation.NewAppModule(app.inflationKeeper),
-		bep3.NewAppModule(app.bep3Keeper, app.accountKeeper, app.bankKeeper),
 		queries.NewAppModule(app.accountKeeper, app.bankKeeper),
 	)
 
@@ -423,7 +417,6 @@ func NewApp(
 		upgradetypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
 		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
-		bep3.ModuleName,
 	)
 
 	// todo (reviewer): check which modules make sense
@@ -440,7 +433,6 @@ func NewApp(
 		emslashing.ModuleName, govtypes.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
 		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName, inflation.ModuleName,
-		bep3.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
