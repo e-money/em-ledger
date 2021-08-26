@@ -7,6 +7,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 )
 
 var (
@@ -15,6 +16,7 @@ var (
 	_ sdk.Msg = &MsgSetGasPrices{}
 	_ sdk.Msg = &MsgReplaceAuthority{}
 	_ sdk.Msg = &MsgScheduleUpgrade{}
+	_ sdk.Msg = &MsgSetParameters{}
 )
 
 func (msg MsgDestroyIssuer) Type() string { return "destroy_issuer" }
@@ -26,6 +28,8 @@ func (msg MsgSetGasPrices) Type() string { return "set_gas_prices" }
 func (msg MsgReplaceAuthority) Type() string { return "replace_authority" }
 
 func (msg MsgScheduleUpgrade) Type() string { return "schedule_upgrade" }
+
+func (m MsgSetParameters) Type() string { return "set_parameters" }
 
 func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
@@ -91,6 +95,22 @@ func (msg MsgScheduleUpgrade) ValidateBasic() error {
 	return nil
 }
 
+func (m MsgSetParameters) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+	}
+
+	if len(m.Changes) == 0 {
+		return sdkerrors.Wrapf(ErrNoParams, "Message contains not parameter changes.")
+	}
+
+	if err := proposal.ValidateChanges(m.Changes); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (msg MsgDestroyIssuer) GetSigners() []sdk.AccAddress {
 	from, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
@@ -131,6 +151,14 @@ func (msg MsgScheduleUpgrade) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{from}
 }
 
+func (m MsgSetParameters) GetSigners() []sdk.AccAddress {
+	from, err := sdk.AccAddressFromBech32(m.Authority)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{from}
+}
+
 func (msg MsgDestroyIssuer) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
@@ -151,6 +179,10 @@ func (msg MsgScheduleUpgrade) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
+func (m MsgSetParameters) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
 func (msg MsgDestroyIssuer) Route() string { return ModuleName }
 
 func (msg MsgCreateIssuer) Route() string { return ModuleName }
@@ -160,3 +192,5 @@ func (msg MsgSetGasPrices) Route() string { return ModuleName }
 func (msg MsgReplaceAuthority) Route() string { return ModuleName }
 
 func (msg MsgScheduleUpgrade) Route() string { return ModuleName }
+
+func (m MsgSetParameters) Route() string { return ModuleName }

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -20,6 +21,7 @@ type authorityKeeper interface {
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	ScheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 	GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
+	SetParam(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error)
 }
 type msgServer struct {
 	k authorityKeeper
@@ -142,4 +144,28 @@ func (m msgServer) ScheduleUpgrade(
 	}
 
 	return &types.MsgScheduleUpgradeResponse{}, nil
+}
+
+func (m msgServer) SetParameters(goCtx context.Context, msg *types.MsgSetParameters) (*types.MsgSetParametersResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	authority, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
+	}
+
+	if len(msg.Changes) == 0 {
+		return nil, sdkerrors.Wrap(types.ErrNoParams, "authority")
+	}
+
+	result, err := m.k.SetParam(ctx, authority, msg.Changes)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range result.Events {
+		ctx.EventManager().EmitEvent(sdk.Event(e))
+	}
+
+	return &types.MsgSetParametersResponse{}, nil
 }

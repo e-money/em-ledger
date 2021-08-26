@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "em/authority/v1/query.proto",
+    "title": "em/liquidityprovider/v1/query.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,14 +11,14 @@
     "application/json"
   ],
   "paths": {
-    "/e-money/authority/v1/gasprices": {
+    "/e-money/liquidityprovider/v1/list": {
       "get": {
-        "operationId": "GasPrices",
+        "operationId": "List",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/em.authority.v1.QueryGasPricesResponse"
+              "$ref": "#/definitions/em.liquidityprovider.v1.QueryListResponse"
             }
           },
           "default": {
@@ -33,14 +33,14 @@
         ]
       }
     },
-    "/e-money/authority/v1/upgrade_plan": {
+    "/e-money/liquidityprovider/v1/mintable/{address}": {
       "get": {
-        "operationId": "UpgradePlan",
+        "operationId": "Mintable",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/em.authority.v1.QueryUpgradePlanResponse"
+              "$ref": "#/definitions/em.liquidityprovider.v1.QueryMintableResponse"
             }
           },
           "default": {
@@ -50,6 +50,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "address",
+            "description": "address defines the liquidity provider address to query mintable.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "tags": [
           "Query"
         ]
@@ -57,7 +66,7 @@
     }
   },
   "definitions": {
-    "cosmos.base.v1beta1.DecCoin": {
+    "cosmos.base.v1beta1.Coin": {
       "type": "object",
       "properties": {
         "denom": {
@@ -67,52 +76,42 @@
           "type": "string"
         }
       },
-      "description": "DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto."
+      "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
     },
-    "cosmos.upgrade.v1beta1.Plan": {
+    "em.liquidityprovider.v1.LiquidityProviderAccount": {
       "type": "object",
       "properties": {
-        "name": {
+        "address": {
           "type": "string",
-          "description": "Sets the name for the upgrade. This name will be used by the upgraded\nversion of the software to apply any special \"on-upgrade\" commands during\nthe first BeginBlock method after the upgrade is applied. It is also used\nto detect whether a software version can handle a given upgrade. If no\nupgrade handler with this name has been set in the software, it will be\nassumed that the software is out-of-date when the upgrade Time or Height is\nreached and the software will exit."
+          "description": "Any string address representation with the accompanying supporting encoding\nand validation functions starting with bech32. However, in the\ninterest of cultivating wider acceptance for this module other arbitrary\naddress encodings outside the supported cosmos sdk formats perhaps would\nfit nicely with this loosely defined provider identity specifier."
         },
-        "time": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The time after which the upgrade must be performed.\nLeave set to its zero value to use a pre-defined Height instead."
-        },
-        "height": {
-          "type": "string",
-          "format": "int64",
-          "description": "The height at which the upgrade must be performed.\nOnly used if Time is not set."
-        },
-        "info": {
-          "type": "string",
-          "title": "Any application specific upgrade info to be included on-chain\nsuch as a git commit that validators could automatically upgrade to"
-        },
-        "upgraded_client_state": {
-          "$ref": "#/definitions/google.protobuf.Any",
-          "title": "IBC-enabled chains can opt-in to including the upgraded client state in its upgrade plan\nThis will make the chain commit to the correct upgraded (self) client state before the upgrade occurs,\nso that connecting chains can verify that the new upgraded client is valid by verifying a proof on the\nprevious version of the chain.\nThis will allow IBC connections to persist smoothly across planned chain upgrades"
-        }
-      },
-      "description": "Plan specifies information about a planned upgrade and when it should occur."
-    },
-    "em.authority.v1.QueryGasPricesResponse": {
-      "type": "object",
-      "properties": {
-        "min_gas_prices": {
+        "mintable": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           }
         }
       }
     },
-    "em.authority.v1.QueryUpgradePlanResponse": {
+    "em.liquidityprovider.v1.QueryListResponse": {
       "type": "object",
       "properties": {
-        "plan": {
-          "$ref": "#/definitions/cosmos.upgrade.v1beta1.Plan"
+        "liquidity_providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/em.liquidityprovider.v1.LiquidityProviderAccount"
+          }
+        }
+      }
+    },
+    "em.liquidityprovider.v1.QueryMintableResponse": {
+      "type": "object",
+      "properties": {
+        "mintable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+          }
         }
       }
     },

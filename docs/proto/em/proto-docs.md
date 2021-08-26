@@ -30,6 +30,8 @@
     - [MsgScheduleUpgradeResponse](#em.authority.v1.MsgScheduleUpgradeResponse)
     - [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices)
     - [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse)
+    - [MsgSetParameters](#em.authority.v1.MsgSetParameters)
+    - [MsgSetParametersResponse](#em.authority.v1.MsgSetParametersResponse)
   
     - [Msg](#em.authority.v1.Msg)
   
@@ -448,6 +450,32 @@
 
 
 
+
+<a name="em.authority.v1.MsgSetParameters"></a>
+
+### MsgSetParameters
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  |
+| `changes` | [cosmos.params.v1beta1.ParamChange](#cosmos.params.v1beta1.ParamChange) | repeated |  |
+
+
+
+
+
+
+<a name="em.authority.v1.MsgSetParametersResponse"></a>
+
+### MsgSetParametersResponse
+
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -467,6 +495,7 @@
 | `SetGasPrices` | [MsgSetGasPrices](#em.authority.v1.MsgSetGasPrices) | [MsgSetGasPricesResponse](#em.authority.v1.MsgSetGasPricesResponse) |  | |
 | `ReplaceAuthority` | [MsgReplaceAuthority](#em.authority.v1.MsgReplaceAuthority) | [MsgReplaceAuthorityResponse](#em.authority.v1.MsgReplaceAuthorityResponse) |  | |
 | `ScheduleUpgrade` | [MsgScheduleUpgrade](#em.authority.v1.MsgScheduleUpgrade) | [MsgScheduleUpgradeResponse](#em.authority.v1.MsgScheduleUpgradeResponse) |  | |
+| `SetParameters` | [MsgSetParameters](#em.authority.v1.MsgSetParameters) | [MsgSetParametersResponse](#em.authority.v1.MsgSetParametersResponse) |  | |
 
  <!-- end services -->
 

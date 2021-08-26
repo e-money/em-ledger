@@ -5,6 +5,7 @@
 package cli
 
 import (
+	"strings"
 	"time"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -32,6 +33,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdSetGasPrices(),
 		GetCmdReplaceAuthority(),
 		GetCmdScheduleUpgrade(),
+		getCmdSetParameters(),
 	)
 
 	return authorityCmds
@@ -260,4 +262,63 @@ func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
 	}
 
 	return nil
+}
+
+func getCmdSetParameters() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "set-params <path/to/changes.json> --from <authority-key>",
+		Short:   "",
+		Example: ``,
+		Long: strings.TrimSpace(`
+
+
+Where proposal.json contains:
+
+{ 
+  "changes": [
+    {
+      "subspace": "staking",
+      "key": "MaxValidators",
+      "value": 105
+    }
+  ]
+}
+`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := cmd.Flags().Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			println("From address: ", clientCtx.GetFromAddress())
+
+			//msg := &types.MsgSetParameters{
+			//	Authority: clientCtx.GetFromAddress().String(),
+			//	Plan: upgtypes.Plan{
+			//		Name:   args[1],
+			//		Time:   time.Unix(0, 0),
+			//		Height: upgHeightVal,
+			//		Info:   upgInfoVal,
+			//	},
+			//}
+			//
+			//if err := msg.ValidateBasic(); err != nil {
+			//	return err
+			//}
+			//
+			//return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+
+			return nil
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+
 }
