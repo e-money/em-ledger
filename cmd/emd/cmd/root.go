@@ -6,7 +6,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -83,12 +82,6 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 	}
 
 	initRootCmd(rootCmd, encodingConfig)
-	// todo (reviewer): emcli used different "defaults" for the CLI
-	//  - Switch the default value of --broadcast-mode to "block"
-	//  - Switch the default value of --keyring-backend to "file"
-	//
-	// I would not recommend the file backend over OS as default
-
 	return rootCmd, encodingConfig
 }
 
@@ -117,7 +110,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig emoney.EncodingConfig) {
 		rpc.StatusCommand(),
 		queryCommand(),
 		txCommand(),
-		keys.Commands(emoney.DefaultNodeHome),
+		KeysCommands(emoney.DefaultNodeHome),
 	)
 }
 
