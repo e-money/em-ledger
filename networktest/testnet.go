@@ -277,8 +277,8 @@ func IncChain(delta int64) (int64, error) {
 
 	return WaitForHeightWithTimeout(
 		height+delta,
-		// generous and unlikely to exhaust
-		time.Duration(delta)*5*time.Second,
+		// is 10 seconds always enough?
+		time.Duration(delta)*10*time.Second,
 	)
 }
 
