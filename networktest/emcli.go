@@ -336,6 +336,10 @@ func (cli Emcli) BEP3Claim(claimant Key, swapId, secret string) (string, error) 
 }
 
 func extractTxHash(bz []byte) (txhash string, success bool, err error) {
+	if !gjson.ValidBytes(bz) {
+		return "", false, fmt.Errorf("extractTxHash received input that was not valid JSON:\n%v", string(bz))
+	}
+
 	json := gjson.ParseBytes(bz)
 
 	txhashjson := json.Get("txhash")

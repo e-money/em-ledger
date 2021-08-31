@@ -102,7 +102,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig emoney.EncodingConfig) {
 		debug.Cmd(),
 	)
 
-	a := appCreator{encodingConfig}
+	a := appCreator{encCfg: encodingConfig}
 	server.AddCommands(rootCmd, emoney.DefaultNodeHome, a.newApp, a.appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
