@@ -83,7 +83,7 @@ var _ = Describe("Authority", func() {
 
 			execAuthMSigTx(authorityAddress, []nt.Key{key1, key2}, "tx", "authority", "replace", authorityAddress,
 				newAuthorityAddress, "--generate-only", "--from",
-				authorityAddress)
+				authorityAddress, "--fees", "1.0ungm")
 
 			// create/revoke issuer with the new authority
 			ok := nt.AuthCreatesIssuer(emcli, keystore.Authority, key1)
@@ -107,7 +107,7 @@ var _ = Describe("Authority", func() {
 				newAuthorityAddress, []nt.Key{key1, key2}, "tx", "authority",
 				"create-issuer", newAuthorityAddress,
 				key1.GetAddress(), "eeur,ejpy", "--generate-only", "--from",
-				newAuthorityAddress,
+				newAuthorityAddress, "--fees", "1.0ungm",
 			)
 
 			// destroy-issuer with current multisig authority
@@ -115,7 +115,7 @@ var _ = Describe("Authority", func() {
 				newAuthorityAddress, []nt.Key{key1, key2}, "tx", "authority",
 				"destroy-issuer", newAuthorityAddress,
 				key1.GetAddress(), "--generate-only", "--from",
-				newAuthorityAddress,
+				newAuthorityAddress, "--fees", "1.0ungm",
 			)
 
 			// try with a non-authority account
