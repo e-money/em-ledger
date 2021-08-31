@@ -17,6 +17,7 @@ import (
 	v040evidence "github.com/cosmos/cosmos-sdk/x/evidence/legacy/v040"
 	v039genutil "github.com/cosmos/cosmos-sdk/x/genutil/legacy/v039"
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
+	ibccore "github.com/cosmos/cosmos-sdk/x/ibc/core"
 	v036params "github.com/cosmos/cosmos-sdk/x/params/legacy/v036"
 	v038staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v038"
 	v040staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v040"
@@ -209,6 +210,13 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		delete(appState, buyback.ModuleName)
 
 		appState[buyback.ModuleName] = v040Codec.MustMarshalJSON(&buybackGenState)
+	}
+
+	// Make default ibc-section
+	{
+		module := ibccore.AppModuleBasic{}
+		appState[module.Name()] = module.DefaultGenesis(v040Codec)
+
 	}
 
 	return appState
