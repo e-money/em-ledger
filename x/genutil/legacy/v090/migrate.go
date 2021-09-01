@@ -1,6 +1,8 @@
 package v040
 
 import (
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	v039auth "github.com/cosmos/cosmos-sdk/x/auth/legacy/v039"
@@ -27,7 +29,6 @@ import (
 	"github.com/e-money/em-ledger/x/buyback"
 	v09liquidityprovider "github.com/e-money/em-ledger/x/liquidityprovider/legacy/v09"
 	v09slashing "github.com/e-money/em-ledger/x/slashing/legacy/v09"
-	"time"
 )
 
 func migrateGenutil(oldGenState v039genutil.GenesisState) *types.GenesisState {
@@ -77,7 +78,10 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 
 		// Migrate relative source genesis application state and marshal it into
 		// the respective key.
-		appState[v040bank.ModuleName] = v040Codec.MustMarshalJSON(v040bank.Migrate(bankGenState, authGenState, supplyGenState))
+		bankAppState := v040bank.Migrate(bankGenState, authGenState, supplyGenState)
+		// add denom data
+		bankAppState.DenomMetadata = GetDenomMetaData()
+		appState[v040bank.ModuleName] = v040Codec.MustMarshalJSON(bankAppState)
 	}
 
 	// remove balances from existing accounts
