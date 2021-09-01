@@ -29,8 +29,8 @@ func GetQueryCmd() *cobra.Command {
 
 func GetModuleBalanceCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "balance",
-		Short: "Query for the current buyback balance",
+		Use:   "balances",
+		Short: "Query for the current buyback balances",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
