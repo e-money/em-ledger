@@ -44,25 +44,10 @@ func (suite *IntegrationTestSuite) SetupTest() {
 	suite.ctx = ctx
 }
 
-var _ = `
-{
-    "base": "eeur",
-    "description": "e-Money EUR stablecoin",
-    "display": "EEUR",
-    "denom_units": [
-      {
-        "aliases": [],
-        "denom": "eeur",
-        "exponent": 6
-      }
-    ]
-}
-`
-
 func (suite *IntegrationTestSuite) TestKeeperSetGetDenomMetaData() {
 	app, ctx := suite.app, suite.ctx
 
-	inputDenomData := GetDenomData()
+	inputDenomData := GetDenomMetaData()
 
 	for i := 0; i < len(inputDenomData); i++ {
 		app.BankKeeper.SetDenomMetaData(ctx, inputDenomData[i])
@@ -72,7 +57,7 @@ func (suite *IntegrationTestSuite) TestKeeperSetGetDenomMetaData() {
 }
 
 func (suite *IntegrationTestSuite) TestInitDenomInGenesis() {
-	inputDenomData := GetDenomData()
+	inputDenomData := GetDenomMetaData()
 	g := banktypes.DefaultGenesisState()
 	g.DenomMetadata = inputDenomData
 	bk := suite.app.BankKeeper
@@ -87,7 +72,7 @@ func (suite *IntegrationTestSuite) TestInitDenomInGenesis() {
 }
 
 func (suite *IntegrationTestSuite) TestGetStateGenesisData() {
-	inputDenomData := GetDenomData()
+	inputDenomData := GetDenomMetaData()
 	sort.Slice(inputDenomData, func(i, j int) bool {
 		return inputDenomData[i].Base < inputDenomData[j].Base
 	})
@@ -98,6 +83,8 @@ func (suite *IntegrationTestSuite) TestGetStateGenesisData() {
 
 	// wrapper around keeper get denom data all at once
 	exportedBankGenesis := bk.ExportGenesis(suite.ctx)
+
+	suite.Require().Equal(len(inputDenomData), len(exportedBankGenesis.DenomMetadata))
 
 	for i := 0; i < len(inputDenomData); i++ {
 		inputDenom := inputDenomData[i]
@@ -130,7 +117,7 @@ func (suite *IntegrationTestSuite) TestExportGenesisData() {
 	)
 	suite.app.Commit()
 
-	inputDenomData := GetDenomData()
+	inputDenomData := GetDenomMetaData()
 
 	app, sdkctx := suite.app, suite.ctx
 
@@ -201,7 +188,7 @@ func (suite *IntegrationTestSuite) _TestInjectingDenomData2eMoney2Gen() {
 	fmt.Println(bankSegS)
 	encodingConfig.Amino.MustUnmarshalJSON(bankSeg, &bkState)
 
-	bkState.DenomMetadata = GetDenomData()
+	bkState.DenomMetadata = GetDenomMetaData()
 	bkState.Params = getSendEnabledParam()
 
 	bankSegS2 := encodingConfig.Amino.MustMarshalJSON(bkState)
