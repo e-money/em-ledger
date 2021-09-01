@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil/types"
 	slashing "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/e-money/em-ledger/x/buyback"
 	"time"
 )
 
@@ -12,6 +13,18 @@ import (
 func upgradeModuleParams(cdc codec.JSONMarshaler, appState types.AppMap) {
 	increaseValidatorSet(cdc, appState)
 	changeDowntimeJailing(cdc, appState)
+	updateBuybackInterval(cdc, appState)
+}
+
+func updateBuybackInterval(cdc codec.JSONMarshaler, appState types.AppMap) {
+	buybackGenesis := appState[buyback.ModuleName]
+	var genesis buyback.GenesisState
+	cdc.MustUnmarshalJSON(buybackGenesis, &genesis)
+
+	genesis.Interval = (24 * time.Hour).String()
+
+	delete(appState, buyback.ModuleName)
+	appState[buyback.ModuleName] = cdc.MustMarshalJSON(&genesis)
 }
 
 func changeDowntimeJailing(cdc codec.JSONMarshaler, appState types.AppMap) {
