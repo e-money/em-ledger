@@ -6,8 +6,12 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"sort"
+	"strings"
+
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -27,18 +31,23 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	lpKeeper lp.Keeper
 	ik       types.InflationKeeper
+	bk       types.BankKeeper
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) Keeper {
+func NewKeeper(
+	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper,
+	ik types.InflationKeeper, bk types.BankKeeper,
+) Keeper {
 	return Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
 		lpKeeper: lpk,
 		ik:       ik,
+		bk:       bk,
 	}
 }
 
-func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider,  issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer.String())
@@ -189,7 +198,26 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result,
 	}
 
 	k.setIssuers(ctx, issuers)
-	k.ik.AddDenoms(ctx, newIssuer.Denoms) // TODO Check error?
+	for _, denom := range newIssuer.Denoms {
+		if stDenom := k.bk.GetDenomMetaData(ctx, denom); stDenom.Base == "" {
+			k.bk.SetDenomMetaData(ctx, banktypes.Metadata{
+				Description: "e-Money EUR stablecoin",
+				DenomUnits: []*banktypes.DenomUnit{
+					{
+						Denom:    denom,
+						Exponent: 6,
+						Aliases:  nil,
+					},
+				},
+				Base:    denom,
+				Display: strings.ToUpper(denom),
+			})
+		}
+	}
+
+	if _, err := k.ik.AddDenoms(ctx, newIssuer.Denoms); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrDenomInflation, "%v, error: %v", newIssuer.Denoms, err)
+	}
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 

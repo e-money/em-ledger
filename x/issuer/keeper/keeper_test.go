@@ -5,6 +5,9 @@
 package keeper
 
 import (
+	"sort"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -28,8 +31,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"sort"
-	"testing"
 )
 
 func init() {
@@ -38,7 +39,7 @@ func init() {
 }
 
 func TestAddIssuer(t *testing.T) {
-	ctx, _, _, keeper := createTestComponents(t)
+	ctx, _, _, keeper, _ := createTestComponents(t)
 
 	var (
 		acc1, _      = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -74,8 +75,43 @@ func TestAddIssuer(t *testing.T) {
 	require.Error(t, err)
 }
 
+func denomNotFound(ctx sdk.Context, t *testing.T, bk types.BankKeeper, denom string) {
+	stateDenom := bk.GetDenomMetaData(ctx, denom)
+	require.Empty(t, stateDenom.Base)
+}
+
+func denomFound(ctx sdk.Context, t *testing.T, bk types.BankKeeper, denom string) {
+	stateDenom := bk.GetDenomMetaData(ctx, denom)
+	require.NotEmpty(t, stateDenom.Base)
+}
+
+func TestAddDenomMetadata(t *testing.T) {
+	ctx, _, _, keeper, bk := createTestComponents(t)
+
+	var (
+		acc1, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		issuer1 = types.NewIssuer(acc1, "eeur", "ejpy", "echf")
+	)
+
+	denomNotFound(ctx, t, bk, "eeur")
+	denomNotFound(ctx, t, bk, "ejpy")
+	denomNotFound(ctx, t, bk, "echf")
+
+	_, err := keeper.AddIssuer(ctx, issuer1)
+	require.NoError(t, err)
+	denomFound(ctx, t, bk, "eeur")
+	denomFound(ctx, t, bk, "ejpy")
+	denomFound(ctx, t, bk, "echf")
+	denomNotFound(ctx, t, bk, "enok")
+
+	denomNotFound(ctx, t, bk, "edkk")
+	_, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
+	require.NoError(t, err)
+	denomFound(ctx, t, bk, "edkk")
+}
+
 func TestRemoveIssuer(t *testing.T) {
-	ctx, _, _, keeper := createTestComponents(t)
+	ctx, _, _, keeper, _ := createTestComponents(t)
 
 	acc1, _ := sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	acc2, _ := sdk.AccAddressFromBech32("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
@@ -96,7 +132,7 @@ func TestRemoveIssuer(t *testing.T) {
 }
 
 func TestIssuerModifyLiquidityProvider(t *testing.T) {
-	ctx, ak, lpk, keeper := createTestComponents(t)
+	ctx, ak, lpk, keeper, _ := createTestComponents(t)
 
 	var (
 		iacc, _  = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -140,7 +176,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 }
 
 func TestAddAndRevokeLiquidityProvider(t *testing.T) {
-	ctx, ak, _, keeper := createTestComponents(t)
+	ctx, ak, _, keeper, _ := createTestComponents(t)
 
 	var (
 		iacc, _      = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -172,7 +208,7 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 
 func TestDoubleLiquidityProvider(t *testing.T) {
 	// Two issuers provide lp status to the same account. Ensure revocation is isolated.
-	ctx, ak, lpk, keeper := createTestComponents(t)
+	ctx, ak, lpk, keeper, _ := createTestComponents(t)
 
 	var (
 		issuer1, _ = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -255,11 +291,11 @@ func TestRemoveDenom(t *testing.T) {
 	require.EqualValues(t, coins[:len(coins)-1], res)
 }
 
-func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper) {
+func createTestComponents(t *testing.T) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper, types.BankKeeper) {
 	return createTestComponentsWithEncodingConfig(t, MakeTestEncodingConfig())
 }
 
-func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams.EncodingConfig) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper) {
+func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams.EncodingConfig) (sdk.Context, authkeeper.AccountKeeper, liquidityprovider.Keeper, Keeper, types.BankKeeper) {
 	t.Helper()
 	var (
 		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
@@ -269,7 +305,7 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 		issuerKey  = sdk.NewKVStoreKey(types.StoreKey)
-		lpKey  = sdk.NewKVStoreKey(lptypes.StoreKey)
+		lpKey      = sdk.NewKVStoreKey(lptypes.StoreKey)
 
 		blockedAddrs = make(map[string]bool)
 		maccPerms    = map[string][]string{
@@ -306,8 +342,8 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 
 	lpk := liquidityprovider.NewKeeper(encConfig.Marshaler, lpKey, bk)
 
-	keeper := NewKeeper(encConfig.Marshaler, issuerKey, lpk, mockInflationKeeper{})
-	return ctx, ak, lpk, keeper
+	keeper := NewKeeper(encConfig.Marshaler, issuerKey, lpk, mockInflationKeeper{}, bk)
+	return ctx, ak, lpk, keeper, bk
 }
 
 type mockInflationKeeper struct{}

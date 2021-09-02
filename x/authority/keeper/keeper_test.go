@@ -427,7 +427,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
 		lpk = liquidityprovider.NewKeeper(encConfig.Marshaler, keyLp, bk)
-		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{})
+		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{}, bk)
 
 		upgK = upgradekeeper.NewKeeper(map[int64]bool{}, keyUpg, encConfig.Marshaler, t.TempDir())
 	)
