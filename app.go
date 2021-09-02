@@ -284,6 +284,9 @@ func NewApp(
 		app.GetSubspace(crisistypes.ModuleName), invCheckPeriod, app.bankKeeper, authtypes.FeeCollectorName,
 	)
 	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
+	app.upgradeKeeper.SetUpgradeHandler("v1.0.0-RC8", func(ctx sdk.Context, plan upgradetypes.Plan) {
+		ctx.Logger().Info("Upgraded to", plan.Name)
+	})
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
