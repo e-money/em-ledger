@@ -351,6 +351,11 @@ func NewApp(
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
+	app.upgradeKeeper.SetUpgradeHandler("v1.0.0-RC7", func(ctx sdk.Context, plan upgradetypes.Plan) {
+		log := ctx.Logger()
+		log.Info("Upgraded to", plan.Name)
+	})
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
