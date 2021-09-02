@@ -94,7 +94,7 @@ func (cli Emcli) QueryUpgSched() ([]byte, error) {
 }
 
 func (cli Emcli) QueryBuybackBalance() ([]byte, error) {
-	args := cli.addQueryFlags("query", "buyback", "balance")
+	args := cli.addQueryFlags("query", "buyback", "balances")
 	return execCmdAndCollectResponse(args)
 }
 
