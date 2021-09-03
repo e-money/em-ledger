@@ -53,19 +53,12 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(emoney.DefaultNodeHome).
-		WithViper("")
+		WithViper("EM")
 
 	rootCmd := &cobra.Command{
 		Use:   "emd",
 		Short: "e-money app",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			initClientCtx = client.ReadHomeFlag(initClientCtx, cmd)
-
-			initClientCtx, err := config.ReadFromClientConfig(initClientCtx)
-			if err != nil {
-				return err
-			}
-
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
 			}
