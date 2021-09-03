@@ -60,17 +60,21 @@ The number of decimal places to display for a currency or token is available in 
 
 ### Getting Exchange Rates
 
-The current exchange rate from a token to underlying currency can be fetched via [https://api.e-money.com/v1/rates.json](https://api.e-money.com/v1/rates.json):
+The current exchange rate from a token to underlying currency can be fetched via [https://api.e-money.com/v1/rates](https://api.e-money.com/v1/rates):
 
 ```json
-{
-  "eeur": {
-    "EUR": 0.999950
-  },
-  "echf": {
-    "CHF": 0.999980
-  }
-}
+[
+  {
+      "source": "ECHF",
+      "destination": "CHF",
+      "rate": 0.987021
+    },
+    {
+      "source": "ECHF",
+      "destination": "DKK",
+      "rate": 6.765752
+    },
+...
 ```
 
 As the rates change slowly, it is typically not necessary to query more than once per hour.
