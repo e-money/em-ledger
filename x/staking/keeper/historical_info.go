@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	dbm "github.com/tendermint/tm-db"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -24,6 +25,7 @@ type HistoryKeeper struct {
 	storeKey      sdk.StoreKey
 	cdc           codec.BinaryMarshaler
 	stakingKeeper staking.StakingKeeper
+	database      dbm.DB
 }
 
 func getHistoricalInfoKey(height int64) []byte {
@@ -34,11 +36,12 @@ func getHistoricalInfoKey(height int64) []byte {
 }
 
 // NewKeeper creates a new staking Keeper instance
-func NewHistoryKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, stakingkeeper staking.StakingKeeper) HistoryKeeper {
+func NewHistoryKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, stakingkeeper staking.StakingKeeper, db dbm.DB) HistoryKeeper {
 	return HistoryKeeper{
 		storeKey:      key,
 		cdc:           cdc,
 		stakingKeeper: stakingkeeper,
+		database:      db,
 	}
 }
 
@@ -49,14 +52,9 @@ func (k HistoryKeeper) UnbondingTime(ctx sdk.Context) time.Duration {
 
 // GetHistoricalInfo gets the historical info at a given height
 func (k HistoryKeeper) GetHistoricalInfo(ctx sdk.Context, height int64) (types.HistoricalInfo, bool) {
-	database := apptypes.GetDatabase(ctx)
-	if database == nil {
-		return types.HistoricalInfo{}, false
-	}
-
 	key := getHistoricalInfoKey(height)
 
-	value, _ := database.Get(key)
+	value, _ := k.database.Get(key)
 	if value == nil {
 		return types.HistoricalInfo{}, false
 	}
@@ -91,12 +89,7 @@ func (k HistoryKeeper) DeleteHistoricalInfo(ctx sdk.Context, height int64) {
 //  objects. For each HistoricalInfo object, cb will be called. If the cb returns
 // true, the iterator will close and stop.
 func (k HistoryKeeper) IterateHistoricalInfo(ctx sdk.Context, cb func(types.HistoricalInfo) bool) {
-	database := apptypes.GetDatabase(ctx)
-	if database == nil {
-		return
-	}
-
-	iterator, err := database.Iterator(historyKeyprefix, sdk.PrefixEndBytes(historyKeyprefix))
+	iterator, err := k.database.Iterator(historyKeyprefix, sdk.PrefixEndBytes(historyKeyprefix))
 	if err != nil {
 		return
 	}

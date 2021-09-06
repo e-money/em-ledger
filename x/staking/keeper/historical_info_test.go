@@ -97,7 +97,6 @@ func setup(t *testing.T) (sdk.Context, db.Batch, db.DB, keeper.HistoryKeeper) {
 
 	database := db.NewMemDB()
 	batch := database.NewBatch()
-	ctx = apptypes.WithDatabase(ctx, database)
 	ctx = apptypes.WithCurrentBatch(ctx, batch)
 
 	key := sdk.NewKVStoreKey(keeper.StoreKey)
@@ -105,7 +104,7 @@ func setup(t *testing.T) (sdk.Context, db.Batch, db.DB, keeper.HistoryKeeper) {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	marshaler := codec.NewProtoCodec(interfaceRegistry)
-	historyKeeper := keeper.NewHistoryKeeper(marshaler, key, mockStakingKeeper{})
+	historyKeeper := keeper.NewHistoryKeeper(marshaler, key, mockStakingKeeper{}, database)
 
 	return ctx, batch, database, historyKeeper
 }

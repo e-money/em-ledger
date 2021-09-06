@@ -270,7 +270,7 @@ func NewApp(
 		appCodec, keys[stakingtypes.StoreKey], app.accountKeeper, app.bankKeeper, app.GetSubspace(stakingtypes.ModuleName),
 	)
 
-	app.historykeeper = historykeeper.NewHistoryKeeper(appCodec, keys[historykeeper.StoreKey], stakingKeeper)
+	app.historykeeper = historykeeper.NewHistoryKeeper(appCodec, keys[historykeeper.StoreKey], stakingKeeper, app.database)
 
 	app.distrKeeper = distrkeeper.NewKeeper(
 		appCodec, keys[distrtypes.StoreKey], app.GetSubspace(distrtypes.ModuleName), app.accountKeeper, app.bankKeeper,
@@ -469,7 +469,6 @@ func (app *EMoneyApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) 
 	app.currentBatch = app.database.NewBatch() // store in app state as ctx is different in end block
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	ctx = apptypes.WithCurrentBatch(ctx, app.currentBatch)
-	ctx = apptypes.WithDatabase(ctx, app.database)
 
 	return app.mm.BeginBlock(ctx, req)
 }
