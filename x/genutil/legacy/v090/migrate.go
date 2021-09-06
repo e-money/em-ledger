@@ -1,7 +1,9 @@
 package v040
 
 import (
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/capability"
+	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -219,18 +221,15 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		appState[buyback.ModuleName] = v040Codec.MustMarshalJSON(&buybackGenState)
 	}
 
-	// Make default ibc-section
-	{
-		module := ibccore.AppModuleBasic{}
-		appState[module.Name()] = module.DefaultGenesis(v040Codec)
-
+	// Make default sections for new modules
+	newModules := []module.AppModuleBasic{
+		ibccore.AppModuleBasic{},
+		capability.AppModuleBasic{},
+		transfer.AppModuleBasic{},
 	}
 
-	// Make default capability-section
-	{
-		module := capability.AppModuleBasic{}
+	for _, module := range newModules {
 		appState[module.Name()] = module.DefaultGenesis(v040Codec)
-
 	}
 
 	return appState
