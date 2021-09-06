@@ -288,6 +288,10 @@ func NewApp(
 		ctx.Logger().Info("Upgraded to", plan.Name)
 	})
 
+	app.upgradeKeeper.SetUpgradeHandler("hotfix-2", func(ctx sdk.Context, plan upgradetypes.Plan) {
+		ctx.Logger().Info("Upgraded to hotfix-2")
+	})
+
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
