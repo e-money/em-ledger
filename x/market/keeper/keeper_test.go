@@ -269,16 +269,22 @@ func TestCancelReplaceMarketOrderZeroSlippage(t *testing.T) {
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
 	require.Equal(t, coins("1eur,499gbp").String(), acc1Bal.String())
 
-	newClientID := cid()
 	slippageSource, err = k.GetSrcFromSlippage(
 		ctx, srcDenom, dest, sdk.NewDecWithPrec(0, 2),
 	)
 	require.NoError(t, err)
 	order, err := types.NewOrder(
 		ctx.BlockTime(), types.TimeInForce_GoodTillCancel, slippageSource, dest, acc1.GetAddress(),
-		newClientID,
+		clientID,
 	)
 	require.NoError(t, err)
+
+	// The order id has been re-used from the previous order, which causes an error
+	_, err = k.CancelReplaceLimitOrder(ctx, order, clientID)
+	require.True(t, types.ErrInvalidClientOrderId.Is(err), "Unexpected error \"%v\"", err)
+
+	newClientID := cid()
+	order.ClientOrderID = newClientID
 
 	_, err = k.CancelReplaceLimitOrder(ctx, order, clientID)
 	require.NoError(t, err)

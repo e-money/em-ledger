@@ -403,6 +403,12 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 		)
 	}
 
+	if origOrder.ClientOrderID == newOrder.ClientOrderID {
+		return nil, sdkerrors.Wrap(
+			types.ErrInvalidClientOrderId, fmt.Sprintf("ClientOrderId is already in use"),
+		)
+	}
+
 	// Has the previous order already achieved the goal on the source side?
 	if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
 		return nil, sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
