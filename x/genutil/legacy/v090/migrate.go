@@ -1,6 +1,7 @@
 package v040
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/capability"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -221,6 +222,13 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 	// Make default ibc-section
 	{
 		module := ibccore.AppModuleBasic{}
+		appState[module.Name()] = module.DefaultGenesis(v040Codec)
+
+	}
+
+	// Make default capability-section
+	{
+		module := capability.AppModuleBasic{}
 		appState[module.Name()] = module.DefaultGenesis(v040Codec)
 
 	}
