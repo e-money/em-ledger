@@ -183,7 +183,9 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 
 		// Migrate relative source genesis application state and marshal it into
 		// the respective key.
-		appState[v040staking.ModuleName] = v040Codec.MustMarshalJSON(v040staking.Migrate(stakingGenState))
+		migrate := v040staking.Migrate(stakingGenState)
+		migrate.Params.HistoricalEntries = 10000
+		appState[v040staking.ModuleName] = v040Codec.MustMarshalJSON(migrate)
 	}
 
 	// Migrate x/genutil
