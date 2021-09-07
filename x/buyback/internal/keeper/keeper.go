@@ -63,30 +63,21 @@ func (k Keeper) GetStakingTokenDenom(ctx sdk.Context) string {
 
 func (k Keeper) UpdateBuybackMarket(ctx sdk.Context) bool {
 	var (
-		lastUpdate time.Time
-		blockTime  = ctx.BlockTime()
+		blockTime      = ctx.BlockTime()
+		lastUpdate     = k.GetLastUpdated(ctx)
+		updateInterval = k.GetUpdateInterval(ctx)
 	)
 
-	store := ctx.KVStore(k.storeKey)
-	if bz := store.Get(types.GetLastUpdatedKey()); bz != nil {
-		var state ptypes.Timestamp
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &state)
-		var err error
-		lastUpdate, err = ptypes.TimestampFromProto(&state)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	updateInterval := k.GetUpdateInterval(ctx)
 	if blockTime.Sub(lastUpdate) < updateInterval {
 		return false
 	}
+
 	newState, err := ptypes.TimestampProto(blockTime)
 	if err != nil {
 		panic(err)
 	}
 
+	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(newState)
 	store.Set(types.GetLastUpdatedKey(), bz)
 	return true
@@ -108,6 +99,23 @@ func (k Keeper) BurnStakingToken(ctx sdk.Context) error {
 	})
 
 	return k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.Coins{stakingBalance})
+}
+
+func (k Keeper) GetLastUpdated(ctx sdk.Context) time.Time {
+	var lastUpdate time.Time
+
+	store := ctx.KVStore(k.storeKey)
+	if bz := store.Get(types.GetLastUpdatedKey()); bz != nil {
+		var state ptypes.Timestamp
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &state)
+		var err error
+		lastUpdate, err = ptypes.TimestampFromProto(&state)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return lastUpdate
 }
 
 func (k Keeper) GetUpdateInterval(ctx sdk.Context) time.Duration {

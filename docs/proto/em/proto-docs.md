@@ -577,6 +577,7 @@
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Balance` | [QueryBalanceRequest](#em.buyback.v1.QueryBalanceRequest) | [QueryBalanceResponse](#em.buyback.v1.QueryBalanceResponse) | Query for the current buyback balance | GET|/e-money/buyback/v1/balance|
+| `BuybackTime` | [QueryBuybackTimeRequest](#em.buyback.v1.QueryBuybackTimeRequest) | [QueryBuybackTimeResponse](#em.buyback.v1.QueryBuybackTimeResponse) | Query for buyback time periods | GET|/e-money/buyback/v1/time|
 
  <!-- end services -->
 

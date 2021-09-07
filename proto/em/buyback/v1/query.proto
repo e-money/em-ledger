@@ -13,6 +13,12 @@ service Query {
   rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
     option (google.api.http).get = "/e-money/buyback/v1/balance";
   };
+
+  // Query for buyback time periods
+  rpc BuybackTime(QueryBuybackTimeRequest) returns (QueryBuybackTimeResponse) {
+    option (google.api.http).get = "/e-money/buyback/v1/time";
+  };
+
 }
 
 message QueryBalanceRequest {}
