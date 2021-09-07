@@ -39,6 +39,8 @@
 - [em/buyback/v1/query.proto](#em/buyback/v1/query.proto)
     - [QueryBalanceRequest](#em.buyback.v1.QueryBalanceRequest)
     - [QueryBalanceResponse](#em.buyback.v1.QueryBalanceResponse)
+    - [QueryBuybackTimeRequest](#em.buyback.v1.QueryBuybackTimeRequest)
+    - [QueryBuybackTimeResponse](#em.buyback.v1.QueryBuybackTimeResponse)
   
     - [Query](#em.buyback.v1.Query)
   
@@ -529,6 +531,32 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `balance` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="em.buyback.v1.QueryBuybackTimeRequest"></a>
+
+### QueryBuybackTimeRequest
+
+
+
+
+
+
+
+<a name="em.buyback.v1.QueryBuybackTimeResponse"></a>
+
+### QueryBuybackTimeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `last_run` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `next_run` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
 
 
 
