@@ -4,26 +4,30 @@
 package util
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/e-money/em-ledger/x/authority/types"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestParseDenominations(t *testing.T) {
 	testdata := []struct {
-		denoms string
+		denoms []string
 		valid  bool
 		count  int
 	}{
-		{"eeur,ejpy", true, 2},
-		{"  eeur, ejpy ", true, 2},
-		{" eeur,,ejpy ", true, 2},
-		{"", true, 0},
-		{"  E-EUR, ejpy ", false, -1},
+		{[]string{"eeur", "ejpy"}, true, 2},
+		{[]string{"  eeur", "ejpy "}, true, 2},
+		{[]string{"  eeur ", " ejpy "}, true, 2},
+		{[]string{"  eeur,EEUR,Euro stablecoin ", " ejpy "}, true, 2},
+		{[]string{""}, false, 0},
+		{[]string{"E-EUR"}, false, 0},
 	}
 
 	for _, d := range testdata {
-		denoms, error := ParseDenominations(d.denoms)
+		denoms, error := ParseDenominations(d.denoms, "e-Money EUR stablecoin")
 		if error != nil {
 			if d.valid {
 				assert.NoError(t, error)
@@ -32,5 +36,27 @@ func TestParseDenominations(t *testing.T) {
 		}
 
 		assert.Len(t, denoms, d.count)
+	}
+}
+
+func TestParseDenominations2(t *testing.T) {
+	testdata := []struct {
+		denoms []types.Denomination
+		valid  bool
+		count  int
+	}{
+		{
+			denoms: []types.Denomination{
+				{Base: "eeur"},
+				{Base: "ejpy"},
+			},
+			valid: true,
+			count: 2,
+		},
+	}
+
+	for _, d := range testdata {
+		sd := fmt.Sprintf("%s", d.denoms)
+		fmt.Println(sd)
 	}
 }

@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	authtypes "github.com/e-money/em-ledger/x/authority/types"
+
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -175,7 +177,17 @@ func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store.Set([]byte(keyIssuerList), bz)
 }
 
-func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result, error) {
+func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer, denomMetadata []authtypes.Denomination) (*sdk.Result, error) {
+	// set the Issuer denominations from the base of the denominations metadata
+	// when the new issuer struct has fewer denominations.
+	denomMDSize := len(denomMetadata)
+	if denomMDSize > 0 && denomMDSize > len(newIssuer.Denoms) {
+		newIssuer.Denoms = make([]string, denomMDSize)
+		for i, denomMetaDatum := range denomMetadata {
+			newIssuer.Denoms[i] = denomMetaDatum.Base
+		}
+	}
+
 	issuers := k.GetIssuers(ctx)
 
 	existingDenoms := collectDenoms(issuers)

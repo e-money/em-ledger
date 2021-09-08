@@ -24,6 +24,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	apptypes "github.com/e-money/em-ledger/types"
+	emauthtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
@@ -36,6 +37,14 @@ import (
 func init() {
 	// Be able to parse emoney bech32 encoded addresses.
 	apptypes.ConfigureSDK()
+}
+
+func getDenomsMetadata(denoms []string) []emauthtypes.Denomination {
+	md := make([]emauthtypes.Denomination, len(denoms))
+	for i, denom := range denoms {
+		md[i].Base = denom
+	}
+	return md
 }
 
 func TestAddIssuer(t *testing.T) {
@@ -52,16 +61,16 @@ func TestAddIssuer(t *testing.T) {
 	require.True(t, issuer1.IsValid())
 	require.True(t, issuer2.IsValid())
 
-	_, err := keeper.AddIssuer(ctx, issuer1)
+	_, err := keeper.AddIssuer(ctx, issuer1, getDenomsMetadata(issuer1.Denoms))
 	require.NoError(t, err)
-	_, err = keeper.AddIssuer(ctx, issuer1)
+	_, err = keeper.AddIssuer(ctx, issuer1, getDenomsMetadata(issuer1.Denoms))
 	require.Error(t, err)
-	_, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
+	_, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"), []emauthtypes.Denomination{{Base: "edkk"}})
 	require.NoError(t, err)
 
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
-	keeper.AddIssuer(ctx, issuer2)
+	keeper.AddIssuer(ctx, issuer2, getDenomsMetadata(issuer2.Denoms))
 	require.Len(t, keeper.GetIssuers(ctx), 2)
 	require.Len(t, collectDenoms(keeper.GetIssuers(ctx)), 4)
 
@@ -97,7 +106,7 @@ func TestAddDenomMetadata(t *testing.T) {
 	denomNotFound(ctx, t, bk, "ejpy")
 	denomNotFound(ctx, t, bk, "echf")
 
-	_, err := keeper.AddIssuer(ctx, issuer1)
+	_, err := keeper.AddIssuer(ctx, issuer1, getDenomsMetadata(issuer1.Denoms))
 	require.NoError(t, err)
 	denomFound(ctx, t, bk, "eeur")
 	denomFound(ctx, t, bk, "ejpy")
@@ -105,7 +114,7 @@ func TestAddDenomMetadata(t *testing.T) {
 	denomNotFound(ctx, t, bk, "enok")
 
 	denomNotFound(ctx, t, bk, "edkk")
-	_, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"))
+	_, err = keeper.AddIssuer(ctx, types.NewIssuer(acc1, "edkk"), []emauthtypes.Denomination{{Base: "edkk"}})
 	require.NoError(t, err)
 	denomFound(ctx, t, bk, "edkk")
 }
@@ -118,7 +127,7 @@ func TestRemoveIssuer(t *testing.T) {
 
 	issuer := types.NewIssuer(acc1, "eeur", "ejpy")
 
-	_, err := keeper.AddIssuer(ctx, issuer)
+	_, err := keeper.AddIssuer(ctx, issuer, getDenomsMetadata(issuer.Denoms))
 	require.NoError(t, err)
 	require.Len(t, keeper.GetIssuers(ctx), 1)
 
@@ -143,7 +152,7 @@ func TestIssuerModifyLiquidityProvider(t *testing.T) {
 
 	issuer := types.NewIssuer(iacc, "eeur", "ejpy")
 
-	keeper.AddIssuer(ctx, issuer)
+	keeper.AddIssuer(ctx, issuer, getDenomsMetadata(issuer.Denoms))
 	mintable := MustParseCoins("100000eeur,5000ejpy")
 
 	_, err := keeper.IncreaseMintableAmountOfLiquidityProvider(ctx, lpacc, iacc, mintable)
@@ -186,7 +195,7 @@ func TestAddAndRevokeLiquidityProvider(t *testing.T) {
 
 	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lpacc))
 
-	keeper.AddIssuer(ctx, types.NewIssuer(iacc, "eeur", "ejpy"))
+	keeper.AddIssuer(ctx, types.NewIssuer(iacc, "eeur", "ejpy"), []emauthtypes.Denomination{{Base: "eeur"}, {Base: "ejpy"}})
 
 	mintable := MustParseCoins("100000eeur,5000ejpy")
 
@@ -217,8 +226,8 @@ func TestDoubleLiquidityProvider(t *testing.T) {
 	)
 
 	ak.SetAccount(ctx, ak.NewAccountWithAddress(ctx, lp))
-	keeper.AddIssuer(ctx, types.NewIssuer(issuer1, "eeur", "ejpy"))
-	keeper.AddIssuer(ctx, types.NewIssuer(issuer2, "edkk", "esek"))
+	keeper.AddIssuer(ctx, types.NewIssuer(issuer1, "eeur", "ejpy"), []emauthtypes.Denomination{{Base: "eeur"}, {Base: "ejpy"}})
+	keeper.AddIssuer(ctx, types.NewIssuer(issuer2, "edkk", "esek"), []emauthtypes.Denomination{{Base: "edkk"}, {Base: "esek"}})
 
 	mintable1 := MustParseCoins("100000eeur,5000ejpy")
 	mintable2 := MustParseCoins("250000edkk,1000esek")

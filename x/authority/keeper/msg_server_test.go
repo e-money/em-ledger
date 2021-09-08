@@ -21,7 +21,7 @@ func TestCreateIssuer(t *testing.T) {
 		issuerAddr    = mustParseAddress("emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu")
 		gotAuthority  sdk.AccAddress
 		gotIssuer     sdk.AccAddress
-		gotDenoms     []string
+		gotDenoms     []types.Denomination
 	)
 
 	keeper := authorityKeeperMock{}
@@ -30,7 +30,7 @@ func TestCreateIssuer(t *testing.T) {
 	specs := map[string]struct {
 		setup     func(ctx sdk.Context)
 		req       *types.MsgCreateIssuer
-		mockFn    func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error)
 		expErr    bool
 		expEvents sdk.Events
 	}{
@@ -38,9 +38,9 @@ func TestCreateIssuer(t *testing.T) {
 			req: &types.MsgCreateIssuer{
 				Authority:     authorityAddr.String(),
 				Issuer:        issuerAddr.String(),
-				Denominations: []string{"foo", "bar"},
+				Denominations: []types.Denomination{{Base: "foo"}, {Base: "bar"}},
 			},
-			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error) {
 				gotAuthority, gotIssuer, gotDenoms = authority, issuerAddr, denoms
 				return &sdk.Result{
 					Events: []abcitypes.Event{{
@@ -57,7 +57,7 @@ func TestCreateIssuer(t *testing.T) {
 		"authority missing": {
 			req: &types.MsgCreateIssuer{
 				Issuer:        issuerAddr.String(),
-				Denominations: []string{"foo", "bar"},
+				Denominations: []types.Denomination{{Base: "foo"}, {Base: "bar"}},
 			},
 			expErr: true,
 		},
@@ -65,14 +65,14 @@ func TestCreateIssuer(t *testing.T) {
 			req: &types.MsgCreateIssuer{
 				Authority:     "invalid",
 				Issuer:        issuerAddr.String(),
-				Denominations: []string{"foo", "bar"},
+				Denominations: []types.Denomination{{Base: "foo"}, {Base: "bar"}},
 			},
 			expErr: true,
 		},
 		"issuer missing": {
 			req: &types.MsgCreateIssuer{
 				Authority:     authorityAddr.String(),
-				Denominations: []string{"foo", "bar"},
+				Denominations: []types.Denomination{{Base: "foo"}, {Base: "bar"}},
 			},
 			expErr: true,
 		},
@@ -80,7 +80,7 @@ func TestCreateIssuer(t *testing.T) {
 			req: &types.MsgCreateIssuer{
 				Authority:     authorityAddr.String(),
 				Issuer:        "invalid",
-				Denominations: []string{"foo", "bar"},
+				Denominations: []types.Denomination{{Base: "foo"}, {Base: "bar"}},
 			},
 			expErr: true,
 		},
@@ -88,9 +88,9 @@ func TestCreateIssuer(t *testing.T) {
 			req: &types.MsgCreateIssuer{
 				Authority:     authorityAddr.String(),
 				Issuer:        issuerAddr.String(),
-				Denominations: []string{"foo", "bar"},
+				Denominations: []types.Denomination{{Base: "foo"}, {Base: "bar"}},
 			},
-			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error) {
 				return nil, errors.New("testing")
 			},
 			expErr: true,
@@ -529,7 +529,7 @@ func TestReplaceAuth(t *testing.T) {
 
 // mock implementation of authorityKeeper interface
 type authorityKeeperMock struct {
-	createIssuerfn     func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error)
+	createIssuerfn     func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error)
 	destroyIssuerfn    func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress) (*sdk.Result, error)
 	SetGasPricesfn     func(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	replaceAuthorityfn func(ctx sdk.Context, authority, newAuthority sdk.AccAddress) (*sdk.Result, error)
@@ -538,7 +538,7 @@ type authorityKeeperMock struct {
 	applyUpgradefn     func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 }
 
-func (a authorityKeeperMock) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
+func (a authorityKeeperMock) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error) {
 	if a.createIssuerfn == nil {
 		panic("not expected to be called")
 	}

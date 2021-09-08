@@ -27,7 +27,7 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	authorityCmds.AddCommand(
-		getCmdCreateIssuer(),
+		GetCmdCreateIssuer(),
 		getCmdDestroyIssuer(),
 		getCmdSetGasPrices(),
 		GetCmdReplaceAuthority(),
@@ -69,12 +69,19 @@ func getCmdSetGasPrices() *cobra.Command {
 	return cmd
 }
 
-func getCmdCreateIssuer() *cobra.Command {
+const (
+	DenomDescFlagName = "denominations"
+	denomDescDefValue = "e-Money EUR stablecoin"
+)
+
+func GetCmdCreateIssuer() *cobra.Command {
+	var denoms []string
+
 	cmd := &cobra.Command{
-		Use:     "create-issuer [authority_key_or_address] [issuer_address] [denominations]",
-		Example: "emd tx authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu eeur,ejpy",
+		Use:     "create-issuer [authority_key_or_address] [issuer_address]",
+		Example: "emd tx authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu -d eeur,EEUR -d ejpy",
 		Short:   "Create a new issuer",
-		Args:    cobra.ExactArgs(3),
+		Args:    cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.Flags().Set(flags.FlagFrom, args[0])
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -87,7 +94,7 @@ func getCmdCreateIssuer() *cobra.Command {
 				return err
 			}
 
-			denoms, err := util.ParseDenominations(args[2])
+			denoms, err := util.ParseDenominations(denoms, denomDescDefValue)
 			if err != nil {
 				return err
 			}
@@ -101,9 +108,12 @@ func getCmdCreateIssuer() *cobra.Command {
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
+	f := cmd.Flags()
+	f.StringArrayVarP(&denoms, DenomDescFlagName, "d", []string{}, "The denominations with base i.e. eeur, display i.e. EEUR, description with default value: e-Money EUR stablecoin")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
