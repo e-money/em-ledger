@@ -36,7 +36,7 @@ var _ = Describe("Authority", func() {
 
 		It("creates an issuer", func() {
 			// denomination metadata are not set before a new issuer
-			denomList, err := emcli.QueryBalanceDenomMetadata()
+			denomList, err := emcli.QueryDenomMetadata()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(denomList).To(HaveLen(0))
 
@@ -44,7 +44,7 @@ var _ = Describe("Authority", func() {
 			Expect(ok).To(BeTrue())
 
 			// denomination metadata are set to EEUR, EJPY
-			denomList, err = emcli.QueryBalanceDenomMetadata()
+			denomList, err = emcli.QueryDenomMetadata()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(denomList).To(HaveLen(2))
 			Expect(denomList[0].Get("base").Str).To(Equal("eeur"))
@@ -72,7 +72,7 @@ var _ = Describe("Authority", func() {
 			Expect(issuers).To(HaveLen(2))
 			Expect(denoms).To(Equal("echf,edkk,esek"))
 
-			denomList, err := emcli.QueryBalanceDenomMetadata()
+			denomList, err := emcli.QueryDenomMetadata()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(denomList).To(HaveLen(5))
 			Expect(denomList[0].Get("base").Str).To(Equal("echf"))

@@ -173,7 +173,7 @@ func (cli Emcli) QueryBalanceDenom(account, denom string) (balance int, err erro
 	return
 }
 
-func (cli Emcli) QueryBalanceDenomMetadata() ([]gjson.Result, error) {
+func (cli Emcli) QueryDenomMetadata() ([]gjson.Result, error) {
 	args := cli.addQueryFlags("query", "bank", "denom-metadata")
 	bz, err := execCmdAndCollectResponse(args)
 	if err != nil {
