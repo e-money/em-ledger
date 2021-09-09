@@ -79,7 +79,7 @@ func GetCmdCreateIssuer() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "create-issuer [authority_key_or_address] [issuer_address]",
-		Example: "emd tx authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu -d eeur,EEUR -d ejpy",
+		Example: "emd tx authority create-issuer masterkey emoney17up20gamd0vh6g9ne0uh67hx8xhyfrv2lyazgu -d 'eeur,EEUR,e-Money Euro stablecoin' -d ejpy",
 		Short:   "Create a new issuer",
 		Args:    cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {

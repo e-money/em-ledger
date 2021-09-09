@@ -51,7 +51,7 @@ var _ = Describe("Authority", func() {
 			Expect(denomList[0].Get("display").Str).To(Equal("EEUR"))
 			Expect(denomList[0].Get("description").Str).To(Equal("e-Money EUR stablecoin"))
 			Expect(denomList[1].Get("base").Str).To(Equal("ejpy"))
-			Expect(denomList[1].Get("display").Str).To(Equal("EJPY"))
+			Expect(denomList[1].Get("display").Str).To(Equal("eJPY"))
 			Expect(denomList[1].Get("description").Str).To(Equal("Japanese yen stablecoin"))
 		})
 
@@ -62,15 +62,28 @@ var _ = Describe("Authority", func() {
 		})
 
 		It("authority assigns a second issuer to same denomination", func() {
-			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "edkk", "ejpy")
+			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "ejpy")
 			Expect(err).To(HaveOccurred())
 			Expect(success).To(BeFalse())
 		})
 
 		It("authority creates a second issuer", func() {
-			_, success, err := emcli.AuthorityCreateIssuer(Authority, OtherIssuer, "edkk")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(success).To(BeTrue())
+			issuers, denoms := nt.CreateIssuer(emcli, Authority, OtherIssuer, `'esek,eSEK,Not a bad stablecoin'`, `"edkk,EDKK,Coolest stablecoin"`, `"echf,eCHF,yet another stablecoin"`)
+			Expect(issuers).To(HaveLen(2))
+			Expect(denoms).To(Equal("echf,edkk,esek"))
+
+			denomList, err := emcli.QueryBalanceDenomMetadata()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(denomList).To(HaveLen(5))
+			Expect(denomList[0].Get("base").Str).To(Equal("echf"))
+			Expect(denomList[0].Get("display").Str).To(Equal("eCHF"))
+			Expect(denomList[0].Get("description").Str).To(Equal("yet another stablecoin"))
+			Expect(denomList[1].Get("base").Str).To(Equal("edkk"))
+			Expect(denomList[1].Get("display").Str).To(Equal("EDKK"))
+			Expect(denomList[1].Get("description").Str).To(Equal("Coolest stablecoin"))
+			Expect(denomList[4].Get("base").Str).To(Equal("esek"))
+			Expect(denomList[4].Get("display").Str).To(Equal("eSEK"))
+			Expect(denomList[4].Get("description").Str).To(Equal("Not a bad stablecoin"))
 		})
 
 		It("creates a liquidity provider", func() {
