@@ -7,7 +7,6 @@ package keeper
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	authtypes "github.com/e-money/em-ledger/x/authority/types"
 
@@ -210,21 +209,21 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer, denomMetadata
 	}
 
 	k.setIssuers(ctx, issuers)
-	for _, denom := range newIssuer.Denoms {
-		if stDenom := k.bk.GetDenomMetaData(ctx, denom); stDenom.Base == "" {
-			k.bk.SetDenomMetaData(ctx, banktypes.Metadata{
-				Description: "e-Money EUR stablecoin",
+	for _, denom := range denomMetadata {
+		k.bk.SetDenomMetaData(
+			ctx, banktypes.Metadata{
+				Description: denom.Description,
 				DenomUnits: []*banktypes.DenomUnit{
 					{
-						Denom:    denom,
+						Denom:    denom.Base,
 						Exponent: 6,
 						Aliases:  nil,
 					},
 				},
-				Base:    denom,
-				Display: strings.ToUpper(denom),
-			})
-		}
+				Base:    denom.Base,
+				Display: denom.Display,
+			},
+		)
 	}
 
 	if _, err := k.ik.AddDenoms(ctx, newIssuer.Denoms); err != nil {

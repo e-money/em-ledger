@@ -35,8 +35,24 @@ var _ = Describe("Authority", func() {
 		It("creates a new testnet", createNewTestnet)
 
 		It("creates an issuer", func() {
+			// denomination metadata are not set before a new issuer
+			denomList, err := emcli.QueryBalanceDenomMetadata()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(denomList).To(HaveLen(0))
+
 			ok := nt.AuthCreatesIssuer(emcli, Authority, Issuer)
 			Expect(ok).To(BeTrue())
+
+			// denomination metadata are set to EEUR, EJPY
+			denomList, err = emcli.QueryBalanceDenomMetadata()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(denomList).To(HaveLen(2))
+			Expect(denomList[0].Get("base").Str).To(Equal("eeur"))
+			Expect(denomList[0].Get("display").Str).To(Equal("EEUR"))
+			Expect(denomList[0].Get("description").Str).To(Equal("e-Money EUR stablecoin"))
+			Expect(denomList[1].Get("base").Str).To(Equal("ejpy"))
+			Expect(denomList[1].Get("display").Str).To(Equal("EJPY"))
+			Expect(denomList[1].Get("description").Str).To(Equal("Japanese yen stablecoin"))
 		})
 
 		It("imposter attempts to act as authority", func() {

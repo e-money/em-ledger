@@ -64,7 +64,7 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 
 func AuthCreatesIssuer(emcli Emcli, Authority, Issuer Key) bool {
 	_, success, err := emcli.AuthorityCreateIssuer(
-		Authority, Issuer, "eeur", "ejpy",
+		Authority, Issuer, "eeur", `'ejpy,EJPY,Japanese yen stablecoin'`,
 	)
 	if err != nil || !success {
 		return false

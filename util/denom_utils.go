@@ -19,6 +19,7 @@ func ParseDenominations(denoms []string, defDescValue string) ([]types.Denominat
 	}
 	res := make([]types.Denomination, 0)
 	for _, denom := range denoms {
+		denom = strings.Trim(denom, `"'`)
 		denomFields := strings.FieldsFunc(strings.TrimSpace(denom), func(r rune) bool {
 			return r == ','
 		})
