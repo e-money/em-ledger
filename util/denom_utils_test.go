@@ -4,10 +4,7 @@
 package util
 
 import (
-	"fmt"
 	"testing"
-
-	"github.com/e-money/em-ledger/x/authority/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -36,27 +33,5 @@ func TestParseDenominations(t *testing.T) {
 		}
 
 		assert.Len(t, denoms, d.count)
-	}
-}
-
-func TestParseDenominations2(t *testing.T) {
-	testdata := []struct {
-		denoms []types.Denomination
-		valid  bool
-		count  int
-	}{
-		{
-			denoms: []types.Denomination{
-				{Base: "eeur"},
-				{Base: "ejpy"},
-			},
-			valid: true,
-			count: 2,
-		},
-	}
-
-	for _, d := range testdata {
-		sd := fmt.Sprintf("%s", d.denoms)
-		fmt.Println(sd)
 	}
 }
