@@ -1,18 +1,19 @@
 package keeper
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/rand"
-	"testing"
 )
 
 func TestQueryIssuers(t *testing.T) {
 	encConfig := MakeTestEncodingConfig()
-	ctx, _, _, keeper := createTestComponentsWithEncodingConfig(t, encConfig)
+	ctx, _, _, keeper, _ := createTestComponentsWithEncodingConfig(t, encConfig)
 	myIssuers := []types.Issuer{types.NewIssuer(randomAccAddress(), "foo", "bar")}
 	keeper.setIssuers(ctx, myIssuers)
 

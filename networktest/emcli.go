@@ -47,7 +47,19 @@ func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
 }
 
 func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
-	args := cli.addTransactionFlags("tx", "authority", "create-issuer", authority.name, issuer.GetAddress(), strings.Join(denoms, ","))
+	args := cli.addTransactionFlags("tx", "authority", "create-issuer", authority.name, issuer.GetAddress())
+
+	// append flagged denominations i.e. [-d] [eur] [-d] [eur]
+	flaggedDenoms := make([]string, len(denoms)*2)
+	for i := range flaggedDenoms {
+		if i%2 == 0 {
+			flaggedDenoms[i] = "-d"
+		} else {
+			flaggedDenoms[i] = denoms[i/2]
+		}
+	}
+	args = append(args, flaggedDenoms...)
+
 	return execCmdWithInput(args, KeyPwd)
 }
 
@@ -159,6 +171,21 @@ func (cli Emcli) QueryBalanceDenom(account, denom string) (balance int, err erro
 	}
 
 	return
+}
+
+func (cli Emcli) QueryDenomMetadata() ([]gjson.Result, error) {
+	args := cli.addQueryFlags("query", "bank", "denom-metadata")
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return nil, err
+	}
+
+	queryresponse := gjson.ParseBytes(bz).String()
+
+	metadata := gjson.Parse(queryresponse).Get("metadatas")
+	mdLst := metadata.Array()
+
+	return mdLst, nil
 }
 
 func (cli Emcli) QueryAccount(account string) (mintable int, err error) {

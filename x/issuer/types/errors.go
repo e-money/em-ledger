@@ -13,4 +13,5 @@ var (
 	ErrDenominationAlreadyAssigned = sdkerrors.Register(ModuleName, 4, "Domination has already been assigned")
 	ErrNotAnIssuer                 = sdkerrors.Register(ModuleName, 5, "Account is not an issuer")
 	ErrNegativeInflation           = sdkerrors.Register(ModuleName, 6, "Inflation can't be negative")
+	ErrDenomInflation              = sdkerrors.Register(ModuleName, 7, "Inflation denomination error")
 )

@@ -20,6 +20,7 @@
     - [Query](#em.authority.v1.Query)
   
 - [em/authority/v1/tx.proto](#em/authority/v1/tx.proto)
+    - [Denomination](#em.authority.v1.Denomination)
     - [MsgCreateIssuer](#em.authority.v1.MsgCreateIssuer)
     - [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse)
     - [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer)
@@ -315,6 +316,23 @@
 
 
 
+<a name="em.authority.v1.Denomination"></a>
+
+### Denomination
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base` | [string](#string) |  | base represents the base denom (should be the DenomUnit with exponent = 0). |
+| `display` | [string](#string) |  | display indicates the suggested denom that should be displayed in clients. |
+| `description` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="em.authority.v1.MsgCreateIssuer"></a>
 
 ### MsgCreateIssuer
@@ -325,7 +343,7 @@
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |  |
 | `issuer` | [string](#string) |  |  |
-| `denominations` | [string](#string) | repeated |  |
+| `denominations` | [Denomination](#em.authority.v1.Denomination) | repeated |  |
 
 
 

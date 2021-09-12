@@ -5,25 +5,48 @@
 package util
 
 import (
+	"fmt"
 	"strings"
+
+	"github.com/e-money/em-ledger/x/authority/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func ParseDenominations(denoms string) ([]string, error) {
-	res := make([]string, 0)
-	for _, denom := range strings.Split(denoms, ",") {
-		denom = strings.TrimSpace(denom)
+func ParseDenominations(denoms []string, defDescValue string) ([]types.Denomination, error) {
+	if len(denoms) == 0 {
+		return []types.Denomination{}, fmt.Errorf("missing denominations")
+	}
+	res := make([]types.Denomination, 0)
+	for _, denom := range denoms {
+		denom = strings.Trim(denom, `"'`)
+		denomFields := strings.FieldsFunc(strings.TrimSpace(denom), func(r rune) bool {
+			return r == ','
+		})
 
-		if len(denom) == 0 {
-			continue
+		if len(denomFields) == 0 {
+			return nil, fmt.Errorf("missing denomination fields")
 		}
 
-		if err := sdk.ValidateDenom(denom); err != nil {
+		if err := sdk.ValidateDenom(denomFields[0]); err != nil {
 			return nil, err
 		}
 
-		res = append(res, denom)
+		denomStruct := types.Denomination{
+			Base:        denomFields[0],
+			Display:     strings.ToUpper(denomFields[0]),
+			Description: defDescValue,
+		}
+
+		if len(denomFields) > 1 {
+			denomStruct.Display = denomFields[1]
+		}
+
+		if len(denomFields) > 2 {
+			denomStruct.Description = denomFields[2]
+		}
+
+		res = append(res, denomStruct)
 	}
 
 	return res, nil

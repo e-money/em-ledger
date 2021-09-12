@@ -6,8 +6,13 @@ package keeper
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"sort"
+
+	authtypes "github.com/e-money/em-ledger/x/authority/types"
+
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -27,18 +32,23 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	lpKeeper lp.Keeper
 	ik       types.InflationKeeper
+	bk       types.BankKeeper
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper, ik types.InflationKeeper) Keeper {
+func NewKeeper(
+	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper,
+	ik types.InflationKeeper, bk types.BankKeeper,
+) Keeper {
 	return Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
 		lpKeeper: lpk,
 		ik:       ik,
+		bk:       bk,
 	}
 }
 
-func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider,  issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
+func (k Keeper) IncreaseMintableAmountOfLiquidityProvider(ctx sdk.Context, liquidityProvider, issuer sdk.AccAddress, mintableIncrease sdk.Coins) (*sdk.Result, error) {
 	logger := k.logger(ctx)
 
 	i, err := k.mustBeIssuer(ctx, issuer.String())
@@ -166,7 +176,17 @@ func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store.Set([]byte(keyIssuerList), bz)
 }
 
-func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result, error) {
+func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer, denomMetadata []authtypes.Denomination) (*sdk.Result, error) {
+	// set the Issuer denominations from the base of the denominations metadata
+	// when the new issuer struct has fewer denominations.
+	denomMDSize := len(denomMetadata)
+	if denomMDSize > 0 && denomMDSize > len(newIssuer.Denoms) {
+		newIssuer.Denoms = make([]string, denomMDSize)
+		for i, denomMetaDatum := range denomMetadata {
+			newIssuer.Denoms[i] = denomMetaDatum.Base
+		}
+	}
+
 	issuers := k.GetIssuers(ctx)
 
 	existingDenoms := collectDenoms(issuers)
@@ -189,7 +209,26 @@ func (k Keeper) AddIssuer(ctx sdk.Context, newIssuer types.Issuer) (*sdk.Result,
 	}
 
 	k.setIssuers(ctx, issuers)
-	k.ik.AddDenoms(ctx, newIssuer.Denoms) // TODO Check error?
+	for _, denom := range denomMetadata {
+		k.bk.SetDenomMetaData(
+			ctx, banktypes.Metadata{
+				Description: denom.Description,
+				DenomUnits: []*banktypes.DenomUnit{
+					{
+						Denom:    denom.Base,
+						Exponent: 6,
+						Aliases:  nil,
+					},
+				},
+				Base:    denom.Base,
+				Display: denom.Display,
+			},
+		)
+	}
+
+	if _, err := k.ik.AddDenoms(ctx, newIssuer.Denoms); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrDenomInflation, "%v, error: %v", newIssuer.Denoms, err)
+	}
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
