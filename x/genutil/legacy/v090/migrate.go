@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/capability"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
 	"github.com/e-money/em-ledger/x/upgrade"
 	"time"
@@ -230,6 +232,8 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
+		crisis.AppModuleBasic{},
+		evidence.AppModuleBasic{},
 	}
 
 	for _, module := range newModules {
