@@ -1133,37 +1133,6 @@ func TestUnknownAsset(t *testing.T) {
 	require.Equal(t, gasPriceNewOrder, gasMeter.GasConsumed())
 }
 
-func TestLoadFromStore(t *testing.T) {
-	// Create order book with a number of passive orders.
-	ctx, k, ak, bk := createTestComponents(t)
-
-	acc1 := createAccount(ctx, ak, bk, randomAddress(), "5000eur")
-	acc2 := createAccount(ctx, ak, bk, randomAddress(), "7400usd")
-
-	_, err := k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc1, "1000eur", "1200usd"))
-	require.NoError(t, err)
-
-	_, err = k.NewOrderSingle(ctx, order(ctx.BlockTime(), acc2, "5000usd", "3500chf"))
-	require.NoError(t, err)
-
-	require.NotNil(t, k.getBestOrder(ctx, "eur", "usd"))
-	k.clearMemoryStore(ctx)
-	require.Nil(t, k.getBestOrder(ctx, "eur", "usd"))
-
-	k.initializeFromStore(ctx)
-	require.NotNil(t, k.getBestOrder(ctx, "eur", "usd"))
-}
-
-// clearMemoryStore simulates a node being restarted, and losing the contents stored in the mem KV stores.
-func (k *Keeper) clearMemoryStore(ctx sdk.Context) {
-	indiceStore := ctx.KVStore(k.keyIndices)
-
-	itr := indiceStore.ReverseIterator(nil, nil)
-	for ; itr.Valid(); itr.Next() {
-		indiceStore.Delete(itr.Key())
-	}
-}
-
 func TestVestingAccount(t *testing.T) {
 	ctx, keeper, ak, bk := createTestComponents(t)
 	account := createAccount(ctx, ak, bk, randomAddress(), "110000eur")
