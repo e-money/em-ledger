@@ -228,12 +228,12 @@ func NewApp(
 		paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		lptypes.StoreKey, issuer.StoreKey, authority.StoreKey,
-		market.StoreKey, buyback.StoreKey,
+		market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
 		inflation.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey, market.StoreKeyIdx)
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	app := &EMoneyApp{
 		BaseApp:           bApp,
@@ -327,7 +327,7 @@ func NewApp(
 	app.lpKeeper = liquidityprovider.NewKeeper(app.appCodec, keys[lptypes.StoreKey], app.bankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper, app.bankKeeper)
 	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app, &app.upgradeKeeper)
-	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], memKeys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
+	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment

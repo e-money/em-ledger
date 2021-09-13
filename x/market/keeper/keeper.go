@@ -348,34 +348,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k *Keeper) initializeFromStore(ctx sdk.Context) {
-	k.appstateInit.Do(func() {
-		// Load the last known market state from app state.
-		store := ctx.KVStore(k.key)
-		idxStore := ctx.KVStore(k.keyIndices)
-
-		if idxStore.Iterator(nil, nil).Valid() {
-			ctx.Logger().Info("index store was expected to be empty")
-		}
-
-		it := store.Iterator(types.GetOwnersPrefix(), nil)
-		if it.Valid() {
-			defer it.Close()
-		}
-
-		for ; it.Valid(); it.Next() {
-			o := &types.Order{}
-			err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
-			if err != nil {
-				panic(err)
-			}
-
-			key := types.GetPriorityKey(o.Source.Denom, o.Destination.Denom, o.Price(), o.ID)
-			idxStore.Set(key, it.Value())
-		}
-	})
-}
-
 // Check whether an asset even exists on the chain at the moment.
 func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	total := k.bk.GetSupply(ctx).GetTotal()

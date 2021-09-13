@@ -26,10 +26,9 @@ const (
 )
 
 var (
-	ModuleCdc    = types.ModuleCdc
-	NewKeeper    = keeper.NewKeeper
-	BeginBlocker = keeper.BeginBlocker
-	NewOrder     = types.NewOrder
+	ModuleCdc = types.ModuleCdc
+	NewKeeper = keeper.NewKeeper
+	NewOrder  = types.NewOrder
 
 	ErrClientOrderIdNotFound                   = types.ErrClientOrderIdNotFound
 	ErrOrderInstrumentChanged                  = types.ErrOrderInstrumentChanged
