@@ -305,7 +305,7 @@ func GetHeight() (int64, error) {
 }
 
 func chainStatus() ([]byte, error) {
-	return exec.Command(EMCLI, "status").CombinedOutput()
+	return exec.Command(EMCLI, "status", "--node", DefaultNode).CombinedOutput()
 }
 
 // WaitForHeightWithTimeout waits till the chain reaches the requested height
