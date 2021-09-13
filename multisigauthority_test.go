@@ -106,7 +106,7 @@ var _ = Describe("Authority", func() {
 			execAuthMSigTx(
 				newAuthorityAddress, []nt.Key{key1, key2}, "tx", "authority",
 				"create-issuer", newAuthorityAddress,
-				key1.GetAddress(), "eeur,ejpy", "--generate-only", "--from",
+				key1.GetAddress(), "-d", "eeur", "-d", "ejpy", "--generate-only", "--from",
 				newAuthorityAddress, "--fees", "1.0ungm",
 			)
 
