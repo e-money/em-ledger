@@ -17,9 +17,11 @@ import (
 	. "github.com/onsi/gomega"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 )
 
 var _ = Describe("Market", func() {
@@ -33,8 +35,28 @@ var _ = Describe("Market", func() {
 		Authority = testnet.Keystore.Authority
 	)
 
-	Describe("Authority manages issuers", func() {
-		It("creates a new testnet", createNewTestnet)
+	Describe("Market tests", func() {
+		It("creates a new testnet", func() {
+			awaitReady, err := testnet.RestartWithModifications(
+				func(bz []byte) []byte {
+					// Enable buyback module, which is a special user of the market module.
+
+					// Allow for stablecoin inflation to create a buyback balance
+					genesisTime := time.Now().Add(-365 * 24 * time.Hour).UTC()
+					bz = setGenesisTime(bz, genesisTime)
+
+					// Set buyback module to act on every block
+					bz, err := sjson.SetBytes(bz, "app_state.buyback.interval", time.Millisecond.String())
+					if err != nil {
+						panic(err)
+					}
+
+					return bz
+				})
+
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(awaitReady()).To(BeTrue())
+		})
 
 		It("Basic creation of simple orders", func() {
 			//bz, err := emcli.QueryAccountJson(acc1.GetAddress())
@@ -58,6 +80,10 @@ var _ = Describe("Market", func() {
 				err error
 			)
 			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			_, success, err = emcli.MarketAddLimitOrder(acc2, "5000ungm", "5000echf", "acc2cid2")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
@@ -197,4 +223,3 @@ var _ = Describe("Market", func() {
 		})
 	})
 })
-
