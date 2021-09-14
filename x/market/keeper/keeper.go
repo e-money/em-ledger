@@ -439,7 +439,7 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 	types.EmitExpireEvent(ctx, *order)
 	k.deleteOrder(ctx, order)
 
-	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
+	return &sdk.Result{}, nil
 }
 
 // Update any orders that can no longer be filled with the account's balance.
