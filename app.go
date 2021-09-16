@@ -284,6 +284,10 @@ func NewApp(
 		app.GetSubspace(crisistypes.ModuleName), invCheckPeriod, app.bankKeeper, authtypes.FeeCollectorName,
 	)
 	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
+	app.upgradeKeeper.SetUpgradeHandler("v1.1.0-RC2", func(ctx sdk.Context, plan upgradetypes.Plan) {
+		ctx.Logger().Info("Upgraded to", plan.Name)
+	})
+
 	app.upgradeKeeper.SetUpgradeHandler("v1.0.0-RC7", func(ctx sdk.Context, plan upgradetypes.Plan) {
 		ctx.Logger().Info("Upgraded to", plan.Name)
 	})
