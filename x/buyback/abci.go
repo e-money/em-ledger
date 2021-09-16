@@ -21,6 +21,10 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 	)
 
 	for _, balance := range bk.GetAllBalances(ctx, account) {
+		if balance.Denom == stakingDenom {
+			continue
+		}
+
 		price := k.GetBestPrice(ctx, balance.Denom, stakingDenom)
 		if price == nil {
 			// There are no passive orders to fill for this instrument
@@ -44,12 +48,13 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 
 		if err != nil {
 			ctx.Logger().Error("Error creating buyback order", "err", err)
-			panic(err)
+			continue
 		}
 
 		result, err := k.SendOrderToMarket(ctx, order)
 		if err != nil {
 			ctx.Logger().Error("Error sending buyback order to market", "err", err)
+			continue
 		}
 
 		for _, ev := range result.Events {
