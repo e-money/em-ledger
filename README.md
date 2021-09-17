@@ -1,6 +1,6 @@
-# e-Money Ledger
+![e-Money wordmark](docs/e-money%20wordmark.svg)
 
-![AWS CodeBuild](https://codebuild.eu-central-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiZWQzSDZkbjZzYVpsMlNQNlJEYzlNVFlVVnhaak1UcU1RZzR5ODhPVlc5bVRpOEJUQ0liNU5zeUdCcHFlVnBXOW1JRTdRZVlDMzFOVGM2bHd1ZEtwZmVFPSIsIml2UGFyYW1ldGVyU3BlYyI6IlNsNUdrMWtiMm04c1pWaXYiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+# Introduction
 
 The e-Money Ledger, a proof-of-stake blockchain based on the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and [Tendermint](https://github.com/tendermint/tendermint), introduces our novel interest-bearing, currency-backed tokens into the [Cosmos Network](https://cosmos.network).
 
@@ -14,17 +14,15 @@ make build
 
 ## Getting Started
 
-To better understand em-ledger, start with a [quick tour](docs/emcli.md) of the `emcli` command line interface.
+To better understand em-ledger, start with a [quick tour](docs/emd.md) of the `emd` command line interface.
+
+The [emoneyjs library](https://github.com/e-money/emoneyjs) is the recommended way for client applications to interact with em-ledger.
 
 _Please notice that it is highly recommended to use a [Ledger Device](docs/ledger.md) to securely manage keys._
 
-## Production Network
+## Networks
 
-See [https://github.com/e-money/launch](https://github.com/e-money/launch) for instructions on how to join our production network.
-
-## Test Network
-
-See [https://github.com/e-money/testnets](https://github.com/e-money/testnets) for instructions on how to join our test network.
+See [https://github.com/e-money/networks](https://github.com/e-money/networks) for instructions on how to join our production and test networks.
 
 ## Integration Guide
 
