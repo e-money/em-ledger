@@ -7,11 +7,9 @@ package inflation
 import (
 	"time"
 
-	"github.com/e-money/em-ledger/x/inflation/types"
-
-	"github.com/e-money/em-ledger/util"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/e-money/em-ledger/util"
+	"github.com/e-money/em-ledger/x/inflation/types"
 )
 
 const (
