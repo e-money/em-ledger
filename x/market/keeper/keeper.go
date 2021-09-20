@@ -6,16 +6,15 @@ package keeper
 
 import (
 	"fmt"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"math"
 	"sync"
 	"time"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/e-money/em-ledger/x/market/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/e-money/em-ledger/x/market/types"
 )
 
 const (
@@ -141,6 +140,9 @@ func (k *Keeper) GetSrcFromSlippage(
 }
 
 func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+	// save caller's event manager
+	retEvManager := ctx.EventManager()
+
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceNewOrder, "NewOrderSingle")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -150,6 +152,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	ctx, commitTrade := ctx.CacheContext()
 
 	defer func() {
+		retEvManager.EmitEvents(ctx.EventManager().Events())
+
 		if KillOrder {
 			return
 		}
@@ -345,7 +349,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		}
 	}
 
-	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
+	return &sdk.Result{}, nil
 }
 
 // Check whether an asset even exists on the chain at the moment.
@@ -396,13 +400,7 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 
 	newOrder.TimeInForce = origOrder.TimeInForce
 
-	resAdd, err := k.NewOrderSingle(ctx, newOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	evts := append(ctx.EventManager().ABCIEvents(), resAdd.Events...)
-	return &sdk.Result{Events: evts}, nil
+	return k.NewOrderSingle(ctx, newOrder)
 }
 
 func (k *Keeper) GetOrderByOwnerAndClientOrderId(ctx sdk.Context, owner, clientOrderId string) *types.Order {

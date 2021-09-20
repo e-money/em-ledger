@@ -7,6 +7,11 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -36,10 +41,6 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"math"
-	"strings"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -538,16 +539,16 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 
 	// Create a market for eur
 	o = order(ctx.BlockTime(), acc2, "100eur", "100gbp")
-	res, err := k.NewOrderSingle(ctx, o)
+	_, err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 	require.Equal(
 		t, "accept",
-		string(res.Events[0].Attributes[0].GetValue()),
+		string(ctx.EventManager().Events()[0].Attributes[0].GetValue()),
 	)
 
 	require.Equal(
 		t, ctx.BlockTime().Format(time.RFC3339),
-		string(res.Events[0].Attributes[len(res.Events[0].Attributes)-1].GetValue()),
+		string(ctx.EventManager().Events()[0].Attributes[len(ctx.EventManager().Events()[0].Attributes)-1].GetValue()),
 	)
 
 	// Create a fill or kill order that cannot be satisfied by the current market
@@ -559,12 +560,13 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	require.NoError(t, err)
 	limitOrder := order(ctx.BlockTime(), acc1, slippageSource.String(), dest.String())
 	limitOrder.TimeInForce = types.TimeInForce_FillOrKill
-	result, err := k.NewOrderSingle(ctx, limitOrder)
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
+	_, err = k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
-	require.Len(t, result.Events, 1)
-	require.Equal(t, types.EventTypeMarket, result.Events[0].Type)
-	require.Equal(t, "action", string(result.Events[0].Attributes[0].GetKey()))
-	require.Equal(t, "expire", string(result.Events[0].Attributes[0].GetValue()))
+	require.Len(t, ctx.EventManager().Events(), 1)
+	require.Equal(t, types.EventTypeMarket, ctx.EventManager().Events()[0].Type)
+	require.Equal(t, "action", string(ctx.EventManager().Events()[0].Attributes[0].GetKey()))
+	require.Equal(t, "expire", string(ctx.EventManager().Events()[0].Attributes[0].GetValue()))
 
 	// Last order must fail completely due to not being fillable
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
