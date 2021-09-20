@@ -7,9 +7,8 @@ package keeper
 import (
 	"testing"
 
+	"github.com/e-money/em-ledger/x/inflation/types"
 	"github.com/stretchr/testify/require"
-
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
