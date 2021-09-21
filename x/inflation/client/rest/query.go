@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/x/inflation/types"
 	"net/http"
 )
 
