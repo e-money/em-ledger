@@ -6,12 +6,12 @@ package keeper
 
 import (
 	"fmt"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/inflation/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 type Keeper struct {

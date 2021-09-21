@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -15,8 +16,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/e-money/em-ledger/x/inflation/client/cli"
 	"github.com/e-money/em-ledger/x/inflation/client/rest"
-	"github.com/e-money/em-ledger/x/inflation/internal/keeper"
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/x/inflation/keeper"
+	"github.com/e-money/em-ledger/x/inflation/types"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
