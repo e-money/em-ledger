@@ -196,6 +196,88 @@ func TestBeginBlocker(t *testing.T) {
 
 }
 
+func TestOldGenesisTime(t *testing.T) {
+	// The launch of emoney-3 revealed that the first block contains the genesis time from genesis.json. In the case of emoney-3, this was inherited directly from
+	// emoney-2 and was thus some time in the past, leading to immediate jailing and slashing of validators that were not ready.
+	// Block 1 should be treated differently to avoid this in future upgrades.
+	genesisTime, _ := time.Parse(time.RFC3339, "2020-11-04T13:00:00Z") // Genesis time from emoney-2 and emoney-3
+
+	ctx, keeper, _, _, stakingKeeper, database := createTestComponents(t)
+
+	var power1, power2 int64 = 70, 30
+	addr1, pk1 := addrs[2], pks[2]
+	addr2, pk2 := addrs[1], pks[1]
+
+	// bond the validators
+	_, err := staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr1, pk1, sdk.TokensFromConsensusPower(power1)))
+	require.NoError(t, err)
+	_, err = staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr2, pk2, sdk.TokensFromConsensusPower(power2)))
+	require.NoError(t, err)
+
+	val1 := abci.Validator{pk1.Address(), power1}
+	val2 := abci.Validator{pk2.Address(), power2}
+
+	// Val2 fails to sign
+	req := abci.RequestBeginBlock{
+		LastCommitInfo: abci.LastCommitInfo{
+			Votes: []abci.VoteInfo{
+				{
+					Validator:       val1,
+					SignedLastBlock: true,
+				},
+				{
+					Validator:       val2,
+					SignedLastBlock: false,
+				},
+			},
+		},
+	}
+
+	// Start processing blocks
+	now := time.Now()
+	ctx = ctx.WithBlockHeight(1).WithBlockTime(genesisTime)
+
+	// block 1
+	{
+		batch := database.NewBatch()
+		ctx = apptypes.WithCurrentBatch(ctx, batch)
+		BeginBlocker(ctx, req, keeper)
+		staking.EndBlocker(ctx, stakingKeeper)
+		batch.Write()
+	}
+
+	ctx = ctx.WithBlockHeight(2).WithBlockTime(now)
+	// block 2
+	{
+		batch := database.NewBatch()
+		ctx = apptypes.WithCurrentBatch(ctx, batch)
+		BeginBlocker(ctx, req, keeper)
+		staking.EndBlocker(ctx, stakingKeeper)
+		batch.Write()
+	}
+
+	// Validator 2 must remain bonded.
+	validator, found := stakingKeeper.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(pk2))
+	require.True(t, found)
+	require.Equal(t, stakingtypes.Bonded, validator.GetStatus())
+
+	// create a third block 25 hours later and ensure jailing
+	ctx = ctx.WithBlockHeight(3).WithBlockTime(now.Add(25 * time.Hour))
+	// block 3
+	{
+		batch := database.NewBatch()
+		ctx = apptypes.WithCurrentBatch(ctx, batch)
+		BeginBlocker(ctx, req, keeper)
+		staking.EndBlocker(ctx, stakingKeeper)
+		batch.Write()
+	}
+
+	// Validator 2 must be unbonding.
+	validator, found = stakingKeeper.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(pk2))
+	require.True(t, found)
+	require.Equal(t, stakingtypes.Unbonding, validator.GetStatus())
+}
+
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountKeeper, bankkeeper.Keeper, stakingkeeper.Keeper, *dbm.MemDB) {
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
