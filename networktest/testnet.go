@@ -277,8 +277,11 @@ func IncChain(delta int64) (int64, error) {
 
 	return WaitForHeightWithTimeout(
 		height+delta,
-		// is 10 seconds always enough?
-		time.Duration(delta)*10*time.Second,
+		// max seconds allowance for reaching the desired height
+		// increased again to accommodate an observed backup operation during the upgrade
+		// on catalina with docker
+		// `time taken to complete the backup: 442.204684ms12:00PM INF starting ABCI with Tendermint`
+		time.Duration(delta)*16*time.Second,
 	)
 }
 
