@@ -6,7 +6,7 @@ package inflation
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	"github.com/e-money/em-ledger/x/inflation/types"
 )
 
 // NewGenesisState creates a new GenesisState object
