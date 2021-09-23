@@ -262,7 +262,7 @@ func TestOldGenesisTime(t *testing.T) {
 	require.Equal(t, stakingtypes.Bonded, validator.GetStatus())
 
 	// create a third block 25 hours later and ensure jailing
-	ctx = ctx.WithBlockHeight(3).WithBlockTime(now.Add(25 * time.Hour))
+	ctx = ctx.WithBlockHeight(3).WithBlockTime(now.Add(61 * time.Minute))
 	// block 3
 	{
 		batch := database.NewBatch()
@@ -275,7 +275,7 @@ func TestOldGenesisTime(t *testing.T) {
 	// Validator 2 must be unbonding.
 	validator, found = stakingKeeper.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(pk2))
 	require.True(t, found)
-	require.Equal(t, stakingtypes.Unbonding, validator.GetStatus())
+	require.Equal(t, stakingtypes.Unbonding.String(), validator.GetStatus().String())
 }
 
 func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountKeeper, bankkeeper.Keeper, stakingkeeper.Keeper, *dbm.MemDB) {
