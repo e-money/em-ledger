@@ -25,8 +25,12 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k Keeper) {
 	blockTimes := k.getBlockTimes()
 	blockTimes = append(blockTimes, ctx.BlockTime())
 	slashable := false
-	slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
-	k.setBlockTimes(batch, blockTimes)
+
+	if ctx.BlockHeight() != 1 {
+		// Ignore first blocktime, which comes from the genesis file and may not match actual time
+		slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
+		k.setBlockTimes(batch, blockTimes)
+	}
 
 	// Iterate over all the validators which *should* have signed this block
 	// store whether or not they have actually signed it and slash/unbond any
