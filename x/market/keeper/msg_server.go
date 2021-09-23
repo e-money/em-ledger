@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -10,9 +11,9 @@ import (
 var _ types.MsgServer = msgServer{}
 
 type marketKeeper interface {
-	NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
-	CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
-	CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
+	NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) error
+	CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error
+	CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error
 	GetSrcFromSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error)
 }
 type msgServer struct {
@@ -35,14 +36,11 @@ func (m msgServer) AddLimitOrder(c context.Context, msg *types.MsgAddLimitOrder)
 		return nil, err
 	}
 
-	result, err := m.k.NewOrderSingle(ctx, order)
+	err = m.k.NewOrderSingle(ctx, order)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, e := range result.Events {
-		ctx.EventManager().EmitEvent(sdk.Event(e))
-	}
 	return &types.MsgAddLimitOrderResponse{}, nil
 }
 
@@ -76,13 +74,11 @@ func (m msgServer) CancelOrder(c context.Context, msg *types.MsgCancelOrder) (*t
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 
-	result, err := m.k.CancelOrder(ctx, owner, msg.ClientOrderId)
+	err = m.k.CancelOrder(ctx, owner, msg.ClientOrderId)
 	if err != nil {
 		return nil, err
 	}
-	for _, e := range result.Events {
-		ctx.EventManager().EmitEvent(sdk.Event(e))
-	}
+
 	return &types.MsgCancelOrderResponse{}, nil
 }
 
@@ -97,13 +93,11 @@ func (m msgServer) CancelReplaceLimitOrder(c context.Context, msg *types.MsgCanc
 		return nil, err
 	}
 
-	result, err := m.k.CancelReplaceLimitOrder(ctx, order, msg.OrigClientOrderId)
+	err = m.k.CancelReplaceLimitOrder(ctx, order, msg.OrigClientOrderId)
 	if err != nil {
 		return nil, err
 	}
-	for _, e := range result.Events {
-		ctx.EventManager().EmitEvent(sdk.Event(e))
-	}
+
 	return &types.MsgCancelReplaceLimitOrderResponse{}, nil
 }
 

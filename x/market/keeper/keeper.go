@@ -139,7 +139,7 @@ func (k *Keeper) GetSrcFromSlippage(
 	return slippageSource, nil
 }
 
-func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) error {
 	// save caller's event manager
 	retEvManager := ctx.EventManager()
 
@@ -162,22 +162,25 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	}()
 
 	if err := aggressiveOrder.IsValid(); err != nil {
-		return nil, err
+		return err
 	}
 
 	if aggressiveOrder.IsFilled() {
-		return nil, sdkerrors.Wrapf(types.ErrInvalidPrice, "Order price is invalid: %s -> %s", aggressiveOrder.Source, aggressiveOrder.Destination)
+		return sdkerrors.Wrapf(
+			types.ErrInvalidPrice, "Order price is invalid: %s -> %s",
+			aggressiveOrder.Source, aggressiveOrder.Destination,
+		)
 	}
 
 	owner, err := sdk.AccAddressFromBech32(aggressiveOrder.Owner)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner")
 	}
 	spendableCoins := k.bk.SpendableCoins(ctx, owner)
 
 	// Verify account balance
 	if _, anyNegative := spendableCoins.SafeSub(sdk.NewCoins(aggressiveOrder.Source)); anyNegative {
-		return nil, sdkerrors.Wrapf(
+		return sdkerrors.Wrapf(
 			types.ErrAccountBalanceInsufficient,
 			"Account %v has insufficient balance to execute trade: %v < %v",
 			owner,
@@ -193,17 +196,17 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 	totalSourceDemand = totalSourceDemand.Add(aggressiveOrder.Source)
 	if _, anyNegative := spendableCoins.SafeSub(sdk.NewCoins(totalSourceDemand)); anyNegative {
 		// TODO Improve message
-		return nil, sdkerrors.Wrapf(types.ErrAccountBalanceInsufficientForInstrument, "")
+		return sdkerrors.Wrapf(types.ErrAccountBalanceInsufficientForInstrument, "")
 	}
 
 	// Verify uniqueness of client order id among active orders
 	if containsClientId(accountOrders, aggressiveOrder.ClientOrderID) {
-		return nil, sdkerrors.Wrap(types.ErrNonUniqueClientOrderId, aggressiveOrder.ClientOrderID)
+		return sdkerrors.Wrap(types.ErrNonUniqueClientOrderId, aggressiveOrder.ClientOrderID)
 	}
 
 	// Verify that the destination asset actually exists on chain before creating an instrument
 	if !k.assetExists(ctx, aggressiveOrder.Destination) {
-		return nil, sdkerrors.Wrap(types.ErrUnknownAsset, aggressiveOrder.Destination.Denom)
+		return sdkerrors.Wrap(types.ErrUnknownAsset, aggressiveOrder.Destination.Denom)
 	}
 	k.registerMarketData(ctx, aggressiveOrder.Source.Denom, aggressiveOrder.Destination.Denom)
 	k.registerMarketData(ctx, aggressiveOrder.Destination.Denom, aggressiveOrder.Source.Denom)
@@ -349,7 +352,7 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*
 		}
 	}
 
-	return &sdk.Result{}, nil
+	return nil
 }
 
 // Check whether an asset even exists on the chain at the moment.
@@ -358,7 +361,7 @@ func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
 	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
 }
 
-func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
+func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelReplaceOrder, "CancelReplaceOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -366,28 +369,30 @@ func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, 
 	origOrder := k.GetOrderByOwnerAndClientOrderId(ctx, newOrder.Owner, origClientOrderId)
 
 	if origOrder == nil {
-		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
+		return sdkerrors.Wrap(types.ErrClientOrderIdNotFound, origClientOrderId)
 	}
 
 	// Verify that instrument is the same.
 	if origOrder.Source.Denom != newOrder.Source.Denom || origOrder.Destination.Denom != newOrder.Destination.Denom {
-		return nil, sdkerrors.Wrap(
+		return sdkerrors.Wrap(
 			types.ErrOrderInstrumentChanged, fmt.Sprintf(
-				"source %s != %s Or dest %s != %s", origOrder.Source, newOrder.Source,
+				"source %s != %s Or dest %s != %s", origOrder.Source,
+				newOrder.Source,
 				origOrder.Destination.Denom, newOrder.Destination.Denom,
 			),
 		)
 	}
 
 	if origOrder.ClientOrderID == newOrder.ClientOrderID {
-		return nil, sdkerrors.Wrap(
-			types.ErrInvalidClientOrderId, fmt.Sprintf("ClientOrderId is already in use"),
+		return sdkerrors.Wrap(
+			types.ErrInvalidClientOrderId,
+			fmt.Sprintf("ClientOrderId is already in use"),
 		)
 	}
 
 	// Has the previous order already achieved the goal on the source side?
 	if origOrder.SourceFilled.GTE(newOrder.Source.Amount) {
-		return nil, sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
+		return sdkerrors.Wrap(types.ErrNoSourceRemaining, "")
 	}
 
 	k.deleteOrder(ctx, origOrder)
@@ -422,7 +427,7 @@ func (k *Keeper) GetOrderByOwnerAndClientOrderId(ctx sdk.Context, owner, clientO
 	return o
 }
 
-func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
+func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error {
 	// Use a fixed gas amount
 	ctx.GasMeter().ConsumeGas(gasPriceCancelOrder, "CancelOrder")
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -431,13 +436,13 @@ func (k *Keeper) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderI
 	order := k.GetOrderByOwnerAndClientOrderId(ctx, owner.String(), clientOrderId)
 
 	if order == nil {
-		return nil, sdkerrors.Wrap(types.ErrClientOrderIdNotFound, clientOrderId)
+		return sdkerrors.Wrap(types.ErrClientOrderIdNotFound, clientOrderId)
 	}
 
 	types.EmitExpireEvent(ctx, *order)
 	k.deleteOrder(ctx, order)
 
-	return &sdk.Result{}, nil
+	return nil
 }
 
 // Update any orders that can no longer be filled with the account's balance.
