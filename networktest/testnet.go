@@ -263,8 +263,6 @@ func (t *Testnet) updateGenesis() {
 	genesisTime := time.Now().Add(10 * time.Second).UTC().Format(time.RFC3339)
 	bz, _ = sjson.SetBytes(bz, "genesis_time", genesisTime)
 
-	bz, _ = sjson.SetRawBytes(bz, "app_state.bank.denom_metadata", []byte(denomMetadata))
-
 	t.genesis = bz
 
 	writeGenesisFiles(bz)
