@@ -8,6 +8,11 @@ package emoney_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	emoney "github.com/e-money/em-ledger"
@@ -18,10 +23,6 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"io/ioutil"
-	"os"
-	"strings"
-	"time"
 )
 
 var _ = Describe("Market", func() {
@@ -73,6 +74,18 @@ var _ = Describe("Market", func() {
 			Expect(err).ToNot(HaveOccurred())
 			ir := gjson.ParseBytes(bz)
 			Expect(ir.Get("orders").Array()).To(HaveLen(10))
+		})
+
+		It("Check accompanying events are generated", func() {
+			output, events, success, err := emcli.MarketAddLimitOrderRetEvents(acc1, "120eeur", "90echf", "acc1ev1")
+			Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
+			Expect(success).To(BeTrue())
+			checkTxEvents(events)
+
+			_, success, err = emcli.MarketCancelOrder(acc1, "acc1ev1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+			checkTxEvents(events)
 		})
 
 		It("Crashing validator can catch up", func() {
@@ -223,3 +236,11 @@ var _ = Describe("Market", func() {
 		})
 	})
 })
+
+func checkTxEvents(events sdk.Events) {
+	Expect(events).To(HaveLen(2))
+	Expect(events[0].Type == "market").To(BeTrue())
+	attr0 := events[0].Attributes[0]
+	Expect(string(attr0.Key) == "action").To(BeTrue())
+	Expect(string(attr0.Value) == "accept").To(BeTrue())
+}

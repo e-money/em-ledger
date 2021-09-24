@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tendermint/tendermint/abci/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tidwall/gjson"
 )
@@ -316,9 +318,15 @@ func (cli Emcli) LiquidityProviderBurn(key Key, amount string) (string, bool, er
 }
 
 func (cli Emcli) MarketAddLimitOrder(key Key, source, destination, cid string, moreflags ...string) (string, bool, error) {
+	tx, _, success, err := cli.MarketAddLimitOrderRetEvents(key, source, destination, cid, moreflags...)
+
+	return tx, success, err
+}
+
+func (cli Emcli) MarketAddLimitOrderRetEvents(key Key, source, destination, cid string, moreflags ...string) (string, sdk.Events, bool, error) {
 	args := cli.addTransactionFlags("tx", "market", "add-limit", source, destination, cid, "--from", key.name)
 	args = append(args, moreflags...)
-	return execCmdWithInput(args, KeyPwd)
+	return execCmdWithInputRetEvents(args, KeyPwd)
 }
 
 func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid string, slippage sdk.Dec, moreflags ...string) (string, bool, error) {
@@ -328,8 +336,14 @@ func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid str
 }
 
 func (cli Emcli) MarketCancelOrder(key Key, cid string) (string, bool, error) {
+	tx, _, success, err := cli.MarketCancelOrderRetEvents(key, cid)
+	return tx, success, err
+}
+
+func (cli Emcli) MarketCancelOrderRetEvents(key Key, cid string) (string, sdk.Events, bool, error) {
 	args := cli.addTransactionFlags("tx", "market", "cancel", cid, "--from", key.name)
-	return execCmdWithInput(args, KeyPwd)
+
+	return execCmdWithInputRetEvents(args, KeyPwd)
 }
 
 func (cli Emcli) UnjailValidator(key string) (string, bool, error) {
@@ -384,6 +398,68 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 	}
 
 	return txhashjson.Str, true, nil
+}
+
+func extractTxWithEvents(bz []byte) (txhash string, evList sdk.Events, success bool, err error) {
+	if !gjson.ValidBytes(bz) {
+		return "", evList, false, fmt.Errorf("extractTxHash received input that was not valid JSON:\n%v", string(bz))
+	}
+
+	json := gjson.ParseBytes(bz)
+
+	txhashjson := json.Get("txhash")
+	logs := json.Get("logs")
+	code := json.Get("code")
+
+	// todo (reviewer) : emd command returns `exit 0` although the TX has failed with `signature verification failed`
+	// any non zero `code` in response json is a failure code
+	if !txhashjson.Exists() || !logs.Exists() || code.Int() != 0 {
+		return "", evList, false, fmt.Errorf("tx appears to have failed %v", string(bz))
+	}
+
+	if strings.Contains(logs.Raw, "failed") {
+		return "", evList, false, fmt.Errorf("tx failed: %s", logs.Raw)
+	}
+
+	evList = getTxEvents(logs)
+
+	return txhashjson.Str, evList, true, nil
+}
+
+func getTxEvents(logs gjson.Result) (evList sdk.Events) {
+	logs.ForEach(
+		func(_, value gjson.Result) bool {
+			events := value.Get("events")
+			events.ForEach(
+				func(key, value gjson.Result) bool {
+					ev := sdk.Event{
+						Type:       value.Get("type").Str,
+						Attributes: []types.EventAttribute{},
+					}
+
+					evAttrs := value.Get("attributes")
+					evAttrs.ForEach(
+						func(_, value gjson.Result) bool {
+							k := value.Get("key").Str
+							v := value.Get("value").Str
+							ev.Attributes = append(
+								ev.Attributes, types.EventAttribute{
+									Key:   []byte(k),
+									Value: []byte(v),
+								},
+							)
+
+							return true
+						},
+					)
+					evList = append(evList, ev)
+
+					return true
+				})
+			return true
+		})
+
+	return evList
 }
 
 func execCmdCollectOutput(arguments []string, input string, checkTxRes bool) (string, error) {
@@ -446,6 +522,29 @@ func execCmdWithInput(arguments []string, input string) (string, bool, error) {
 	}
 
 	return extractTxHash(bz)
+}
+
+func execCmdWithInputRetEvents(arguments []string, input string) (string, sdk.Events, bool, error) {
+	cmd := exec.Command(EMCLI, arguments...)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", sdk.Events{}, false, err
+	}
+
+	_, err = io.WriteString(stdin, input+"\n")
+	if err != nil {
+		return "", sdk.Events{}, false, err
+	}
+
+	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
+	bz, err := cmd.CombinedOutput()
+	// fmt.Println(" *** CombinedOutput", string(bz))
+	if err != nil {
+		return "", sdk.Events{}, false, err
+	}
+
+	return extractTxWithEvents(bz)
 }
 
 func execCmdAndCollectResponse(arguments []string) ([]byte, error) {

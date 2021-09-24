@@ -19,7 +19,6 @@ var (
 	ErrInvalidPrice                            = sdkerrors.Register(ModuleName, 8, "insufficient source instrument quantity to pay for 1 unit of destination instrument")
 	ErrNoSourceRemaining                       = sdkerrors.Register(ModuleName, 9, "the original order has spent the entire source instrument quantity")
 	ErrUnknownAsset                            = sdkerrors.Register(ModuleName, 10, "unknown destination instrument denomination")
-	ErrUnknownOrderType                        = sdkerrors.Register(ModuleName, 11, "unknown order type")
 	ErrUnknownTimeInForce                      = sdkerrors.Register(ModuleName, 12, "unknown time in force value. Valid values are TimeInForce_GoodTillCancel, TimeInForce_FillOrKill, TimeInForce_ImmediateOrCancel")
 	ErrNoMarketDataAvailable                   = sdkerrors.Register(ModuleName, 13, "no market data available for instrument")
 	ErrInvalidSlippage                         = sdkerrors.Register(ModuleName, 14, "invalid slippage")
