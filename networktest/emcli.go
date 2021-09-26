@@ -329,10 +329,11 @@ func (cli Emcli) MarketAddLimitOrderRetEvents(key Key, source, destination, cid 
 	return execCmdWithInputRetEvents(args, KeyPwd)
 }
 
-func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid string, slippage sdk.Dec, moreflags ...string) (string, bool, error) {
+func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid string, slippage sdk.Dec, moreflags ...string) (string, sdk.Events, bool, error) {
 	args := cli.addTransactionFlags("tx", "market", "add-market", sourceDenom, destination, slippage.String(), cid, "--from", key.name)
 	args = append(args, moreflags...)
-	return execCmdWithInput(args, KeyPwd)
+
+	return execCmdWithInputRetEvents(args, KeyPwd)
 }
 
 func (cli Emcli) MarketCancelOrder(key Key, cid string) (string, bool, error) {
