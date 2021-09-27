@@ -545,10 +545,7 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	o = order(ctx.BlockTime(), acc2, "100eur", "100gbp")
 	err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
-	require.Equal(
-		t, "accept",
-		string(ctx.EventManager().Events()[0].Attributes[0].GetValue()),
-	)
+	require.True(t, findEventAttr(ctx, "accept"))
 
 	require.Equal(
 		t, ctx.BlockTime().Format(time.RFC3339),
@@ -567,10 +564,7 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	err = k.NewOrderSingle(ctx, limitOrder)
 	require.NoError(t, err)
-	require.Len(t, ctx.EventManager().Events(), 1)
-	require.Equal(t, types.EventTypeMarket, ctx.EventManager().Events()[0].Type)
-	require.Equal(t, "action", string(ctx.EventManager().Events()[0].Attributes[0].GetKey()))
-	require.Equal(t, "expire", string(ctx.EventManager().Events()[0].Attributes[0].GetValue()))
+	require.True(t, findEventAttr(ctx, "expire"))
 
 	// Last order must fail completely due to not being fillable
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -895,12 +889,7 @@ func TestGetOrdersByOwnerAndCancel(t *testing.T) {
 	allOrders3 := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, allOrders3, 3)
 
-	found := false
-	for _, e := range ctx.EventManager().ABCIEvents() {
-		found = found || (e.Type == types.EventTypeMarket && string(e.Attributes[0].GetValue()) == "expire")
-	}
-
-	require.True(t, found)
+	require.True(t, findEventAttr(ctx, "expire"))
 }
 
 func TestCancelOrders1(t *testing.T) {
