@@ -179,10 +179,14 @@ func TestMarketOrderSlippage1(t *testing.T) {
 	o = order(ctx.BlockTime(), acc2, "1eur", "1gbp")
 	err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
+	require.True(t, findEventAttr(ctx, "accept"))
 
 	o = order(ctx.BlockTime(), acc1, "1gbp", "1eur")
 	err = k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
+	require.True(t, findEventAttr(ctx, "accept"))
+	require.True(t, findEventAttr(ctx, "fill"))
+	require.True(t, findEventAttr(ctx, "expire"))
 
 	// Sell eur at various prices
 	o = order(ctx.BlockTime(), acc2, "50eur", "50gbp")
@@ -1571,4 +1575,21 @@ func snapshotAccounts(ctx sdk.Context, bk bankkeeper.ViewKeeper) (totalBalance s
 
 func randomAddress() sdk.AccAddress {
 	return tmrand.Bytes(sdk.AddrLen)
+}
+
+// findEventAttr find attr i.e. accept, fill, expire within an event attribute
+// collection
+func findEventAttr(ctx sdk.Context, eventAttr string) bool {
+	for _, event := range ctx.EventManager().ABCIEvents() {
+		if event.Type == "market" {
+			for _, evAttr := range event.Attributes {
+				if string(evAttr.Key) == "action" {
+					if string(evAttr.Value) == eventAttr {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
