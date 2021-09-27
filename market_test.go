@@ -76,16 +76,37 @@ var _ = Describe("Market", func() {
 			Expect(ir.Get("orders").Array()).To(HaveLen(10))
 		})
 
-		It("Check accompanying events are generated", func() {
+		It("Check accompanying events for all types of market orders", func() {
 			output, events, success, err := emcli.MarketAddLimitOrderRetEvents(acc1, "120eeur", "90echf", "acc1ev1")
 			Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
 			Expect(success).To(BeTrue())
-			checkTxEvents(events)
+			checkTxEvents(events, false)
 
-			_, success, err = emcli.MarketCancelOrder(acc1, "acc1ev1")
+			// A complement order from another account to be filled and check events
+			output, events, success, err = emcli.MarketAddLimitOrderRetEvents(acc2, "90echf", "120eeur", "acc2ev2")
+			Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
+			Expect(success).To(BeTrue())
+			checkTxEvents(events, true)
+
+			// Place an order that won't be filled
+			firstOrderID := "acc1ev3"
+			output, events, success, err = emcli.MarketAddLimitOrderRetEvents(acc1, "100eeur", "100echf", firstOrderID)
+			Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
+			Expect(success).To(BeTrue())
+			checkTxEvents(events, false)
+
+			// Replace order with another pessimal
+			replacingOrderID := "acc1ev4"
+			output, events, success, err = emcli.MarketCancelReplaceOrder(acc1, firstOrderID, "200eeur", "200echf", replacingOrderID)
+			Expect(err).ToNot(HaveOccurred(), "Error output: %v", output)
+			Expect(success).To(BeTrue())
+			checkTxEvents(events, false)
+
+			// Cancel last order
+			_, success, err = emcli.MarketCancelOrder(acc1, replacingOrderID)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
-			checkTxEvents(events)
+			checkTxEvents(events, false)
 		})
 
 		It("Crashing validator can catch up", func() {
@@ -237,10 +258,36 @@ var _ = Describe("Market", func() {
 	})
 })
 
-func checkTxEvents(events sdk.Events) {
-	Expect(events).To(HaveLen(2))
-	Expect(events[0].Type == "market").To(BeTrue())
-	attr0 := events[0].Attributes[0]
-	Expect(string(attr0.Key) == "action").To(BeTrue())
-	Expect(string(attr0.Value) == "accept").To(BeTrue())
+// checkTxEvents looks for the `accept` and optionally the `fill` event attributes
+func checkTxEvents(events sdk.Events, searchFill bool) {
+	const (
+		fillEventAttrValue   = "fill"
+		acceptEventAttrValue = "accept"
+	)
+
+	Expect(len(events) >= 2).To(BeTrue())
+	var foundAccept, foundFill bool
+	for _, event := range events {
+		if event.Type == "market" {
+			for _, evAttr := range event.Attributes {
+				if string(evAttr.Key) == "action" {
+					if string(evAttr.Value) == acceptEventAttrValue && !searchFill {
+						return
+					}
+					foundAccept = true
+				}
+				if searchFill {
+					if string(evAttr.Value) == fillEventAttrValue && foundAccept {
+						return
+					}
+					foundFill = true
+				}
+			}
+		}
+	}
+
+	Expect(foundAccept).To(BeTrue(), "did not find the accept event")
+	if searchFill {
+		Expect(foundFill).To(BeTrue(), "did not find the fill event")
+	}
 }

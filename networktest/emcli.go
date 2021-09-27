@@ -336,6 +336,12 @@ func (cli Emcli) MarketAddMarketOrder(key Key, sourceDenom, destination, cid str
 	return execCmdWithInputRetEvents(args, KeyPwd)
 }
 
+func (cli Emcli) MarketCancelReplaceOrder(key Key, prevCid, sourceDenom, destination, newCid string) (string, sdk.Events, bool, error) {
+	args := cli.addTransactionFlags("tx", "market", "cancelreplace", prevCid, sourceDenom, destination, newCid, "--from", key.name)
+
+	return execCmdWithInputRetEvents(args, KeyPwd)
+}
+
 func (cli Emcli) MarketCancelOrder(key Key, cid string) (string, bool, error) {
 	tx, _, success, err := cli.MarketCancelOrderRetEvents(key, cid)
 	return tx, success, err
