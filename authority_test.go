@@ -38,7 +38,7 @@ var _ = Describe("Authority", func() {
 			// denomination metadata are not set before a new issuer
 			denomList, err := emcli.QueryDenomMetadata()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(denomList).To(HaveLen(0))
+			Expect(denomList).To(HaveLen(6))
 
 			ok := nt.AuthCreatesIssuer(emcli, Authority, Issuer)
 			Expect(ok).To(BeTrue())
@@ -46,13 +46,13 @@ var _ = Describe("Authority", func() {
 			// denomination metadata are set to EEUR, EJPY
 			denomList, err = emcli.QueryDenomMetadata()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(denomList).To(HaveLen(2))
-			Expect(denomList[0].Get("base").Str).To(Equal("eeur"))
-			Expect(denomList[0].Get("display").Str).To(Equal("EEUR"))
-			Expect(denomList[0].Get("description").Str).To(Equal("e-Money EUR stablecoin"))
-			Expect(denomList[1].Get("base").Str).To(Equal("ejpy"))
-			Expect(denomList[1].Get("display").Str).To(Equal("eJPY"))
-			Expect(denomList[1].Get("description").Str).To(Equal("Japanese yen stablecoin"))
+			Expect(denomList).To(HaveLen(7))
+			Expect(denomList[2].Get("base").Str).To(Equal("eeur"))
+			Expect(denomList[2].Get("display").Str).To(Equal("EEUR"))
+			Expect(denomList[2].Get("description").Str).To(Equal("e-Money EUR stablecoin"))
+			Expect(denomList[3].Get("base").Str).To(Equal("ejpy"))
+			Expect(denomList[3].Get("display").Str).To(Equal("eJPY"))
+			Expect(denomList[3].Get("description").Str).To(Equal("Japanese yen stablecoin"))
 		})
 
 		It("imposter attempts to act as authority", func() {
@@ -74,16 +74,16 @@ var _ = Describe("Authority", func() {
 
 			denomList, err := emcli.QueryDenomMetadata()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(denomList).To(HaveLen(5))
+			Expect(denomList).To(HaveLen(7))
 			Expect(denomList[0].Get("base").Str).To(Equal("echf"))
 			Expect(denomList[0].Get("display").Str).To(Equal("eCHF"))
 			Expect(denomList[0].Get("description").Str).To(Equal("yet another stablecoin"))
 			Expect(denomList[1].Get("base").Str).To(Equal("edkk"))
 			Expect(denomList[1].Get("display").Str).To(Equal("EDKK"))
 			Expect(denomList[1].Get("description").Str).To(Equal("Coolest stablecoin"))
-			Expect(denomList[4].Get("base").Str).To(Equal("esek"))
-			Expect(denomList[4].Get("display").Str).To(Equal("eSEK"))
-			Expect(denomList[4].Get("description").Str).To(Equal("Not a bad stablecoin"))
+			Expect(denomList[5].Get("base").Str).To(Equal("esek"))
+			Expect(denomList[5].Get("display").Str).To(Equal("eSEK"))
+			Expect(denomList[5].Get("description").Str).To(Equal("Not a bad stablecoin"))
 		})
 
 		It("creates a liquidity provider", func() {
