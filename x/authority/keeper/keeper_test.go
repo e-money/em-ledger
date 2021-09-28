@@ -468,12 +468,18 @@ func (m mockInflationKeeper) AddDenoms(sdk.Context, []string) (_ *sdk.Result, _ 
 	return
 }
 
+var encodingConfig simappparams.EncodingConfig
+
 func MakeTestEncodingConfig() simappparams.EncodingConfig {
+	if encodingConfig.Amino != nil {
+		return encodingConfig
+	}
+
 	cdc := codec.NewLegacyAmino()
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	marshaler := codec.NewProtoCodec(interfaceRegistry)
 
-	encodingConfig := simappparams.EncodingConfig{
+	encodingConfig = simappparams.EncodingConfig{
 		InterfaceRegistry: interfaceRegistry,
 		Marshaler:         marshaler,
 		TxConfig:          tx.NewTxConfig(marshaler, tx.DefaultSignModes),
