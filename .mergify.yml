@@ -1,0 +1,25 @@
+pull_request_rules:
+  - name: merge to master with label automerge and one PR approval
+    conditions:
+      - "#approved-reviews-by>1"
+      - base=master
+      - label=automerge
+    actions:
+      merge:
+        method: squash
+  - name: backport master changes to develop
+    conditions:
+      - base=master
+    actions:
+      backport:
+        branches:
+          - develop
+        assignees:
+          - "{{ author }}"
+  - name: automerge to develop when a PR is approved
+    conditions:
+      - "#approved-reviews-by>1"
+      - base=develop
+    actions:
+      merge:
+        method: squash
