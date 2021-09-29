@@ -1,7 +1,7 @@
 pull_request_rules:
   - name: merge to master with label automerge and one PR approval
     conditions:
-      - "#approved-reviews-by>1"
+      - "#approved-reviews-by>0"
       - base=master
       - label=automerge
     actions:
