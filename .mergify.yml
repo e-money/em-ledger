@@ -1,7 +1,7 @@
 pull_request_rules:
   - name: merge to master with label automerge and one PR approval
     conditions:
-      - "#approved-reviews-by>0"
+      - "#approved-reviews-by>=1"
       - base=master
       - label=automerge
     actions:
@@ -16,10 +16,13 @@ pull_request_rules:
           - develop
         assignees:
           - "{{ author }}"
-  - name: automerge to develop when a PR is approved
+  - name: automerge to develop when a PR is approved or created by mergify
     conditions:
-      - "#approved-reviews-by>1"
-      - base=develop
+      - or:
+        - and:
+          - "#approved-reviews-by>=1"
+          - base=develop
+        - author=mergify[bot]
     actions:
       merge:
         method: squash
