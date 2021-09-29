@@ -409,7 +409,7 @@ func extractTxHash(bz []byte) (txhash string, success bool, err error) {
 
 func extractTxWithEvents(bz []byte) (txhash string, evList sdk.Events, success bool, err error) {
 	if !gjson.ValidBytes(bz) {
-		return "", evList, false, fmt.Errorf("extractTxHash received input that was not valid JSON:\n%v", string(bz))
+		return "", evList, false, fmt.Errorf("extractTxWithEvents received input that was not valid JSON:\n%v", string(bz))
 	}
 
 	json := gjson.ParseBytes(bz)
