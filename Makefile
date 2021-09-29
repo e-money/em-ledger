@@ -53,7 +53,7 @@ endif
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 build:
-	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+	go build $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
 
 cosmovisor:
 	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
@@ -91,7 +91,7 @@ run-single-node: clean
 	go run cmd/daemon/*.go start
 
 test:
-	go test -mod=readonly ./...
+	go test ./...
 
 bdd-test:
 	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go market_test.go buyback_test.go capacity_test.go staking_test.go upgrade_test.go

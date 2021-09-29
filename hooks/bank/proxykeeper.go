@@ -6,6 +6,7 @@ package bank
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -113,22 +114,6 @@ func (pk ProxyKeeper) IterateAllBalances(ctx sdk.Context, cb func(address sdk.Ac
 	pk.bk.IterateAllBalances(ctx, cb)
 }
 
-func (pk ProxyKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error {
-	return pk.bk.SubtractCoins(ctx, addr, amt)
-}
-
-func (pk ProxyKeeper) AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error {
-	return pk.bk.AddCoins(ctx, addr, amt)
-}
-
-func (pk ProxyKeeper) SetBalance(ctx sdk.Context, addr sdk.AccAddress, balance sdk.Coin) error {
-	return pk.bk.SetBalance(ctx, addr, balance)
-}
-
-func (pk ProxyKeeper) SetBalances(ctx sdk.Context, addr sdk.AccAddress, balances sdk.Coins) error {
-	return pk.bk.SetBalances(ctx, addr, balances)
-}
-
 func (pk ProxyKeeper) GetParams(ctx sdk.Context) banktypes.Params {
 	return pk.bk.GetParams(ctx)
 }
@@ -137,8 +122,8 @@ func (pk ProxyKeeper) SendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool {
 	return pk.bk.SendEnabledCoin(ctx, coin)
 }
 
-func (pk ProxyKeeper) SendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error {
-	return pk.bk.SendEnabledCoins(ctx, coins...)
+func (pk ProxyKeeper) IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error {
+	return pk.bk.IsSendEnabledCoins(ctx, coins...)
 }
 
 func (pk ProxyKeeper) BlockedAddr(addr sdk.AccAddress) bool {
@@ -149,8 +134,8 @@ func (pk ProxyKeeper) SetParams(ctx sdk.Context, params banktypes.Params) {
 	pk.bk.SetParams(ctx, params)
 }
 
-func (pk ProxyKeeper) GetSupply(ctx sdk.Context) exported.SupplyI {
-	return pk.bk.GetSupply(ctx)
+func (pk ProxyKeeper) GetSupply(ctx sdk.Context, denom string) sdk.Coin {
+	return pk.bk.GetSupply(ctx, denom)
 }
 
 func (pk *ProxyKeeper) InitGenesis(ctx sdk.Context, state *banktypes.GenesisState) {
@@ -161,11 +146,11 @@ func (pk *ProxyKeeper) ExportGenesis(ctx sdk.Context) *banktypes.GenesisState {
 	return pk.bk.ExportGenesis(ctx)
 }
 
-func (pk *ProxyKeeper) SetSupply(ctx sdk.Context, supply exported.SupplyI) {
-	pk.bk.SetSupply(ctx, supply)
+func (pk *ProxyKeeper) MintCoins(ctx sdk.Context, moduleName string, amounts sdk.Coins) error {
+	return pk.bk.MintCoins(ctx, moduleName, amounts)
 }
 
-func (pk *ProxyKeeper) GetDenomMetaData(ctx sdk.Context, denom string) banktypes.Metadata {
+func (pk *ProxyKeeper) GetDenomMetaData(ctx sdk.Context, denom string) (banktypes.Metadata, bool) {
 	return pk.bk.GetDenomMetaData(ctx, denom)
 }
 
@@ -215,10 +200,6 @@ func (pk *ProxyKeeper) UndelegateCoinsFromModuleToAccount(ctx sdk.Context, sende
 	}
 	pk.notifyListeners(ctx, recipientAddr)
 	return nil
-}
-
-func (pk *ProxyKeeper) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
-	return pk.bk.MintCoins(ctx, moduleName, amt)
 }
 
 func (pk *ProxyKeeper) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
