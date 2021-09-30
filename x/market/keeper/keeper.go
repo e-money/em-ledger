@@ -152,8 +152,6 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) er
 	ctx, commitTrade := ctx.CacheContext()
 
 	defer func() {
-		retEvManager.EmitEvents(ctx.EventManager().Events())
-
 		if KillOrder {
 			return
 		}
@@ -351,6 +349,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) er
 			// NOTE If this ceases to be true, move logic to func that cleans up all datastructures.
 		}
 	}
+
+	retEvManager.EmitEvents(ctx.EventManager().Events())
 
 	return nil
 }
