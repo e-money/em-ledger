@@ -7,13 +7,14 @@ package keeper
 import (
 	crand "crypto/rand"
 	"fmt"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"math"
 	"math/big"
 	"math/rand"
 	"runtime/debug"
 	"testing"
 	"time"
+
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -93,7 +94,7 @@ func TestFuzzing1(t *testing.T) {
 	})
 
 	for _, order := range allOrders {
-		_, err := k.NewOrderSingle(ctx, order)
+		err := k.NewOrderSingle(ctx, order)
 		if order.IsFilled() {
 			fmt.Println("Order is filled on creation. Ignoring.", order)
 			continue

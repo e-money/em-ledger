@@ -2,6 +2,10 @@ package buyback
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -15,9 +19,6 @@ import (
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"strings"
-	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -141,7 +142,7 @@ func TestBuyback3(t *testing.T) {
 	// Generate some prices for the pesos <-> ungm instrument
 	acc2 := createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
 
-	_, err := market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
+	err := market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
 	require.NoError(t, err)
 
 	// Attempt to create a position using the meager pesos balance of the module

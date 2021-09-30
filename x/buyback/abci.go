@@ -2,6 +2,7 @@ package buyback
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	markettypes "github.com/e-money/em-ledger/x/market/types"
@@ -51,14 +52,9 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 			continue
 		}
 
-		result, err := k.SendOrderToMarket(ctx, order)
-		if err != nil {
+		if err := k.SendOrderToMarket(ctx, order); err != nil {
 			ctx.Logger().Error("Error sending buyback order to market", "err", err)
 			continue
-		}
-
-		for _, ev := range result.Events {
-			ctx.EventManager().EmitEvent(sdk.Event(ev))
 		}
 	}
 
