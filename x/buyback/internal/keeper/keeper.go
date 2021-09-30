@@ -41,8 +41,7 @@ func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
 	orders := k.marketKeeper.GetOrdersByOwner(ctx, buybackAccount)
 
 	for _, order := range orders {
-		result, err := k.marketKeeper.CancelOrder(ctx, buybackAccount, order.ClientOrderID)
-		if err != nil {
+		if err := k.marketKeeper.CancelOrder(ctx, buybackAccount, order.ClientOrderID); err != nil {
 			ctx.Logger().Error(
 				fmt.Sprintf(
 					"The buyback module could not create market order %s, error:%v",
@@ -52,13 +51,10 @@ func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
 
 			return
 		}
-		for _, ev := range result.Events {
-			ctx.EventManager().EmitEvent(sdk.Event(ev))
-		}
 	}
 }
 
-func (k Keeper) SendOrderToMarket(ctx sdk.Context, order market.Order) (*sdk.Result, error) {
+func (k Keeper) SendOrderToMarket(ctx sdk.Context, order market.Order) error {
 	return k.marketKeeper.NewOrderSingle(ctx, order)
 }
 
