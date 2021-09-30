@@ -22,7 +22,9 @@ pull_request_rules:
         - and:
           - "#approved-reviews-by>=1"
           - base=develop
-        - author=mergify[bot]
+        - and:
+          - author=mergify[bot]
+          - base!=master
     actions:
       merge:
         method: squash
