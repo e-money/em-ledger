@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -42,6 +43,9 @@ func NewAppModule(k keeper.Keeper, bk types.BankKeeper) AppModule {
 		bankKeeper:     bk,
 	}
 }
+
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 func (amb AppModuleBasic) Name() string {
 	return ModuleName

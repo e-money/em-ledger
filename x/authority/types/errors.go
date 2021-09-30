@@ -17,4 +17,5 @@ var (
 	ErrUnknownDenom          = sdkerrors.Register(ModuleName, 6, "Unknown denomination specified")
 	ErrMissingFlag           = sdkerrors.Register(ModuleName, 7, "missing flag")
 	ErrPlanTimeIsSet         = sdkerrors.Register(ModuleName, 8, "upgrade plan cannot set time")
+	ErrGetTotalSupply        = sdkerrors.Register(ModuleName, 9, "GetPaginatedSupply() erred")
 )

@@ -113,6 +113,9 @@ func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, ak types.AccountKee
 	}
 }
 
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
+
 // Name returns the staking module's name.
 func (AppModule) Name() string {
 	return types.ModuleName

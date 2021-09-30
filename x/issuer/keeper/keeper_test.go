@@ -85,12 +85,14 @@ func TestAddIssuer(t *testing.T) {
 }
 
 func denomNotFound(ctx sdk.Context, t *testing.T, bk types.BankKeeper, denom string) {
-	stateDenom := bk.GetDenomMetaData(ctx, denom)
+	stateDenom, ok := bk.GetDenomMetaData(ctx, denom)
+	require.False(t, ok)
 	require.Empty(t, stateDenom.Base)
 }
 
 func denomFound(ctx sdk.Context, t *testing.T, bk types.BankKeeper, denom string) {
-	stateDenom := bk.GetDenomMetaData(ctx, denom)
+	stateDenom, ok := bk.GetDenomMetaData(ctx, denom)
+	require.True(t, ok)
 	require.NotEmpty(t, stateDenom.Base)
 }
 

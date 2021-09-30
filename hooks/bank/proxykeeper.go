@@ -7,8 +7,9 @@ package bank
 import (
 	"context"
 
+	"github.com/cosmos/cosmos-sdk/types/query"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -78,6 +79,15 @@ func (pk ProxyKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr
 	return nil
 }
 
+func (pk *ProxyKeeper) GetPaginatedTotalSupply(ctx sdk.Context, pagination *query.PageRequest,
+) (sdk.Coins, *query.PageResponse, error) {
+	return pk.bk.GetPaginatedTotalSupply(ctx, pagination)
+}
+
+func (pk *ProxyKeeper) IterateTotalSupply(ctx sdk.Context, cb func(sdk.Coin) bool) {
+	pk.bk.IterateTotalSupply(ctx, cb)
+}
+
 func (pk ProxyKeeper) ValidateBalance(ctx sdk.Context, addr sdk.AccAddress) error {
 	return pk.bk.ValidateBalance(ctx, addr)
 }
@@ -118,8 +128,8 @@ func (pk ProxyKeeper) GetParams(ctx sdk.Context) banktypes.Params {
 	return pk.bk.GetParams(ctx)
 }
 
-func (pk ProxyKeeper) SendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool {
-	return pk.bk.SendEnabledCoin(ctx, coin)
+func (pk ProxyKeeper) IsSendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool {
+	return pk.bk.IsSendEnabledCoin(ctx, coin)
 }
 
 func (pk ProxyKeeper) IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error {
@@ -222,14 +232,6 @@ func (pk *ProxyKeeper) UndelegateCoins(ctx sdk.Context, moduleAccAddr, delegator
 	}
 	pk.notifyListeners(ctx, delegatorAddr)
 	return nil
-}
-
-func (pk *ProxyKeeper) MarshalSupply(supplyI exported.SupplyI) ([]byte, error) {
-	return pk.bk.MarshalSupply(supplyI)
-}
-
-func (pk *ProxyKeeper) UnmarshalSupply(bz []byte) (exported.SupplyI, error) {
-	return pk.bk.UnmarshalSupply(bz)
 }
 
 func (pk *ProxyKeeper) Balance(ctx context.Context, request *banktypes.QueryBalanceRequest) (*banktypes.QueryBalanceResponse, error) {

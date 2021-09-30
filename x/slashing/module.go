@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	sdkslashing "github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/e-money/em-ledger/x/slashing/keeper"
 	"github.com/e-money/em-ledger/x/slashing/types"
@@ -107,7 +108,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, ak sdkslashingtypes.AccountKeeper, bk sdkslashingtypes.BankKeeper, sk sdkstakingkeeper.Keeper) AppModule {
+func NewAppModule(cdc codec.BinaryCodec, keeper keeper.Keeper, ak sdkslashingtypes.AccountKeeper, bk sdkslashingtypes.BankKeeper, sk sdkstakingkeeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{cdc: cdc},
 		keeper:         keeper,
@@ -116,6 +117,9 @@ func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, ak sdkslashingtypes
 		stakingKeeper:  sk,
 	}
 }
+
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // Name returns the slashing module's name.
 func (AppModule) Name() string {

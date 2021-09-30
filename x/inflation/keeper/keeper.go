@@ -6,6 +6,9 @@ package keeper
 
 import (
 	"fmt"
+	"math"
+
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +18,7 @@ import (
 )
 
 type Keeper struct {
-	cdc           codec.BinaryMarshaler
+	cdc           codec.BinaryCodec
 	storeKey      sdk.StoreKey
 	supplyKeeper  types.BankKeeper
 	stakingKeeper types.StakingKeeper
@@ -26,7 +29,10 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc codec.BinaryMarshaler, key sdk.StoreKey, bankKeeper types.BankKeeper, accountKeeper types.AccountKeeper, stakingKeeper types.StakingKeeper, coinTokenDestination, stakingTokenDestination string) Keeper {
+	cdc codec.BinaryCodec, key sdk.StoreKey, bankKeeper types.BankKeeper,
+	accountKeeper types.AccountKeeper, stakingKeeper types.StakingKeeper,
+	coinTokenDestination, stakingTokenDestination string,
+) Keeper {
 
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the inflation module account has not been set")
@@ -58,13 +64,13 @@ func (k Keeper) GetState(ctx sdk.Context) (is types.InflationState) {
 		panic("stored inflation state should not have been nil")
 	}
 
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &is)
+	k.cdc.MustUnmarshalLengthPrefixed(b, &is)
 	return
 }
 
 func (k Keeper) SetState(ctx sdk.Context, is types.InflationState) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(&is)
+	b := k.cdc.MustMarshalLengthPrefixed(&is)
 	store.Set(types.MinterKey, b)
 }
 
@@ -106,8 +112,10 @@ func (k Keeper) AddDenoms(ctx sdk.Context, denoms []string) (*sdk.Result, error)
 	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
-func (k Keeper) TotalTokenSupply(ctx sdk.Context) sdk.Coins {
-	return k.supplyKeeper.GetSupply(ctx).GetTotal()
+func (k Keeper) TotalTokenSupply(ctx sdk.Context) (sdk.Coins, error) {
+	// TotalSupply removed https://github.com/cosmos/cosmos-sdk/pull/8798#discussion_r599867976
+	totalSupply, _, err := k.supplyKeeper.GetPaginatedTotalSupply(ctx, &query.PageRequest{Limit: math.MaxUint64})
+	return totalSupply, err
 }
 
 // MintCoins implements an alias call to the underlying supply keeper's

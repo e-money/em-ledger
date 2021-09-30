@@ -5,6 +5,7 @@
 package inflation
 
 import (
+	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -36,7 +37,11 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 		return
 	}
 
-	totalTokenSupply := k.TotalTokenSupply(ctx)
+	totalTokenSupply, err := k.TotalTokenSupply(ctx)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("Inflation module error from bank.GetPaginatedTotalSupply() %v", err))
+		return
+	}
 
 	mintedCoins := applyInflation(&state, totalTokenSupply, blockTime)
 	state.LastAppliedHeight = sdk.NewInt(ctx.BlockHeight())
