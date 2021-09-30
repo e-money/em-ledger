@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -41,7 +42,14 @@ func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
 
 	for _, order := range orders {
 		if err := k.marketKeeper.CancelOrder(ctx, buybackAccount, order.ClientOrderID); err != nil {
-			panic(err)
+			ctx.Logger().Error(
+				fmt.Sprintf(
+					"The buyback module could not create market order %s, error:%v",
+					order.String(), err,
+				),
+			)
+
+			return
 		}
 	}
 }
