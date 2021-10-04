@@ -16,13 +16,13 @@ import (
 )
 
 type Keeper struct {
-	cdc        codec.BinaryMarshaler
+	cdc        codec.BinaryCodec
 	storeKey   sdk.StoreKey
 	bankKeeper types.BankKeeper
 }
 
 func NewKeeper(
-	cdc codec.BinaryMarshaler, key sdk.StoreKey, bk types.BankKeeper,
+	cdc codec.Codec, key sdk.StoreKey, bk types.BankKeeper,
 ) Keeper {
 	return Keeper{
 		cdc:        cdc,
@@ -40,7 +40,7 @@ func (k Keeper) SetLiquidityProviderAccount(
 	ctx sdk.Context, prov *types.LiquidityProviderAccount,
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.ProviderKeyPrefix)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(prov)
+	bz := k.cdc.MustMarshalLengthPrefixed(prov)
 	store.Set([]byte(prov.Address), bz)
 }
 
@@ -55,7 +55,7 @@ func (k Keeper) GetLiquidityProviderAccount(ctx sdk.Context, address sdk.AccAddr
 		return nil
 	}
 
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &prov)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &prov)
 	return &prov
 }
 
@@ -76,7 +76,7 @@ func (k Keeper) IterateProviders(
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var prov types.LiquidityProviderAccount
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &prov)
+		k.cdc.MustUnmarshalLengthPrefixed(iterator.Value(), &prov)
 
 		if cb(prov) {
 			break

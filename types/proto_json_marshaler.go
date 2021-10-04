@@ -11,7 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-var _ codec.JSONMarshaler = (*ProtoJsonMarshaller)(nil)
+var _ codec.JSONCodec = (*ProtoJsonMarshaller)(nil)
 
 // ProtoJsonMarshaller that omits empty values
 type ProtoJsonMarshaller struct {

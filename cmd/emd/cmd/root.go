@@ -18,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -45,7 +44,7 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 	apptypes.ConfigureSDK()
 
 	initClientCtx := client.Context{}.
-		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithLegacyAmino(encodingConfig.Amino).
@@ -75,7 +74,7 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 				return err
 			}
 
-			if err := server.InterceptConfigsPreRunHandler(cmd); err != nil {
+			if err := server.InterceptConfigsPreRunHandler(cmd, "", nil); err != nil {
 				return err
 			}
 
@@ -102,8 +101,6 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 
 func initRootCmd(rootCmd *cobra.Command, encodingConfig emoney.EncodingConfig) {
 	// todo (reviewer): this are the sdk defaults + emoney modules
-
-	authclient.Codec = encodingConfig.Marshaler
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(emoney.ModuleBasics, emoney.DefaultNodeHome),

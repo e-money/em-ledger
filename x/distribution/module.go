@@ -47,7 +47,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 }
 
 // DefaultGenesis returns default genesis state as raw bytes for the distribution module.
-func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	state := distrtypes.DefaultGenesisState()
 	state.Params.CommunityTax = sdk.ZeroDec()
 	return cdc.MustMarshalJSON(state)

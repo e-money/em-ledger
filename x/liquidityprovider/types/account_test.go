@@ -71,11 +71,11 @@ func TestMarshalUnmarshal(t *testing.T) {
 	RegisterInterfaces(interfaceRegistry)
 
 	// encode
-	bz, err := marshaler.MarshalBinaryBare(src)
+	bz, err := marshaler.Marshal(src)
 	require.NoError(t, err)
 	// and decode to type
 	var dest LiquidityProviderAccount
-	err = marshaler.UnmarshalBinaryBare(bz, &dest)
+	err = marshaler.Unmarshal(bz, &dest)
 	require.NoError(t, err)
 	assert.Equal(t, src, &dest)
 	assert.Equal(t, myAddr.String(), dest.Address)

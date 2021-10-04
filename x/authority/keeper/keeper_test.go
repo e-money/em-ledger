@@ -359,7 +359,7 @@ func TestManageGasPrices2(t *testing.T) {
 
 	// Manually write gas prices to appstate, circumventing the keeper
 	setGasPrices := func(gp sdk.DecCoins) {
-		bz := encConfig.Marshaler.MustMarshalBinaryLengthPrefixed(&types.GasPrices{Minimum: gp})
+		bz := encConfig.Marshaler.MustMarshalLengthPrefixed(&types.GasPrices{Minimum: gp})
 		store := ctx.KVStore(keeper.storeKey)
 		store.Set([]byte(keyGasPrices), bz)
 	}

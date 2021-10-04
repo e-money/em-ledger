@@ -54,7 +54,7 @@ func BeginBlocker(ctx sdk.Context, k Keeper) {
 
 	k.Logger(ctx).Info("Inflation minted coins", toKeyValuePairs(mintedCoins)...)
 
-	err := k.MintCoins(ctx, mintedCoins)
+	err = k.MintCoins(ctx, mintedCoins)
 	if err != nil {
 		panic(err)
 	}

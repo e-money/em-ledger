@@ -42,7 +42,7 @@ type Keeper struct {
 	appstateInit *sync.Once
 }
 
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
+func NewKeeper(cdc codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,

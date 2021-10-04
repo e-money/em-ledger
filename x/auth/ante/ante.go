@@ -25,9 +25,10 @@ func NewAnteHandler(
 		sdkante.TxTimeoutHeightDecorator{},
 		sdkante.NewValidateMemoDecorator(ak),
 		sdkante.NewConsumeGasForTxSizeDecorator(ak),
-		sdkante.NewRejectFeeGranterDecorator(),
 		sdkante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
 		sdkante.NewValidateSigCountDecorator(ak),
+		// TODO review and reconcile new sdk DeductFeeDecorator next 2 lines
+		// sdkante.NewDeductFeeDecorator(ak, bankKeeper, nil),
 		NewDeductFeeDecorator(ak, bankKeeper, stakingKeeper),
 		sdkante.NewSigGasConsumeDecorator(ak, sigGasConsumer),
 		sdkante.NewSigVerificationDecorator(ak, signModeHandler),

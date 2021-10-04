@@ -22,13 +22,13 @@ func TestSerialization(t *testing.T) {
 	order1.DestinationFilled = sdk.NewInt(50)
 	order1.TimeInForce = TimeInForce_FillOrKill
 
-	bz, err := ModuleCdc.MarshalBinaryBare(&order1)
+	bz, err := ModuleCdc.Marshal(&order1)
 	require.NoError(t, err)
 
 	require.True(t, len(bz) > 0)
 
 	order2 := Order{}
-	err = ModuleCdc.UnmarshalBinaryBare(bz, &order2)
+	err = ModuleCdc.Unmarshal(bz, &order2)
 	require.NoError(t, err)
 
 	// Some sanity checks to ensure we're not just comparing default values below.
@@ -84,12 +84,12 @@ func TestMarketDataSerialization1(t *testing.T) {
 		Timestamp:   nil,
 	}
 
-	bz, err := ModuleCdc.MarshalBinaryBare(&md)
+	bz, err := ModuleCdc.Marshal(&md)
 	require.NoError(t, err)
 
 	md2 := MarketData{}
 
-	err = ModuleCdc.UnmarshalBinaryBare(bz, &md2)
+	err = ModuleCdc.Unmarshal(bz, &md2)
 	require.NoError(t, err)
 
 	// Amino serialization converts nil time.Time pointers to Unix epoch.
@@ -106,12 +106,12 @@ func TestMarketDataSerialization2(t *testing.T) {
 		Timestamp:   &ts,
 	}
 
-	bz, err := ModuleCdc.MarshalBinaryBare(&md)
+	bz, err := ModuleCdc.Marshal(&md)
 	require.NoError(t, err)
 
 	md2 := MarketData{}
 
-	err = ModuleCdc.UnmarshalBinaryBare(bz, &md2)
+	err = ModuleCdc.Unmarshal(bz, &md2)
 	require.NoError(t, err)
 
 	ts = ts.UTC()

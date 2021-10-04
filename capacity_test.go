@@ -138,7 +138,7 @@ func sendTx(fromKey, toKey nt.Key, amount sdk.Coins, chainID string) (string, er
 	}
 
 	clientCtx := client.Context{}.
-		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithJSONCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithLegacyAmino(encodingConfig.Amino).

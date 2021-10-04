@@ -23,7 +23,7 @@ var (
 
 type HistoryKeeper struct {
 	storeKey      sdk.StoreKey
-	cdc           codec.BinaryMarshaler
+	cdc           codec.BinaryCodec
 	stakingKeeper staking.StakingKeeper
 	database      dbm.DB
 }
@@ -36,7 +36,7 @@ func getHistoricalInfoKey(height int64) []byte {
 }
 
 // NewKeeper creates a new staking Keeper instance
-func NewHistoryKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, stakingkeeper staking.StakingKeeper, db dbm.DB) HistoryKeeper {
+func NewHistoryKeeper(cdc codec.Codec, key sdk.StoreKey, stakingkeeper staking.StakingKeeper, db dbm.DB) HistoryKeeper {
 	return HistoryKeeper{
 		storeKey:      key,
 		cdc:           cdc,
@@ -70,7 +70,7 @@ func (k HistoryKeeper) SetHistoricalInfo(ctx sdk.Context, height int64, hi *type
 	}
 
 	key := getHistoricalInfoKey(height)
-	value := k.cdc.MustMarshalBinaryBare(hi)
+	value := k.cdc.MustMarshal(hi)
 	batch.Set(key, value)
 }
 
@@ -143,7 +143,7 @@ func (k HistoryKeeper) TrackHistoricalInfo(ctx sdk.Context) {
 
 	// Create HistoricalInfo struct
 	lastVals := k.stakingKeeper.GetLastValidators(ctx)
-	historicalEntry := types.NewHistoricalInfo(ctx.BlockHeader(), lastVals)
+	historicalEntry := types.NewHistoricalInfo(ctx.BlockHeader(), lastVals, sdk.DefaultPowerReduction)
 
 	// Set latest HistoricalInfo at current height
 	k.SetHistoricalInfo(ctx, ctx.BlockHeight(), &historicalEntry)

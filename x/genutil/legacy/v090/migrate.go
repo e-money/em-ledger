@@ -54,7 +54,7 @@ func Migrate(appState types.AppMap, clientCtx client.Context) types.AppMap {
 
 	v09liquidityprovider.RegisterLegacyAminoCodec(v09Codec)
 
-	v040Codec := clientCtx.JSONMarshaler
+	v040Codec := clientCtx.JSONCodec
 
 	if appState[v038bank.ModuleName] != nil {
 		// unmarshal relative source genesis application state

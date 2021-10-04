@@ -1377,7 +1377,7 @@ func TestTimeInForceIO(t *testing.T) {
 	encodingConfig := MakeTestEncodingConfig()
 
 	clientCtx := client.Context{}.
-		WithJSONMarshaler(encodingConfig.Marshaler).
+		WithJSONCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithLegacyAmino(encodingConfig.Amino).

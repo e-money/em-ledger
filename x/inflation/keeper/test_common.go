@@ -34,7 +34,7 @@ import (
 
 type testInput struct {
 	ctx        sdk.Context
-	cdc        codec.Marshaler
+	cdc        codec.Codec
 	mintKeeper Keeper
 	encConfig  simappparams.EncodingConfig
 }

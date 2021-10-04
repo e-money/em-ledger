@@ -36,7 +36,7 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc codec.BinaryCodec, storeKey sdk.StoreKey, lpk lp.Keeper,
+	cdc codec.Codec, storeKey sdk.StoreKey, lpk lp.Keeper,
 	ik types.InflationKeeper, bk types.BankKeeper,
 ) Keeper {
 	return Keeper{

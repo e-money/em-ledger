@@ -40,7 +40,7 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc codec.BinaryCodec, storeKey sdk.StoreKey,
+	cdc codec.Codec, storeKey sdk.StoreKey,
 	issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper,
 	gasPricesKeeper types.GasPricesKeeper, upgradeKeeper types.UpgradeKeeper,
 ) Keeper {

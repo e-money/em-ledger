@@ -99,7 +99,7 @@ $ %s migrate v0.9 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=20
 			if !noUpgrade {
 				genDoc.ConsensusParams.Evidence.MaxBytes = 4194304
 
-				upgradeModuleParams(clientCtx.JSONMarshaler, newGenState)
+				upgradeModuleParams(clientCtx.JSONCodec, newGenState)
 			}
 
 			genDoc.AppState, err = json.Marshal(newGenState)
