@@ -4,12 +4,17 @@
 
 The e-Money Ledger, a proof-of-stake blockchain based on the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and [Tendermint](https://github.com/tendermint/tendermint), introduces our novel interest-bearing, currency-backed tokens into the [Cosmos Network](https://cosmos.network).
 
-## Build Instructions
+## Quickstart Instructions
+
+This will get you a fully synced node, very quickly.
 
 ```bash
 git clone https://github.com/e-money/em-ledger.git
 cd em-ledger
-make build
+make install
+emd init choose-a-cool-name
+wget -O ~/.emd/config/genesis.json https://github.com/e-money/networks/raw/master/emoney-3/genesis.json
+emd start --p2p.persistent_peers 17533be7691494a0bc2dbd174930fa6a57b5b98c@3.69.44.220:28656,3f6ce97077a9bddd6dd637cd64c140eabdebbda5@3.68.159.237:28656,ecec8933d80da5fccda6bdd72befe7e064279fc1@207.180.213.123:26676,0ad7bc7687112e212bac404670aa24cd6116d097@50.18.83.75:26656,1723e34f45f54584f44d193ce9fd9c65271ca0b3@13.124.62.83:26656
 ```
 
 ## Getting Started
