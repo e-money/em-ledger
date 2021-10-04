@@ -432,7 +432,18 @@ func NewApp(
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
+
+	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	// TODO hack to initialize application
+	// from sdk.bank/module.go: AppModule RegisterServices
+	// 	m := keeper.NewMigrator(am.keeper.(keeper.BaseKeeper))
+	sdkBk := app.bankKeeper.GetBankKeeper()
+	bankMigModule := bank.NewAppModule(appCodec, *sdkBk, app.accountKeeper)
+	proxy := app.mm.Modules[banktypes.ModuleName]
+	app.mm.Modules[banktypes.ModuleName] = bankMigModule
 	app.mm.RegisterServices(app.configurator)
+
+	app.mm.Modules[banktypes.ModuleName] = proxy
 
 	// initialize stores
 	app.MountKVStores(keys)

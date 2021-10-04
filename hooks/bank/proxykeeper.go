@@ -261,3 +261,7 @@ func (pk *ProxyKeeper) DenomMetadata(ctx context.Context, request *banktypes.Que
 func (pk *ProxyKeeper) DenomsMetadata(ctx context.Context, request *banktypes.QueryDenomsMetadataRequest) (*banktypes.QueryDenomsMetadataResponse, error) {
 	return pk.bk.DenomsMetadata(ctx, request)
 }
+
+func (pk *ProxyKeeper) GetBankKeeper() *bankkeeper.Keeper {
+	return &pk.bk
+}
