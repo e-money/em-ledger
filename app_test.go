@@ -2,6 +2,7 @@ package emoney
 
 import (
 	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"os"
 	"sync"
 	"testing"
@@ -18,15 +19,22 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
 
 var configOnce sync.Once
 
+func mustGetAccAddress(addr string) sdk.AccAddress {
+	acc, err := sdk.AccAddressFromBech32(addr)
+	if err != nil {
+		panic(err)
+	}
+	return acc
+}
+
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {
-	encCfg, db, app, _ := getEmSimApp(t, rand.Bytes(sdk.AddrLen))
+	encCfg, db, app, _ := getEmSimApp(t, mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn"))
 	app.Commit()
 
 	// Making a new app object with the db, so that initchain hasn't been called
@@ -256,7 +264,10 @@ func Test_Upgrade(t *testing.T) {
 				Height: 123450000,
 			},
 			setupUpgCond: func(simEmApp emAppTests, plan *upgradetypes.Plan) {
-				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, _ upgradetypes.Plan) {})
+				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, upgradeHandler upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+					return vm, nil
+				})
+
 				simEmApp.app.upgradeKeeper.ApplyUpgrade(
 					simEmApp.ctx, upgradetypes.Plan{
 						Name:   "all-good",
@@ -396,7 +407,9 @@ func executePlan(
 	ctx sdk.Context, t *testing.T, uk upgradekeeper.Keeper, ak authority.Keeper,
 	plan upgradetypes.Plan,
 ) {
-	uk.SetUpgradeHandler(plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
+	uk.SetUpgradeHandler(plan.Name, func(_ sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		return vm, nil
+	})
 
 	uk.ApplyUpgrade(ctx, plan)
 

@@ -17,7 +17,9 @@ import (
 const (
 	ModuleName   = "market"
 	StoreKey     = ModuleName
-	StoreKeyIdx  = "market_indices"
+	// StoreKeyIdx 0.44 SDK forced rename: market_indices -> indices_market. A
+	// store key cannot use a shared prefix i.e. market.
+	StoreKeyIdx  = "indices_market"
 	RouterKey    = ModuleName
 	QuerierRoute = ModuleName
 
