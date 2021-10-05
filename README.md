@@ -16,7 +16,7 @@ make build
 
 To better understand em-ledger, start with a [quick tour](docs/emd.md) of the `emd` command line interface.
 
-The [emoneyjs library](https://github.com/e-money/emoneyjs) is the recommended way for client applications to interact with em-ledger.
+The [@e-money/client.js](https://www.npmjs.com/package/@e-money/client.js) NPM is the recommended way for client applications to interact with em-ledger.
 
 _Please notice that it is highly recommended to use a [Ledger Device](docs/ledger.md) to securely manage keys._
 
