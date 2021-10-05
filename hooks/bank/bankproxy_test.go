@@ -19,9 +19,9 @@ import (
 
 func TestDeduplicate(t *testing.T) {
 	var (
-		addr1 = bytes.Repeat([]byte{0x1}, sdk.AddrLen)
-		addr2 = bytes.Repeat([]byte{0x2}, sdk.AddrLen)
-		addr3 = bytes.Repeat([]byte{0x3}, sdk.AddrLen)
+		addr1 = bytes.Repeat([]byte{0x1}, 20)
+		addr2 = bytes.Repeat([]byte{0x2}, 20)
+		addr3 = bytes.Repeat([]byte{0x3}, 20)
 	)
 	specs := map[string]struct {
 		src []sdk.AccAddress
@@ -728,7 +728,7 @@ func (m senderBankKeeperMock) UndelegateCoins(ctx sdk.Context, moduleAccAddr, de
 }
 
 func randomAddress() sdk.AccAddress {
-	return rand.Bytes(sdk.AddrLen)
+	return rand.Bytes(20)
 }
 
 func coins(s string) sdk.Coins {

@@ -11,10 +11,12 @@ import (
 	"testing"
 )
 
+var accAddress = sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
+
 func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 	var (
-		issuerAddr               = randomAccAddress()
-		lpAddr                   = randomAccAddress()
+		issuerAddr               = accAddress
+		lpAddr                   = accAddress
 		gotIssuer                sdk.AccAddress
 		gotLiquidityProviderAddr string
 		gotMintableIncrease      sdk.Coins
@@ -115,8 +117,8 @@ func TestIncreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 
 func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 	var (
-		issuerAddr               = randomAccAddress()
-		lpAddr                   = randomAccAddress()
+		issuerAddr               = accAddress
+		lpAddr                   = accAddress
 		gotIssuer                sdk.AccAddress
 		gotLiquidityProviderAddr string
 		gotMintableDecrease      sdk.Coins
@@ -217,7 +219,7 @@ func TestDecreaseMintableAmountOfLiquidityProvider(t *testing.T) {
 
 func TestSetInflationRate(t *testing.T) {
 	var (
-		issuerAddr       = randomAccAddress()
+		issuerAddr       = accAddress
 		gotIssuer        sdk.AccAddress
 		gotInflationRate sdk.Dec
 		gotDenom         string

@@ -39,7 +39,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	keeper.SetParams(ctx, keeperTestParams())
 
 	power := int64(100)
-	amt := sdk.TokensFromConsensusPower(power)
+	amt := sdk.TokensFromConsensusPower(power, sdk.OneInt())
 	addr, val := addrs[0], pks[0]
 	consAddr := sdk.ConsAddress(val.Address())
 	var blockTimes []time.Time
@@ -244,7 +244,7 @@ func TestHandleNewValidator(t *testing.T) {
 	keeper.SetParams(ctx, keeperTestParams())
 
 	addr, val := addrs[0], pks[0]
-	amt := sdk.TokensFromConsensusPower(100)
+	amt := sdk.TokensFromConsensusPower(100, sdk.OneInt())
 	sh := staking.NewHandler(sk)
 
 	// 1000 first blocks not a validator
@@ -286,7 +286,7 @@ func TestHandleNewValidator(t *testing.T) {
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, stakingtypes.Bonded, validator.GetStatus())
 	bondPool := sk.GetBondedPool(ctx)
-	expTokens := sdk.TokensFromConsensusPower(100)
+	expTokens := sdk.TokensFromConsensusPower(100, sdk.OneInt())
 	require.Equal(t, expTokens.Int64(), bk.GetAllBalances(ctx, bondPool.GetAddress()).AmountOf(sk.BondDenom(ctx)).Int64())
 }
 
@@ -299,7 +299,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	keeper.SetParams(ctx, keeperTestParams())
 
 	power := int64(100)
-	amt := sdk.TokensFromConsensusPower(power)
+	amt := sdk.TokensFromConsensusPower(power, sdk.OneInt())
 	addr, val := addrs[0], pks[0]
 	sh := staking.NewHandler(sk)
 	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
@@ -307,7 +307,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 	require.NoError(t, err)
 	staking.EndBlocker(ctx, sk)
 
-	preSlashingSupply := bk.GetSupply(ctx)
+	preSlashingSupply := getTotalSupply(t, ctx, bk)
 
 	// 1000 first blocks OK
 	height := int64(0)
@@ -364,8 +364,8 @@ func TestHandleAlreadyJailed(t *testing.T) {
 
 	// Verify that slashed tokens have been burned
 	slashingPenalty := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).TruncateInt()
-	totalSupplyAfter := bk.GetSupply(ctx).GetTotal().AmountOf("stake")
-	require.Equal(t, preSlashingSupply.GetTotal().AmountOf("stake").Sub(slashingPenalty), totalSupplyAfter)
+	totalSupplyAfter := getTotalSupply(t, ctx, bk).AmountOf("stake")
+	require.Equal(t, preSlashingSupply.AmountOf("stake").Sub(slashingPenalty), totalSupplyAfter)
 }
 
 // Test a validator dipping in and out of the validator set
@@ -384,7 +384,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	params.MaxValidators = 1
 	sk.SetParams(ctx, params)
 	power := int64(100)
-	amt := sdk.TokensFromConsensusPower(power)
+	amt := sdk.TokensFromConsensusPower(power, sdk.OneInt())
 	addr, val := addrs[0], pks[0]
 	consAddr := sdk.ConsAddress(addr)
 	sh := staking.NewHandler(sk)
@@ -408,7 +408,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	}
 
 	// kick first validator out of validator set
-	newAmt := sdk.TokensFromConsensusPower(101)
+	newAmt := sdk.TokensFromConsensusPower(101, sdk.OneInt())
 	_, err = sh(ctx, NewTestMsgCreateValidator(addrs[1], pks[1], newAmt))
 	require.NoError(t, err)
 	validatorUpdates := staking.EndBlocker(ctx, sk)
@@ -422,7 +422,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(0))
 
 	// validator added back in
-	delTokens := sdk.TokensFromConsensusPower(50)
+	delTokens := sdk.TokensFromConsensusPower(50, sdk.OneInt())
 	_, err = sh(ctx, stakingtypes.NewMsgDelegate(sdk.AccAddress(addrs[2]), addrs[0], sdk.NewCoin(sk.GetParams(ctx).BondDenom, delTokens)))
 	require.NoError(t, err)
 	validatorUpdates = staking.EndBlocker(ctx, sk)

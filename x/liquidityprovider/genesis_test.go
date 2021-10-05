@@ -5,7 +5,6 @@ import (
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/stretchr/testify/require"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tidwall/gjson"
 	"testing"
 )
@@ -69,7 +68,7 @@ func TestSerialize(t *testing.T) {
 	gs := &types.GenesisState{
 		Accounts: []types.GenesisAcc{
 			{
-				Address: randomAddress().String(),
+				Address: "emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv",
 				Mintable: sdk.Coins{
 					sdk.Coin{
 						Denom:  "eeur",
@@ -82,7 +81,7 @@ func TestSerialize(t *testing.T) {
 				},
 			},
 			{
-				Address: randomAddress().String(),
+				Address: "emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv",
 				Mintable: sdk.Coins{
 					sdk.Coin{
 						Denom:  "esek",
@@ -101,8 +100,4 @@ func TestSerialize(t *testing.T) {
 
 	require.Len(t, doc.Get("accounts.0.mintable").Array(), 2)
 	require.Len(t, doc.Get("accounts.1.mintable").Array(), 1)
-}
-
-func randomAddress() sdk.AccAddress {
-	return tmrand.Bytes(sdk.AddrLen)
 }

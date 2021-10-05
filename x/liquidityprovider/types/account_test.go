@@ -12,7 +12,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/libs/rand"
 	"testing"
 )
 
@@ -59,7 +58,7 @@ func MustParseCoins(coins string) sdk.Coins {
 }
 
 func TestMarshalUnmarshal(t *testing.T) {
-	var myAddr sdk.AccAddress = rand.Bytes(sdk.AddrLen)
+	var myAddr sdk.AccAddress = sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
 	nestedAcc := authtypes.NewBaseAccountWithAddress(myAddr)
 	mintableCoins := sdk.NewCoins(sdk.NewCoin("alx", sdk.NewInt(123)))
 	src, err := NewLiquidityProviderAccount(nestedAcc.GetAddress().String(), mintableCoins)
@@ -82,7 +81,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 }
 func TestValidate(t *testing.T) {
 	var (
-		randomAddress sdk.AccAddress = rand.Bytes(sdk.AddrLen)
+		randomAddress sdk.AccAddress = sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
 	)
 
 	specs := map[string]struct {

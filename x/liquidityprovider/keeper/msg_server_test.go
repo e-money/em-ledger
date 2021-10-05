@@ -210,5 +210,5 @@ func (m lpKeeperMock) BurnTokensFromBalance(ctx sdk.Context, liquidityProvider s
 }
 
 func randomAddress() string {
-	return sdk.AccAddress(rand.Bytes(sdk.AddrLen)).String()
+	return sdk.AccAddress(rand.Bytes(legacyAddrLen)).String()
 }

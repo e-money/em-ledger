@@ -8,13 +8,12 @@ import (
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/libs/rand"
 )
 
 func TestQueryIssuers(t *testing.T) {
 	encConfig := MakeTestEncodingConfig()
 	ctx, _, _, keeper, _ := createTestComponentsWithEncodingConfig(t, encConfig)
-	myIssuers := []types.Issuer{types.NewIssuer(randomAccAddress(), "foo", "bar")}
+	myIssuers := []types.Issuer{types.NewIssuer(sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv"), "foo", "bar")}
 	keeper.setIssuers(ctx, myIssuers)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encConfig.InterfaceRegistry)
@@ -41,8 +40,4 @@ func TestQueryIssuers(t *testing.T) {
 			assert.Equal(t, spec.expIssuers, gotRsp.Issuers)
 		})
 	}
-}
-
-func randomAccAddress() sdk.AccAddress {
-	return rand.Bytes(sdk.AddrLen)
 }
