@@ -769,7 +769,8 @@ func TestAllInstruments(t *testing.T) {
 	orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, orders, 0)
 
-	allInstruments := k.GetAllInstruments(ctx)
+	allInstruments, err := k.GetAllInstruments(ctx)
+	require.NoError(t, err)
 	// 30 because of chf, eur, gbp, jpy, ngm, usd
 	require.Len(t, allInstruments, 30)
 
@@ -1366,8 +1367,9 @@ func TestListInstruments(t *testing.T) {
 		}
 	}
 
-	allInstrumentsWithBestPrice := k.GetAllInstruments(ctx)
-	_, err := json.Marshal(allInstrumentsWithBestPrice)
+	allInstrumentsWithBestPrice, err := k.GetAllInstruments(ctx)
+	require.NoError(t, err)
+	_, err = json.Marshal(allInstrumentsWithBestPrice)
 	require.Nil(t, err)
 	// 30 because of chf, eur, gbp, jpy, ngm, usd
 	require.Len(t, allInstrumentsWithBestPrice, 30)
@@ -1445,7 +1447,9 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 
 		blockedAddr = make(map[string]bool)
-		maccPerms   = map[string][]string{}
+		maccPerms   = map[string][]string{
+			types.ModuleName: {authtypes.Minter, authtypes.Burner},
+		}
 	)
 
 	db := dbm.NewMemDB()
@@ -1474,7 +1478,8 @@ func createTestComponentsWithEncoding(t *testing.T, encConfig simappparams.Encod
 		wrappedBank = embank.Wrap(bk)
 	)
 
-	bk.SetSupply(ctx, banktypes.NewSupply(coins("1eur,1usd,1chf,1jpy,1gbp,1ngm")))
+	err = mintBalance(ctx, bk, coins("1eur,1usd,1chf,1jpy,1gbp,1ngm"))
+	require.NoError(t, err)
 
 	marketKeeper := NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, wrappedBank)
 	return ctx, marketKeeper, ak, wrappedBank
@@ -1535,9 +1540,9 @@ func order(createdTm time.Time, account authtypes.AccountI, src, dst string) typ
 	return o
 }
 
-func createAccount(ctx sdk.Context, ak authkeeper.AccountKeeper, bk bankkeeper.SendKeeper, address sdk.AccAddress, balance string) authtypes.AccountI {
+func createAccount(ctx sdk.Context, ak authkeeper.AccountKeeper, bk bankkeeper.Keeper, address sdk.AccAddress, balance string) authtypes.AccountI {
 	acc := ak.NewAccountWithAddress(ctx, address)
-	if err := bk.SetBalances(ctx, address, coins(balance)); err != nil {
+	if err := fundAccount(ctx, address, bk, coins(balance)); err != nil {
 		panic(err)
 	}
 	ak.SetAccount(ctx, acc)
@@ -1568,5 +1573,6 @@ func snapshotAccounts(ctx sdk.Context, bk bankkeeper.ViewKeeper) (totalBalance s
 }
 
 func randomAddress() sdk.AccAddress {
-	return tmrand.Bytes(sdk.AddrLen)
+	const legacyAddrLen = 20
+	return tmrand.Bytes(legacyAddrLen)
 }

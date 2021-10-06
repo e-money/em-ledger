@@ -97,7 +97,9 @@ func TestQryGetAllInstrumentsWithNilBestPrices(t *testing.T) {
 	orders := k.GetOrdersByOwner(ctx, acc1.GetAddress())
 	require.Len(t, orders, 0)
 
-	allInstruments := k.GetAllInstruments(ctx)
+	allInstruments, err := k.GetAllInstruments(ctx)
+	require.NoError(t, err)
+
 	// 30 because of chf, eur, gbp, jpy, ngm, usd
 	require.Len(t, allInstruments, 30)
 

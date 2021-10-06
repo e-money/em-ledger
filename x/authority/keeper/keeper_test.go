@@ -5,6 +5,9 @@
 package keeper
 
 import (
+	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/types/query"
+	"math"
 	"testing"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
@@ -429,14 +432,13 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		lpk = liquidityprovider.NewKeeper(encConfig.Marshaler, keyLp, bk)
 		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{}, bk)
 
-		upgK = upgradekeeper.NewKeeper(map[int64]bool{}, keyUpg, encConfig.Marshaler, t.TempDir())
+		app = simapp.Setup(false)
+		upgK = upgradekeeper.NewKeeper(map[int64]bool{}, keyUpg, encConfig.Marshaler, t.TempDir(), app)
 	)
 
-	bk.SetSupply(ctx, banktypes.NewSupply(
-		sdk.NewCoins(
+	mintBalance(t, ctx, bk, sdk.NewCoins(
 			sdk.NewCoin("echf", sdk.NewInt(5000)),
-			sdk.NewCoin("eeur", sdk.NewInt(5000)),
-		)))
+			sdk.NewCoin("eeur", sdk.NewInt(5000))))
 
 	gpk := new(mockGasPricesKeeper)
 	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK)
@@ -504,4 +506,18 @@ func mustParseAddress(address string) sdk.AccAddress {
 		panic(err)
 	}
 	return a
+}
+
+func getTotalSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper) sdk.Coins {
+	totalSupply, _, err := bk.GetPaginatedTotalSupply(
+		ctx, &query.PageRequest{Limit: math.MaxUint64},
+	)
+	require.NoError(t, err)
+
+	return totalSupply
+}
+
+func mintBalance(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) {
+	err := bk.MintCoins(ctx, types.ModuleName, supply.Sub(getTotalSupply(t, ctx, bk)))
+	require.NoError(t, err)
 }

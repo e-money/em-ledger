@@ -3,10 +3,12 @@ package keeper
 import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"math"
 	"testing"
 	"time"
 )
@@ -85,7 +87,7 @@ func TestInstruments(t *testing.T) {
 	enc := MakeTestEncodingConfig()
 	ctx, k, _, bk := createTestComponentsWithEncoding(t, enc)
 
-	bk.SetSupply(ctx, banktypes.NewSupply(coins("1alx,1blx")))
+	setSupply(t, ctx, bk, coins("1alx,1blx"))
 
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, enc.InterfaceRegistry)
 	types.RegisterQueryServer(queryHelper, k)
@@ -190,4 +192,49 @@ func TestInstrument(t *testing.T) {
 			assert.Equal(t, spec.expState, gotRsp)
 		})
 	}
+}
+
+func getTotalSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper) sdk.Coins {
+	totalSupply, _, err := bk.GetPaginatedTotalSupply(
+		ctx, &query.PageRequest{Limit: math.MaxUint64},
+	)
+	require.NoError(t, err)
+
+	return totalSupply
+}
+
+func mintBalance(ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) error {
+	return bk.MintCoins(ctx, types.ModuleName, supply)
+}
+
+func clearSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper) {
+	bk.IterateTotalSupply(ctx, func(coin sdk.Coin) bool {
+		if !coin.Amount.IsZero() {
+			err := bk.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(coin))
+			require.NoError(t, err)
+		}
+
+		return false
+	})
+}
+
+func setSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) error {
+	clearSupply(t, ctx, bk)
+	return mintBalance(ctx, bk, supply)
+}
+
+func setAccBalance(ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
+	balance sdk.Coins) error {
+	return bk.SendCoinsFromModuleToAccount(
+		ctx, types.ModuleName, acc, balance.Sub(bk.GetAllBalances(ctx, acc)),
+	)
+}
+
+func fundAccount(ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
+	balance sdk.Coins) error {
+	if err := mintBalance(ctx, bk, balance); err != nil {
+		return err
+	}
+
+	return setAccBalance(ctx, acc, bk, balance)
 }

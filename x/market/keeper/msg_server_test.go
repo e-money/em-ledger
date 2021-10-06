@@ -637,5 +637,6 @@ func (m marketKeeperMock) GetSrcFromSlippage(ctx sdk.Context, srcDenom string, d
 }
 
 func randomAccAddress() sdk.AccAddress {
-	return rand.Bytes(sdk.AddrLen)
+	const legacyAddrLen = 20
+	return rand.Bytes(legacyAddrLen)
 }

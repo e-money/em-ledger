@@ -115,7 +115,7 @@ func (suite *AnteTestSuite) createAccount(ctx sdk.Context, balance sdk.Coins) au
 	_, _, addr1 := testdata.KeyTestPubAddr()
 	account := suite.ak.NewAccountWithAddress(ctx, addr1)
 	suite.ak.SetAccount(ctx, account)
-	suite.bk.SetBalances(ctx, addr1, balance)
+	fundAccount(suite, ctx, addr1, suite.bk, balance)
 
 	return account
 }
@@ -139,6 +139,7 @@ func (suite *AnteTestSuite) setup() {
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
+			authtypes.ModuleName: {authtypes.Minter},
 			authtypes.FeeCollectorName: nil,
 			buyback.AccountName:        nil,
 		}
@@ -236,4 +237,22 @@ func (m mockFeeTX) FeeGranter() sdk.AccAddress {
 
 func (msk mockStakingKeeper) BondDenom(sdk.Context) string {
 	return msk.bondDenom
+}
+
+func setAccBalance(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,	balance sdk.Coins) {
+	err := bk.SendCoinsFromModuleToAccount(
+		ctx, authtypes.ModuleName, acc, balance.Sub(bk.GetAllBalances(ctx, acc)),
+	)
+	suite.NoError(err)
+}
+
+func mintBalance(suite *AnteTestSuite, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) {
+	err := bk.MintCoins(ctx, authtypes.ModuleName, supply)
+	suite.NoError(err)
+}
+
+func fundAccount(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
+	balance sdk.Coins) {
+	mintBalance(suite, ctx, bk, balance)
+	setAccBalance(suite, ctx, acc, bk, balance)
 }

@@ -218,8 +218,8 @@ func TestOldGenesisTime(t *testing.T) {
 	_, err = staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr2, pk2, sdk.TokensFromConsensusPower(power2, sdk.OneInt())))
 	require.NoError(t, err)
 
-	val1 := abci.Validator{pk1.Address(), power1}
-	val2 := abci.Validator{pk2.Address(), power2}
+	val1 := abci.Validator{Address: pk1.Address(), Power: power1}
+	val2 := abci.Validator{Address: pk2.Address(), Power: power2}
 
 	// Val2 fails to sign
 	req := abci.RequestBeginBlock{

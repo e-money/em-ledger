@@ -2,35 +2,33 @@ package buyback
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
-	"github.com/cosmos/cosmos-sdk/std"
-	"github.com/cosmos/cosmos-sdk/types/module"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	"github.com/cosmos/cosmos-sdk/x/auth/tx"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	embank "github.com/e-money/em-ledger/hooks/bank"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
-	"github.com/e-money/em-ledger/x/market"
-	"github.com/e-money/em-ledger/x/market/types"
-
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	embank "github.com/e-money/em-ledger/hooks/bank"
+	"github.com/e-money/em-ledger/x/buyback/internal/keeper"
+	"github.com/e-money/em-ledger/x/market"
+	markettypes "github.com/e-money/em-ledger/x/market/types"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
 
@@ -42,13 +40,12 @@ func TestBuyback1(t *testing.T) {
 	ctx = ctx.WithBlockHeight(1)
 
 	// Add some ungm sell orders
-	acc1 := createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "50000ungm")
+	acc1 := createAccount(t, ctx, accountKeeper, bankKeeper, randomAddress(), "50000ungm")
 	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
 	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
 
 	buybackAccount := accountKeeper.GetModuleAccount(ctx, ModuleName).GetAddress()
-	err := bankKeeper.AddCoins(ctx, buybackAccount, coins("10000ungm"))
-	require.NoError(t, err)
+	setAccBalance(t, ctx, buybackAccount, bankKeeper, coins("10000ungm"))
 
 	BeginBlocker(ctx, k, bankKeeper)
 
@@ -76,8 +73,7 @@ func TestBuyback1(t *testing.T) {
 	require.True(t, strings.HasSuffix(orders[0].ClientOrderID, "1"))
 
 	// Add some echf to to buyback and see it take a bit of the previous sell order
-	err = bankKeeper.AddCoins(ctx, buybackAccount, coins("10000chf"))
-	require.NoError(t, err)
+	setAccBalance(t, ctx, buybackAccount, bankKeeper, coins("10000chf"))
 
 	ctx = ctx.WithBlockHeight(2).WithBlockTime(ctx.BlockTime().Add(2 * time.Hour))
 	BeginBlocker(ctx, k, bankKeeper)
@@ -97,7 +93,7 @@ func TestBuyback2(t *testing.T) {
 
 	ctx = ctx.WithBlockHeight(1)
 
-	acc1 := createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "50000ungm")
+	acc1 := createAccount(t, ctx, accountKeeper, bankKeeper, randomAddress(), "50000ungm")
 	//generateMarketActivity(ctx, market, accountKeeper, bankKeeper)
 	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
 	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
@@ -113,7 +109,7 @@ func TestBuyback2(t *testing.T) {
 	require.Len(t, orders, 1)
 
 	// New balance that should trigger order updates
-	bankKeeper.AddCoins(ctx, buybackAccount, coins("10000eur,75000chf"))
+	setAccBalance(t, ctx, buybackAccount, bankKeeper, coins("10000eur,75000chf"))
 
 	// Time since last update is too short to update the module's market positions.
 	ctx = ctx.WithBlockHeight(2).WithBlockTime(ctx.BlockTime().Add(30 * time.Minute))
@@ -136,10 +132,10 @@ func TestBuyback3(t *testing.T) {
 	// Test very high NGM price with very low balance
 	ctx, keeper, market, accountKeeper, bankKeeper := createTestComponents(t)
 	buybackAccount := accountKeeper.GetModuleAccount(ctx, ModuleName).GetAddress()
-	bankKeeper.AddCoins(ctx, buybackAccount, coins("50pesos"))
+	setAccBalance(t, ctx, buybackAccount, bankKeeper, coins("50pesos"))
 
 	// Generate some prices for the pesos <-> ungm instrument
-	acc2 := createAccount(ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
+	acc2 := createAccount(t, ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
 
 	_, err := market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
 	require.NoError(t, err)
@@ -154,10 +150,10 @@ func TestBuyback3(t *testing.T) {
 	require.Empty(t, orders)
 }
 
-func order(account authtypes.AccountI, src, dst string) types.Order {
+func order(account authtypes.AccountI, src, dst string) markettypes.Order {
 	s, _ := sdk.ParseCoinNormalized(src)
 	d, _ := sdk.ParseCoinNormalized(dst)
-	o, err := types.NewOrder(time.Now(), types.TimeInForce_GoodTillCancel, s, d, account.GetAddress(), tmrand.Str(10))
+	o, err := markettypes.NewOrder(time.Now(), markettypes.TimeInForce_GoodTillCancel, s, d, account.GetAddress(), tmrand.Str(10))
 	if err != nil {
 		panic(err)
 	}
@@ -165,11 +161,9 @@ func order(account authtypes.AccountI, src, dst string) types.Order {
 	return o
 }
 
-func createAccount(ctx sdk.Context, ak banktypes.AccountKeeper, bk bankkeeper.SendKeeper, address sdk.AccAddress, balance string) authtypes.AccountI {
+func createAccount(t *testing.T, ctx sdk.Context, ak banktypes.AccountKeeper, bk bankkeeper.Keeper, address sdk.AccAddress, balance string) authtypes.AccountI {
 	acc := ak.NewAccountWithAddress(ctx, address)
-	if err := bk.SetBalances(ctx, address, coins(balance)); err != nil {
-		panic(err)
-	}
+	setAccBalance(t, ctx, address, bk, coins(balance))
 	ak.SetAccount(ctx, acc)
 	return acc
 }
@@ -179,8 +173,8 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	encConfig := MakeTestEncodingConfig()
 
 	var (
-		keyMarket  = sdk.NewKVStoreKey(types.ModuleName)
-		keyIndices = sdk.NewKVStoreKey(types.StoreKeyIdx)
+		keyMarket  = sdk.NewKVStoreKey(markettypes.ModuleName)
+		keyIndices = sdk.NewKVStoreKey(markettypes.StoreKeyIdx)
 		authCapKey = sdk.NewKVStoreKey("authCapKey")
 		keyParams  = sdk.NewKVStoreKey("params")
 		stakingKey = sdk.NewKVStoreKey("staking")
@@ -192,6 +186,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
 			AccountName: {authtypes.Burner},
+			authtypes.ModuleName: {authtypes.Minter},
 		}
 	)
 
@@ -218,7 +213,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	)
 
 	initialSupply := coins(fmt.Sprintf("1000000eur,1000000usd,1000000chf,1000000jpy,1000000gbp,1000000%v,500000000pesos", stakingDenom))
-	bk.SetSupply(ctx, banktypes.NewSupply(initialSupply))
+	mintBalance(t, ctx, bk, initialSupply)
 
 	marketKeeper := market.NewKeeper(encConfig.Marshaler, keyMarket, keyIndices, ak, bk)
 
@@ -226,8 +221,9 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 	k.SetUpdateInterval(ctx, time.Hour)
 
 	// Deposit a working balance on the buyback module account.
-	buybackAccount := ak.GetModuleAddress(ModuleName)
-	bk.SetBalances(ctx, buybackAccount, coins("50000eur"))
+	buybackAccount := authtypes.NewEmptyModuleAccount(ModuleName, authtypes.Burner)
+	ak.SetModuleAccount(ctx, buybackAccount)
+	setAccBalance(t, ctx, buybackAccount.GetAddress(), bk, coins("50000eur"))
 
 	return ctx, k, marketKeeper, ak, bk
 }
@@ -275,7 +271,8 @@ func coins(c string) sdk.Coins {
 }
 
 func randomAddress() sdk.AccAddress {
-	return tmrand.Bytes(sdk.AddrLen)
+	const legAddrLength = 20
+	return tmrand.Bytes(legAddrLength)
 }
 
 var _ keeper.StakingKeeper = (*mockStakingKeeper)(nil)
@@ -284,4 +281,15 @@ type mockStakingKeeper struct{}
 
 func (mockStakingKeeper) BondDenom(sdk.Context) string {
 	return stakingDenom
+}
+
+func mintBalance(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) {
+	err := bk.MintCoins(ctx, authtypes.ModuleName, supply)
+	require.NoError(t, err)
+}
+
+func setAccBalance(
+	t *testing.T, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper, balance sdk.Coins) {
+	err := bk.SendCoinsFromModuleToAccount(ctx, authtypes.ModuleName, acc, balance)
+	require.NoError(t, err)
 }

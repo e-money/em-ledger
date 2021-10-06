@@ -20,10 +20,11 @@ func TestCirculating(t *testing.T) {
 	enc := simapp.MakeTestEncodingConfig()
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, enc.InterfaceRegistry)
 	accountKeeper := accountKeeperMock{}
+	const legAddrLen = 20
 	var (
-		acc1 sdk.AccAddress = rand.Bytes(sdk.AddrLen)
-		acc2 sdk.AccAddress = rand.Bytes(sdk.AddrLen)
-		acc3 sdk.AccAddress = rand.Bytes(sdk.AddrLen)
+		acc1 sdk.AccAddress = rand.Bytes(legAddrLen)
+		acc2 sdk.AccAddress = rand.Bytes(legAddrLen)
+		acc3 sdk.AccAddress = rand.Bytes(legAddrLen)
 	)
 	bkMock := bankKeeperMock{
 		balances: map[string]sdk.Coins{
