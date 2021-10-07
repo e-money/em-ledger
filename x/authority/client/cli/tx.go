@@ -5,8 +5,6 @@
 package cli
 
 import (
-	"time"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -228,7 +226,6 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 				Authority: clientCtx.GetFromAddress().String(),
 				Plan: upgtypes.Plan{
 					Name:   args[1],
-					Time:   time.Unix(0, 0),
 					Height: upgHeightVal,
 					Info:   upgInfoVal,
 				},

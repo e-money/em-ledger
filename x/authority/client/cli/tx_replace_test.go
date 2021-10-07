@@ -1,4 +1,4 @@
-// +build chaintest
+// +build chain
 
 package cli_test
 
@@ -40,22 +40,33 @@ func (s *ReplacementTestSuite) SetupSuite() {
 	cfg := network.DefaultConfig()
 	cfg.LegacyAmino.RegisterConcrete(&types.MsgReplaceAuthority{}, "MsgReplaceAuthority", nil)
 	cfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil), &types.MsgReplaceAuthority{})
-	cfg.NumValidators = 2
+	//cfg.NumValidators = 2
 
 	s.cfg = cfg
-	s.network = network.New(s.T(), cfg)
+	s.network = network.New(s.T(), s.cfg)
 
 	kb := s.network.Validators[0].ClientCtx.Keyring
-	_, _, err := kb.NewMnemonic("newAccount", keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
+	_, _, err := kb.NewMnemonic(
+		"newAccount", keyring.English, sdk.FullFundraiserPath,
+		keyring.DefaultBIP39Passphrase, hd.Secp256k1,
+	)
 	s.Require().NoError(err)
 
-	account1, _, err := kb.NewMnemonic("newAccount1", keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
+	account1, _, err := kb.NewMnemonic(
+		"newAccount1", keyring.English, sdk.FullFundraiserPath,
+		keyring.DefaultBIP39Passphrase, hd.Secp256k1,
+	)
 	s.Require().NoError(err)
 
-	account2, _, err := kb.NewMnemonic("newAccount2", keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
+	account2, _, err := kb.NewMnemonic(
+		"newAccount2", keyring.English, sdk.FullFundraiserPath,
+		keyring.DefaultBIP39Passphrase, hd.Secp256k1,
+	)
 	s.Require().NoError(err)
 
-	multi := kmultisig.NewLegacyAminoPubKey(2, []cryptotypes.PubKey{account1.GetPubKey(), account2.GetPubKey()})
+	multi := kmultisig.NewLegacyAminoPubKey(
+		2, []cryptotypes.PubKey{account1.GetPubKey(), account2.GetPubKey()},
+	)
 	_, err = kb.SaveMultisig("multi", multi)
 	s.Require().NoError(err)
 
@@ -100,7 +111,10 @@ func (s *ReplacementTestSuite) TestReplaceAuth() {
 
 	// create the new multisig authority key adding a 3rd key
 	kb := val1.ClientCtx.Keyring
-	account3, _, err := kb.NewMnemonic(acc3UID, keyring.English, sdk.FullFundraiserPath, hd.Secp256k1)
+	account3, _, err := kb.NewMnemonic(
+		acc3UID, keyring.English, sdk.FullFundraiserPath,
+		keyring.DefaultBIP39Passphrase, hd.Secp256k1,
+	)
 	s.Require().NoError(err)
 	s.Require().NotNil(account3)
 
@@ -183,18 +197,19 @@ func (s *ReplacementTestSuite) TestReplaceAuth() {
 	sign2File := testutil.WriteToNewTempFile(s.T(), account2Signature.String())
 
 	// Does not work in offline mode.
+	msigAccName := authMultiSigAcc.GetName()
 	_, err = authtest.TxMultiSignExec(
-		val1.ClientCtx, authMultiSigAcc.GetName(), multiGeneratedTxFile.Name(),
+		val1.ClientCtx, msigAccName, multiGeneratedTxFile.Name(),
 		"--offline", sign1File.Name(), sign2File.Name(),
 	)
 	s.Require().EqualError(
 		err,
-		"couldn't verify signature: unable to verify single signer signature",
+		"couldn't verify signature for address "+account1.GetAddress().String(),
 	)
 
 	val1.ClientCtx.Offline = false
 	multiSigWith2Signatures, err := authtest.TxMultiSignExec(
-		val1.ClientCtx, authMultiSigAcc.GetName(), multiGeneratedTxFile.Name(),
+		val1.ClientCtx, msigAccName, multiGeneratedTxFile.Name(),
 		sign1File.Name(), sign2File.Name(),
 	)
 	s.Require().NoError(err)
