@@ -44,7 +44,7 @@ func querySpendableBalance(ctx sdk.Context, k BankKeeper, path []string) (res []
 func calculateCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) (circSupply sdk.Coins) {
 	total := bk.GetSupply(ctx).GetTotal()
 
-	stakingAccounts := map[string]interface{}{
+	stakingAccounts := map[string]bool{
 		accK.GetModuleAccount(ctx, stakingtypes.NotBondedPoolName).GetAddress().String(): true,
 		accK.GetModuleAccount(ctx, stakingtypes.BondedPoolName).GetAddress().String():    true,
 	}
@@ -56,7 +56,7 @@ func calculateCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeep
 			return false
 		}
 
-		if _, stakingModule := stakingAccounts[address.String()]; stakingModule {
+		if _, exists := stakingAccounts[address.String()]; exists {
 			return false
 		}
 
