@@ -2,7 +2,6 @@ package queries
 
 import (
 	"encoding/json"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/e-money/em-ledger/x/queries/types"
@@ -11,6 +10,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
+
+const stakingDenom = "ungm"
 
 func NewLegacyQuerier(accK AccountKeeper, bk BankKeeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err error) {
@@ -26,21 +27,7 @@ func NewLegacyQuerier(accK AccountKeeper, bk BankKeeper) sdk.Querier {
 }
 
 func queryCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) (res []byte, err error) {
-	var total sdk.Coins
-
-	accK.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
-		if ma, ok := account.(*authtypes.ModuleAccount); ok {
-			switch ma.Name {
-			case stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName:
-				return false
-			}
-		}
-
-		coins := bk.SpendableCoins(ctx, account.GetAddress())
-		total = total.Add(coins...)
-		return false
-	})
-
+	total := calculateCirculatingSupply(ctx, accK, bk)
 	return json.Marshal(total)
 }
 
@@ -52,4 +39,42 @@ func querySpendableBalance(ctx sdk.Context, k BankKeeper, path []string) (res []
 
 	spendableBalance := k.SpendableCoins(ctx, address)
 	return json.Marshal(spendableBalance)
+}
+
+func calculateCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) (circSupply sdk.Coins) {
+	total := bk.GetSupply(ctx).GetTotal()
+
+	stakingAccounts := map[string]interface{}{
+		accK.GetModuleAccount(ctx, stakingtypes.NotBondedPoolName).GetAddress().String(): true,
+		accK.GetModuleAccount(ctx, stakingtypes.BondedPoolName).GetAddress().String():    true,
+	}
+
+	ngmbalance := sdk.ZeroInt()
+
+	bk.IterateAllBalances(ctx, func(address sdk.AccAddress, coin sdk.Coin) bool {
+		if coin.Denom != stakingDenom {
+			return false
+		}
+
+		if _, stakingModule := stakingAccounts[address.String()]; stakingModule {
+			return false
+		}
+
+		spendableCoins := bk.SpendableCoins(ctx, address)
+		ngmbalance = ngmbalance.Add(spendableCoins.AmountOf("ungm"))
+
+		return false
+	})
+
+	// Replace staking token balance with the one calculated above, which omits vesting and staked tokens.
+	for i, c := range total {
+		if c.Denom != stakingDenom {
+			continue
+		}
+
+		total[i] = sdk.NewCoin(stakingDenom, ngmbalance)
+		break
+	}
+
+	return total
 }
