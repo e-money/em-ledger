@@ -7,9 +7,8 @@ package bank
 import (
 	"context"
 
-	"github.com/cosmos/cosmos-sdk/types/query"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -166,6 +165,18 @@ func (pk *ProxyKeeper) GetDenomMetaData(ctx sdk.Context, denom string) (banktype
 
 func (pk *ProxyKeeper) SetDenomMetaData(ctx sdk.Context, denomMetaData banktypes.Metadata) {
 	pk.bk.SetDenomMetaData(ctx, denomMetaData)
+}
+
+// GetAllDenomMetaData cloned here from the bank keeper as it is not exposed in
+// the bank keeper interface
+func (pk *ProxyKeeper) GetAllDenomMetaData(ctx sdk.Context) []banktypes.Metadata {
+	denomMetaData := make([]banktypes.Metadata, 0)
+	pk.IterateAllDenomMetaData(ctx, func(metadata banktypes.Metadata) bool {
+		denomMetaData = append(denomMetaData, metadata)
+		return false
+	})
+
+	return denomMetaData
 }
 
 func (pk *ProxyKeeper) IterateAllDenomMetaData(ctx sdk.Context, cb func(banktypes.Metadata) bool) {
