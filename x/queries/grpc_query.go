@@ -2,7 +2,6 @@ package queries
 
 import (
 	"context"
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/queries/types"
 	"google.golang.org/grpc/codes"
@@ -26,12 +25,7 @@ func (k Querier) Circulating(c context.Context, req *types.QueryCirculatingReque
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	total, err := calculateCirculatingSupply(ctx, k.accK, k.bk)
-	if err != nil {
-		return nil, status.Error(
-			codes.Unavailable, fmt.Sprintf("supply store query erred:%v", err),
-		)
-	}
+	total := calculateCirculatingSupply(ctx, k.accK, k.bk)
 
 	return &types.QueryCirculatingResponse{Total: total}, nil
 }

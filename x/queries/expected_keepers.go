@@ -2,8 +2,8 @@ package queries
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 type AccountKeeper interface {
@@ -12,6 +12,8 @@ type AccountKeeper interface {
 
 type BankKeeper interface {
 	SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	GetPaginatedTotalSupply(ctx sdk.Context, pagination *query.PageRequest) (sdk.Coins, *query.PageResponse, error)
+	GetSupply(ctx sdk.Context, denom string) sdk.Coin
 	IterateAllBalances(ctx sdk.Context, cb func(sdk.AccAddress, sdk.Coin) bool)
+	IterateAllDenomMetaData(ctx sdk.Context, cb func(banktypes.Metadata) bool)
+	GetAllDenomMetaData(ctx sdk.Context) []banktypes.Metadata
 }

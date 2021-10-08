@@ -2,14 +2,12 @@ package queries
 
 import (
 	"encoding/json"
-	"github.com/cosmos/cosmos-sdk/types/query"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"math"
-
-	"github.com/e-money/em-ledger/x/queries/types"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/e-money/em-ledger/x/queries/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -29,7 +27,7 @@ func NewLegacyQuerier(accK AccountKeeper, bk BankKeeper) sdk.Querier {
 }
 
 func queryCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) (res []byte, err error) {
-	total, err := calculateCirculatingSupply(ctx, accK, bk)
+	total := calculateCirculatingSupply(ctx, accK, bk)
 	if err != nil {
 		return nil, err
 	}
@@ -46,43 +44,67 @@ func querySpendableBalance(ctx sdk.Context, k BankKeeper, path []string) (res []
 	return json.Marshal(spendableBalance)
 }
 
-func calculateCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) (circSupply sdk.Coins, err error) {
-	total, _, err := bk.GetPaginatedTotalSupply(ctx, &query.PageRequest{Limit: math.MaxUint64})
-	if err != nil {
-		return circSupply, err
-	}
+func calculateCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) sdk.Coins {
+	denomsSupply, stakingDenomIdx := getDenomsSupply(ctx, bk)
 
+	ngmbalance := calcStakingSpendableSupply(ctx, accK, bk)
+
+	// Replace staking token balance with the one calculated above, which omits
+	// vesting and staked tokens.
+	denomsSupply[stakingDenomIdx] = sdk.NewCoin(stakingDenom, ngmbalance)
+
+	return denomsSupply
+}
+
+func calcStakingSpendableSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) sdk.Int {
 	stakingAccounts := map[string]bool{
-		accK.GetModuleAccount(ctx, stakingtypes.NotBondedPoolName).GetAddress().String(): true,
-		accK.GetModuleAccount(ctx, stakingtypes.BondedPoolName).GetAddress().String():    true,
+		accK.GetModuleAccount(ctx, stakingtypes.NotBondedPoolName).	GetAddress().String(): true,
+		accK.GetModuleAccount(ctx, stakingtypes.BondedPoolName).GetAddress().String(): true,
 	}
 
 	ngmbalance := sdk.ZeroInt()
 
-	bk.IterateAllBalances(ctx, func(address sdk.AccAddress, coin sdk.Coin) bool {
-		if coin.Denom != stakingDenom {
+	bk.IterateAllBalances(
+		ctx, func(address sdk.AccAddress, coin sdk.Coin) bool {
+			if coin.Denom != stakingDenom {
+				return false
+			}
+
+			if stakingAccounts[address.String()] {
+				return false
+			}
+
+			spendableCoins := bk.SpendableCoins(ctx, address)
+			ngmbalance = ngmbalance.Add(spendableCoins.AmountOf(stakingDenom))
+
 			return false
-		}
+		},
+	)
 
-		if _, stakingModule := stakingAccounts[address.String()]; stakingModule {
-			return false
-		}
+	return ngmbalance
+}
 
-		spendableCoins := bk.SpendableCoins(ctx, address)
-		ngmbalance = ngmbalance.Add(spendableCoins.AmountOf("ungm"))
+func getDenomsSupply(ctx sdk.Context, bk BankKeeper) (sdk.Coins, int) {
+	denoms := bk.GetAllDenomMetaData(ctx)
+	sort.Slice(denoms, func(i, j int) bool {
+			return denoms[i].Base < denoms[j].Base
+		})
 
-		return false
-	})
-
-	// Replace staking token balance with the one calculated above, which omits vesting and staked tokens.
-	for i, c := range total {
-		if c.Denom != stakingDenom {
+	var (
+		denomsSupply    sdk.Coins
+		stakingDenomIdx int
+	)
+	for idx, denom := range denoms {
+		if denom.Base == stakingDenom {
+			stakingDenomIdx = idx
+			// 0 : the staking supply is calculated later
+			denomsSupply = append(
+				denomsSupply, sdk.NewCoin(stakingDenom, sdk.ZeroInt()),
+			)
 			continue
 		}
-
-		total[i] = sdk.NewCoin(stakingDenom, ngmbalance)
-		break
+		denomsSupply = append(denomsSupply, bk.GetSupply(ctx, denom.Base))
 	}
 
-	return total, nil
+	return denomsSupply, stakingDenomIdx
 }

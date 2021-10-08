@@ -2,18 +2,18 @@ package queries
 
 import (
 	"context"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/queries/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/rand"
-	"testing"
 )
 
 func TestCirculating(t *testing.T) {
@@ -40,15 +40,15 @@ func TestCirculating(t *testing.T) {
 	}
 
 	// Test that supply has been initialized as expected
-	require.Equal(t, "453", bkMock.GetSupply(ctx).GetTotal().AmountOf(stakingDenom).String())
-	require.Equal(t, "154", bkMock.GetSupply(ctx).GetTotal().AmountOf("blx").String())
+	require.Equal(t, "453", bkMock.GetSupply(ctx, stakingDenom).Amount.String())
+	require.Equal(t, "154", bkMock.GetSupply(ctx,"blx").Amount.String())
 
 	types.RegisterQueryServer(queryHelper, NewQuerier(&accountKeeper, bkMock))
 	queryClient := types.NewQueryClient(queryHelper)
 
 	gotRsp, err := queryClient.Circulating(sdk.WrapSDKContext(ctx), &types.QueryCirculatingRequest{})
 	require.NoError(t, err)
-	assert.Equal(t, mustParseCoins("154blx,3"+stakingDenom), gotRsp.Total)
+	assert.Equal(t, mustParseCoins("154blx,3"+stakingDenom).String(), gotRsp.Total.String())
 }
 
 func mustParseCoins(s string) sdk.Coins {
@@ -70,18 +70,36 @@ type bankKeeperMock struct {
 	vesting  sdk.Coins
 }
 
+func (b bankKeeperMock) IterateAllDenomMetaData(
+	ctx sdk.Context, cb func(banktypes.Metadata) bool,
+) {
+	panic("implement me")
+}
+
+func (b bankKeeperMock) GetAllDenomMetaData(_ sdk.Context) []banktypes.Metadata {
+	return []banktypes.Metadata{
+		{
+			Base:        "blx",
+		},
+		{
+			Base:        stakingDenom,
+		},
+	}
+}
+
 func (b bankKeeperMock) SpendableCoins(_ sdk.Context, addr sdk.AccAddress) sdk.Coins {
 	return b.balances[addr.String()]
 }
 
-func (b bankKeeperMock) GetSupply(_ sdk.Context) exported.SupplyI {
-	supply := sdk.NewCoins()
+func (b bankKeeperMock) GetSupply(_ sdk.Context, denom string) sdk.Coin {
+	var supply = sdk.NewCoin(denom, sdk.ZeroInt())
 	for _, balance := range b.balances {
-		supply = supply.Add(balance...)
+		amnt := balance.AmountOfNoDenomValidation(denom)
+		supply = supply.Add(sdk.NewCoin(denom, amnt))
 	}
 
-	supply = supply.Add(b.vesting...)
-	return banktypes.NewSupply(supply)
+	supply = supply.Add(sdk.NewCoin(denom, b.vesting.AmountOfNoDenomValidation(denom)))
+	return supply
 }
 
 func (b bankKeeperMock) IterateAllBalances(_ sdk.Context, cb func(sdk.AccAddress, sdk.Coin) bool) {
