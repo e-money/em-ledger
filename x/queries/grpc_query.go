@@ -2,9 +2,8 @@ package queries
 
 import (
 	"context"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/queries/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,21 +24,14 @@ func (k Querier) Circulating(c context.Context, req *types.QueryCirculatingReque
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
+
 	ctx := sdk.UnwrapSDKContext(c)
-	var total sdk.Coins
-
-	k.accK.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
-		if ma, ok := account.(*authtypes.ModuleAccount); ok {
-			switch ma.Name {
-			case stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName:
-				return false
-			}
-		}
-
-		coins := k.bk.SpendableCoins(ctx, account.GetAddress())
-		total = total.Add(coins...)
-		return false
-	})
+	total, err := calculateCirculatingSupply(ctx, k.accK, k.bk)
+	if err != nil {
+		return nil, status.Error(
+			codes.Unavailable, fmt.Sprintf("supply store query erred:%v", err),
+		)
+	}
 
 	return &types.QueryCirculatingResponse{Total: total}, nil
 }
