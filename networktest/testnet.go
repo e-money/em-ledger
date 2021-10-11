@@ -116,11 +116,11 @@ func writeGenesisFiles(newGenesisFile []byte) error {
 	})
 }
 
-func (t Testnet) Restart() (func() bool, error) {
+func (t *Testnet) Restart() (func() bool, error) {
 	return t.restart(nil)
 }
 
-func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (func() bool, error) {
+func (t *Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (func() bool, error) {
 	return t.restart(genesisModifier)
 }
 
