@@ -4,7 +4,14 @@
 	 * Setting gas to One ungm
 	**/
 	const testUpgradeHandler = "test-upg-0.2.0"
-	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, func(ctx sdk.Context, plan upgradetypes.Plan) {
+	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
+		app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
+
+		fromVM := make(map[string]uint64)
+		for moduleName := range app.mm.Modules {
+			fromVM[moduleName] = 1
+		}
+
 		genesisAuth := app.authorityKeeper.GetAuthoritySet(ctx)
 		if genesisAuth.Address == "" {
 			panic("authority should be set in genesis")
@@ -28,4 +35,8 @@
 		if gasPrices.Empty() || !gasPrices.IsEqual(newGas) {
 			panic(fmt.Sprintf("expected Gas: %+v != store Gas: %+v", newGas, gasPrices))
 		}
+
+		ctx.Logger().Info(testUpgradeHandler)
+
+		return app.mm.RunMigrations(ctx, app.configurator, fromVM)
 	})
