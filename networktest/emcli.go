@@ -400,11 +400,11 @@ func execCmdCollectOutput(arguments []string, input string, checkTxRes bool) (st
 	}
 
 	// fmt.Println(" *** Running command: ", EMCLI, strings.Join(arguments, " "))
-	// bz, err := cmd.CombinedOutput()
+	bz, err := cmd.CombinedOutput()
 	var b bytes.Buffer
 	cmd.Stderr = &b
 
-	bz, err := cmd.Output()
+	//bz, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
