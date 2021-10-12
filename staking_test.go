@@ -54,7 +54,7 @@ var _ = Describe("Staking", func() {
 				Expect(slash()).ToNot(BeNil())
 
 				// wait 2 blocks
-				nt.IncChain(2)
+				nt.IncChain(3)
 
 				rewardsJson, err := emcli.QueryRewards(Validator0Key.GetAddress())
 				Expect(err).ToNot(HaveOccurred())
@@ -75,6 +75,8 @@ var _ = Describe("Staking", func() {
 				_, success, err := emcli.UnjailValidator(Validator2Key.GetAddress())
 				Expect(success).To(BeTrue())
 				Expect(err).ToNot(HaveOccurred())
+
+				nt.IncChain(1)
 
 				validators, err = emcli.QueryValidators()
 				Expect(err).ToNot(HaveOccurred())
