@@ -31,6 +31,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -453,11 +454,14 @@ func NewApp(
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
-	app.SetAnteHandler(
-		ante.NewAnteHandler(
-			app.accountKeeper, app.bankKeeper, app.stakingKeeper,
-			encodingConfig.TxConfig.SignModeHandler(),
-		),
+	anteHandler, err := ante.NewAnteHandler(
+		ante.HandlerOptions{
+			AccountKeeper:  app.accountKeeper,
+			BankKeeper:     app.bankKeeper,
+			FeegrantKeeper: app.FeeGrantKeeper,
+			StakingKeeper:  app.stakingKeeper,
+			SigGasConsumer: sdkante.DefaultSigVerificationGasConsumer,
+		},
 	)
 	app.SetEndBlocker(app.EndBlocker)
 
