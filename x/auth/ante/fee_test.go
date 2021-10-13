@@ -1,6 +1,9 @@
 package ante_test
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
+	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"testing"
 	"time"
 
@@ -132,10 +135,11 @@ func (suite *AnteTestSuite) setup() {
 	encConfig := MakeTestEncodingConfig()
 
 	var (
-		keyAuthCap = sdk.NewKVStoreKey("authCapKey")
-		keyParams  = sdk.NewKVStoreKey("params")
-		keyBank    = sdk.NewKVStoreKey(banktypes.ModuleName)
-		tkeyParams = sdk.NewTransientStoreKey("transient_params")
+		keyAuthCap  = sdk.NewKVStoreKey("authCapKey")
+		keyParams   = sdk.NewKVStoreKey("params")
+		keyBank     = sdk.NewKVStoreKey(banktypes.ModuleName)
+		keyFeeGrant = sdk.NewKVStoreKey(feegrant.ModuleName)
+		tkeyParams  = sdk.NewTransientStoreKey("transient_params")
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
@@ -150,6 +154,7 @@ func (suite *AnteTestSuite) setup() {
 	ms.MountStoreWithDB(keyAuthCap, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyBank, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyFeeGrant, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(suite.T(), err)
@@ -164,8 +169,9 @@ func (suite *AnteTestSuite) setup() {
 	bk := bankkeeper.NewBaseKeeper(
 		encConfig.Marshaler, keyBank, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 	)
+	fk := feegrantkeeper.NewKeeper(encConfig.Marshaler, keyFeeGrant, ak)
 
-	dfd := ante.NewDeductFeeDecorator(ak, bk, mockStakingKeeper{"ungm"})
+	dfd := ante.NewDeductFeeDecorator(ak, bk, mockStakingKeeper{"ungm"}, fk)
 
 	suite.anteHandler = sdk.ChainAnteDecorators(dfd)
 	suite.ak = ak
@@ -191,6 +197,7 @@ func MakeTestEncodingConfig() simappparams.EncodingConfig {
 		bank.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		feegrantmodule.AppModuleBasic{},
 	)
 
 	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)

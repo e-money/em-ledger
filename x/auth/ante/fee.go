@@ -19,7 +19,7 @@ import (
 // If the fee is paid with a stablecoin balance, it is sent to the buyback module
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 // https://github.com/e-money/em-ledger/issues/41
-// This is a fork of from the SDK (version v0.42.4)
+// From SDK v0.44.2 https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/auth/ante/fee.go
 type DeductFeeDecorator struct {
 	ak             sdkante.AccountKeeper
 	bankKeeper     types.BankKeeper
@@ -53,13 +53,8 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	fee := feeTx.GetFee()
 	feeGranter := feeTx.FeeGranter()
 	feePayer := feeTx.FeePayer()
-	feePayerAcc := dfd.ak.GetAccount(ctx, feePayer)
 
 	deductFeesFrom := feePayer
-
-	if feePayerAcc == nil {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", feePayer)
-	}
 
 	// if feegranter set deduct fee from feegranter account.
 	// this works with only when feegrant enabled.
@@ -84,8 +79,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	// deduct the fees
 	if !feeTx.GetFee().IsZero() {
-		//err = deductFees(dfd.bankKeeper, dfd.stakingKeeper, ctx, feePayerAcc, feeTx.GetFee())
-		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
+		err = deductFees(dfd.bankKeeper, dfd.stakingKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
 		if err != nil {
 			return ctx, err
 		}
@@ -131,20 +125,6 @@ func deductFees(bankKeeper types.BankKeeper, stakingKeeper StakingKeeper, ctx sd
 		if err != nil {
 			return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
 		}
-	}
-
-	return nil
-}
-
-// DeductFees deducts fees from the given account.
-func DeductFees(bankKeeper types.BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
-	if !fees.IsValid() {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
-	}
-
-	err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
 	}
 
 	return nil

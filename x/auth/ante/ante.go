@@ -7,23 +7,25 @@ import (
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	channelkeeper "github.com/cosmos/ibc-go/modules/core/04-channel/keeper"
 )
 
-// HandlerOptions are the options required for constructing a default SDK AnteHandler.
-type HandlerOptions struct {
+// EmAnteHandlerOptions are the options required for constructing a default SDK AnteHandler.
+type EmAnteHandlerOptions struct {
 	AccountKeeper   sdkante.AccountKeeper
 	BankKeeper      types.BankKeeper
 	FeegrantKeeper  FeegrantKeeper
-	StakingKeeper   StakingKeeper
+	StakingKeeper   StakingKeeper // em-ledger for special handling of staking fees
 	SignModeHandler authsigning.SignModeHandler
 	SigGasConsumer  func(meter sdk.GasMeter, sig signing.SignatureV2, params types.Params) error
+	IBCChannelkeeper channelkeeper.Keeper
 }
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first
 // signer.
-// Forked from sdk v0.44.1
-func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
+// Forked from sdk v0.44.2
+func NewAnteHandler(options EmAnteHandlerOptions) (sdk.AnteHandler, error) {
 	if options.AccountKeeper == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrLogic, "account keeper is required for ante builder")
 	}
@@ -49,9 +51,6 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		sdkante.NewTxTimeoutHeightDecorator(),
 		sdkante.NewValidateMemoDecorator(options.AccountKeeper),
 		sdkante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
-
-		// TODO review and reconcile new sdk DeductFeeDecorator next 2 lines
-		// sdkante.NewDeductFeeDecorator(ak, bankKeeper, nil),
 		NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.StakingKeeper, options.FeegrantKeeper),
 		sdkante.NewSetPubKeyDecorator(options.AccountKeeper), // SetPubKeyDecorator must be called before all signature verification decorators
 		sdkante.NewValidateSigCountDecorator(options.AccountKeeper),
