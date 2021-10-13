@@ -7,7 +7,6 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
-	channelkeeper "github.com/cosmos/ibc-go/modules/core/04-channel/keeper"
 	"io"
 	"net/http"
 	"os"
@@ -71,6 +70,7 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/modules/core"
 	ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
+	channelkeeper "github.com/cosmos/ibc-go/modules/core/04-channel/keeper"
 	porttypes "github.com/cosmos/ibc-go/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/modules/core/keeper"
