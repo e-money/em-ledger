@@ -310,7 +310,6 @@ func TestScheduleUpgrade(t *testing.T) {
 				Plan: upgradetypes.Plan{
 					Name:   "plan8",
 					Height: 100,
-					Time:   time.Unix(0, 0),
 				},
 			},
 			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error) {
