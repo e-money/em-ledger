@@ -2,21 +2,28 @@ package emoney
 
 import (
 	"encoding/json"
-	"github.com/cosmos/cosmos-sdk/types/module"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	"github.com/e-money/em-ledger/x/authority"
-
-	apptypes "github.com/e-money/em-ledger/types"
-
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ibckeeper "github.com/cosmos/ibc-go/modules/core/keeper"
+	ibctesting "github.com/cosmos/ibc-go/testing"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority"
 	authtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -89,6 +96,134 @@ func getEmSimApp(
 
 	return encCfg, db, app, homeFolder
 }
+
+func init() {
+	ibctesting.DefaultTestingAppInit = getIBCApp
+}
+
+type emIBCApp struct {
+	*EMoneyApp
+	encCfg EncodingConfig
+}
+
+var tempDirs = make([]string, 0, 2)
+
+func (app emIBCApp) GetBaseApp() *baseapp.BaseApp {
+	return app.BaseApp
+}
+
+func (app emIBCApp) GetStakingKeeper() stakingkeeper.Keeper {
+	return app.stakingKeeper
+}
+
+func (app emIBCApp) GetIBCKeeper() *ibckeeper.Keeper {
+	return app.ibcKeeper
+}
+
+func (app emIBCApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
+	return app.scopedIBCKeeper
+}
+
+func (app emIBCApp) GetTxConfig() client.TxConfig {
+	return app.encCfg.TxConfig
+}
+
+func (app emIBCApp) AppCodec() codec.Codec {
+	return app.appCodec
+}
+
+func createIBCApp() (emIBCApp emIBCApp, genesis map[string]json.RawMessage) {
+	var _ ibctesting.TestingApp = emIBCApp
+
+	//configOnce.Do(apptypes.ConfigureSDK)
+	authorityAcc := mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn")
+
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+
+	emIBCApp.encCfg = MakeEncodingConfig()
+	db := dbm.NewMemDB()
+	homeDir, err := os.MkdirTemp("/tmp", "chain-")
+	if err != nil {
+		panic(err)
+	}
+	tempDirs = append(tempDirs, homeDir)
+	logger.Info(fmt.Sprintf("home dir:%s", homeDir))
+
+	emIBCApp.EMoneyApp = NewApp(
+		log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true,
+		map[int64]bool{}, homeDir, 5, emIBCApp.encCfg, EmptyAppOptions{},
+	)
+
+	genesisState := ModuleBasics.DefaultGenesis(emIBCApp.encCfg.Marshaler)
+	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
+
+	genesisState["authority"] = emIBCApp.encCfg.Marshaler.MustMarshalJSON(&authorityState)
+
+
+	return emIBCApp, genesisState
+}
+
+// Bridge the concrete type returning function with the interface returning func
+func getIBCApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
+	return createIBCApp()
+}
+
+// KeeperTestSuite is a testing suite to test keeper functions.
+type KeeperTestSuite struct {
+	suite.Suite
+
+	coordinator *ibctesting.Coordinator
+
+	// testing chains used for convenience and readability
+	chainA *ibctesting.TestChain
+	chainB *ibctesting.TestChain
+}
+
+// SetupTest creates a coordinator with 2 test chains.
+func (suite *KeeperTestSuite) SetupTest() {
+	suite.coordinator = ibctesting.NewCoordinator(suite.T(), 2)
+
+	suite.Nil(suite.chainA)
+	suite.chainA = suite.coordinator.GetChain(ibctesting.GetChainID(0))
+	suite.NotNil(suite.chainA)
+
+	suite.Nil(suite.chainB)
+	suite.chainB = suite.coordinator.GetChain(ibctesting.GetChainID(1))
+	suite.NotNil(suite.chainB)
+}
+
+func NewTransferPath(chainA, chainB *ibctesting.TestChain) *ibctesting.Path {
+	path := ibctesting.NewPath(chainA, chainB)
+	path.EndpointA.ChannelConfig.PortID = ibctesting.TransferPort
+	path.EndpointB.ChannelConfig.PortID = ibctesting.TransferPort
+
+	return path
+}
+
+func (suite *KeeperTestSuite) TestTransfer() {
+	// setup between chainA and chainB
+	path := NewTransferPath(suite.chainA, suite.chainB)
+	suite.coordinator.SetupClients(path)
+	//suite.coordinator.Setup(path)
+	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
+
+}
+
+// TestKeeperTestSuite runs all the tests within this package.
+func TestKeeperTestSuite(t *testing.T) {
+	suite.Run(t, new(KeeperTestSuite))
+}
+
+func (s *KeeperTestSuite) TearDownSuite() {
+	s.T().Log("tearing down ibc test suite")
+	for _, t := range tempDirs {
+		err := os.RemoveAll(t)
+		if err != nil {
+			s.T().Log(fmt.Sprintf("removing %s temp dir %v", t, err))
+		}
+	}
+}
+
 
 // EmptyAppOptions is a stub implementing AppOptions
 type EmptyAppOptions struct{}
