@@ -71,7 +71,10 @@ func (k HistoryKeeper) SetHistoricalInfo(ctx sdk.Context, height int64, hi *type
 
 	key := getHistoricalInfoKey(height)
 	value := k.cdc.MustMarshal(hi)
-	batch.Set(key, value)
+	if err := k.database.Set(key, value); err != nil {
+		// critical to succeed for ibc
+		panic(err)
+	}
 }
 
 // DeleteHistoricalInfo deletes the historical info at a given height
