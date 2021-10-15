@@ -2,24 +2,28 @@ package emoney
 
 import (
 	"encoding/json"
-	"github.com/cosmos/cosmos-sdk/types/module"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	"github.com/e-money/em-ledger/x/authority"
-
-	apptypes "github.com/e-money/em-ledger/types"
-
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority"
 	authtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 	dbm "github.com/tendermint/tm-db"
 )
 
@@ -34,7 +38,7 @@ func mustGetAccAddress(addr string) sdk.AccAddress {
 }
 
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {
-	encCfg, db, app, _ := getEmSimApp(t, mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn"))
+	encCfg, db, app, _ := mustGetEmApp(mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn"))
 	app.Commit()
 
 	// Making a new app object with the db, so that initchain hasn't been called
@@ -48,28 +52,20 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	)
 }
 
-func getEmSimApp(
-	t *testing.T, authorityAcc sdk.AccAddress,
-) (encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string) {
-	t.Helper()
+func mustGetEmApp(authorityAcc sdk.AccAddress) (
+	encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string) {
 
 	encCfg = MakeEncodingConfig()
 	db := dbm.NewMemDB()
-	homeDir := t.TempDir()
-	t.Log("home dir:", homeDir)
+	homeDir, err := os.MkdirTemp("", "emapp")
+	if err != nil {
+		panic(err)
+	}
 
 	app := NewApp(
 		log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true,
 		map[int64]bool{}, homeDir, 0, encCfg, EmptyAppOptions{},
 	)
-
-	for acc := range maccPerms {
-		require.True(
-			t,
-			app.bankKeeper.BlockedAddr(app.accountKeeper.GetModuleAddress(acc)),
-			"ensure that blocked addresses are properly set in bank keeper",
-		)
-	}
 
 	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
 	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
@@ -77,7 +73,9 @@ func getEmSimApp(
 	genesisState["authority"] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	// Initialize the chain
 	app.InitChain(
@@ -112,7 +110,7 @@ func (et emAppTests) initEmApp(t *testing.T) emAppTests {
 	et.authority, err = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	require.NoError(t, err)
 
-	_, _, app, homeDir := getEmSimApp(t, et.authority)
+	_, _, app, homeDir := mustGetEmApp(et.authority)
 
 	et.homeDir = homeDir
 	et.app = app
@@ -330,4 +328,267 @@ func executePlan(
 	schedPlan, hasPlan := ak.GetUpgradePlan(ctx)
 	require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
 	require.NotEqualf(t, schedPlan, plan, "queried %v == %v", schedPlan, plan)
+}
+
+// Migrated from the sdk and ran against the eMoneyApp
+// https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/feegrant/basic_fee_test.go
+func TestBasicFeeValidAllow(t *testing.T) {
+	configOnce.Do(apptypes.ConfigureSDK)
+	_, _, app, _  := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
+
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
+	badTime := ctx.BlockTime().AddDate(0, 0, -1)
+	allowace := &feegrant.BasicAllowance{
+		Expiration: &badTime,
+	}
+	require.Error(t, allowace.ValidateBasic())
+
+	ctx = app.BaseApp.NewContext(
+		false, tmproto.Header{
+			Time: time.Now(),
+		},
+	)
+	eth := sdk.NewCoins(sdk.NewInt64Coin("eth", 10))
+	atom := sdk.NewCoins(sdk.NewInt64Coin("atom", 555))
+	smallAtom := sdk.NewCoins(sdk.NewInt64Coin("atom", 43))
+	bigAtom := sdk.NewCoins(sdk.NewInt64Coin("atom", 1000))
+	leftAtom := sdk.NewCoins(sdk.NewInt64Coin("atom", 512))
+	now := ctx.BlockTime()
+	oneHour := now.Add(1 * time.Hour)
+
+	cases := map[string]struct {
+		allowance *feegrant.BasicAllowance
+		// all other checks are ignored if valid=false
+		fee       sdk.Coins
+		blockTime time.Time
+		valid     bool
+		accept    bool
+		remove    bool
+		remains   sdk.Coins
+	}{
+		"empty": {
+			allowance: &feegrant.BasicAllowance{},
+			accept:    true,
+		},
+		"small fee without expire": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+			},
+			fee:     smallAtom,
+			accept:  true,
+			remove:  false,
+			remains: leftAtom,
+		},
+		"all fee without expire": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: smallAtom,
+			},
+			fee:    smallAtom,
+			accept: true,
+			remove: true,
+		},
+		"wrong fee": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: smallAtom,
+			},
+			fee:    eth,
+			accept: false,
+		},
+		"non-expired": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+				Expiration: &oneHour,
+			},
+			valid:     true,
+			fee:       smallAtom,
+			blockTime: now,
+			accept:    true,
+			remove:    false,
+			remains:   leftAtom,
+		},
+		"expired": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+				Expiration: &now,
+			},
+			valid:     true,
+			fee:       smallAtom,
+			blockTime: oneHour,
+			accept:    false,
+			remove:    true,
+		},
+		"fee more than allowed": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+				Expiration: &oneHour,
+			},
+			valid:     true,
+			fee:       bigAtom,
+			blockTime: now,
+			accept:    false,
+		},
+		"with out spend limit": {
+			allowance: &feegrant.BasicAllowance{
+				Expiration: &oneHour,
+			},
+			valid:     true,
+			fee:       bigAtom,
+			blockTime: now,
+			accept:    true,
+		},
+		"expired no spend limit": {
+			allowance: &feegrant.BasicAllowance{
+				Expiration: &now,
+			},
+			valid:     true,
+			fee:       bigAtom,
+			blockTime: oneHour,
+			accept:    false,
+		},
+	}
+
+	for name, stc := range cases {
+		tc := stc // to make scopelint happy
+		t.Run(
+			name, func(t *testing.T) {
+				err := tc.allowance.ValidateBasic()
+				require.NoError(t, err)
+
+				ctx := app.BaseApp.NewContext(
+					false, tmproto.Header{},
+				).WithBlockTime(tc.blockTime)
+
+				// now try to deduct
+				removed, err := tc.allowance.Accept(ctx, tc.fee, []sdk.Msg{})
+				if !tc.accept {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+
+				require.Equal(t, tc.remove, removed)
+				if !removed {
+					require.Equal(t, tc.allowance.SpendLimit, tc.remains)
+				}
+			},
+		)
+	}
+}
+
+var bankSendAuthMsgType = banktypes.SendAuthorization{}.MsgTypeURL()
+
+type TestAuthzSuite struct {
+	suite.Suite
+
+	app         *EMoneyApp
+	ctx         sdk.Context
+	addrs       []sdk.AccAddress
+	queryClient authz.QueryClient
+}
+
+func (s *TestAuthzSuite) SetupTest() {
+	configOnce.Do(apptypes.ConfigureSDK)
+	_, _, app, _  := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
+	now := tmtime.Now()
+	ctx = ctx.WithBlockHeader(tmproto.Header{Time: now})
+	queryHelper := baseapp.NewQueryServerTestHelper(ctx, app.InterfaceRegistry())
+	authz.RegisterQueryServer(queryHelper, app.authzKeeper)
+	queryClient := authz.NewQueryClient(queryHelper)
+	s.queryClient = queryClient
+
+	s.app = app
+	s.ctx = ctx
+	s.queryClient = queryClient
+	s.addrs = []sdk.AccAddress{
+		mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"),
+		mustGetAccAddress("emoney124f7ce4x7j3wsfctfzlggxluxjk9t0hl05rj5d"),
+		mustGetAccAddress("emoney1um0tg8zeg8y9qn9l5pz3sygq7q5xmhkqjrylak"),
+	}
+}
+
+// Migrated from the sdk and ran against the eMoneyApp
+// https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/feegrant/basic_fee_test.go
+func (s *TestAuthzSuite) TestAuthzKeeper() {
+	app, ctx, addrs := s.app, s.ctx, s.addrs
+
+	granterAddr := addrs[0]
+	granteeAddr := addrs[1]
+	recipientAddr := addrs[2]
+
+	s.T().Log("verify that no authorization returns nil")
+	authorization, expiration := app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+	s.Require().Equal(expiration, time.Time{})
+	now := s.ctx.BlockHeader().Time
+	s.Require().NotNil(now)
+
+	newCoins := sdk.NewCoins(sdk.NewInt64Coin("steak", 100))
+	s.T().Log("verify if expired authorization is rejected")
+	x := &banktypes.SendAuthorization{SpendLimit: newCoins}
+	err := app.authzKeeper.SaveGrant(ctx, granterAddr, granteeAddr, x, now.Add(-1*time.Hour))
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify if authorization is accepted")
+	x = &banktypes.SendAuthorization{SpendLimit: newCoins}
+	err = app.authzKeeper.SaveGrant(ctx, granteeAddr, granterAddr, x, now.Add(time.Hour))
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().NotNil(authorization)
+	s.Require().Equal(authorization.MsgTypeURL(), bankSendAuthMsgType)
+
+	s.T().Log("verify fetching authorization with wrong msg type fails")
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, sdk.MsgTypeURL(&banktypes.MsgMultiSend{}))
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify fetching authorization with wrong grantee fails")
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, recipientAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify revoke fails with wrong information")
+	err = app.authzKeeper.DeleteGrant(ctx, recipientAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Error(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, recipientAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify revoke executes with correct information")
+	err = app.authzKeeper.DeleteGrant(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+}
+
+func (s *TestAuthzSuite) TestAuthzKeeperIter() {
+	app, ctx, addrs := s.app, s.ctx, s.addrs
+
+	granterAddr := addrs[0]
+	granteeAddr := addrs[1]
+
+	s.T().Log("verify that no authorization returns nil")
+	authorization, expiration := app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, "Abcd")
+	s.Require().Nil(authorization)
+	s.Require().Equal(time.Time{}, expiration)
+	now := s.ctx.BlockHeader().Time
+	s.Require().NotNil(now)
+
+	newCoins := sdk.NewCoins(sdk.NewInt64Coin("steak", 100))
+	s.T().Log("verify if expired authorization is rejected")
+	x := &banktypes.SendAuthorization{SpendLimit: newCoins}
+	err := app.authzKeeper.SaveGrant(ctx, granteeAddr, granterAddr, x, now.Add(-1*time.Hour))
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, "abcd")
+	s.Require().Nil(authorization)
+
+	app.authzKeeper.IterateGrants(ctx, func(granter, grantee sdk.AccAddress, grant authz.Grant) bool {
+		s.Require().Equal(granter, granterAddr)
+		s.Require().Equal(grantee, granteeAddr)
+		return true
+	})
+}
+
+func TestTestSuite(t *testing.T) {
+	suite.Run(t, new(TestAuthzSuite))
 }
