@@ -159,7 +159,6 @@ func createIBCApp() (emIBCApp emIBCApp, genesis map[string]json.RawMessage) {
 
 	genesisState["authority"] = emIBCApp.encCfg.Marshaler.MustMarshalJSON(&authorityState)
 
-
 	return emIBCApp, genesisState
 }
 
@@ -168,8 +167,8 @@ func getIBCApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
 	return createIBCApp()
 }
 
-// KeeperTestSuite is a testing suite to test keeper functions.
-type KeeperTestSuite struct {
+// IBCTestSuite is a testing suite to test keeper functions.
+type IBCTestSuite struct {
 	suite.Suite
 
 	coordinator *ibctesting.Coordinator
@@ -180,7 +179,7 @@ type KeeperTestSuite struct {
 }
 
 // SetupTest creates a coordinator with 2 test chains.
-func (suite *KeeperTestSuite) SetupTest() {
+func (suite *IBCTestSuite) SetupTest() {
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), 2)
 
 	suite.Nil(suite.chainA)
@@ -200,21 +199,24 @@ func NewTransferPath(chainA, chainB *ibctesting.TestChain) *ibctesting.Path {
 	return path
 }
 
-func (suite *KeeperTestSuite) TestTransfer() {
+func (suite *IBCTestSuite) Test_IBCTransfer() {
 	// setup between chainA and chainB
 	path := NewTransferPath(suite.chainA, suite.chainB)
-	suite.coordinator.SetupClients(path)
-	//suite.coordinator.Setup(path)
+
+	// Succeeds setting the clients
+	// suite.coordinator.SetupClients(path)
+
+	// Fails here
+	suite.coordinator.Setup(path)
+
 	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
-
 }
 
-// TestKeeperTestSuite runs all the tests within this package.
-func TestKeeperTestSuite(t *testing.T) {
-	suite.Run(t, new(KeeperTestSuite))
+func Test_IBCSuite(t *testing.T) {
+	suite.Run(t, new(IBCTestSuite))
 }
 
-func (s *KeeperTestSuite) TearDownSuite() {
+func (s *IBCTestSuite) TearDownSuite() {
 	s.T().Log("tearing down ibc test suite")
 	for _, t := range tempDirs {
 		err := os.RemoveAll(t)
