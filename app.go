@@ -7,6 +7,7 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"io"
 	"net/http"
 	"os"
@@ -69,7 +70,6 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/modules/core"
-	ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	channelkeeper "github.com/cosmos/ibc-go/modules/core/04-channel/keeper"
 	porttypes "github.com/cosmos/ibc-go/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/modules/core/24-host"
@@ -304,41 +304,7 @@ func NewApp(
 	)
 	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp)
 
-	// Used for lilmermaid-16
-	const upgPlan1 = "upgrade-plan-1"
-	app.upgradeKeeper.SetUpgradeHandler(
-		upgPlan1,
-		func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
-			app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
-
-			// TODO revisit this and check default of 1
-			fromVM := make(map[string]uint64)
-			for moduleName := range app.mm.Modules {
-				fromVM[moduleName] = 1
-			}
-			// override versions for _new_ modules as to not skip InitGenesis
-			fromVM[authz.ModuleName] = 0
-			fromVM[feegrant.ModuleName] = 0
-
-			ctx.Logger().Info("Upgraded to upgrade-plan-1")
-
-			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
-		},
-	)
-
-	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
-	}
-
-	if upgradeInfo.Name == upgPlan1 && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{
-			Added: []string{authz.ModuleName, feegrant.ModuleName},
-		}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
+	app.registerUpgradeHandlers()
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
@@ -502,6 +468,43 @@ func NewApp(
 	return app
 }
 
+func (app *EMoneyApp) registerUpgradeHandlers() {
+	const upg44Plan = "v44-upgrade"
+
+	app.upgradeKeeper.SetUpgradeHandler(
+		upg44Plan,
+		func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
+			app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
+
+			fromVM := make(map[string]uint64)
+			for _, mod := range app.mm.Modules {
+				fromVM[mod.Name()] = mod.ConsensusVersion()
+			}
+			// override versions for _new_ modules as to not skip InitGenesis
+			fromVM[authz.ModuleName] = 0
+			fromVM[feegrant.ModuleName] = 0
+
+			ctx.Logger().Info("Upgraded to " + upg44Plan)
+
+			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+		},
+	)
+
+	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
+	}
+
+	if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{
+			Added: []string{authz.ModuleName, feegrant.ModuleName},
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
+}
+
 func createApplicationDatabase(rootDir string) db.DB {
 	datadirectory := filepath.Join(rootDir, "data")
 	emoneydb, err := db.NewGoLevelDB("emoney", datadirectory)
@@ -553,12 +556,15 @@ func (app *EMoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 	return response
 }
 
-// application update at chain initialization
+// InitChainer application update at chain initialization
 func (app *EMoneyApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
 	var genesisState GenesisState
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
+
+	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
