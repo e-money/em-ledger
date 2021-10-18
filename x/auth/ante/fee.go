@@ -2,10 +2,10 @@ package ante
 
 import (
 	"fmt"
-	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/e-money/em-ledger/x/buyback"
 )
@@ -18,18 +18,20 @@ import (
 // If the fee is paid with a stablecoin balance, it is sent to the buyback module
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 // https://github.com/e-money/em-ledger/issues/41
-// This is a fork of from the SDK (version v0.42.4)
+// From SDK v0.44.2 https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/auth/ante/fee.go
 type DeductFeeDecorator struct {
-	ak            sdkante.AccountKeeper
-	bankKeeper    types.BankKeeper
-	stakingKeeper StakingKeeper
+	ak             sdkante.AccountKeeper
+	bankKeeper     types.BankKeeper
+	stakingKeeper  StakingKeeper
+	feegrantKeeper FeegrantKeeper
 }
 
-func NewDeductFeeDecorator(ak sdkante.AccountKeeper, bk types.BankKeeper, sk StakingKeeper) DeductFeeDecorator {
+func NewDeductFeeDecorator(ak sdkante.AccountKeeper, bk types.BankKeeper, sk StakingKeeper, fk FeegrantKeeper) DeductFeeDecorator {
 	return DeductFeeDecorator{
-		ak:            ak,
-		bankKeeper:    bk,
-		stakingKeeper: sk,
+		ak:             ak,
+		bankKeeper:     bk,
+		stakingKeeper:  sk,
+		feegrantKeeper: fk,
 	}
 }
 
@@ -47,20 +49,45 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		panic(fmt.Sprintf("%s module account has not been set", buyback.AccountName))
 	}
 
+	fee := feeTx.GetFee()
+	feeGranter := feeTx.FeeGranter()
 	feePayer := feeTx.FeePayer()
-	feePayerAcc := dfd.ak.GetAccount(ctx, feePayer)
 
-	if feePayerAcc == nil {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", feePayer)
+	deductFeesFrom := feePayer
+
+	// if feegranter set deduct fee from feegranter account.
+	// this works with only when feegrant enabled.
+	if feeGranter != nil {
+		if dfd.feegrantKeeper == nil {
+			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "fee grants are not enabled")
+		} else if !feeGranter.Equals(feePayer) {
+			err := dfd.feegrantKeeper.UseGrantedFees(ctx, feeGranter, feePayer, fee, tx.GetMsgs())
+
+			if err != nil {
+				return ctx, sdkerrors.Wrapf(err, "%s not allowed to pay fees from %s", feeGranter, feePayer)
+			}
+		}
+
+		deductFeesFrom = feeGranter
+	}
+
+	deductFeesFromAcc := dfd.ak.GetAccount(ctx, deductFeesFrom)
+	if deductFeesFromAcc == nil {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", deductFeesFrom)
 	}
 
 	// deduct the fees
 	if !feeTx.GetFee().IsZero() {
-		err = deductFees(dfd.bankKeeper, dfd.stakingKeeper, ctx, feePayerAcc, feeTx.GetFee())
+		err = deductFees(dfd.bankKeeper, dfd.stakingKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
 		if err != nil {
 			return ctx, err
 		}
 	}
+
+	events := sdk.Events{sdk.NewEvent(sdk.EventTypeTx,
+		sdk.NewAttribute(sdk.AttributeKeyFee, feeTx.GetFee().String()),
+	)}
+	ctx.EventManager().EmitEvents(events)
 
 	return next(ctx, tx, simulate)
 }
