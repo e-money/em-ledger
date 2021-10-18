@@ -290,6 +290,12 @@ func NewApp(
 		ctx.Logger().Info("Upgraded to upgrade-plan-1")
 	})
 
+	const v44UpgPlan = "v44-upg-test"
+	app.upgradeKeeper.SetUpgradeHandler(
+		v44UpgPlan, func(ctx sdk.Context, plan upgradetypes.Plan) {
+		ctx.Logger().Info("Upgraded to " + v44UpgPlan)
+	})
+
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
