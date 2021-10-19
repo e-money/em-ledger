@@ -469,7 +469,7 @@ func NewApp(
 }
 
 func (app *EMoneyApp) registerUpgradeHandlers() {
-	const upg44Plan = "v44-upgrade"
+	const upg44Plan = "v44-upg-test"
 
 	app.upgradeKeeper.SetUpgradeHandler(
 		upg44Plan,
