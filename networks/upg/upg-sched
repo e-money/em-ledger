@@ -1,5 +1,5 @@
-#!/bin/bash
-
+#!/bin/sh
+# Invoke to schedule an upgrade
 # $1 : choose a future block height to upgrade
 
 set -e
@@ -17,10 +17,3 @@ $EMD tx authority schedule-upgrade authoritykey $UPG_PLAN --upgrade-height "$1" 
 
 # confirm upg plan
 $EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test
-
-# ---------- after upgrade --------->
-$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
-#$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test # is nil again
-$EMD version # UPG_PLAN
-
-$EMD query upgrade applied $UPG_PLAN
