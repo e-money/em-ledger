@@ -1,0 +1,13 @@
+#!/bin/sh
+# Run post the upgrade to confirm upgraded values
+set -e
+
+EMD=.emd/cosmovisor/current/bin/emd
+
+UPG_PLAN=v44-upg-test
+
+$EMD version # UPG_PLAN
+
+$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
+
+$EMD query upgrade applied $UPG_PLAN
