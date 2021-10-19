@@ -7,12 +7,13 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
-	ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -471,6 +472,14 @@ func NewApp(
 func (app *EMoneyApp) registerUpgradeHandlers() {
 	const upg44Plan = "v44-upg-test"
 
+	fmt.Println("")
+	fmt.Println("*** ------------------------------------------------------- ")
+
+	fmt.Println("Entered registerUpgradeHandlers")
+
+	fmt.Println("*** ------------------------------------------------------- ")
+	fmt.Println("")
+
 	app.upgradeKeeper.SetUpgradeHandler(
 		upg44Plan,
 		func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
@@ -490,12 +499,28 @@ func (app *EMoneyApp) registerUpgradeHandlers() {
 		},
 	)
 
+	fmt.Println("")
+	fmt.Println("*** ------------------------------------------------------- ")
+
+	fmt.Println("after SetUpgradeHandler", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
+
+	fmt.Println("*** ------------------------------------------------------- ")
+	fmt.Println("")
+
 	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
 	}
 
 	if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		fmt.Println("")
+		fmt.Println("*** ------------------------------------------------------- ")
+
+		fmt.Println("entered setStoreLoader check", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
+
+		fmt.Println("*** ------------------------------------------------------- ")
+		fmt.Println("")
+
 		storeUpgrades := store.StoreUpgrades{
 			Added: []string{authz.ModuleName, feegrant.ModuleName},
 		}
@@ -503,6 +528,14 @@ func (app *EMoneyApp) registerUpgradeHandlers() {
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
+
+	fmt.Println("")
+	fmt.Println("*** ------------------------------------------------------- ")
+
+	fmt.Println("after SetStoreLoader", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
+
+	fmt.Println("*** ------------------------------------------------------- ")
+	fmt.Println("")
 }
 
 func createApplicationDatabase(rootDir string) db.DB {
