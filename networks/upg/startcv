@@ -48,6 +48,4 @@ export DAEMON_HOME=$EMD_NODE
 
 echo "node home: $DAEMON_HOME"
 
-cosmovisor version
-
 cosmovisor start --home="$DAEMON_HOME"
