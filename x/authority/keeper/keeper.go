@@ -240,10 +240,5 @@ func (k Keeper) ScheduleUpgrade(
 
 func (k Keeper) GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool) {
 
-	plan, hasPlan := k.upgradeKeeper.GetUpgradePlan(ctx)
-	if !hasPlan {
-		return plan, false
-	}
-
-	return plan, k.upgradeKeeper.HasHandler(plan.Name)
+	return k.upgradeKeeper.GetUpgradePlan(ctx)
 }
