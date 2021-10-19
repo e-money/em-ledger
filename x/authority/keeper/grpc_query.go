@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -26,7 +27,10 @@ func (k Keeper) UpgradePlan(c context.Context, req *types.QueryUpgradePlanReques
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	plan, _ := k.GetUpgradePlan(ctx)
+	plan, hasHandler := k.GetUpgradePlan(ctx)
+	plan.Info = fmt.Sprintf("%q has handler:%t", plan.Name, hasHandler)
 
-	return &types.QueryUpgradePlanResponse{Plan: plan}, nil
+	return &types.QueryUpgradePlanResponse{
+		Plan: plan,
+	}, nil
 }
