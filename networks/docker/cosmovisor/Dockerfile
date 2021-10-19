@@ -2,6 +2,6 @@
 #
 # Please contact partners@e-money.com for licensing related questions.
 
-FROM golang:1.17-buster AS build-env
+FROM golang:1.17-buster
 
 RUN go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0

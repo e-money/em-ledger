@@ -8,7 +8,7 @@
 # │ └── bin
 # │     └── emd
 # └── upgrades
-#     └── test-upg-0.2.0
+#     └── v44-upg-test
 #         └── bin
 #             └── emd
 
@@ -33,7 +33,7 @@ rm -f "$COSMOVISOR_HOME"/current
 
 mkdir -p "$COSMOVISOR_HOME"/genesis/bin
 cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
-UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.2.0/bin
+UPG_LOC="$COSMOVISOR_HOME"/upgrades/v44-upg-test/bin
 
 mkdir -p "$UPG_LOC"
 if [ "$(uname)" = "Linux"  ]; then
