@@ -9,7 +9,7 @@ cosmovisor:
 	docker build cosmovisor --tag emoney/cosmovisor
 
 test-upg:
-	docker build test-upg --build-arg version=v44-upg-test --tag emoney/test-upg
+	docker build test-upg --build-arg branch=v44-upgrade --build-arg version=v44-upg-test --tag emoney/test-upg
 
 # todo (reviewer): please note the rest-server is not a command anymore. Please enable `api` section in `app.toml` instead
 
