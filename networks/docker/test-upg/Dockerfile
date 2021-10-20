@@ -6,6 +6,9 @@ ARG version
 RUN cd /go/src && \
     git clone --depth 1 --single-branch --branch $version https://github.com/e-money/em-ledger.git && \
     cd em-ledger && \
+    sed -i '16 i\    ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"' app.go && \
+    sed -i '16 i\    store "github.com/cosmos/cosmos-sdk/store/types"' app.go && \
+    sed -i -e '/upgradekeeper.NewKeeper/r networks/upg/upgfunc.txt' app.go && \
     FAST_CONSENSUS=true BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 make build
 
 # build MacOS binary

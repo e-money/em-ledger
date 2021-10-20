@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 	"time"
 
-	ibcconnectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -25,7 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -305,8 +302,6 @@ func NewApp(
 	)
 	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp)
 
-	app.registerUpgradeHandlers()
-
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
@@ -467,75 +462,6 @@ func NewApp(
 	app.scopedTransferKeeper = scopedTransferKeeper
 
 	return app
-}
-
-func (app *EMoneyApp) registerUpgradeHandlers() {
-	const upg44Plan = "v44-upg-test"
-
-	fmt.Println("")
-	fmt.Println("*** ------------------------------------------------------- ")
-
-	fmt.Println("Entered registerUpgradeHandlers")
-
-	fmt.Println("*** ------------------------------------------------------- ")
-	fmt.Println("")
-
-	app.upgradeKeeper.SetUpgradeHandler(
-		upg44Plan,
-		func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
-			app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
-
-			fromVM := make(map[string]uint64)
-			for _, mod := range app.mm.Modules {
-				fromVM[mod.Name()] = mod.ConsensusVersion()
-			}
-			// override versions for _new_ modules as to not skip InitGenesis
-			fromVM[authz.ModuleName] = 0
-			fromVM[feegrant.ModuleName] = 0
-
-			ctx.Logger().Info("Upgraded to " + upg44Plan)
-
-			return app.mm.RunMigrations(ctx, app.configurator, fromVM)
-		},
-	)
-
-	fmt.Println("")
-	fmt.Println("*** ------------------------------------------------------- ")
-
-	fmt.Println("after SetUpgradeHandler", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
-
-	fmt.Println("*** ------------------------------------------------------- ")
-	fmt.Println("")
-
-	upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
-	}
-
-	if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		fmt.Println("")
-		fmt.Println("*** ------------------------------------------------------- ")
-
-		fmt.Println("entered setStoreLoader check", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
-
-		fmt.Println("*** ------------------------------------------------------- ")
-		fmt.Println("")
-
-		storeUpgrades := store.StoreUpgrades{
-			Added: []string{authz.ModuleName, feegrant.ModuleName},
-		}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
-
-	fmt.Println("")
-	fmt.Println("*** ------------------------------------------------------- ")
-
-	fmt.Println("after SetStoreLoader", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
-
-	fmt.Println("*** ------------------------------------------------------- ")
-	fmt.Println("")
 }
 
 func createApplicationDatabase(rootDir string) db.DB {
