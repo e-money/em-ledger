@@ -1,12 +1,12 @@
 package keeper
 
 import (
-	dbm "github.com/tendermint/tm-db"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	dbm "github.com/tendermint/tm-db"
 
 	apptypes "github.com/e-money/em-ledger/types"
 	staking "github.com/e-money/em-ledger/x/staking/types"
@@ -22,7 +22,7 @@ var (
 )
 
 type HistoryKeeper struct {
-	storeKey      sdk.StoreKey
+	StoreKey      sdk.StoreKey
 	cdc           codec.BinaryCodec
 	stakingKeeper staking.StakingKeeper
 	database      dbm.DB
@@ -38,7 +38,7 @@ func getHistoricalInfoKey(height int64) []byte {
 // NewKeeper creates a new staking Keeper instance
 func NewHistoryKeeper(cdc codec.Codec, key sdk.StoreKey, stakingkeeper staking.StakingKeeper, db dbm.DB) HistoryKeeper {
 	return HistoryKeeper{
-		storeKey:      key,
+		StoreKey:      key,
 		cdc:           cdc,
 		stakingKeeper: stakingkeeper,
 		database:      db,
