@@ -1,17 +1,9 @@
-
+// beginning of test upg handler insertion
 	{
-        /*
-         * This is a test v44 handler
-         */
+		/*
+		 * This is a test v44 handler
+		 */
 		const upg44Plan = "v44-upg-test"
-
-		fmt.Println("")
-		fmt.Println("*** ------------------------------------------------------- ")
-
-		fmt.Println("Before SetUpgradeHandler")
-
-		fmt.Println("*** ------------------------------------------------------- ")
-		fmt.Println("")
 
 		app.upgradeKeeper.SetUpgradeHandler(
 			upg44Plan,
@@ -19,26 +11,23 @@
 				app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
 
 				fromVM := make(map[string]uint64)
-				for _, mod := range app.mm.Modules {
-					fromVM[mod.Name()] = mod.ConsensusVersion()
+				for moduleName := range app.mm.Modules {
+					// v40 state is version 1
+					// v43 state is version 2
+					// V43: em-ledger modules with state migration should set consensus version to 2
+					// v45 state is likely v3
+					fromVM[moduleName] = 1
 				}
+
 				// override versions for _new_ modules as to not skip InitGenesis
 				fromVM[authz.ModuleName] = 0
 				fromVM[feegrant.ModuleName] = 0
 
-				ctx.Logger().Info("Upgraded to " + upg44Plan)
+				ctx.Logger().Info("Upgrading to " + upg44Plan)
 
 				return app.mm.RunMigrations(ctx, app.configurator, fromVM)
 			},
 		)
-
-		fmt.Println("")
-		fmt.Println("*** ------------------------------------------------------- ")
-
-		fmt.Println("after SetUpgradeHandler", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
-
-		fmt.Println("*** ------------------------------------------------------- ")
-		fmt.Println("")
 
 		upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
 		if err != nil {
@@ -46,27 +35,12 @@
 		}
 
 		if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-			fmt.Println("")
-			fmt.Println("*** ------------------------------------------------------- ")
-
-			fmt.Println("entered setStoreLoader check", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
-
-			fmt.Println("*** ------------------------------------------------------- ")
-			fmt.Println("")
-
 			storeUpgrades := store.StoreUpgrades{
-				Added: []string{authz.ModuleName, feegrant.ModuleName},
+				//Added: []string{authz.ModuleName, feegrant.ModuleName},
 			}
 
 			// configure store loader that checks if version == upgradeHeight and applies store upgrades
 			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 		}
-
-		fmt.Println("")
-		fmt.Println("*** ------------------------------------------------------- ")
-
-		fmt.Println("after SetStoreLoader", upg44Plan, "has handler:", app.upgradeKeeper.HasHandler(upg44Plan))
-
-		fmt.Println("*** ------------------------------------------------------- ")
-		fmt.Println("")
 	}
+// end of insert
