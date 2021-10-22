@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/e-money/em-ledger/x/slashing/migration"
+
 	sdkslashing "github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/e-money/em-ledger/x/slashing/keeper"
 	"github.com/e-money/em-ledger/x/slashing/types"
@@ -119,7 +121,7 @@ func NewAppModule(cdc codec.Codec, keeper keeper.Keeper, ak sdkslashingtypes.Acc
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (AppModule) ConsensusVersion() uint64 { return 2 }
 
 // Name returns the slashing module's name.
 func (AppModule) Name() string {
@@ -148,6 +150,9 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	sdkslashingtypes.RegisterMsgServer(cfg.MsgServer(), sdkslashingkeeper.NewMsgServerImpl(am.keeper.Keeper))
 	sdkslashingtypes.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+
+	m := migration.NewMigrator(am.keeper)
+	cfg.RegisterMigration(ModuleName, 1, m.Migrate1to2)
 }
 
 // InitGenesis performs genesis initialization for the slashing module. It returns
