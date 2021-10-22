@@ -1,0 +1,49 @@
+#!/bin/sh
+
+set -ev
+
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+
+# optionally uncomment to copy future upgrade binary in location if
+# auto-downloading is not available as a primary or none at all
+# by default we assume it is on and the upgrade binary is not available
+# locally: DAEMON_RESTART_AFTER_UPGRADE=true
+#./cpupgemd
+
+EMD_NODE=$PWD/.emd
+EMD=../../build/emd
+
+# do not do this in production
+# do not delete cosmovisor if it exists
+rm -rf "$EMD_NODE"/config
+rm -rf "$EMD_NODE"/data
+rm -rf "$EMD_NODE"/keyring-test
+
+./cpemd
+
+$EMD unsafe-reset-all --home=$EMD_NODE
+
+$EMD init test --chain-id=test --home="$EMD_NODE" --overwrite
+$EMD keys add validator --keyring-backend=test --home="$EMD_NODE"
+$EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home=$EMD_NODE
+$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id=test
+
+# create genesis emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t to set the authority later
+AUTH_SEED="fuel public electric luxury short upper quit edge ginger need olive gesture time useful stadium exhaust since team pond wool type flat focus narrow"
+(echo "$AUTH_SEED"; echo "$AUTH_SEED") | $EMD keys add authoritykey --recover --keyring-backend=test --home="$EMD_NODE"
+AUTHORITY_ADDR=$($EMD keys show authoritykey -a --keyring-backend=test --home="$EMD_NODE")
+$EMD add-genesis-account "$AUTHORITY_ADDR" 1000000000000ungm --home=$EMD_NODE
+
+$EMD collect-gentxs --home="$EMD_NODE"
+
+# set the auth address as the chain authority
+AUTHORITY_ADDR_VAL=".app_state.authority.key=\"$AUTHORITY_ADDR\""
+jq $AUTHORITY_ADDR_VAL < "$EMD_NODE"/config/genesis.json > "$EMD_NODE"/config/tmp_genesis.json
+mv "$EMD_NODE"/config/tmp_genesis.json "$EMD_NODE"/config/genesis.json
+
+export DAEMON_HOME=$EMD_NODE
+
+echo "node home: $DAEMON_HOME"
