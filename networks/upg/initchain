@@ -21,6 +21,7 @@ EMD=../../build/emd
 rm -rf "$EMD_NODE"/config
 rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
+rm -rf "$EMD_NODE"/cosmovisor/current
 
 ./cpemd
 
