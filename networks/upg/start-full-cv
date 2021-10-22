@@ -15,4 +15,5 @@ export DAEMON_RESTART_AFTER_UPGRADE=true
 
 export DAEMON_HOME=$PWD/.emd
 
+./initchain
 cosmovisor start --home="$DAEMON_HOME"
