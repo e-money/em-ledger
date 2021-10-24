@@ -1,3 +1,5 @@
+// +build chaintest
+
 package cli_test
 
 import (
