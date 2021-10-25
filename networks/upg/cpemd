@@ -8,7 +8,7 @@
 # │ └── bin
 # │     └── emd
 # └── upgrades
-#     └── test-upg-0.2.0
+#     └── v44-upg-test
 #         └── bin
 #             └── emd
 
@@ -30,10 +30,12 @@ COSMOVISOR_HOME="$EM_LEDGER_LOC"/networks/upg/.emd/cosmovisor
 
 # clean up previous sticky upgrade
 rm -f "$COSMOVISOR_HOME"/current
+rm -f "$COSMOVISOR_HOME"/genesis/bin/emd
+rm -rf "$COSMOVISOR_HOME"/upgrades
 
 mkdir -p "$COSMOVISOR_HOME"/genesis/bin
 cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
-UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.2.0/bin
+UPG_LOC="$COSMOVISOR_HOME"/upgrades/v44-upg-test/bin
 
 mkdir -p "$UPG_LOC"
 if [ "$(uname)" = "Linux"  ]; then
@@ -46,4 +48,3 @@ echo "legacy or current binary:"
 ls "$COSMOVISOR_HOME"/genesis/bin/emd
 echo "upgrade binary:"
 ls "$UPG_LOC"/emd
-echo "current version: $(cosmovisor version)"
