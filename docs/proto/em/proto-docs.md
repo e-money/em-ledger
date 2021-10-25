@@ -141,8 +141,11 @@
     - [Msg](#em.market.v1.Msg)
   
 - [em/queries/v1/query.proto](#em/queries/v1/query.proto)
+    - [MissedBlocksInfo](#em.queries.v1.MissedBlocksInfo)
     - [QueryCirculatingRequest](#em.queries.v1.QueryCirculatingRequest)
     - [QueryCirculatingResponse](#em.queries.v1.QueryCirculatingResponse)
+    - [QueryMissedBlocksRequest](#em.queries.v1.QueryMissedBlocksRequest)
+    - [QueryMissedBlocksResponse](#em.queries.v1.QueryMissedBlocksResponse)
     - [QuerySpendableRequest](#em.queries.v1.QuerySpendableRequest)
     - [QuerySpendableResponse](#em.queries.v1.QuerySpendableResponse)
   
@@ -1681,6 +1684,24 @@
 
 
 
+<a name="em.queries.v1.MissedBlocksInfo"></a>
+
+### MissedBlocksInfo
+ValidatorSigningInfo defines a validator's signing info for monitoring their
+liveness activity.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `cons_address` | [string](#string) |  |  |
+| `missed_blocks_counter` | [int64](#int64) |  | missed blocks counter (to avoid scanning the array every time) |
+| `total_blocks_counter` | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="em.queries.v1.QueryCirculatingRequest"></a>
 
 ### QueryCirculatingRequest
@@ -1700,6 +1721,36 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `total` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+
+<a name="em.queries.v1.QueryMissedBlocksRequest"></a>
+
+### QueryMissedBlocksRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `cons_address` | [string](#string) |  | cons_address is the address to query the missed blocks signing info |
+
+
+
+
+
+
+<a name="em.queries.v1.QueryMissedBlocksResponse"></a>
+
+### QueryMissedBlocksResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `missed_blocks_info` | [MissedBlocksInfo](#em.queries.v1.MissedBlocksInfo) |  | val_signing_info is the signing info of requested val cons address |
 
 
 
@@ -1750,6 +1801,7 @@
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Circulating` | [QueryCirculatingRequest](#em.queries.v1.QueryCirculatingRequest) | [QueryCirculatingResponse](#em.queries.v1.QueryCirculatingResponse) |  | GET|/e-money/bank/v1/circulating|
+| `MissedBlocks` | [QueryMissedBlocksRequest](#em.queries.v1.QueryMissedBlocksRequest) | [QueryMissedBlocksResponse](#em.queries.v1.QueryMissedBlocksResponse) |  | GET|/e-money/slashing/v1/missedblocks/{cons_address}|
 | `Spendable` | [QuerySpendableRequest](#em.queries.v1.QuerySpendableRequest) | [QuerySpendableResponse](#em.queries.v1.QuerySpendableResponse) |  | GET|/e-money/bank/v1/spendable/{address}|
 
  <!-- end services -->
