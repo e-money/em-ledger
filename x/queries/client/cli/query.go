@@ -21,6 +21,7 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(
 		GetQuerySpendableBalance(),
 		GetQueryCirculatingSupplyCmd(),
+		GetQueryMissedBlocksCmd(),
 	)
 
 	return cmd
@@ -70,6 +71,39 @@ func GetQueryCirculatingSupplyCmd() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 			res, err := queryClient.Circulating(cmd.Context(), &types.QueryCirculatingRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetQueryMissedBlocksCmd Replacing the SDK slashing signing info
+func GetQueryMissedBlocksCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "missedblocks [validator-conspub]",
+		Short: "Query the validator's missed blocks and blocks counter",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			addr, err := sdk.AccAddressFromBech32(args[0])
+			consAddr := sdk.ConsAddress(addr)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.MissedBlocks(cmd.Context(), &types.QueryMissedBlocksRequest{
+				ConsAddress: consAddr.String(),
+			})
 			if err != nil {
 				return err
 			}
