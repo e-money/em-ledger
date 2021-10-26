@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.13
 	github.com/tendermint/tm-db v0.6.4
-	github.com/tidwall/gjson v1.6.5
+	github.com/tidwall/gjson v1.9.3
 	github.com/tidwall/sjson v1.0.4
 	google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f
 	google.golang.org/grpc v1.37.0
