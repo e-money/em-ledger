@@ -1,46 +1,32 @@
 // beginning of test upg handler insertion
-	{
-		/*
-		 * This is a test v44 handler
-		 */
-		const upg44Plan = "v44-upg-test"
+	/*
+	 * This is a test handler for trying out cosmovisor
+	 * Setting gas to One ungm
+	**/
+	const testUpgradeHandler = "test-upg-0.2.0"
+	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, func(ctx sdk.Context, plan upgradetypes.Plan) {
+		genesisAuth := app.authorityKeeper.GetAuthoritySet(ctx)
+		if genesisAuth.Address == "" {
+			panic("authority should be set in genesis")
+		}
 
-		app.upgradeKeeper.SetUpgradeHandler(
-			upg44Plan,
-			func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
-				app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
+		authAcc, err := sdk.AccAddressFromBech32(genesisAuth.Address)
+		if err != nil {
+			panic(err)
+		}
 
-				fromVM := make(map[string]uint64)
-				for moduleName := range app.mm.Modules {
-					// v40 state is version 1
-					// v43 state is version 2
-					// V43: em-ledger modules with state migration should set consensus version to 2
-					// v45 state is likely v3
-					fromVM[moduleName] = 1
-				}
+		newGas := sdk.DecCoins{
+			sdk.NewDecCoin("ungm", sdk.OneInt()),
+		}
 
-				// override versions for _new_ modules as to not skip InitGenesis
-				fromVM[authz.ModuleName] = 0
-				fromVM[feegrant.ModuleName] = 0
-
-				ctx.Logger().Info("Upgrading to " + upg44Plan)
-
-				return app.mm.RunMigrations(ctx, app.configurator, fromVM)
-			},
-		)
-
-		upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+		_, err = app.authorityKeeper.SetGasPrices(ctx, authAcc, newGas)
 		if err != nil {
 			panic(fmt.Sprintf("failed to read upgrade info from disk %s", err))
 		}
 
-		if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-			storeUpgrades := store.StoreUpgrades{
-				//Added: []string{authz.ModuleName, feegrant.ModuleName},
-			}
-
-			// configure store loader that checks if version == upgradeHeight and applies store upgrades
-			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+		gasPrices := app.authorityKeeper.GetGasPrices(ctx)
+		if gasPrices.Empty() || !gasPrices.IsEqual(newGas) {
+			panic(fmt.Sprintf("expected Gas: %+v != store Gas: %+v", newGas, gasPrices))
 		}
-	}
+	})
 // end of insert
