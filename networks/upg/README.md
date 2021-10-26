@@ -24,7 +24,8 @@ Note these scripts at **em-ledger/networks/upg**:
 * `start-full-cv` runs `initchain && startcv`
 * `upg-sched` schedule an upgrade by passing the upgrade block height 
 * `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
-* `upgfunc.txt` Go snippet to be inserted as the upgrade module handler in the *upgrade* binary.
+* `upgvfunc.txt` Go snippet text inserted for same chain upgrade in app.go. Enables the bdd upgrade test. No migration run.
+* `upgv42v44func.txt` Go snippet text inserted for a v42 chain to v44 upgrade in the app.go. Enables the start-full-cv manual test.
 
 ### Components installation
 Build the revamped Docker, Linux artifacts
