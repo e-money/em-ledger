@@ -17,8 +17,8 @@ type Querier struct {
 	sk   SlashingKeeper
 }
 
-func NewQuerier(accK AccountKeeper, bk BankKeeper) *Querier {
-	return &Querier{accK: accK, bk: bk}
+func NewQuerier(accK AccountKeeper, bk BankKeeper, sk SlashingKeeper) *Querier {
+	return &Querier{accK: accK, bk: bk, sk: sk}
 }
 
 func (k Querier) Circulating(c context.Context, req *types.QueryCirculatingRequest) (*types.QueryCirculatingResponse, error) {

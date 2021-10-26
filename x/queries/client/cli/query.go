@@ -94,8 +94,7 @@ func GetQueryMissedBlocksCmd() *cobra.Command {
 				return err
 			}
 
-			addr, err := sdk.AccAddressFromBech32(args[0])
-			consAddr := sdk.ConsAddress(addr)
+			consAddr, err := sdk.ConsAddressFromBech32(args[0])
 			if err != nil {
 				return err
 			}

@@ -54,8 +54,7 @@ message QueryMissedBlocksResponse {
   MissedBlocksInfo missed_blocks_info = 1 [(gogoproto.nullable) = false];
 }
 
-// ValidatorSigningInfo defines a validator's signing info for monitoring their
-// liveness activity.
+// ValidatorSigningInfo defines a validator's missed blocks info.
 message MissedBlocksInfo {
   option (gogoproto.equal)            = true;
   option (gogoproto.goproto_stringer) = true;
