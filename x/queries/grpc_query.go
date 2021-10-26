@@ -2,7 +2,6 @@ package queries
 
 import (
 	"context"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/queries/types"
@@ -56,8 +55,6 @@ func (k Querier) MissedBlocks(c context.Context, req *types.QueryMissedBlocksReq
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid validator consensus address: "+err.Error())
 	}
-	consAddrStr := consAddr.String()
-	fmt.Println(req.ConsAddress, consAddrStr)
 
 	missedBlocksCnt, blocksCnt := k.sk.GetMissedBlocks(ctx, consAddr)
 	return &types.QueryMissedBlocksResponse{
