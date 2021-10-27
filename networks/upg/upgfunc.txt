@@ -1,10 +1,11 @@
+
 // beginning of test upg handler insertion
 	/*
 	 * This is a test handler for trying out cosmovisor
 	 * Setting gas to One ungm
 	**/
 	const testUpgradeHandler = "test-upg-0.2.0"
-	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, func(ctx sdk.Context, plan upgradetypes.Plan) {
+	app.upgradeKeeper.SetUpgradeHandler(testUpgradeHandler, func(ctx sdk.Context, plan upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
 		genesisAuth := app.authorityKeeper.GetAuthoritySet(ctx)
 		if genesisAuth.Address == "" {
 			panic("authority should be set in genesis")
@@ -28,5 +29,22 @@
 		if gasPrices.Empty() || !gasPrices.IsEqual(newGas) {
 			panic(fmt.Sprintf("expected Gas: %+v != store Gas: %+v", newGas, gasPrices))
 		}
+
+		ctx.Logger().Info("Upgrading to " + testUpgradeHandler)
+
+		fromVM := make(map[string]uint64)
+		for moduleName := range app.mm.Modules {
+			// v40 state is version 1
+			// v43 state is version 2
+			// V43: em-ledger modules with state migration should set consensus version to 2
+			// v45 state is likely v3
+			fromVM[moduleName] = 1
+		}
+
+		// override versions for _new_ modules as to not skip InitGenesis
+		fromVM[authz.ModuleName] = 0
+		fromVM[feegrant.ModuleName] = 0
+
+		return fromVM, nil
 	})
 // end of insert
