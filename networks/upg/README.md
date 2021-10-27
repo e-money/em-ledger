@@ -7,27 +7,32 @@ Please note if you'd rather test the upgrade module within the **e-money local-t
 ```shell
 cd em-ledger
 make build-docker
-make build-all
+make build-fast-consensus
 go test -v --tags="bdd" bdd_test.go upgrade_test.go
 ```
 
-Two new docker images defined in em-ledger/networks/docker:
+Three new docker images defined in em-ledger/networks/docker:
 
 1. `emoney/cosmovisor` which builds a linux cosmovisor binary for use within the e-money local-testnet.
 
-2. `emoney/test-upg` which builds a test upgrade mode with a trivial upgrade module handler changing the gas-fees as part of the upgrade migration process.
+2. `emoney/test-upg` which builds a test upgrade binary with a trivial upgrade module handler changing the gas-fees as part of the upgrade migration process.
+3. 
+4. `emoney/test-v44` which builds a v44 test upgrade binary running v42-v44 migrations.
 
 Note these scripts at **em-ledger/networks/upg**:
 * `README.md` (this doc)
 * `initchain` initializes genesis, authority for an em-legder chain.
+* `resetv42` initializes genesis, authority for an em-legder chain from a zip containing the em-ledger v42 genesis files.
 * `startcv` (starts emoney node with cosmovisor): `cosmovisor start --home=.emd`
+* `start-upg-cv` runs `resetv42 && startcv` launches a v42 chain and immediately at block 9 launches the upgrade process to the v44 em-ledger chain from a v42 chain by running the v42 to the v44 migrations.
 * `start-full-cv` runs `initchain && startcv` for testing the upgrade process to the chain with same sdk version without running migrations.
-* `start-upg-cv` runs `initchain && startcv` for testing the upgrade process to the v44 em-ledger chain by running the v42 to the v44 migrations. This is supported from the v44 branch.
 * `upg-sched` schedule an upgrade by passing the upgrade block height 
 * `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
 * `upgvfunc.txt` Go snippet text inserted for same chain upgrade in app.go. Enables the bdd upgrade test. No migration run.
 * `upgv44func.txt` Go snippet text inserted for a v42 chain to v44 upgrade in the app.go. Enables the start-upg-cv manual test.
-* `cpemd`, `cpemd44` Set up the cosmovisor upgrade file folder tree, the former with an upgrade binary of the same SDK and the latter with a v44 *upgrade* binary. 
+* `cpemd`, `cpemd44` Set up the cosmovisor upgrade file folder tree, the former with an upgrade binary of the same SDK and the latter with a v44 *upgrade* binary.
+* `post-upg` Checks the post upgrade binary version to match the intended version.
+* `post-upg-44` Checks the post upgrade binary version to match the intended version.
 
 ### Components installation
 Build the revamped Docker, Linux artifacts

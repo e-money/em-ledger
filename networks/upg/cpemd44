@@ -39,9 +39,9 @@ UPG_LOC="$COSMOVISOR_HOME"/upgrades/v44-upg-test/bin
 
 mkdir -p "$UPG_LOC"
 if [ "$(uname)" = "Linux"  ]; then
-  cp "$EM_LEDGER_LOC"/build/emdupg-linux "$UPG_LOC"/emd
+  cp "$EM_LEDGER_LOC"/build/emdupg44-linux "$UPG_LOC"/emd
 else
-  cp "$EM_LEDGER_LOC"/build/emdupg "$UPG_LOC"/emd
+  cp "$EM_LEDGER_LOC"/build/emdupg44 "$UPG_LOC"/emd
 fi
 
 echo "legacy or current binary:"

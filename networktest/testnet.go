@@ -2,6 +2,7 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
+//go:build bdd
 // +build bdd
 
 package networktest
@@ -282,7 +283,7 @@ func IncChain(delta int64) (int64, error) {
 		// max seconds allowance for reaching the desired height
 		// increased again to accommodate an observed backup operation during the upgrade
 		// `time taken to complete the backup: 442.204684ms12:00PM INF starting ABCI with Tendermint`
-		time.Duration(delta)*16*time.Second,
+		time.Duration(delta)*24*time.Second,
 	)
 }
 

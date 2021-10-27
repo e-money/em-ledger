@@ -19,7 +19,7 @@ set -ev
 
 EMD_NODE=$PWD/.emd
 
-./initchain
+./initchain "44"
 
 # v42 chain state files scheduled to upgrade to v44
 unzip -o ./v42-v44.zip
