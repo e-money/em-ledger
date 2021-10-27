@@ -12,13 +12,8 @@ import (
 func (k Keeper) GetMissedBlocks(ctx sdk.Context, consAddr sdk.ConsAddress) (int64, int64) {
 	missedTimeBlocks := k.getMissingBlocksForValidator(consAddr)
 
-	signedBlocksWindow := k.SignedBlocksWindowDuration(ctx)
-
-	_, missedTimeBlocks = truncateByWindow(ctx.BlockTime(), missedTimeBlocks, signedBlocksWindow)
-
 	blockTimes := k.getBlockTimes()
 	blockTimes = append(blockTimes, ctx.BlockTime())
-	_, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 	return int64(len(missedTimeBlocks)), int64(len(blockTimes))
 }
