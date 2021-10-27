@@ -2,6 +2,29 @@
 
 set -ev
 
+usage() {
+  echo "Usage: $0 chain-arg"
+  echo "For same chain upgrade"
+  echo "enter -> $0 0"
+  echo "For upgrading the chain to v44"
+  echo "enter -> $0 v44"
+  exit 1
+}
+
+missing() {
+  echo "Missing chain parameter. 0 for same chain upgrade, or 44"
+  usage
+}
+
+if [ -z "$1" ]; then
+  missing
+fi
+
+if [ "$#" -gt 1 ]; then
+  echo "Incorrect number of parameters."
+  usage
+fi
+
 ##### em-ledger single node cosmovisor setup
 export DAEMON_NAME=emd
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
@@ -23,7 +46,11 @@ rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
 rm -rf "$EMD_NODE"/cosmovisor/current
 
-./cpemd
+if [ "$1" -eq 0 ]; then
+  ./cpemd
+else
+  ./cpemd"$1"
+fi
 
 $EMD unsafe-reset-all --home=$EMD_NODE
 

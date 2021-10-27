@@ -77,7 +77,7 @@ build-linux:
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
 	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
-build-all: build-linux build/cosmovisor build/emdupg build/emdupg-linux
+build-all: build-linux build/cosmovisor build/emdupg build/emdupg-linux build/emdupg44 build/emdupg44-linux
 	$(MAKE) build
 
 build-fast-consensus:
@@ -124,6 +124,14 @@ build/emdupg:
 build/emdupg-linux:
 	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
 	chmod +x "build/emdupg-linux"
+
+build/emdupg44:
+	docker run --rm --entrypoint cat emoney/test-v44 /go/src/em-ledger/build/emd > "build/emdupg44"
+	chmod +x "build/emdupg44"
+
+build/emdupg44-linux:
+	docker run --rm --entrypoint cat emoney/test-v44 /go/src/em-ledger/build/emd-linux > "build/emdupg44-linux"
+	chmod +x "build/emdupg44-linux"
 
 license:
 	GO111MODULE=off go get github.com/google/addlicense/
