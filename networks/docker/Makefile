@@ -16,4 +16,4 @@ v44:
 
 # todo (reviewer): please note the rest-server is not a command anymore. Please enable `api` section in `app.toml` instead
 
-.PHONY: all emdnode cosmovisor test-upg
+.PHONY: all emdnode cosmovisor test-upg v44
