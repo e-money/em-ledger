@@ -19,9 +19,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tendermint/tendermint v0.34.13
+	github.com/tendermint/tendermint v0.34.14
 	github.com/tendermint/tm-db v0.6.4
-	github.com/tidwall/gjson v1.6.7
+	github.com/tidwall/gjson v1.9.3
 	github.com/tidwall/sjson v1.1.4
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
 	google.golang.org/grpc v1.40.0
@@ -32,7 +32,7 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
-replace github.com/cosmos/cosmos-sdk => github.com/e-money/cosmos-sdk v0.44.2-em0
+replace github.com/cosmos/cosmos-sdk => github.com/e-money/cosmos-sdk v0.44.3-em0
 
 // replace github.com/cosmos/cosmos-sdk => ../../cosmos/cosmos-sdk
 
