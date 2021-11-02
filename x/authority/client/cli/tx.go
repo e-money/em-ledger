@@ -5,15 +5,17 @@
 package cli
 
 import (
+	"io/ioutil"
 	"strings"
 	"time"
-
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/params/client/utils"
 	upgtypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -267,10 +269,14 @@ func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
 func getCmdSetParameters() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "set-params <path/to/changes.json> --from <authority-key>",
-		Short:   "",
-		Example: ``,
+		Short:   "Set a parameter change",
+		Example: "emd tx authority set-params ./params.json --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t",
 		Long: strings.TrimSpace(`
-
+The parameter details must be supplied via a JSON file. For values that contain
+objects, only non-empty fields will be updated.
+Any "value" change should be valid (ie. correct type and within bounds)
+for its respective parameter, eg. "MaxValidators" should be an integer and not a 
+decimal.
 
 Where proposal.json contains:
 
@@ -296,29 +302,43 @@ Where proposal.json contains:
 				return err
 			}
 
-			println("From address: ", clientCtx.GetFromAddress())
+			println("Authority address: ", clientCtx.GetFromAddress())
 
-			//msg := &types.MsgSetParameters{
-			//	Authority: clientCtx.GetFromAddress().String(),
-			//	Plan: upgtypes.Plan{
-			//		Name:   args[1],
-			//		Time:   time.Unix(0, 0),
-			//		Height: upgHeightVal,
-			//		Info:   upgInfoVal,
-			//	},
-			//}
-			//
-			//if err := msg.ValidateBasic(); err != nil {
-			//	return err
-			//}
-			//
-			//return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			paramChanges, err := parseParamChangesJSON(clientCtx.LegacyAmino, args[0])
+			if err != nil {
+				return err
+			}
 
-			return nil
+			msg := &types.MsgSetParameters{
+				Authority: clientCtx.GetFromAddress().String(),
+				Changes:   paramChanges.ToParamChanges(),
+			}
+			
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 
+}
+
+// parseParamChangesJSON reads and parses a ParamChangesJSON from file.
+func parseParamChangesJSON(cdc *codec.LegacyAmino, jsonFile string) (utils.ParamChangesJSON, error) {
+	paramChangesJSON := utils.ParamChangesJSON{}
+
+	contents, err := ioutil.ReadFile(jsonFile)
+	if err != nil {
+		return paramChangesJSON, err
+	}
+
+	if err := cdc.UnmarshalJSON(contents, &paramChangesJSON); err != nil {
+		return paramChangesJSON, err
+	}
+
+	return paramChangesJSON, nil
 }
