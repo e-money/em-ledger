@@ -21,7 +21,7 @@ type authorityKeeper interface {
 	SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, gasprices sdk.DecCoins) (*sdk.Result, error)
 	ScheduleUpgrade(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 	GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
-	SetParam(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error)
+	SetParams(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error)
 }
 type msgServer struct {
 	k authorityKeeper
@@ -158,7 +158,7 @@ func (m msgServer) SetParameters(goCtx context.Context, msg *types.MsgSetParamet
 		return nil, sdkerrors.Wrap(types.ErrNoParams, "authority")
 	}
 
-	result, err := m.k.SetParam(ctx, authority, msg.Changes)
+	result, err := m.k.SetParams(ctx, authority, msg.Changes)
 	if err != nil {
 		return nil, err
 	}

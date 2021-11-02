@@ -240,7 +240,7 @@ func (k Keeper) GetUpgradePlan(ctx sdk.Context) (plan upgradetypes.Plan, havePla
 	return k.upgradeKeeper.GetUpgradePlan(ctx)
 }
 
-func (k Keeper) SetParam(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
+func (k Keeper) SetParams(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
 	if err := k.ValidateAuthority(ctx, authority); err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (k Keeper) SetParam(ctx sdk.Context, authority sdk.AccAddress, changes []pr
 		}
 	}
 
-	return nil, nil
+	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
 }
 
 // logger returns a module-specific logger.
