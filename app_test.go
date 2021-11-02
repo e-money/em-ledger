@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	"github.com/e-money/em-ledger/x/authority"
-
-	apptypes "github.com/e-money/em-ledger/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	apptypes "github.com/e-money/em-ledger/types"
+	"github.com/e-money/em-ledger/x/authority"
 	authtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -74,8 +74,13 @@ func getEmSimApp(
 	// Initialize the chain
 	app.InitChain(
 		abci.RequestInitChain{
-			Validators:    []abci.ValidatorUpdate{},
-			AppStateBytes: stateBytes,
+			Validators:      []abci.ValidatorUpdate{},
+			AppStateBytes:   stateBytes,
+			ConsensusParams: &abci.ConsensusParams{
+				Block: &abci.BlockParams{
+					MaxGas: 100,
+				},
+			},
 		},
 	)
 
@@ -403,4 +408,35 @@ func executePlan(
 	schedPlan, hasPlan := ak.GetUpgradePlan(ctx)
 	require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
 	require.NotEqualf(t, schedPlan, plan, "queried %v == %v", schedPlan, plan)
+}
+
+func TestUpdatingChainParams(t *testing.T) {
+	configOnce.Do(apptypes.ConfigureSDK)
+
+	et := emAppTests{}.initEmApp(t)
+	header := tmproto.Header{Height: et.app.LastBlockHeight() + 1}
+	et.app.BeginBlock(abci.RequestBeginBlock{Header: header})
+	et.app.EndBlock(abci.RequestEndBlock{})
+	et.app.Commit()
+
+	// block --> 2
+	header = tmproto.Header{Height: et.app.LastBlockHeight() + 1}
+	et.app.BeginBlock(abci.RequestBeginBlock{Header: header})
+	et.ctx = et.app.BaseApp.NewContext(true, header)
+
+	paramChanges := []proposal.ParamChange{
+		{
+			Subspace: stakingtypes.ModuleName,
+			Key:      "MaxValidators",
+			Value:    "101",
+		},
+	}
+	_, err := et.app.authorityKeeper.SetParams(et.ctx, et.authority,	paramChanges)
+	require.NoError(t, err)
+
+	et.app.EndBlock(abci.RequestEndBlock{})
+	et.app.Commit()
+
+	stateMaxValidators := et.app.stakingKeeper.MaxValidators(et.ctx)
+	require.Equal(t, uint32(101), stateMaxValidators)
 }
