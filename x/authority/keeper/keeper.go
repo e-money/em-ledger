@@ -114,19 +114,21 @@ func (k Keeper) GetAuthoritySet(ctx sdk.Context) types.Authority {
 	return authoritySet
 }
 
-func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []string) (*sdk.Result, error) {
+func (k Keeper) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denomsMetaData []types.Denomination) (*sdk.Result, error) {
 	if err := k.ValidateAuthority(ctx, authority); err != nil {
 		return nil, err
 	}
 
-	for _, denom := range denoms {
-		if err := sdk.ValidateDenom(denom); err != nil {
+	denoms := make([]string, len(denomsMetaData))
+	for i, denomMetadatum := range denomsMetaData {
+		if err := sdk.ValidateDenom(denomMetadatum.Base); err != nil {
 			return nil, sdkerrors.Wrapf(types.ErrInvalidDenom, err.Error())
 		}
+		denoms[i] = denomMetadatum.Base
 	}
 
 	i := issuer.NewIssuer(issuerAddress, denoms...)
-	return k.ik.AddIssuer(ctx, i)
+	return k.ik.AddIssuer(ctx, i, denomsMetaData)
 }
 
 func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrices sdk.DecCoins) (*sdk.Result, error) {

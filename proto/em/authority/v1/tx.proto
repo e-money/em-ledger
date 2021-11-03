@@ -26,8 +26,16 @@ service Msg {
 message MsgCreateIssuer {
   string authority = 1 [ (gogoproto.moretags) = "yaml:\"authority\"" ];
   string issuer = 2 [ (gogoproto.moretags) = "yaml:\"issuer\"" ];
-  repeated string denominations = 3
-  [ (gogoproto.moretags) = "yaml:\"denoms\"" ];
+  repeated Denomination denominations = 3 [(gogoproto.moretags) = "yaml:\"denominations\"", (gogoproto.nullable) = false];
+}
+
+message Denomination {
+  // base represents the base denom (should be the DenomUnit with exponent = 0).
+  string base = 1;
+  // display indicates the suggested denom that should be
+  // displayed in clients.
+  string display = 2;
+  string description = 3;
 }
 
 message MsgCreateIssuerResponse {}

@@ -11,6 +11,8 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	grpc1 "github.com/gogo/protobuf/grpc"
 	proto "github.com/gogo/protobuf/proto"
+	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
+	_ "github.com/golang/protobuf/ptypes/timestamp"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -18,12 +20,14 @@ import (
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	time "time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+var _ = time.Kitchen
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -111,37 +115,136 @@ func (m *QueryBalanceResponse) GetBalance() github_com_cosmos_cosmos_sdk_types.C
 	return nil
 }
 
+type QueryBuybackTimeRequest struct {
+}
+
+func (m *QueryBuybackTimeRequest) Reset()         { *m = QueryBuybackTimeRequest{} }
+func (m *QueryBuybackTimeRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryBuybackTimeRequest) ProtoMessage()    {}
+func (*QueryBuybackTimeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_848a71e982cb34d3, []int{2}
+}
+func (m *QueryBuybackTimeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryBuybackTimeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryBuybackTimeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryBuybackTimeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryBuybackTimeRequest.Merge(m, src)
+}
+func (m *QueryBuybackTimeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryBuybackTimeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryBuybackTimeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryBuybackTimeRequest proto.InternalMessageInfo
+
+type QueryBuybackTimeResponse struct {
+	LastRunTime time.Time `protobuf:"bytes,1,opt,name=last_run,json=lastRun,proto3,stdtime" json:"last_run" yaml:"last_run"`
+	NextRunTime time.Time `protobuf:"bytes,2,opt,name=next_run,json=nextRun,proto3,stdtime" json:"next_run" yaml:"next_run"`
+}
+
+func (m *QueryBuybackTimeResponse) Reset()         { *m = QueryBuybackTimeResponse{} }
+func (m *QueryBuybackTimeResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryBuybackTimeResponse) ProtoMessage()    {}
+func (*QueryBuybackTimeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_848a71e982cb34d3, []int{3}
+}
+func (m *QueryBuybackTimeResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryBuybackTimeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryBuybackTimeResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryBuybackTimeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryBuybackTimeResponse.Merge(m, src)
+}
+func (m *QueryBuybackTimeResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryBuybackTimeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryBuybackTimeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryBuybackTimeResponse proto.InternalMessageInfo
+
+func (m *QueryBuybackTimeResponse) GetLastRunTime() time.Time {
+	if m != nil {
+		return m.LastRunTime
+	}
+	return time.Time{}
+}
+
+func (m *QueryBuybackTimeResponse) GetNextRunTime() time.Time {
+	if m != nil {
+		return m.NextRunTime
+	}
+	return time.Time{}
+}
+
 func init() {
 	proto.RegisterType((*QueryBalanceRequest)(nil), "em.buyback.v1.QueryBalanceRequest")
 	proto.RegisterType((*QueryBalanceResponse)(nil), "em.buyback.v1.QueryBalanceResponse")
+	proto.RegisterType((*QueryBuybackTimeRequest)(nil), "em.buyback.v1.QueryBuybackTimeRequest")
+	proto.RegisterType((*QueryBuybackTimeResponse)(nil), "em.buyback.v1.QueryBuybackTimeResponse")
 }
 
 func init() { proto.RegisterFile("em/buyback/v1/query.proto", fileDescriptor_848a71e982cb34d3) }
 
 var fileDescriptor_848a71e982cb34d3 = []byte{
-	// 352 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0xc1, 0x4a, 0xeb, 0x40,
-	0x14, 0x86, 0x93, 0x7b, 0xb9, 0xf7, 0x42, 0x2e, 0xba, 0x88, 0x15, 0x6c, 0xd5, 0x54, 0xd2, 0x4d,
-	0x37, 0x9d, 0x21, 0x15, 0x37, 0x2e, 0xe3, 0x03, 0x88, 0x5d, 0xba, 0x9b, 0xa4, 0x87, 0x18, 0x9a,
-	0xcc, 0x49, 0x33, 0x93, 0x6a, 0x76, 0xe2, 0x0b, 0x28, 0xf8, 0x16, 0x3e, 0x49, 0x97, 0x05, 0x37,
-	0xae, 0xaa, 0xb4, 0x3e, 0x81, 0x4f, 0x20, 0xc9, 0x4c, 0xa5, 0x05, 0x71, 0x35, 0xc3, 0xf9, 0xcf,
-	0x9c, 0xff, 0xfb, 0xe7, 0x58, 0x4d, 0x48, 0x69, 0x50, 0x94, 0x01, 0x0b, 0x47, 0x74, 0xe2, 0xd1,
-	0x71, 0x01, 0x79, 0x49, 0xb2, 0x1c, 0x25, 0xda, 0x5b, 0x90, 0x12, 0x2d, 0x91, 0x89, 0xd7, 0x6a,
-	0x44, 0x18, 0x61, 0xad, 0xd0, 0xea, 0xa6, 0x9a, 0x5a, 0x4e, 0x88, 0x22, 0x45, 0x41, 0x03, 0x26,
-	0x80, 0x4e, 0xbc, 0x00, 0x24, 0xf3, 0x68, 0x88, 0x31, 0xd7, 0xfa, 0x41, 0x84, 0x18, 0x25, 0x40,
-	0x59, 0x16, 0x53, 0xc6, 0x39, 0x4a, 0x26, 0x63, 0xe4, 0x42, 0xa9, 0xee, 0xae, 0xb5, 0x73, 0x51,
-	0x39, 0xfa, 0x2c, 0x61, 0x3c, 0x84, 0x01, 0x8c, 0x0b, 0x10, 0xd2, 0xbd, 0x37, 0xad, 0xc6, 0x66,
-	0x5d, 0x64, 0xc8, 0x05, 0xd8, 0xd7, 0xd6, 0xbf, 0x40, 0x95, 0xf6, 0xcc, 0xa3, 0xdf, 0xdd, 0xff,
-	0xfd, 0x26, 0x51, 0xfe, 0xa4, 0xf2, 0x27, 0xda, 0x9f, 0x9c, 0x61, 0xcc, 0x7d, 0x7f, 0x3a, 0x6f,
-	0x1b, 0x1f, 0xf3, 0xf6, 0x76, 0xc9, 0xd2, 0xe4, 0xd4, 0xd5, 0xef, 0xdc, 0xa7, 0xd7, 0x76, 0x37,
-	0x8a, 0xe5, 0x55, 0x11, 0x90, 0x10, 0x53, 0xaa, 0xf1, 0xd5, 0xd1, 0x13, 0xc3, 0x11, 0x95, 0x65,
-	0x06, 0xa2, 0x1e, 0x21, 0x06, 0x2b, 0xb7, 0xfe, 0xad, 0x69, 0xfd, 0xa9, 0x89, 0x2a, 0x04, 0x4d,
-	0x65, 0xbb, 0x64, 0xe3, 0x87, 0xc8, 0x37, 0x51, 0x5a, 0x9d, 0x1f, 0x7b, 0x54, 0x2c, 0xb7, 0x73,
-	0xf7, 0xfc, 0xfe, 0xf8, 0xeb, 0xd0, 0xde, 0xa7, 0xd0, 0x4b, 0x91, 0x43, 0xb9, 0xbe, 0x12, 0x8d,
-	0xe0, 0x9f, 0x4f, 0x17, 0x8e, 0x39, 0x5b, 0x38, 0xe6, 0xdb, 0xc2, 0x31, 0x1f, 0x96, 0x8e, 0x31,
-	0x5b, 0x3a, 0xc6, 0xcb, 0xd2, 0x31, 0x2e, 0x4f, 0xd6, 0xf2, 0xac, 0x06, 0x40, 0xda, 0x4b, 0x60,
-	0x18, 0x41, 0x4e, 0x6f, 0xbe, 0x86, 0xc5, 0x5c, 0x42, 0xce, 0x59, 0xa2, 0x22, 0x06, 0x7f, 0xeb,
-	0x1d, 0x1c, 0x7f, 0x06, 0x00, 0x00, 0xff, 0xff, 0x03, 0x5a, 0x12, 0xd2, 0x03, 0x02, 0x00, 0x00,
+	// 496 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0x41, 0x6f, 0xd3, 0x30,
+	0x18, 0xad, 0x8b, 0x60, 0xc8, 0x15, 0x20, 0x85, 0x21, 0xda, 0x00, 0x49, 0x95, 0x49, 0x50, 0x21,
+	0xd5, 0x56, 0x8b, 0xb8, 0x70, 0x2c, 0x57, 0x04, 0xa2, 0xda, 0x89, 0x0b, 0x72, 0xb2, 0x8f, 0x10,
+	0x2d, 0xb6, 0xb3, 0xd8, 0x29, 0xcd, 0x0d, 0xc1, 0x0f, 0x60, 0x12, 0xff, 0x82, 0x5f, 0xb2, 0xe3,
+	0x24, 0x2e, 0x9c, 0xba, 0xa9, 0xe5, 0x17, 0xec, 0x17, 0xa0, 0xc4, 0xce, 0xd4, 0xa9, 0x15, 0x70,
+	0x6a, 0xe3, 0xf7, 0xfc, 0xbd, 0xe7, 0xf7, 0x3e, 0xdc, 0x03, 0x4e, 0xc3, 0xa2, 0x0c, 0x59, 0x74,
+	0x48, 0x67, 0x23, 0x7a, 0x54, 0x40, 0x5e, 0x92, 0x2c, 0x97, 0x5a, 0x3a, 0xb7, 0x80, 0x13, 0x0b,
+	0x91, 0xd9, 0xc8, 0xdd, 0x8d, 0x65, 0x2c, 0x6b, 0x84, 0x56, 0xff, 0x0c, 0xc9, 0xf5, 0x22, 0xa9,
+	0xb8, 0x54, 0x34, 0x64, 0x0a, 0xe8, 0x6c, 0x14, 0x82, 0x66, 0x23, 0x1a, 0xc9, 0x44, 0x58, 0xfc,
+	0x61, 0x2c, 0x65, 0x9c, 0x02, 0x65, 0x59, 0x42, 0x99, 0x10, 0x52, 0x33, 0x9d, 0x48, 0xa1, 0x2c,
+	0xea, 0x5b, 0xb4, 0xfe, 0x0a, 0x8b, 0x0f, 0x54, 0x27, 0x1c, 0x94, 0x66, 0x3c, 0x33, 0x84, 0xe0,
+	0x1e, 0xbe, 0xfb, 0xb6, 0xb2, 0x34, 0x61, 0x29, 0x13, 0x11, 0x4c, 0xe1, 0xa8, 0x00, 0xa5, 0x83,
+	0x6f, 0x08, 0xef, 0x5e, 0x3d, 0x57, 0x99, 0x14, 0x0a, 0x9c, 0x4f, 0x78, 0x27, 0x34, 0x47, 0x5d,
+	0xd4, 0xbf, 0x36, 0xe8, 0x8c, 0x7b, 0xc4, 0x18, 0x24, 0x95, 0x41, 0x62, 0x0d, 0x92, 0x97, 0x32,
+	0x11, 0x93, 0xc9, 0xc9, 0xc2, 0x6f, 0x5d, 0x2c, 0xfc, 0xdb, 0x25, 0xe3, 0xe9, 0x8b, 0xc0, 0xde,
+	0x0b, 0x7e, 0x9c, 0xf9, 0x83, 0x38, 0xd1, 0x1f, 0x8b, 0x90, 0x44, 0x92, 0x53, 0xfb, 0x3e, 0xf3,
+	0x33, 0x54, 0x07, 0x87, 0x54, 0x97, 0x19, 0xa8, 0x7a, 0x84, 0x9a, 0x36, 0x6a, 0x41, 0x0f, 0xdf,
+	0x37, 0x86, 0x4c, 0x60, 0xfb, 0x09, 0xbf, 0x34, 0x7b, 0x8e, 0x70, 0x77, 0x13, 0xb3, 0x86, 0x19,
+	0xbe, 0x99, 0x32, 0xa5, 0xdf, 0xe7, 0x85, 0xe8, 0xa2, 0x3e, 0x1a, 0x74, 0xc6, 0x2e, 0x31, 0xa1,
+	0x90, 0x26, 0x14, 0xb2, 0xdf, 0x84, 0x32, 0x79, 0x5a, 0x59, 0x5e, 0x2e, 0xfc, 0xce, 0x2b, 0xa6,
+	0xf4, 0xb4, 0x10, 0x15, 0x72, 0xb1, 0xf0, 0xef, 0x98, 0x17, 0x34, 0x83, 0x82, 0xe3, 0x33, 0x1f,
+	0x4d, 0x77, 0x52, 0xc3, 0xa9, 0x24, 0x04, 0xcc, 0x8d, 0x44, 0xfb, 0xff, 0x25, 0x5e, 0xc3, 0x7c,
+	0x53, 0xa2, 0x19, 0x64, 0x25, 0x84, 0xe1, 0x8c, 0xbf, 0xb6, 0xf1, 0xf5, 0xfa, 0x89, 0x55, 0x01,
+	0xb6, 0x13, 0x27, 0x20, 0x57, 0x16, 0x88, 0x6c, 0x29, 0xd2, 0xdd, 0xfb, 0x2b, 0xc7, 0x64, 0x14,
+	0xec, 0x7d, 0xf9, 0xf9, 0xfb, 0x7b, 0xfb, 0x91, 0xf3, 0x80, 0xc2, 0x90, 0x4b, 0x01, 0xe5, 0xfa,
+	0xc6, 0xda, 0x02, 0x9c, 0xcf, 0x08, 0x77, 0xd6, 0x02, 0x76, 0x1e, 0x6f, 0x9d, 0xbc, 0xd1, 0x8e,
+	0xfb, 0xe4, 0x9f, 0x3c, 0xeb, 0xa2, 0x5f, 0xbb, 0x70, 0x9d, 0xee, 0x36, 0x17, 0xd5, 0xde, 0x4e,
+	0xde, 0x9c, 0x2c, 0x3d, 0x74, 0xba, 0xf4, 0xd0, 0xf9, 0xd2, 0x43, 0xc7, 0x2b, 0xaf, 0x75, 0xba,
+	0xf2, 0x5a, 0xbf, 0x56, 0x5e, 0xeb, 0xdd, 0xf3, 0xb5, 0x85, 0x6a, 0x6e, 0x03, 0x1f, 0xa6, 0x70,
+	0x10, 0x43, 0x4e, 0xe7, 0x97, 0x93, 0x12, 0xa1, 0x21, 0x17, 0x2c, 0x35, 0x3b, 0x16, 0xde, 0xa8,
+	0xfb, 0x79, 0xf6, 0x27, 0x00, 0x00, 0xff, 0xff, 0x86, 0x6f, 0xc7, 0x8a, 0xa5, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -158,6 +261,8 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Query for the current buyback balance
 	Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error)
+	// Query for buyback time periods
+	BuybackTime(ctx context.Context, in *QueryBuybackTimeRequest, opts ...grpc.CallOption) (*QueryBuybackTimeResponse, error)
 }
 
 type queryClient struct {
@@ -177,10 +282,21 @@ func (c *queryClient) Balance(ctx context.Context, in *QueryBalanceRequest, opts
 	return out, nil
 }
 
+func (c *queryClient) BuybackTime(ctx context.Context, in *QueryBuybackTimeRequest, opts ...grpc.CallOption) (*QueryBuybackTimeResponse, error) {
+	out := new(QueryBuybackTimeResponse)
+	err := c.cc.Invoke(ctx, "/em.buyback.v1.Query/BuybackTime", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Query for the current buyback balance
 	Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error)
+	// Query for buyback time periods
+	BuybackTime(context.Context, *QueryBuybackTimeRequest) (*QueryBuybackTimeResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -189,6 +305,9 @@ type UnimplementedQueryServer struct {
 
 func (*UnimplementedQueryServer) Balance(ctx context.Context, req *QueryBalanceRequest) (*QueryBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Balance not implemented")
+}
+func (*UnimplementedQueryServer) BuybackTime(ctx context.Context, req *QueryBuybackTimeRequest) (*QueryBuybackTimeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BuybackTime not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -213,6 +332,24 @@ func _Query_Balance_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_BuybackTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBuybackTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).BuybackTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.buyback.v1.Query/BuybackTime",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).BuybackTime(ctx, req.(*QueryBuybackTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "em.buyback.v1.Query",
 	HandlerType: (*QueryServer)(nil),
@@ -220,6 +357,10 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Balance",
 			Handler:    _Query_Balance_Handler,
+		},
+		{
+			MethodName: "BuybackTime",
+			Handler:    _Query_BuybackTime_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -286,6 +427,68 @@ func (m *QueryBalanceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryBuybackTimeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryBuybackTimeRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryBuybackTimeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryBuybackTimeResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryBuybackTimeResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryBuybackTimeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.NextRunTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.NextRunTime):])
+	if err1 != nil {
+		return 0, err1
+	}
+	i -= n1
+	i = encodeVarintQuery(dAtA, i, uint64(n1))
+	i--
+	dAtA[i] = 0x12
+	n2, err2 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.LastRunTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.LastRunTime):])
+	if err2 != nil {
+		return 0, err2
+	}
+	i -= n2
+	i = encodeVarintQuery(dAtA, i, uint64(n2))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -318,6 +521,28 @@ func (m *QueryBalanceResponse) Size() (n int) {
 			n += 1 + l + sovQuery(uint64(l))
 		}
 	}
+	return n
+}
+
+func (m *QueryBuybackTimeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryBuybackTimeResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.LastRunTime)
+	n += 1 + l + sovQuery(uint64(l))
+	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.NextRunTime)
+	n += 1 + l + sovQuery(uint64(l))
 	return n
 }
 
@@ -437,6 +662,172 @@ func (m *QueryBalanceResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.Balance = append(m.Balance, types.Coin{})
 			if err := m.Balance[len(m.Balance)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryBuybackTimeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryBuybackTimeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryBuybackTimeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryBuybackTimeResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryBuybackTimeResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryBuybackTimeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRunTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.LastRunTime, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NextRunTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.NextRunTime, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

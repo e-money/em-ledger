@@ -25,14 +25,20 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var _ = Describe("Staking", func() {
 
 	var (
-		Key1 = testnet.Keystore.Key1
-		Key2 = testnet.Keystore.Key2
-		Key3 = testnet.Keystore.Key3
+		keys = []nt.Key{
+			testnet.Keystore.Key1,
+			testnet.Keystore.Key2,
+			testnet.Keystore.Key3,
+			testnet.Keystore.Key4,
+			testnet.Keystore.Key5,
+			testnet.Keystore.Key6,
+		}
 	)
 
 	Describe("Blocks can hold many transactions", func() {
@@ -40,7 +46,7 @@ var _ = Describe("Staking", func() {
 			It("creates a new testnet", createNewTestnet)
 
 			It("Creates a lot of send transactions", func() {
-				const trxCount = 400
+				const trxCount = 1000
 
 				var (
 					failedTxs int32 = 0
@@ -48,9 +54,6 @@ var _ = Describe("Staking", func() {
 					chainID         = testnet.ChainID()
 					txhash          = make(chan string, 1024)
 				)
-
-				senders := []nt.Key{Key1, Key2, Key3, Key3}
-				receivers := []nt.Key{Key2, Key1, Key1, Key2}
 
 				for i := 0; i < trxCount; i++ {
 
@@ -61,48 +64,53 @@ var _ = Describe("Staking", func() {
 							fmt.Println(err)
 							return
 						}
-
 						txhash <- hash
-					}(senders[i%4], receivers[i%4])
+					}(keys[i%len(keys)], keys[(i+1)%len(keys)])
 				}
 
 				_, _ = nt.IncChain(1)
 
-				emcli := testnet.NewEmcli()
-				success, failure, errs := 0, 0, int(failedTxs)
-				for ; success+failure+errs < trxCount;{
-					h := <-txhash
-					bz, err := emcli.QueryTransaction(h)
-					if err != nil {
-						errs++
-						continue
-					}
+				success, failure := verifyTransactions(txhash)
 
-					s := gjson.ParseBytes(bz).Get("txhash")
-					if s.Exists() {
-						success++
-					} else {
-						failure++
-					}
-				}
-
-				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Errors: %v\n Total: %v\n", success, failure, errs, success+failure+errs)
-				Expect(success).To(Equal(trxCount))
-
-				// Equivalent event listening handler
-				// listener, err := nt.NewEventListener()
-				// Expect(err).ToNot(HaveOccurred())
-				//
-				// Eventually(func() int {
-				//	 success, err = listener.SubTx(
-				//	 	mu, txHashes, trxCount-errs, expiration,
-				//	 )
-				//	 return int(success)
-				// }, expiration, time.Second).Should(Equal(trxCount))
+				fmt.Printf(" *** Transactions summary:\n Successful: %v\n Failed: %v\n Broadcast errors: %v\n Total: %v\n", success, failure, failedTxs, success+failure+failedTxs)
+				Expect(success).To(Equal(int32(trxCount)))
 			})
 		})
 	})
 })
+
+func verifyTransactions(txhash chan string) (success, failure int32) {
+	timeout := time.NewTimer(5 * time.Minute)
+	emcli := testnet.NewEmcli()
+
+	for {
+		select {
+
+		case h := <-txhash:
+			bz, err := emcli.QueryTransaction(h)
+
+			if err != nil {
+				txhash <- h // Resubmit for retry
+				continue
+			}
+
+			s := gjson.ParseBytes(bz).Get("txhash")
+			if s.Exists() {
+				success++
+			} else {
+				failure++
+			}
+
+		case <-timeout.C:
+			fmt.Println("Verification timed out")
+			return
+
+		default:
+			return
+		}
+	}
+
+}
 
 type accountNoSequence struct {
 	AccountNo, Sequence uint64

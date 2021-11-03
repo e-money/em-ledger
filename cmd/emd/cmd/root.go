@@ -2,11 +2,16 @@ package cmd
 
 import (
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -16,20 +21,21 @@ import (
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	vestingcli "github.com/cosmos/cosmos-sdk/x/auth/vesting/client/cli"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	emoney "github.com/e-money/em-ledger"
 	apptypes "github.com/e-money/em-ledger/types"
+	migratecli "github.com/e-money/em-ledger/x/genutil/client/cli"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"io"
-	"os"
-	"path/filepath"
+)
+
+var (
+	CreateEmptyBlocksInterval = "60s"
 )
 
 // NewRootCmd creates a new root command for emd. It is called once in the
@@ -46,27 +52,51 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
-		WithHomeDir(emoney.DefaultNodeHome)
+		WithHomeDir(emoney.DefaultNodeHome).
+		WithViper("")
 
 	rootCmd := &cobra.Command{
 		Use:   "emd",
 		Short: "e-money app",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			initClientCtx = client.ReadHomeFlag(initClientCtx, cmd)
+
+			initClientCtx, err := createDefaultConfig(initClientCtx)
+			if err != nil {
+				return err
+			}
+
+			initClientCtx, err = config.ReadFromClientConfig(initClientCtx)
+			if err != nil {
+				return err
+			}
+
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd)
+			if err := server.InterceptConfigsPreRunHandler(cmd); err != nil {
+				return err
+			}
+
+			srvCtx := server.GetServerContextFromCmd(cmd)
+
+			d, err := time.ParseDuration(CreateEmptyBlocksInterval)
+			if err != nil {
+				panic(err)
+			}
+
+			srvCtx.Config.Consensus.CreateEmptyBlocksInterval = d
+			srvCtx.Config.Consensus.CreateEmptyBlocks = false
+			srvCtx.Config.Consensus.TimeoutCommit = 500 * time.Millisecond
+			srvCtx.Config.Consensus.TimeoutPropose = 2 * time.Second
+			srvCtx.Config.Consensus.PeerGossipSleepDuration = 25 * time.Millisecond
+
+			return server.SetCmdServerContext(cmd, srvCtx)
 		},
 	}
 
 	initRootCmd(rootCmd, encodingConfig)
-	// todo (reviewer): emcli used different "defaults" for the CLI
-	//  - Switch the default value of --broadcast-mode to "block"
-	//  - Switch the default value of --keyring-backend to "file"
-	//
-	// I would not recommend the file backend over OS as default
-
 	return rootCmd, encodingConfig
 }
 
@@ -78,16 +108,16 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig emoney.EncodingConfig) {
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(emoney.ModuleBasics, emoney.DefaultNodeHome),
 		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, emoney.DefaultNodeHome),
-		genutilcli.MigrateGenesisCmd(),
+		migratecli.MigrateGenesisCmd(),
 		genutilcli.GenTxCmd(emoney.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, emoney.DefaultNodeHome),
-		genutilcli.ValidateGenesisCmd(emoney.ModuleBasics),
 		AddGenesisAccountCmd(emoney.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		testnetCmd(emoney.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		debug.Cmd(),
+		config.Cmd(),
 	)
 
-	a := appCreator{encodingConfig}
+	a := appCreator{encCfg: encodingConfig}
 	server.AddCommands(rootCmd, emoney.DefaultNodeHome, a.newApp, a.appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
@@ -95,7 +125,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig emoney.EncodingConfig) {
 		rpc.StatusCommand(),
 		queryCommand(),
 		txCommand(),
-		keys.Commands(emoney.DefaultNodeHome),
+		KeysCommands(emoney.DefaultNodeHome),
 	)
 }
 
@@ -146,7 +176,6 @@ func txCommand() *cobra.Command {
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
 		flags.LineBreak,
-		vestingcli.GetTxCmd(),
 	)
 
 	emoney.ModuleBasics.AddTxCommands(cmd)

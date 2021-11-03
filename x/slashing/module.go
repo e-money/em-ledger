@@ -158,7 +158,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data j
 // ExportGenesis returns the exported genesis state as raw bytes for the slashing
 // module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
-	gs := sdkslashing.ExportGenesis(ctx, am.keeper.Keeper)
+	gs := ExportGenesis(ctx, am.keeper)
 	return cdc.MustMarshalJSON(gs)
 }
 

@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "google/api/annotations.proto";
 import "cosmos/upgrade/v1beta1/upgrade.proto";
+import "cosmos/bank/v1beta1/bank.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/authority/types";
 

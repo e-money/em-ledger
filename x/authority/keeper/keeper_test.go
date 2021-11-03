@@ -119,17 +119,17 @@ func CreateAndRevokeIssuer(
 	accAuthority, issuer1, issuer2 sdk.AccAddress, ik issuer.Keeper,
 ) {
 	_, err := keeper.createIssuer(
-		ctx, accAuthority, issuer1, []string{"eeur", "ejpy"},
+		ctx, accAuthority, issuer1, []types.Denomination{{Base: "eeur"}, {Base: "ejpy"}},
 	)
 	require.NoError(t, err)
 
 	_, err = keeper.createIssuer(
-		ctx, accAuthority, issuer2, []string{"echf", "egbp", "eeur"},
+		ctx, accAuthority, issuer2, []types.Denomination{{Base: "echf"}, {Base: "egbp"}, {Base: "eeur"}},
 	)
 	require.Error(t, err) // Must fail due to duplicate token denomination
 
 	_, err = keeper.createIssuer(
-		ctx, accAuthority, issuer2, []string{"echf", "egbp"},
+		ctx, accAuthority, issuer2, []types.Denomination{{Base: "echf"}, {Base: "egbp"}},
 	)
 	require.NoError(t, err)
 	require.Len(t, ik.GetIssuers(ctx), 2)
@@ -194,7 +194,7 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	// accNewAuthority1 is no longer the current nor the fallback authority
 	// trying a single transaction with accNewAuthority1 errs
 	_, err = keeper.createIssuer(
-		ctx, accNewAuthority1, issuer1, []string{"eeur", "ejpy"},
+		ctx, accNewAuthority1, issuer1, []types.Denomination{{Base: "eeur"}, {Base: "ejpy"}},
 	)
 	require.Error(t, err)
 
@@ -216,7 +216,7 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	// the former authority has expired
 	// trying a single transaction with the former authority errs
 	_, err = keeper.createIssuer(
-		ctx, accAuthority, issuer1, []string{"eeur", "ejpy"},
+		ctx, accAuthority, issuer1, []types.Denomination{{Base: "eeur"}, {Base: "ejpy"}},
 	)
 	require.Error(t, err)
 
@@ -239,10 +239,10 @@ func TestAddMultipleDenomsSameIssuer(t *testing.T) {
 
 	keeper.BootstrapAuthority(ctx, accAuthority)
 
-	_, err := keeper.createIssuer(ctx, accAuthority, accIssuer, []string{"eeur", "ejpy"})
+	_, err := keeper.createIssuer(ctx, accAuthority, accIssuer, []types.Denomination{{Base: "eeur"}, {Base: "ejpy"}})
 	require.NoError(t, err)
 
-	_, err = keeper.createIssuer(ctx, accAuthority, accIssuer, []string{"ekrw"})
+	_, err = keeper.createIssuer(ctx, accAuthority, accIssuer, []types.Denomination{{Base: "ekrw"}})
 	require.NoError(t, err)
 	issuers := ik.GetIssuers(ctx)
 
@@ -427,7 +427,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 			encConfig.Marshaler, bankKey, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 		)
 		lpk = liquidityprovider.NewKeeper(encConfig.Marshaler, keyLp, bk)
-		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{})
+		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{}, bk)
 
 		upgK = upgradekeeper.NewKeeper(map[int64]bool{}, keyUpg, encConfig.Marshaler, t.TempDir())
 	)

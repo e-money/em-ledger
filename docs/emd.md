@@ -1,10 +1,5 @@
 # em-ledger Command Line Interface
 
-TODO (reviewer): emd functionality was merged into emd. This is a common pattern within cosmos-sdk stargate apps
-please also note that the `config` command is not available anymore (unfortunately). I think there is an open issue
-for that.
-
-
 ## Keys
 
 ### Key Types
@@ -112,7 +107,7 @@ multi signature account see [Multisig Transactions](#multisig-transactions).
 
 ## Transaction Broadcasting
 
-When broadcasting transactions, `emcli` accepts a `--broadcast-mode` flag. This
+When broadcasting transactions, `emd` accepts a `--broadcast-mode` flag. This
 flag can have a value of `sync`, `async`, or `block` (default), where `sync` makes
 the client return a CheckTx response, `async` makes the client return immediately,
 and `block` makes the client wait for the tx to be committed (or timing out).
@@ -196,7 +191,7 @@ You can build a transaction and print its JSON format to STDOUT by appending `--
 emd tx send <sender_key_name_or_address> <recipient_address> 1000000eeur --generate-only > unsigned_tx.json
 ```
 
-_The `--generate-only` flag prevents `emcli` from accessing the local keychain. 
+_The `--generate-only` flag prevents `emd` from accessing the local keychain. 
 Thus when this flag is supplied `<sender_key_name_or_address>` must be an address._
 
 The transaction can now be signed:

@@ -277,8 +277,8 @@ func IncChain(delta int64) (int64, error) {
 
 	return WaitForHeightWithTimeout(
 		height+delta,
-		// generous and unlikely to exhaust
-		time.Duration(delta)*5*time.Second,
+		// is 10 seconds always enough?
+		time.Duration(delta)*10*time.Second,
 	)
 }
 
@@ -305,7 +305,7 @@ func GetHeight() (int64, error) {
 }
 
 func chainStatus() ([]byte, error) {
-	return exec.Command(EMCLI, "status").CombinedOutput()
+	return exec.Command(EMCLI, "status", "--node", DefaultNode).CombinedOutput()
 }
 
 // WaitForHeightWithTimeout waits till the chain reaches the requested height
@@ -339,7 +339,7 @@ func WaitForHeightWithTimeout(requestedHeight int64, t time.Duration) (int64, er
 }
 
 func (t *Testnet) compileBinaries() error {
-	_, err := t.execCmdAndWait(makePath, "clean", "build-all")
+	_, err := t.execCmdAndWait(makePath, "clean", "build-fast-consensus")
 	if err != nil {
 		fmt.Println("Compilation step caused error: ", err)
 	}

@@ -6,12 +6,10 @@ package keeper
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/e-money/em-ledger/x/inflation/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // NewQuerier returns an inflation Querier handler.

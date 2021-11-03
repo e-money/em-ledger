@@ -6,7 +6,7 @@ import "cosmos/base/v1beta1/coin.proto";
 import "google/api/annotations.proto";
 import "em/inflation/v1/inflation.proto";
 
-option go_package = "github.com/e-money/em-ledger/x/inflation/internal/types";
+option go_package = "github.com/e-money/em-ledger/x/inflation/types";
 
 service Query {
   rpc Inflation(QueryInflationRequest) returns (QueryInflationResponse) {

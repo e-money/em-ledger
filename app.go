@@ -40,24 +40,18 @@ import (
 	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	"github.com/cosmos/cosmos-sdk/x/gov"
-	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
 	ibctransferkeeper "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
-	ibcclient "github.com/cosmos/cosmos-sdk/x/ibc/core/02-client"
 	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/05-port/types"
 	ibchost "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
 	ibckeeper "github.com/cosmos/cosmos-sdk/x/ibc/core/keeper"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	bep3 "github.com/e-money/bep3/module"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/auth/ante"
@@ -83,7 +77,6 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/buyback"
@@ -93,6 +86,8 @@ import (
 	"github.com/e-money/em-ledger/x/liquidityprovider"
 	"github.com/e-money/em-ledger/x/market"
 	emslashing "github.com/e-money/em-ledger/x/slashing"
+	"github.com/e-money/em-ledger/x/staking"
+	historykeeper "github.com/e-money/em-ledger/x/staking/keeper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
@@ -113,10 +108,6 @@ var (
 		staking.AppModuleBasic{},
 		emdistr.AppModuleBasic{},
 		// todo (reviewer) : gov was deactivated in the original app.go but for ICS-20 we should have the `upgradeclient` handlers
-		gov.NewAppModuleBasic(
-			//paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
-			upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
-		),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		emslashing.AppModuleBasic{},
@@ -132,7 +123,6 @@ var (
 		authority.AppModule{},
 		market.AppModule{},
 		buyback.AppModule{},
-		bep3.AppModule{},
 		queries.AppModule{},
 	)
 
@@ -142,14 +132,12 @@ var (
 		emdistr.ModuleName:             nil,
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		// em modules
 		inflation.ModuleName:         {authtypes.Minter},
 		emslashing.ModuleName:        nil, // TODO Remove this line?
 		liquidityprovider.ModuleName: {authtypes.Minter, authtypes.Burner},
 		buyback.ModuleName:           {authtypes.Burner},
-		bep3.ModuleName:              {authtypes.Burner, authtypes.Minter},
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -181,11 +169,11 @@ type EMoneyApp struct {
 	// keepers
 	accountKeeper    authkeeper.AccountKeeper
 	bankKeeper       *embank.ProxyKeeper
+	historykeeper    historykeeper.HistoryKeeper
 	capabilityKeeper *capabilitykeeper.Keeper
 	distrKeeper      distrkeeper.Keeper
 	stakingKeeper    stakingkeeper.Keeper
 	slashingKeeper   emslashing.Keeper
-	govKeeper        govkeeper.Keeper
 	crisisKeeper     crisiskeeper.Keeper
 	upgradeKeeper    upgradekeeper.Keeper
 	paramsKeeper     paramskeeper.Keeper
@@ -204,7 +192,6 @@ type EMoneyApp struct {
 	authorityKeeper authority.Keeper
 	marketKeeper    *market.Keeper
 	buybackKeeper   buyback.Keeper
-	bep3Keeper      bep3.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -238,15 +225,15 @@ func NewApp(
 	keys := sdk.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
 		distrtypes.StoreKey, emslashing.StoreKey,
-		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
+		paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		lptypes.StoreKey, issuer.StoreKey, authority.StoreKey,
-		market.StoreKey, buyback.StoreKey,
-		inflation.StoreKey, bep3.StoreKey,
+		market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
+		inflation.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey, market.StoreKeyIdx)
+	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	app := &EMoneyApp{
 		BaseApp:           bApp,
@@ -282,6 +269,9 @@ func NewApp(
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], app.accountKeeper, app.bankKeeper, app.GetSubspace(stakingtypes.ModuleName),
 	)
+
+	app.historykeeper = historykeeper.NewHistoryKeeper(appCodec, keys[historykeeper.StoreKey], stakingKeeper, app.database)
+
 	app.distrKeeper = distrkeeper.NewKeeper(
 		appCodec, keys[distrtypes.StoreKey], app.GetSubspace(distrtypes.ModuleName), app.accountKeeper, app.bankKeeper,
 		&stakingKeeper, authtypes.FeeCollectorName, app.ModuleAccountAddrs(),
@@ -295,6 +285,11 @@ func NewApp(
 	)
 	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
 
+	// Used for lilmermaid-16
+	app.upgradeKeeper.SetUpgradeHandler("upgrade-plan-1", func(ctx sdk.Context, plan upgradetypes.Plan) {
+		ctx.Logger().Info("Upgraded to upgrade-plan-1")
+	})
+
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
@@ -303,20 +298,7 @@ func NewApp(
 
 	// Create IBC Keeper
 	app.ibcKeeper = ibckeeper.NewKeeper(
-		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.stakingKeeper, scopedIBCKeeper,
-	)
-
-	// register the proposal types
-	govRouter := govtypes.NewRouter()
-	govRouter.AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
-		// todo (reviewer): check which modules should be enabled
-		//AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
-		//AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper)).
-		//AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper)).
-		AddRoute(ibchost.RouterKey, ibcclient.NewClientUpdateProposalHandler(app.ibcKeeper.ClientKeeper))
-	app.govKeeper = govkeeper.NewKeeper(
-		appCodec, keys[govtypes.StoreKey], app.GetSubspace(govtypes.ModuleName), app.accountKeeper, app.bankKeeper,
-		&stakingKeeper, govRouter,
+		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.historykeeper, scopedIBCKeeper,
 	)
 
 	// Create Transfer Keepers
@@ -341,20 +323,14 @@ func NewApp(
 
 	app.inflationKeeper = inflation.NewKeeper(app.appCodec, keys[inflation.StoreKey], app.bankKeeper, app.accountKeeper, app.stakingKeeper, buyback.AccountName, authtypes.FeeCollectorName)
 	app.lpKeeper = liquidityprovider.NewKeeper(app.appCodec, keys[lptypes.StoreKey], app.bankKeeper)
-	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper)
+	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper, app.bankKeeper)
 	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app, &app.upgradeKeeper, app.paramsKeeper)
-	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], memKeys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
+	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
-	app.bep3Keeper = bep3.NewKeeper(app.appCodec, keys[bep3.StoreKey], app.bankKeeper, app.accountKeeper, app.paramsKeeper.Subspace(bep3.ModuleName), GetMaccs())
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
-
-	app.upgradeKeeper.SetUpgradeHandler("v1.0.0-RC7", func(ctx sdk.Context, plan upgradetypes.Plan) {
-		log := ctx.Logger()
-		log.Info("Upgraded to", plan.Name)
-	})
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -368,9 +344,8 @@ func NewApp(
 		bank.NewAppModule(appCodec, app.bankKeeper, app.accountKeeper),
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
 		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
-		gov.NewAppModule(appCodec, app.govKeeper, app.accountKeeper, app.bankKeeper),
 		emslashing.NewAppModule(appCodec, app.slashingKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
-		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper),
+		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper, app.historykeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
 		evidence.NewAppModule(app.evidenceKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
@@ -383,7 +358,6 @@ func NewApp(
 		market.NewAppModule(app.marketKeeper),
 		buyback.NewAppModule(app.buybackKeeper, app.bankKeeper),
 		inflation.NewAppModule(app.inflationKeeper),
-		bep3.NewAppModule(app.bep3Keeper, app.accountKeeper, app.bankKeeper),
 		queries.NewAppModule(app.accountKeeper, app.bankKeeper),
 	)
 
@@ -391,15 +365,23 @@ func NewApp(
 	app.mm.SetOrderBeginBlockers(
 		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName,
-		// Cosmos #9800: capability module's begin blocker must come before any modules using capabilities (e.g. IBC)
+		//// Cosmos #9800: capability module's begin blocker must come before any modules using capabilities (e.g. IBC)
 		capabilitytypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		authority.ModuleName, market.ModuleName, inflation.ModuleName, emslashing.ModuleName, emdistr.ModuleName, buyback.ModuleName,
-		bep3.ModuleName,
+		evidencetypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibchost.ModuleName,
+
+		authority.ModuleName,
+		market.ModuleName,
+		inflation.ModuleName,
+		emslashing.ModuleName,
+		emdistr.ModuleName,
+		buyback.ModuleName,
+		//bep3.ModuleName, // <- TODO Forces app-state change in BeginBlock
 	)
 
 	// todo (reviewer): check which modules make sense
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName)
+	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, stakingtypes.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -407,12 +389,11 @@ func NewApp(
 	// so that other modules that want to create or claim capabilities afterwards in InitChain
 	// can do so safely.
 	app.mm.SetOrderInitGenesis(
-		// todo (reviewer): check which modules make sense
 		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, emdistr.ModuleName, stakingtypes.ModuleName,
-		emslashing.ModuleName, govtypes.ModuleName, crisistypes.ModuleName,
+		emslashing.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
-		issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName, inflation.ModuleName,
-		bep3.ModuleName,
+		inflation.ModuleName, issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName,
+		liquidityprovider.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
@@ -629,7 +610,6 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	paramsKeeper.Subspace(stakingtypes.ModuleName)
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(emslashing.ModuleName)
-	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)

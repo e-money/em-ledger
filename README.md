@@ -1,30 +1,36 @@
-# e-Money Ledger
+![e-Money wordmark](docs/e-money%20wordmark.svg)
 
-![AWS CodeBuild](https://codebuild.eu-central-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiZWQzSDZkbjZzYVpsMlNQNlJEYzlNVFlVVnhaak1UcU1RZzR5ODhPVlc5bVRpOEJUQ0liNU5zeUdCcHFlVnBXOW1JRTdRZVlDMzFOVGM2bHd1ZEtwZmVFPSIsIml2UGFyYW1ldGVyU3BlYyI6IlNsNUdrMWtiMm04c1pWaXYiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+# Introduction
 
 The e-Money Ledger, a proof-of-stake blockchain based on the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and [Tendermint](https://github.com/tendermint/tendermint), introduces our novel interest-bearing, currency-backed tokens into the [Cosmos Network](https://cosmos.network).
 
-## Build Instructions
+## Quickstart Instructions
+
+This will get you a fully synced node, very quickly.
 
 ```bash
 git clone https://github.com/e-money/em-ledger.git
 cd em-ledger
-make build
+git checkout v1.1.3
+make install
+emd init choose-a-cool-name
+wget -O ~/.emd/config/genesis.json https://github.com/e-money/networks/raw/master/emoney-3/genesis.json
+emd start --p2p.persistent_peers 17533be7691494a0bc2dbd174930fa6a57b5b98c@3.69.44.220:28656,3f6ce97077a9bddd6dd637cd64c140eabdebbda5@3.68.159.237:28656,ecec8933d80da5fccda6bdd72befe7e064279fc1@207.180.213.123:26676,0ad7bc7687112e212bac404670aa24cd6116d097@50.18.83.75:26656,1723e34f45f54584f44d193ce9fd9c65271ca0b3@13.124.62.83:26656
 ```
+
+
 
 ## Getting Started
 
-To better understand em-ledger, start with a [quick tour](docs/emcli.md) of the `emcli` command line interface.
+To better understand em-ledger, start with a [quick tour](docs/emd.md) of the `emd` command line interface.
+
+The [@e-money/client.js](https://www.npmjs.com/package/@e-money/client.js) NPM is the recommended way for client applications to interact with em-ledger.
 
 _Please notice that it is highly recommended to use a [Ledger Device](docs/ledger.md) to securely manage keys._
 
-## Production Network
+## Networks
 
-See [https://github.com/e-money/launch](https://github.com/e-money/launch) for instructions on how to join our production network.
-
-## Test Network
-
-See [https://github.com/e-money/testnets](https://github.com/e-money/testnets) for instructions on how to join our test network.
+See [https://github.com/e-money/networks](https://github.com/e-money/networks) for instructions on how to join our production and test networks.
 
 ## Integration Guide
 

@@ -63,26 +63,32 @@ func createOutputScanner(substring string, timeout time.Duration) (wait func() b
 }
 
 func AuthCreatesIssuer(emcli Emcli, Authority, Issuer Key) bool {
+	issuers, denoms := CreateIssuer(emcli, Authority, Issuer, "eeur", `'ejpy,eJPY,Japanese yen stablecoin'`)
+
+	return len(issuers) == 1 && strings.Contains(
+		denoms, "eeur",
+	) && strings.Contains(denoms, "ejpy")
+}
+
+func CreateIssuer(emcli Emcli, Authority Key, Issuer Key, denomArgs ...string) ([]types.Issuer, string) {
 	_, success, err := emcli.AuthorityCreateIssuer(
-		Authority, Issuer, "eeur", "ejpy",
+		Authority, Issuer, denomArgs...,
 	)
 	if err != nil || !success {
-		return false
+		return nil, ""
 	}
 
 	bz, err := emcli.QueryIssuers()
 	if err != nil {
-		return false
+		return nil, ""
 	}
 
 	var resp types.QueryIssuersResponse
 	if err = json.Unmarshal(bz, &resp); err != nil {
-		return false
+		return nil, ""
 	}
 
-	denoms := strings.Join(resp.Issuers[0].Denoms, ",")
-
-	return len(resp.Issuers) == 1 && strings.Contains(denoms, "eeur") && strings.Contains(denoms, "ejpy")
+	return resp.Issuers, strings.Join(resp.Issuers[len(resp.Issuers)-1].Denoms, ",")
 }
 
 func CreateMultiMsgTx(key Key, chainid, feestring string, accnum, sequence uint64, msgs ...sdk.Msg) signing.Tx {

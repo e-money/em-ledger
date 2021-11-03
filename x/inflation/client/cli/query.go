@@ -7,9 +7,7 @@ package cli
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-
-	"github.com/e-money/em-ledger/x/inflation/internal/types"
-
+	"github.com/e-money/em-ledger/x/inflation/types"
 	"github.com/spf13/cobra"
 )
 

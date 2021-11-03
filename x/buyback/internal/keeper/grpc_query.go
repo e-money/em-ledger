@@ -20,3 +20,23 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	}
 	return &response, nil
 }
+
+func (k Keeper) BuybackTime(c context.Context, req *types.QueryBuybackTimeRequest) (*types.QueryBuybackTimeResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	ctx := sdk.UnwrapSDKContext(c)
+
+	updateInterval := k.GetUpdateInterval(ctx)
+	lastUpdated := k.GetLastUpdated(ctx)
+
+	nextRun := lastUpdated.Add(updateInterval)
+
+	response := types.QueryBuybackTimeResponse{
+		LastRunTime: lastUpdated,
+		NextRunTime: nextRun,
+	}
+
+	return &response, nil
+}

@@ -3,12 +3,19 @@ package keeper
 import (
 	"context"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	ctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
+	"time"
 )
 
 func TestQueryBalance(t *testing.T) {
@@ -52,6 +59,39 @@ func TestQueryBalance(t *testing.T) {
 			assert.Equal(t, myModuleAddress, bankMock.lastRecordedReqAddr)
 		})
 	}
+}
+
+func TestQueryBuybackTime(t *testing.T) {
+	storeKey := sdk.NewKVStoreKey(types.ModuleName)
+	db := dbm.NewMemDB()
+	ms := store.NewCommitMultiStore(db)
+	ms.MountStoreWithDB(storeKey, sdk.StoreTypeIAVL, db)
+	ms.LoadLatestVersion()
+
+	now := time.Now().UTC()
+	updateInterval := 24 * time.Hour
+
+	ctx := sdk.NewContext(ms, tmproto.Header{ChainID: "test-chain"}, true, log.NewNopLogger())
+	ctx = ctx.WithBlockTime(now)
+
+	keeper := &Keeper{
+		cdc:      codec.NewProtoCodec(ctypes.NewInterfaceRegistry()),
+		storeKey: storeKey,
+	}
+
+	keeper.SetUpdateInterval(ctx, updateInterval)
+	keeper.UpdateBuybackMarket(ctx)
+
+	queryHelper := baseapp.NewQueryServerTestHelper(ctx, codectypes.NewInterfaceRegistry())
+	types.RegisterQueryServer(queryHelper, keeper)
+
+	queryClient := types.NewQueryClient(queryHelper)
+
+	response, err := queryClient.BuybackTime(sdk.WrapSDKContext(ctx), &types.QueryBuybackTimeRequest{})
+	require.NoError(t, err)
+	require.NotNil(t, response)
+	require.Equal(t, now, response.LastRunTime)
+	require.Equal(t, now.Add(updateInterval), response.NextRunTime)
 }
 
 type bankMock struct {

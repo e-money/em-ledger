@@ -20,6 +20,7 @@
     - [Query](#em.authority.v1.Query)
   
 - [em/authority/v1/tx.proto](#em/authority/v1/tx.proto)
+    - [Denomination](#em.authority.v1.Denomination)
     - [MsgCreateIssuer](#em.authority.v1.MsgCreateIssuer)
     - [MsgCreateIssuerResponse](#em.authority.v1.MsgCreateIssuerResponse)
     - [MsgDestroyIssuer](#em.authority.v1.MsgDestroyIssuer)
@@ -41,6 +42,8 @@
 - [em/buyback/v1/query.proto](#em/buyback/v1/query.proto)
     - [QueryBalanceRequest](#em.buyback.v1.QueryBalanceRequest)
     - [QueryBalanceResponse](#em.buyback.v1.QueryBalanceResponse)
+    - [QueryBuybackTimeRequest](#em.buyback.v1.QueryBuybackTimeRequest)
+    - [QueryBuybackTimeResponse](#em.buyback.v1.QueryBuybackTimeResponse)
   
     - [Query](#em.buyback.v1.Query)
   
@@ -315,6 +318,23 @@
 
 
 
+<a name="em.authority.v1.Denomination"></a>
+
+### Denomination
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base` | [string](#string) |  | base represents the base denom (should be the DenomUnit with exponent = 0). |
+| `display` | [string](#string) |  | display indicates the suggested denom that should be displayed in clients. |
+| `description` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="em.authority.v1.MsgCreateIssuer"></a>
 
 ### MsgCreateIssuer
@@ -325,7 +345,7 @@
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |  |
 | `issuer` | [string](#string) |  |  |
-| `denominations` | [string](#string) | repeated |  |
+| `denominations` | [Denomination](#em.authority.v1.Denomination) | repeated |  |
 
 
 
@@ -563,6 +583,32 @@
 
 
 
+
+<a name="em.buyback.v1.QueryBuybackTimeRequest"></a>
+
+### QueryBuybackTimeRequest
+
+
+
+
+
+
+
+<a name="em.buyback.v1.QueryBuybackTimeResponse"></a>
+
+### QueryBuybackTimeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `last_run` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+| `next_run` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  |  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -578,6 +624,7 @@
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Balance` | [QueryBalanceRequest](#em.buyback.v1.QueryBalanceRequest) | [QueryBalanceResponse](#em.buyback.v1.QueryBalanceResponse) | Query for the current buyback balance | GET|/e-money/buyback/v1/balance|
+| `BuybackTime` | [QueryBuybackTimeRequest](#em.buyback.v1.QueryBuybackTimeRequest) | [QueryBuybackTimeResponse](#em.buyback.v1.QueryBuybackTimeResponse) | Query for buyback time periods | GET|/e-money/buyback/v1/time|
 
  <!-- end services -->
 

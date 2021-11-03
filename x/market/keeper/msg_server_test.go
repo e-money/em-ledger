@@ -3,6 +3,8 @@ package keeper
 import (
 	"context"
 	"errors"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -10,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/rand"
-	"testing"
 )
 
 func TestAddLimitOrder(t *testing.T) {
@@ -24,7 +25,7 @@ func TestAddLimitOrder(t *testing.T) {
 
 	specs := map[string]struct {
 		req       *types.MsgAddLimitOrder
-		mockFn    func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, aggressiveOrder types.Order) error
 		expErr    bool
 		expEvents sdk.Events
 		expOrder  types.Order
@@ -37,14 +38,15 @@ func TestAddLimitOrder(t *testing.T) {
 				Source:        sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
-			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order) error {
 				gotOrder = aggressiveOrder
-				return &sdk.Result{
-					Events: []abcitypes.Event{{
+				ctx.EventManager().EmitEvents([]sdk.Event{
+					{
 						Type:       "testing",
 						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
-					}},
-				}, nil
+					},
+				})
+				return nil
 			},
 			expEvents: sdk.Events{{
 				Type:       "testing",
@@ -88,8 +90,8 @@ func TestAddLimitOrder(t *testing.T) {
 				Source:        sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:   sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
-			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
-				return nil, errors.New("testing")
+			mockFn: func(ctx sdk.Context, aggressiveOrder types.Order) error {
+				return errors.New("testing")
 			},
 			expErr: true,
 		},
@@ -113,11 +115,11 @@ func TestAddLimitOrder(t *testing.T) {
 
 func TestAddMarketOrder(t *testing.T) {
 	var (
-		ownerAddr        = randomAccAddress()
-		gotSrc 			 sdk.Coin
-		gotDst           sdk.Coin
-		gotMaxSlippage   sdk.Dec
-		gotOrder         types.Order
+		ownerAddr      = randomAccAddress()
+		gotSrc         sdk.Coin
+		gotDst         sdk.Coin
+		gotMaxSlippage sdk.Dec
+		gotOrder       types.Order
 	)
 
 	keeper := marketKeeperMock{}
@@ -125,7 +127,7 @@ func TestAddMarketOrder(t *testing.T) {
 
 	specs := map[string]struct {
 		req                      *types.MsgAddMarketOrder
-		mockAddLimitOrderFn      func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
+		mockAddLimitOrderFn      func(ctx sdk.Context, aggressiveOrder types.Order) error
 		mockGetSrcFromSlippageFn func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error)
 		expErr                   bool
 		expSrc                   sdk.Coin
@@ -146,14 +148,15 @@ func TestAddMarketOrder(t *testing.T) {
 				gotDst, gotMaxSlippage = dst, maxSlippage
 				return gotSrc, nil
 			},
-			mockAddLimitOrderFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+			mockAddLimitOrderFn: func(ctx sdk.Context, aggressiveOrder types.Order) error {
 				gotOrder = aggressiveOrder
-				return &sdk.Result{
-					Events: []abcitypes.Event{{
+				ctx.EventManager().EmitEvents([]sdk.Event{
+					{
 						Type:       "testing",
 						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
-					}},
-				}, nil
+					},
+				})
+				return nil
 			},
 			expEvents: sdk.Events{{
 				Type:       "testing",
@@ -228,8 +231,8 @@ func TestAddMarketOrder(t *testing.T) {
 				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
 				return gotSrc, nil
 			},
-			mockAddLimitOrderFn: func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
-				return nil, errors.New("testing")
+			mockAddLimitOrderFn: func(ctx sdk.Context, aggressiveOrder types.Order) error {
+				return errors.New("testing")
 			},
 			expErr: true,
 		},
@@ -266,7 +269,7 @@ func TestCancelOrder(t *testing.T) {
 
 	specs := map[string]struct {
 		req       *types.MsgCancelOrder
-		mockFn    func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error
 		expErr    bool
 		expEvents sdk.Events
 	}{
@@ -275,14 +278,15 @@ func TestCancelOrder(t *testing.T) {
 				Owner:         ownerAddr.String(),
 				ClientOrderId: "myClientIOrderID",
 			},
-			mockFn: func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error {
 				gotOwner, gotClientOrderId = owner, clientOrderId
-				return &sdk.Result{
-					Events: []abcitypes.Event{{
+				ctx.EventManager().EmitEvents([]sdk.Event{
+					{
 						Type:       "testing",
 						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
-					}},
-				}, nil
+					},
+				})
+				return nil
 			},
 			expEvents: sdk.Events{{
 				Type:       "testing",
@@ -307,8 +311,8 @@ func TestCancelOrder(t *testing.T) {
 				Owner:         ownerAddr.String(),
 				ClientOrderId: "myClientIOrderID",
 			},
-			mockFn: func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
-				return nil, errors.New("testing")
+			mockFn: func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error {
+				return errors.New("testing")
 			},
 			expErr: true,
 		},
@@ -342,7 +346,7 @@ func TestCancelReplaceLimitOrder(t *testing.T) {
 
 	specs := map[string]struct {
 		req       *types.MsgCancelReplaceLimitOrder
-		mockFn    func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
+		mockFn    func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error
 		expErr    bool
 		expEvents sdk.Events
 		expOrder  types.Order
@@ -356,14 +360,15 @@ func TestCancelReplaceLimitOrder(t *testing.T) {
 				Source:            sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
-			mockFn: func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
+			mockFn: func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error {
 				gotOrder, gotOrigClientOrderId = newOrder, origClientOrderId
-				return &sdk.Result{
-					Events: []abcitypes.Event{{
+				ctx.EventManager().EmitEvents([]sdk.Event{
+					{
 						Type:       "testing",
 						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
-					}},
-				}, nil
+					},
+				})
+				return nil
 			},
 			expEvents: sdk.Events{{
 				Type:       "testing",
@@ -418,8 +423,8 @@ func TestCancelReplaceLimitOrder(t *testing.T) {
 				Source:            sdk.Coin{Denom: "eeur", Amount: sdk.OneInt()},
 				Destination:       sdk.Coin{Denom: "alx", Amount: sdk.OneInt()},
 			},
-			mockFn: func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
-				return nil, errors.New("testing")
+			mockFn: func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error {
+				return errors.New("testing")
 			},
 			expErr: true,
 		},
@@ -456,7 +461,7 @@ func TestCancelReplaceMarketOrder(t *testing.T) {
 	specs := map[string]struct {
 		req                           *types.MsgCancelReplaceMarketOrder
 		mockGetSrcFromSlippageFn      func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error)
-		mockCancelReplaceLimitOrderFn func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
+		mockCancelReplaceLimitOrderFn func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error
 		expErr                        bool
 		expEvents                     sdk.Events
 		expSrc                        sdk.Coin
@@ -476,14 +481,15 @@ func TestCancelReplaceMarketOrder(t *testing.T) {
 				gotSrc = sdk.NewCoin(srcDenom, sdk.OneInt())
 				return gotSrc, nil
 			},
-			mockCancelReplaceLimitOrderFn: func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
+			mockCancelReplaceLimitOrderFn: func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error {
 				gotOrder, gotOrigClientOrderId = newOrder, origClientOrderId
-				return &sdk.Result{
-					Events: []abcitypes.Event{{
+				ctx.EventManager().EmitEvents([]sdk.Event{
+					{
 						Type:       "testing",
 						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
-					}},
-				}, nil
+					},
+				})
+				return nil
 			},
 			expEvents: sdk.Events{{
 				Type:       "testing",
@@ -594,35 +600,35 @@ func TestCancelReplaceMarketOrder(t *testing.T) {
 }
 
 type marketKeeperMock struct {
-	NewMarketOrderWithSlippageFn func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error)
-	NewOrderSingleFn             func(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error)
-	CancelOrderFn                func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
-	CancelReplaceLimitOrderFn    func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error)
+	NewMarketOrderWithSlippageFn func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) error
+	NewOrderSingleFn             func(ctx sdk.Context, aggressiveOrder types.Order) error
+	CancelOrderFn                func(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error
+	CancelReplaceLimitOrderFn    func(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error
 	GetSrcFromSlippageFn         func(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec) (sdk.Coin, error)
 }
 
-func (m marketKeeperMock) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) (*sdk.Result, error) {
+func (m marketKeeperMock) NewMarketOrderWithSlippage(ctx sdk.Context, srcDenom string, dst sdk.Coin, maxSlippage sdk.Dec, owner sdk.AccAddress, timeInForce types.TimeInForce, clientOrderId string) error {
 	if m.NewMarketOrderWithSlippageFn == nil {
 		panic("not expected to be called")
 	}
 	return m.NewMarketOrderWithSlippageFn(ctx, srcDenom, dst, maxSlippage, owner, timeInForce, clientOrderId)
 }
 
-func (m marketKeeperMock) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) (*sdk.Result, error) {
+func (m marketKeeperMock) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) error {
 	if m.NewOrderSingleFn == nil {
 		panic("not expected to be called")
 	}
 	return m.NewOrderSingleFn(ctx, aggressiveOrder)
 }
 
-func (m marketKeeperMock) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error) {
+func (m marketKeeperMock) CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error {
 	if m.CancelOrderFn == nil {
 		panic("not expected to be called")
 	}
 	return m.CancelOrderFn(ctx, owner, clientOrderId)
 }
 
-func (m marketKeeperMock) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) (*sdk.Result, error) {
+func (m marketKeeperMock) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error {
 	if m.CancelReplaceLimitOrderFn == nil {
 		panic("not expected to be called")
 	}

@@ -3,6 +3,7 @@ export GO111MODULE=on
 VERSION = $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT  = $(shell git log -1 --format='%H')
 LEDGER_ENABLED ?= true
+FAST_CONSENSUS ?= false
 
 # process build tags
 build_tags = netgo
@@ -44,6 +45,11 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
 
+
+ifeq ($(FAST_CONSENSUS),true)
+	ldflags += -X github.com/e-money/em-ledger/cmd/emd/cmd.CreateEmptyBlocksInterval=2s
+endif
+
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 build:
@@ -66,21 +72,16 @@ imp:
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
 
-build-test-upg:
-	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
-	chmod +x build/cosmovisor
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
-	chmod +x "build/emdupg"
-	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
-	chmod +x "build/emdupg-linux"
-
 build-linux:
 	# Linux images for docker-compose
 	# CGO_ENABLED=0 added to solve this issue: https://stackoverflow.com/a/36308464
 	BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
-build-all: build-linux build-test-upg
+build-all: build-linux build/cosmovisor build/emdupg build/emdupg-linux
 	$(MAKE) build
+
+build-fast-consensus:
+	FAST_CONSENSUS=true $(MAKE) build-all
 
 build-docker:
 	$(MAKE) -C networks/docker/ all
@@ -93,7 +94,7 @@ test:
 	go test -mod=readonly ./...
 
 bdd-test:
-	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go market_test.go buyback_test.go capacity_test.go staking_test.go bep3swap_test.go upgrade_test.go
+	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go market_test.go buyback_test.go capacity_test.go staking_test.go upgrade_test.go
 
 github-ci: build-linux
 	$(MAKE) test
@@ -111,11 +112,24 @@ local-testnet-reset:
 clean:
 	rm -rf ./build ./data ./config
 
+##################### upgrade artifacts
+build/cosmovisor:
+	docker run --rm --entrypoint cat emoney/cosmovisor /go/bin/cosmovisor > build/cosmovisor
+	chmod +x build/cosmovisor
+
+build/emdupg:
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd > "build/emdupg"
+	chmod +x "build/emdupg"
+
+build/emdupg-linux:
+	docker run --rm --entrypoint cat emoney/test-upg /go/src/em-ledger/build/emd-linux > "build/emdupg-linux"
+	chmod +x "build/emdupg-linux"
+
 license:
 	GO111MODULE=off go get github.com/google/addlicense/
 	addlicense -f LICENSE .
 
-.PHONY: build build-linux build-test-upg cosmovisor clean test bdd-test build-docker license
+.PHONY: build build-linux cosmovisor clean test bdd-test build-docker license
 
 ###############################################################################
 ###                                Protobuf                                 ###
@@ -144,4 +158,4 @@ proto-lint:
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against-input $(HTTPS_GIT)#branch=master
 
-.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking
+.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking build-fast-consensus

@@ -4,6 +4,7 @@ package em.buyback.v1;
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/e-money/em-ledger/x/buyback/internal/types";
 
@@ -12,6 +13,12 @@ service Query {
   rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
     option (google.api.http).get = "/e-money/buyback/v1/balance";
   };
+
+  // Query for buyback time periods
+  rpc BuybackTime(QueryBuybackTimeRequest) returns (QueryBuybackTimeResponse) {
+    option (google.api.http).get = "/e-money/buyback/v1/time";
+  };
+
 }
 
 message QueryBalanceRequest {}
@@ -24,3 +31,22 @@ message QueryBalanceResponse {
     (gogoproto.nullable) = false
   ];
 }
+
+message QueryBuybackTimeRequest {}
+
+message QueryBuybackTimeResponse {
+  google.protobuf.Timestamp last_run = 1 [
+    (gogoproto.customname) = "LastRunTime",
+    (gogoproto.moretags) = "yaml:\"last_run\"",
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false
+  ];
+
+  google.protobuf.Timestamp next_run = 2 [
+    (gogoproto.customname) = "NextRunTime",
+    (gogoproto.moretags) = "yaml:\"next_run\"",
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false
+  ];
+}
+
