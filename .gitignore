@@ -4,7 +4,6 @@
 /config
 /keys
 /emd
-/artifacts
 
 # Used for temporarily adding local dependencies during debugging.
 /tmpvendor
