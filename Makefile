@@ -85,6 +85,14 @@ ifeq (,$(findstring nostrip,$(EM_BUILD_OPTIONS)))
   BUILD_FLAGS += -trimpath
 endif
 
+#Print flags when needed
+#$(info $$BUILD_FLAGS -> [$(BUILD_FLAGS)])
+#$(info )
+#$(info $$ldflags -> [$(ldflags)])
+#$(info )
+#$(info $$EM_BUILD_OPTIONS -> [$(EM_BUILD_OPTIONS)])
+#$(info )
+
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
 
@@ -104,13 +112,6 @@ imp:
 
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
-
-$(info $$BUILD_FLAGS is [$(BUILD_FLAGS)])
-$(info )
-$(info $$ldflags is [$(ldflags)])
-$(info )
-$(info $$EM_BUILD_OPTIONS is [$(EM_BUILD_OPTIONS)])
-$(info )
 
 build-reproducible: go.sum
 	$(DOCKER) pull tendermintdev/rbuilder:latest
@@ -217,8 +218,5 @@ proto-lint:
 
 proto-check-breaking:
 	@$(DOCKER_BUF) breaking --against-input $(HTTPS_GIT)#branch=master
-
-# The Cosmos SDK extras makefile contains the tools target.
-include contrib/devtools/Makefile
 
 .PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking build-fast-consensus
