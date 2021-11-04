@@ -117,7 +117,7 @@ build-reproducible: go.sum
 	$(DOCKER) pull tendermintdev/rbuilder:latest
 	$(DOCKER) rm latest-build || true
 	$(DOCKER) run --volume=$(CURDIR):/sources:ro \
-        --env TARGET_PLATFORMS='linux/amd64 darwin/amd64' \
+        --env TARGET_PLATFORMS='linux/amd64 darwin/amd64 linux/arm64' \
         --env APP=emd \
         --env VERSION=$(VERSION) \
         --env COMMIT=$(COMMIT) \
