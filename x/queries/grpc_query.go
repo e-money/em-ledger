@@ -18,10 +18,11 @@ var _ types.QueryServer = Querier{}
 type Querier struct {
 	accK AccountKeeper
 	bk   BankKeeper
+	sk   SlashingKeeper
 }
 
-func NewQuerier(accK AccountKeeper, bk BankKeeper) *Querier {
-	return &Querier{accK: accK, bk: bk}
+func NewQuerier(accK AccountKeeper, bk BankKeeper, sk SlashingKeeper) *Querier {
+	return &Querier{accK: accK, bk: bk, sk: sk}
 }
 
 func (k Querier) Circulating(c context.Context, req *types.QueryCirculatingRequest) (*types.QueryCirculatingResponse, error) {
@@ -112,4 +113,24 @@ func (k Querier) Spendable(c context.Context, req *types.QuerySpendableRequest) 
 
 	spendableBalance := k.bk.SpendableCoins(ctx, address)
 	return &types.QuerySpendableResponse{Balance: spendableBalance}, nil
+}
+
+func (k Querier) MissedBlocks(c context.Context, req *types.QueryMissedBlocksRequest) (*types.QueryMissedBlocksResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+	ctx := sdk.UnwrapSDKContext(c)
+	consAddr, err := sdk.ConsAddressFromBech32(req.ConsAddress)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid validator consensus address: "+err.Error())
+	}
+
+	missedBlocksCnt, blocksCnt := k.sk.GetMissedBlocks(ctx, consAddr)
+	return &types.QueryMissedBlocksResponse{
+		MissedBlocksInfo: types.MissedBlocksInfo{
+			ConsAddress:         req.ConsAddress,
+			MissedBlocksCounter: missedBlocksCnt,
+			TotalBlocksCounter:  blocksCnt,
+		},
+	}, nil
 }

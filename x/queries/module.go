@@ -32,6 +32,7 @@ type AppModule struct {
 	AppModuleBasic
 	ak AccountKeeper
 	bk BankKeeper
+	sk SlashingKeeper
 }
 
 func (amb AppModuleBasic) Name() string { return types.ModuleName }
@@ -67,10 +68,11 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 }
 
-func NewAppModule(ak AccountKeeper, bk BankKeeper) AppModule {
+func NewAppModule(ak AccountKeeper, bk BankKeeper, sk SlashingKeeper) AppModule {
 	return AppModule{
 		ak: ak,
 		bk: bk,
+		sk: sk,
 	}
 }
 
@@ -98,7 +100,7 @@ func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterQueryServer(cfg.QueryServer(), NewQuerier(am.ak, am.bk))
+	types.RegisterQueryServer(cfg.QueryServer(), NewQuerier(am.ak, am.bk, am.sk))
 }
 
 func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
