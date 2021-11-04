@@ -358,7 +358,7 @@ func NewApp(
 		market.NewAppModule(app.marketKeeper),
 		buyback.NewAppModule(app.buybackKeeper, app.bankKeeper),
 		inflation.NewAppModule(app.inflationKeeper),
-		queries.NewAppModule(app.accountKeeper, app.bankKeeper),
+		queries.NewAppModule(app.accountKeeper, app.bankKeeper, app.slashingKeeper),
 	)
 
 	// NOTE: staking module is required if HistoricalEntries param > 0

@@ -5,11 +5,12 @@
 package keeper
 
 import (
+	"testing"
+	"time"
+
 	sdkslashing "github.com/cosmos/cosmos-sdk/x/slashing"
 	sdkslashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"testing"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -57,17 +58,21 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.Equal(t, amt, sk.Validator(ctx, addr).GetBondedTokens())
 
 	// will exist since the validator has been bonded
-	info, found := keeper.GetValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	consAddr = sdk.ConsAddress(val.Address())
+	info, found := keeper.GetValidatorSigningInfo(ctx, consAddr)
 	require.True(t, found)
 	require.Equal(t, int64(0), info.StartHeight)
 	require.Equal(t, int64(0), info.IndexOffset)
 	require.Equal(t, int64(0), info.MissedBlocksCounter)
+	missedBlocksCntApi, _ := keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, info.MissedBlocksCounter, missedBlocksCntApi)
 	require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
 	height := int64(0)
 	slashable := false
 	nextBlocktime := blockTimeGenerator(time.Minute)
 
 	// 1000 first blocks OK
+	var blockCount int64
 	for ; height < 1000; height++ {
 		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 
@@ -76,14 +81,21 @@ func TestHandleAbsentValidator(t *testing.T) {
 		slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 		batch := database.NewBatch()
-		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, true, int64(len(blockTimes)), slashable)
+		keeper.setBlockTimes(batch, blockTimes[1:])
+		blockCount = int64(len(blockTimes))
+		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, true, blockCount, slashable)
 		batch.Write()
 	}
 
-	info, found = keeper.GetValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.GetValidatorSigningInfo(ctx, consAddr)
 	require.True(t, found)
 	require.Equal(t, int64(0), info.StartHeight)
 	require.Equal(t, int64(0), info.MissedBlocksCounter)
+
+	// check api response
+	missedBlocksCntApi, totalBlockCountApi := keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddr))), missedBlocksCntApi)
+	require.Equal(t, blockCount, totalBlockCountApi)
 
 	//for ; height < keeper.SignedBlocksWindow(ctx)+(keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx)); height++ {
 	// nextHeight := height + blockWindow - 3
@@ -97,16 +109,23 @@ func TestHandleAbsentValidator(t *testing.T) {
 		slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 		batch := database.NewBatch()
-		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
+		keeper.setBlockTimes(batch, blockTimes[1:])
+		blockCount = int64(len(blockTimes))
+		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockCount, slashable)
 		batch.Write()
 
 		missedBlocksCount++
 	}
-	info, found = keeper.GetValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.GetValidatorSigningInfo(ctx, consAddr)
 	require.True(t, found)
 	require.Equal(t, int64(0), info.StartHeight)
 	missedBlocks := keeper.getMissingBlocksForValidator(consAddr)
 	require.Equal(t, len(missedBlocks), missedBlocksCount) // Ensure that all missed blocks are registered
+
+	// check api response
+	missedBlocksCntApi, totalBlockCountApi = keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, int64(missedBlocksCount), missedBlocksCntApi)
+	require.Equal(t, blockCount, totalBlockCountApi)
 
 	// validator should be bonded still
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
@@ -124,19 +143,26 @@ func TestHandleAbsentValidator(t *testing.T) {
 		slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 		batch := database.NewBatch()
-		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
+		keeper.setBlockTimes(batch, blockTimes[1:])
+		blockCount = int64(len(blockTimes))
+		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockCount, slashable)
 		batch.Write()
 	}
 
-	info, found = keeper.GetValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.GetValidatorSigningInfo(ctx, consAddr)
 	require.True(t, found)
 	require.Equal(t, int64(0), info.StartHeight)
+
+	// check api response
+	missedBlocksCntApi, totalBlockCountApi = keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddr))), missedBlocksCntApi)
+	require.Equal(t, blockCount, totalBlockCountApi)
 
 	// end block
 	staking.EndBlocker(ctx, sk)
 
 	// validator should have been jailed
-	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	validator, _ = sk.GetValidatorByConsAddr(ctx, consAddr)
 	require.Equal(t, stakingtypes.Unbonding, validator.GetStatus())
 
 	slashAmt := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).RoundInt64()
@@ -147,14 +173,21 @@ func TestHandleAbsentValidator(t *testing.T) {
 	// Next block *also* missed (since the LastCommit would have still included the just-unbonded validator)
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 	batch := database.NewBatch()
-	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
+	keeper.setBlockTimes(batch, blockTimes[1:])
+	blockCount = int64(len(blockTimes))
+	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockCount, slashable)
 	batch.Write()
+
+	// check api response
+	missedBlocksCntApi, totalBlockCountApi = keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddr))), missedBlocksCntApi)
+	require.Equal(t, blockCount, totalBlockCountApi)
 
 	// end block
 	staking.EndBlocker(ctx, sk)
 
 	// validator should not have been slashed any more, since it was already jailed
-	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	validator, _ = sk.GetValidatorByConsAddr(ctx, consAddr)
 	require.Equal(t, amt.Int64()-slashAmt, validator.GetTokens().Int64())
 	require.True(t, validator.Jailed)
 
@@ -174,7 +207,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	staking.EndBlocker(ctx, sk)
 
 	// validator should be rebonded now
-	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	validator, _ = sk.GetValidatorByConsAddr(ctx, consAddr)
 	require.Equal(t, stakingtypes.Bonded, validator.GetStatus())
 
 	// validator should have been slashed
@@ -182,7 +215,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.Equal(t, amt.Int64()-slashAmt, bk.GetAllBalances(ctx, bondPool.GetAddress()).AmountOf(sk.BondDenom(ctx)).Int64())
 
 	// Validator start height should not have been changed
-	info, found = keeper.GetValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
+	info, found = keeper.GetValidatorSigningInfo(ctx, consAddr)
 	require.True(t, found)
 	require.Equal(t, int64(0), info.StartHeight)
 
@@ -190,10 +223,18 @@ func TestHandleAbsentValidator(t *testing.T) {
 	height++
 	ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
 	batch = database.NewBatch()
-	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
+	_, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
+	keeper.setBlockTimes(batch, blockTimes[1:])
+	blockCount = int64(len(blockTimes))
+	keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockCount, slashable)
 	batch.Write()
-	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	validator, _ = sk.GetValidatorByConsAddr(ctx, consAddr)
 	require.Equal(t, stakingtypes.Bonded, validator.GetStatus())
+
+	// check api response
+	missedBlocksCntApi, totalBlockCountApi = keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddr))), missedBlocksCntApi)
+	require.Equal(t, blockCount, totalBlockCountApi)
 
 	// 500 signed blocks
 	nextHeight := height + 501
@@ -205,7 +246,9 @@ func TestHandleAbsentValidator(t *testing.T) {
 		slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 		batch = database.NewBatch()
-		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
+		keeper.setBlockTimes(batch, blockTimes[1:])
+		blockCount = int64(len(blockTimes))
+		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockCount, slashable)
 		batch.Write()
 	}
 
@@ -222,14 +265,21 @@ func TestHandleAbsentValidator(t *testing.T) {
 		slashable, blockTimes = truncateByWindow(ctx.BlockTime(), blockTimes, signedBlocksWindow)
 
 		batch = database.NewBatch()
-		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
+		keeper.setBlockTimes(batch, blockTimes[1:])
+		blockCount = int64(len(blockTimes))
+		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, blockCount, slashable)
 		batch.Write()
 	}
+
+	// check api response
+	missedBlocksCntApi, totalBlockCountApi = keeper.GetMissedBlocks(ctx, consAddr)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddr))), missedBlocksCntApi)
+	require.Equal(t, blockCount, totalBlockCountApi)
 
 	// end block
 	staking.EndBlocker(ctx, sk)
 
-	validator, _ = sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
+	validator, _ = sk.GetValidatorByConsAddr(ctx, consAddr)
 	require.Equal(t, stakingtypes.Unbonding, validator.GetStatus())
 	require.True(t, validator.IsJailed())
 }
@@ -282,6 +332,10 @@ func TestHandleNewValidator(t *testing.T) {
 	require.Equal(t, 1, len(missedBlocks))
 	require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
 
+	// check api response
+	apiMissedBlocks, _ := keeper.GetMissedBlocks(ctx, sdk.ConsAddress(val.Address()))
+	require.Equal(t, int64(len(missedBlocks)), apiMissedBlocks)
+
 	// validator should be bonded still, should not have been jailed or slashed
 	validator, _ := sk.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
 	require.Equal(t, stakingtypes.Bonded, validator.GetStatus())
@@ -324,6 +378,11 @@ func TestHandleAlreadyJailed(t *testing.T) {
 		batch.Write()
 	}
 
+	// check api response
+	consAddress := sdk.ConsAddress(val.Address())
+	apiMissedBlocks, _ := keeper.GetMissedBlocks(ctx, consAddress)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddress))), apiMissedBlocks)
+
 	// 501 blocks missed
 	for ; height < 1501; height++ {
 		ctx = ctx.WithBlockHeight(height).WithBlockTime(nextBlocktime(1))
@@ -336,6 +395,11 @@ func TestHandleAlreadyJailed(t *testing.T) {
 		keeper.HandleValidatorSignature(ctx, batch, val.Address(), power, false, int64(len(blockTimes)), slashable)
 		batch.Write()
 	}
+
+	// check api response
+	consAddress = sdk.ConsAddress(val.Address())
+	apiMissedBlocks, _ = keeper.GetMissedBlocks(ctx, consAddress)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddress))), apiMissedBlocks)
 
 	// end block
 	staking.EndBlocker(ctx, sk)
@@ -407,6 +471,11 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 		batch.Write()
 	}
 
+	// check api response
+	consAddress := sdk.ConsAddress(val.Address())
+	apiMissedBlocks, _ := keeper.GetMissedBlocks(ctx, consAddress)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddress))), apiMissedBlocks)
+
 	// kick first validator out of validator set
 	newAmt := sdk.TokensFromConsensusPower(101)
 	_, err = sh(ctx, NewTestMsgCreateValidator(addrs[1], pks[1], newAmt))
@@ -455,6 +524,10 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 		batch.Write()
 	}
 
+	// check api response
+	apiMissedBlocks, _ = keeper.GetMissedBlocks(ctx, consAddress)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddress))), apiMissedBlocks)
+
 	// should now be jailed & kicked
 	staking.EndBlocker(ctx, sk)
 	validator, _ = sk.GetValidator(ctx, addr)
@@ -496,6 +569,10 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 		keeper.HandleValidatorSignature(ctx, batch, val.Address(), newPower, false, int64(len(blockTimes)), slashable)
 		batch.Write()
 	}
+
+	// check api response
+	apiMissedBlocks, _ = keeper.GetMissedBlocks(ctx, consAddress)
+	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddress))), apiMissedBlocks)
 
 	// validator should now be jailed & kicked
 	staking.EndBlocker(ctx, sk)
