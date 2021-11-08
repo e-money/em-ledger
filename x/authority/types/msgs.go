@@ -29,7 +29,7 @@ func (msg MsgReplaceAuthority) Type() string { return "replace_authority" }
 
 func (msg MsgScheduleUpgrade) Type() string { return "schedule_upgrade" }
 
-func (m MsgSetParameters) Type() string { return "set_parameters" }
+func (msg MsgSetParameters) Type() string { return "set_parameters" }
 
 func (msg MsgDestroyIssuer) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
@@ -151,8 +151,8 @@ func (msg MsgScheduleUpgrade) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{from}
 }
 
-func (m MsgSetParameters) GetSigners() []sdk.AccAddress {
-	from, err := sdk.AccAddressFromBech32(m.Authority)
+func (msg MsgSetParameters) GetSigners() []sdk.AccAddress {
+	from, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
 		panic(err)
 	}
@@ -179,8 +179,8 @@ func (msg MsgScheduleUpgrade) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
-func (m MsgSetParameters) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+func (msg MsgSetParameters) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&msg))
 }
 
 func (msg MsgDestroyIssuer) Route() string { return ModuleName }
@@ -193,4 +193,4 @@ func (msg MsgReplaceAuthority) Route() string { return ModuleName }
 
 func (msg MsgScheduleUpgrade) Route() string { return ModuleName }
 
-func (m MsgSetParameters) Route() string { return ModuleName }
+func (msg MsgSetParameters) Route() string { return ModuleName }

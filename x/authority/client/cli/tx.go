@@ -278,7 +278,7 @@ func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
 
 func getCmdSetParameters() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "set-params <path/to/changes.json> --from <authority-key>",
+		Use:     "set-params [authority_key_or_address] <path/to/changes.json> --from <authority-key>",
 		Short:   "Set a parameter change",
 		Example: "emd tx authority set-params ./params.json --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t",
 		Long: strings.TrimSpace(`
@@ -300,11 +300,18 @@ Where proposal.json contains:
   ]
 }
 `),
-		Args: cobra.ExactArgs(1),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := cmd.Flags().Set(flags.FlagFrom, args[0])
-			if err != nil {
-				return err
+			var paramsFilename string
+
+			if len(args) == 2 {
+				if err := cmd.Flags().Set(flags.FlagFrom, args[0]); err != nil {
+					return err
+				}
+
+				paramsFilename = args[1]
+			} else {
+				paramsFilename = args[0]
 			}
 
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -312,9 +319,9 @@ Where proposal.json contains:
 				return err
 			}
 
-			println("Authority address: ", clientCtx.GetFromAddress())
+			println("Authority address: ", clientCtx.GetFromAddress().String())
 
-			paramChanges, err := parseParamChangesJSON(clientCtx.LegacyAmino, args[0])
+			paramChanges, err := parseParamChangesJSON(clientCtx.LegacyAmino, paramsFilename)
 			if err != nil {
 				return err
 			}
@@ -323,11 +330,11 @@ Where proposal.json contains:
 				Authority: clientCtx.GetFromAddress().String(),
 				Changes:   paramChanges.ToParamChanges(),
 			}
-			
+
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
-			
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
