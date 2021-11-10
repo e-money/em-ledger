@@ -74,8 +74,8 @@ func getEmSimApp(
 	// Initialize the chain
 	app.InitChain(
 		abci.RequestInitChain{
-			Validators:      []abci.ValidatorUpdate{},
-			AppStateBytes:   stateBytes,
+			Validators:    []abci.ValidatorUpdate{},
+			AppStateBytes: stateBytes,
 			ConsensusParams: &abci.ConsensusParams{
 				Block: &abci.BlockParams{
 					MaxGas: 100,
@@ -431,12 +431,17 @@ func TestUpdatingChainParams(t *testing.T) {
 			Value:    "101",
 		},
 	}
-	_, err := et.app.authorityKeeper.SetParams(et.ctx, et.authority,	paramChanges)
+	_, err := et.app.authorityKeeper.SetParams(et.ctx, et.authority, paramChanges)
 	require.NoError(t, err)
+
+	stateMaxValidators := et.app.stakingKeeper.MaxValidators(et.ctx)
+	maxValidators := et.app.stakingKeeper.GetParams(et.ctx).MaxValidators
+	require.Equal(t, uint32(101), stateMaxValidators)
+	require.Equal(t, stateMaxValidators, maxValidators)
 
 	et.app.EndBlock(abci.RequestEndBlock{})
 	et.app.Commit()
 
-	stateMaxValidators := et.app.stakingKeeper.MaxValidators(et.ctx)
+	stateMaxValidators = et.app.stakingKeeper.MaxValidators(et.ctx)
 	require.Equal(t, uint32(101), stateMaxValidators)
 }

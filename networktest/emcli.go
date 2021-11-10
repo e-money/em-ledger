@@ -102,6 +102,14 @@ func (cli Emcli) AuthoritySetMinGasPrices(authority Key, minGasPrices string, pa
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) AuthoritySetParams(authority Key, jsonContent string, params ...string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authority", "set-params", authority.name,
+		jsonContent,
+	)
+	args = append(args, params...)
+	return execCmdWithInput(args, KeyPwd)
+}
+
 func (cli Emcli) QueryUpgSched() ([]byte, error) {
 	args := cli.addQueryFlags("query", "authority", "upgrade-plan")
 	return execCmdAndCollectResponse(args)
@@ -255,6 +263,16 @@ func (cli Emcli) QueryDelegationsTo(validator string) ([]byte, error) {
 
 func (cli Emcli) QueryValidators() (gjson.Result, error) {
 	args := cli.addQueryFlags("query", "staking", "validators")
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return gjson.Result{}, err
+	}
+
+	return gjson.ParseBytes(bz), nil
+}
+
+func (cli Emcli) QueryActiveValidators() (gjson.Result, error) {
+	args := cli.addNetworkFlags(append([]string{}, "query", "tendermint-validator-set"))
 	bz, err := execCmdAndCollectResponse(args)
 	if err != nil {
 		return gjson.Result{}, err

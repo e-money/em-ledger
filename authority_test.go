@@ -2,6 +2,7 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
+//go:build bdd
 // +build bdd
 
 package emoney_test
@@ -33,6 +34,54 @@ var _ = Describe("Authority", func() {
 
 	Describe("Authority manages issuers", func() {
 		It("creates a new testnet", createNewTestnet)
+
+		It("Authority changes the number of validators", func() {
+			const validatorsCount = "validators.#"
+
+			var (
+				vCntParamValue = 4
+				vExpectedCnt   = 4
+			)
+
+			// starting with 4 active validators
+			validators, err := emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt := validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+
+			// set 1 validator
+			vCntParamValue = 1
+			_, success, err := emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"staking","key":"MaxValidators","value":%d}]`,
+				vCntParamValue,
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			nt.IncChain(1)
+
+			// 1 validator is active
+			vExpectedCnt = 1
+			validators, err = emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt = validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+
+			// set validator count to 10 but 4 are available
+			vCntParamValue = 10
+			_, success, err = emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"staking","key":"MaxValidators","value":%d}]`,
+				vCntParamValue,
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			nt.IncChain(1)
+
+			vExpectedCnt = 4
+			validators, err = emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt = validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+		})
 
 		It("creates an issuer", func() {
 			// denomination metadata are not set before a new issuer
