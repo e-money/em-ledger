@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -527,6 +529,83 @@ func TestReplaceAuth(t *testing.T) {
 	}
 }
 
+func TestGrpcSetParams(t *testing.T) {
+	var (
+		authorityAddr = mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
+		gotAuthority  sdk.AccAddress
+		gotChanges    []proposal.ParamChange
+	)
+
+	keeper := authorityKeeperMock{}
+	svr := NewMsgServerImpl(&keeper)
+
+	specs := map[string]struct {
+		req       *types.MsgSetParameters
+		mockFn    func(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error)
+		expErr    bool
+		expEvents sdk.Events
+	}{
+		"all good": {
+			req: &types.MsgSetParameters{
+				Authority: authorityAddr.String(),
+				Changes: []proposal.ParamChange{
+					{
+						Subspace: "staking",
+						Key:      "MaxValidators",
+						Value:    "10",
+					}},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
+				gotAuthority = authority
+				gotChanges = changes
+
+				return &sdk.Result{
+					Events: []abcitypes.Event{{
+						Type:       "testing",
+						Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+					}},
+				}, nil
+			},
+			expEvents: sdk.Events{{
+				Type:       "testing",
+				Attributes: []abcitypes.EventAttribute{{Key: []byte("foo"), Value: []byte("bar")}},
+			}},
+		},
+		"processing failure": {
+			req: &types.MsgSetParameters{
+				Authority: authorityAddr.String(),
+				Changes: []proposal.ParamChange{
+					{
+						Subspace: "staking",
+						Key:      "MaxValidators",
+						Value:    "Ten",
+					}},
+			},
+			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
+				return nil, errors.New("testing")
+			},
+			expErr: true,
+		},
+	}
+
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			keeper.setParamsfn = spec.mockFn
+			eventManager := sdk.NewEventManager()
+			ctx := sdk.Context{}.WithContext(context.Background()).WithEventManager(eventManager)
+			_, gotErr := svr.SetParameters(sdk.WrapSDKContext(ctx), spec.req)
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+			assert.Equal(t, spec.expEvents, eventManager.Events())
+			assert.Equal(t, spec.req.Authority, gotAuthority.String())
+			assert.Equal(t, spec.req.Changes, gotChanges)
+		})
+	}
+}
+
 // mock implementation of authorityKeeper interface
 type authorityKeeperMock struct {
 	createIssuerfn     func(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error)
@@ -536,6 +615,17 @@ type authorityKeeperMock struct {
 	scheduleUpgradefn  func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
 	getUpgradePlanfn   func(ctx sdk.Context) (plan upgradetypes.Plan, havePlan bool)
 	applyUpgradefn     func(ctx sdk.Context, authority sdk.AccAddress, plan upgradetypes.Plan) (*sdk.Result, error)
+	setParamsfn        func(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error)
+}
+
+func (a authorityKeeperMock) SetParams(
+	ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange,
+) (*sdk.Result, error) {
+	if a.setParamsfn == nil {
+		panic("not expected to be called")
+	}
+
+	return a.setParamsfn(ctx, authority, changes)
 }
 
 func (a authorityKeeperMock) createIssuer(ctx sdk.Context, authority sdk.AccAddress, issuerAddress sdk.AccAddress, denoms []types.Denomination) (*sdk.Result, error) {
