@@ -5,9 +5,13 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"github.com/tendermint/tendermint/libs/os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -278,11 +282,12 @@ func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
 
 func getCmdSetParameters() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "set-params [authority_key_or_address] <path/to/changes.json> --from <authority-key>",
-		Short:   "Set a parameter change",
-		Example: "emd tx authority set-params ./params.json --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t",
+		Use:   "set-params [authority_key_or_address] <path/to/changes.json -- OR -- JSON snippet> --from <authority-key>",
+		Short: "Set a parameter change with a JSON file or JSON snippet",
+		Example: `emd tx authority set-params ./params.json --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t
+emd tx authority set-params '[{"subspace":"staking","key":"MaxValidators","value":10}]' --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t`,
 		Long: strings.TrimSpace(`
-The parameter details must be supplied via a JSON file. For values that contain
+The parameter details must be supplied via a JSON file or JSON snippet. For values that contain
 objects, only non-empty fields will be updated.
 Any "value" change should be valid (ie. correct type and within bounds)
 for its respective parameter, eg. "MaxValidators" should be an integer and not a 
@@ -290,15 +295,16 @@ decimal.
 
 Where proposal.json contains:
 
-{ 
-  "changes": [
-    {
-      "subspace": "staking",
-      "key": "MaxValidators",
-      "value": 105
-    }
-  ]
-}
+[
+  {
+    "subspace": "staking",
+    "key": "MaxValidators",
+    "value": 10
+  }
+]
+
+-- OR JSON fragment e.g. [{"subspace":"staking","key":"MaxValidators","value":10}]
+
 `),
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -314,12 +320,14 @@ Where proposal.json contains:
 				paramsFilename = args[0]
 			}
 
+			if !os.FileExists(paramsFilename) && !json.Valid([]byte(paramsFilename)) {
+				return fmt.Errorf("%s is not the name of an existing file nor valid json", paramsFilename)
+			}
+
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
-
-			println("Authority address: ", clientCtx.GetFromAddress().String())
 
 			paramChanges, err := parseParamChangesJSON(clientCtx.LegacyAmino, paramsFilename)
 			if err != nil {
@@ -346,16 +354,25 @@ Where proposal.json contains:
 
 // parseParamChangesJSON reads and parses a ParamChangesJSON from file.
 func parseParamChangesJSON(cdc *codec.LegacyAmino, jsonFile string) (utils.ParamChangesJSON, error) {
-	paramChangesJSON := utils.ParamChangesJSON{}
+	params := utils.ParamChangesJSON{}
 
-	contents, err := ioutil.ReadFile(jsonFile)
+	var paramsJson = []byte(jsonFile)
+	if json.Valid(paramsJson) {
+		return getParsedParams(cdc, paramsJson)
+	}
+
+	paramsJson, err := ioutil.ReadFile(jsonFile)
 	if err != nil {
-		return paramChangesJSON, err
+		return params, err
 	}
 
-	if err := cdc.UnmarshalJSON(contents, &paramChangesJSON); err != nil {
-		return paramChangesJSON, err
-	}
+	return getParsedParams(cdc, paramsJson)
+}
 
-	return paramChangesJSON, nil
+func getParsedParams(cdc *codec.LegacyAmino, contents []byte) (utils.ParamChangesJSON, error) {
+	var params utils.ParamChangesJSON
+	err := cdc.UnmarshalJSON(contents, &params)
+	err = json.Unmarshal(contents, &params)
+
+	return params, err
 }
