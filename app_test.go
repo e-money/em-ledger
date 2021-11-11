@@ -2,10 +2,15 @@ package emoney
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+
+	"github.com/cosmos/cosmos-sdk/baseapp"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
@@ -444,4 +449,51 @@ func TestUpdatingChainParams(t *testing.T) {
 
 	stateMaxValidators = et.app.stakingKeeper.MaxValidators(et.ctx)
 	require.Equal(t, uint32(101), stateMaxValidators)
+}
+
+func TestUpdatingBlockParams(t *testing.T) {
+	configOnce.Do(apptypes.ConfigureSDK)
+
+	et := emAppTests{}.initEmApp(t)
+	header := tmproto.Header{Height: et.app.LastBlockHeight() + 1}
+	et.app.BeginBlock(abci.RequestBeginBlock{Header: header})
+	et.app.EndBlock(abci.RequestEndBlock{})
+	et.app.Commit()
+
+	// block --> 2
+	header = tmproto.Header{Height: et.app.LastBlockHeight() + 1}
+	et.app.BeginBlock(abci.RequestBeginBlock{Header: header})
+	et.ctx = et.app.BaseApp.NewContext(true, header)
+
+	consensusParams := et.app.BaseApp.GetConsensusParams(et.ctx)
+	blockParams := *consensusParams.Block
+
+	subSpc := et.app.GetSubspace(baseapp.Paramspace)
+	var subSpaceBlockParams abci.BlockParams
+	subSpc.Get(et.ctx, baseapp.ParamStoreKeyBlockParams, &subSpaceBlockParams)
+
+	require.Equal(t, blockParams.String(), subSpaceBlockParams.String())
+
+	cdc := codec.NewLegacyAmino()
+	blockParams.MaxBytes = int64(1024)
+	bz, err := cdc.MarshalJSON(blockParams)
+	require.NoError(t, err)
+	strBlockParams := string(bz)
+	fmt.Println(strBlockParams)
+
+	paramChanges := []proposal.ParamChange{
+		{
+			Subspace: baseapp.Paramspace,
+			Key:      "BlockParams",
+			Value:    strBlockParams,
+		},
+	}
+	_, err = et.app.authorityKeeper.SetParams(et.ctx, et.authority, paramChanges)
+	require.NoError(t, err)
+
+	et.app.EndBlock(abci.RequestEndBlock{})
+	et.app.Commit()
+
+	consensusParams = et.app.BaseApp.GetConsensusParams(et.ctx)
+	require.Equal(t, consensusParams.Block.String(), blockParams.String())
 }

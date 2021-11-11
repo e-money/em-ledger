@@ -281,6 +281,18 @@ func (cli Emcli) QueryActiveValidators() (gjson.Result, error) {
 	return gjson.ParseBytes(bz), nil
 }
 
+func (cli Emcli) QueryBlockParams() (gjson.Result, error) {
+	args := cli.addQueryFlags(
+		"query", "params", "subspace", "baseapp", "BlockParams",
+	)
+	bz, err := execCmdAndCollectResponse(args)
+	if err != nil {
+		return gjson.Result{}, err
+	}
+
+	return gjson.ParseBytes(bz), nil
+}
+
 func (cli Emcli) BEP3ListSwaps() (string, error) {
 	args := cli.addQueryFlags("query", "bep3", "swaps")
 	bz, err := execCmdAndCollectResponse(args)

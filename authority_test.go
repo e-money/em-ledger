@@ -8,7 +8,9 @@
 package emoney_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	nt "github.com/e-money/em-ledger/networktest"
@@ -81,6 +83,47 @@ var _ = Describe("Authority", func() {
 			Expect(err).ToNot(HaveOccurred())
 			validatorCnt = validators.Get(validatorsCount).Num
 			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+		})
+
+		It("Authority changes the block size", func() {
+			type blockParamsType struct {
+				MaxBytesStr string `json:"max_bytes"`
+				MaxGasStr   string `json:"max_gas"`
+			}
+			var (
+				vExpectedCnt float64
+				blockParams  blockParamsType
+			)
+
+			// starting with 22020096 bytes
+			blockParamsGJson, err := emcli.QueryBlockParams()
+			Expect(err).ToNot(HaveOccurred())
+			blockBytesStr := blockParamsGJson.Get("value").Str
+			// gjson responds with nil for "value.max_bytes"
+			// so employing partial json's unmarshalling
+			err = json.Unmarshal([]byte(blockBytesStr), &blockParams)
+			Expect(err).ToNot(HaveOccurred())
+			vExpectedCnt, err = strconv.ParseFloat(blockParams.MaxBytesStr, 64)
+			Expect(err).ToNot(HaveOccurred())
+
+			// set 22022120 bytes
+			vExpectedCnt += 1024
+			_, success, err := emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"baseapp","key":"BlockParams","value":{"max_bytes":"%d","max_gas":"100"}}]`,
+				int(vExpectedCnt),
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			nt.IncChain(1)
+
+			blockParamsGJson, err = emcli.QueryBlockParams()
+			Expect(err).ToNot(HaveOccurred())
+			blockBytesStr = blockParamsGJson.Get("value").Str
+			err = json.Unmarshal([]byte(blockBytesStr), &blockParams)
+			Expect(err).ToNot(HaveOccurred())
+			updMaxBytes, err := strconv.ParseFloat(blockParams.MaxBytesStr, 64)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(vExpectedCnt).To(Equal(updMaxBytes))
 		})
 
 		It("creates an issuer", func() {
