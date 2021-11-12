@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
@@ -11,7 +13,6 @@ import (
 	sdkslashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/e-money/em-ledger/x/slashing/types"
 	db "github.com/tendermint/tm-db"
-	"time"
 )
 
 var _ evidencetypes.SlashingKeeper = Keeper{}

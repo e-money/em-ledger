@@ -15,3 +15,7 @@ type BankKeeper interface {
 	GetSupply(ctx sdk.Context) exported.SupplyI
 	IterateAllBalances(ctx sdk.Context, cb func(sdk.AccAddress, sdk.Coin) bool)
 }
+
+type SlashingKeeper interface {
+	GetMissedBlocks(ctx sdk.Context, consAddr sdk.ConsAddress) (int64, int64)
+}

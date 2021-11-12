@@ -1,8 +1,25 @@
+#!/usr/bin/make -f
+
 export GO111MODULE=on
 
-VERSION = $(shell echo $(shell git describe --tags) | sed 's/^v//')
-COMMIT  = $(shell git log -1 --format='%H')
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT  := $(shell git log -1 --format='%H')
+
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --exact-match 2>/dev/null)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
 LEDGER_ENABLED ?= true
+SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
+TM_VERSION := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::') # grab everything after the space
+DOCKER := $(shell which docker)
+SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
+BUILDDIR ?= $(CURDIR)/build
 FAST_CONSENSUS ?= false
 
 # process build tags
@@ -30,6 +47,9 @@ ifeq ($(LEDGER_ENABLED),true)
   endif
 endif
 
+ifeq (cleveldb,$(findstring cleveldb,$(EM_BUILD_OPTIONS)))
+  build_tags += gcc cleveldb
+endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 
@@ -43,14 +63,35 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=emd \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
-
+		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
+		  -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(TM_VERSION)
 
 ifeq ($(FAST_CONSENSUS),true)
 	ldflags += -X github.com/e-money/em-ledger/cmd/emd/cmd.CreateEmptyBlocksInterval=2s
 endif
 
+ifeq (cleveldb,$(findstring cleveldb,$(EM_BUILD_OPTIONS)))
+  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
+endif
+ifeq (,$(findstring nostrip,$(EM_BUILD_OPTIONS)))
+  ldflags += -w -s
+endif
+ldflags += $(LDFLAGS)
+ldflags := $(strip $(ldflags))
+
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
+# check for nostrip option
+ifeq (,$(findstring nostrip,$(EM_BUILD_OPTIONS)))
+  BUILD_FLAGS += -trimpath
+endif
+
+#Print flags when needed
+#$(info $$BUILD_FLAGS -> [$(BUILD_FLAGS)])
+#$(info )
+#$(info $$ldflags -> [$(ldflags)])
+#$(info )
+#$(info $$EM_BUILD_OPTIONS -> [$(EM_BUILD_OPTIONS)])
+#$(info )
 
 build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
@@ -71,6 +112,18 @@ imp:
 
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
+
+build-reproducible: go.sum
+	$(DOCKER) pull tendermintdev/rbuilder:latest
+	$(DOCKER) rm latest-build || true
+	$(DOCKER) run --volume=$(CURDIR):/sources:ro \
+        --env TARGET_PLATFORMS='linux/amd64 darwin/amd64 linux/arm64' \
+        --env APP=emd \
+        --env VERSION=$(VERSION) \
+        --env COMMIT=$(COMMIT) \
+        --env LEDGER_ENABLED=$(LEDGER_ENABLED) \
+        --name latest-build tendermintdev/rbuilder:latest
+	$(DOCKER) cp -a latest-build:/home/builder/artifacts/ $(CURDIR)/
 
 build-linux:
 	# Linux images for docker-compose
@@ -113,7 +166,7 @@ local-testnet-reset:
 	./build/emd unsafe-reset-all --home build/node3/
 
 clean:
-	rm -rf ./build ./data ./config
+	rm -rf $(BUILDDIR)/ artifacts/
 
 ##################### upgrade artifacts
 build/cosmovisor:

@@ -324,7 +324,7 @@ func NewApp(
 	app.inflationKeeper = inflation.NewKeeper(app.appCodec, keys[inflation.StoreKey], app.bankKeeper, app.accountKeeper, app.stakingKeeper, buyback.AccountName, authtypes.FeeCollectorName)
 	app.lpKeeper = liquidityprovider.NewKeeper(app.appCodec, keys[lptypes.StoreKey], app.bankKeeper)
 	app.issuerKeeper = issuer.NewKeeper(app.appCodec, keys[issuer.StoreKey], app.lpKeeper, app.inflationKeeper, app.bankKeeper)
-	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app, &app.upgradeKeeper, app.paramsKeeper)
+	app.authorityKeeper = authority.NewKeeper(app.appCodec, keys[authority.StoreKey], app.issuerKeeper, app.bankKeeper, app, &app.upgradeKeeper)
 	app.marketKeeper = market.NewKeeper(app.appCodec, keys[market.StoreKey], keys[market.StoreKeyIdx], app.accountKeeper, app.bankKeeper)
 	app.buybackKeeper = buyback.NewKeeper(app.appCodec, keys[buyback.StoreKey], app.marketKeeper, app.accountKeeper, app.stakingKeeper, app.bankKeeper)
 
@@ -358,7 +358,7 @@ func NewApp(
 		market.NewAppModule(app.marketKeeper),
 		buyback.NewAppModule(app.buybackKeeper, app.bankKeeper),
 		inflation.NewAppModule(app.inflationKeeper),
-		queries.NewAppModule(app.accountKeeper, app.bankKeeper),
+		queries.NewAppModule(app.accountKeeper, app.bankKeeper, app.slashingKeeper),
 	)
 
 	// NOTE: staking module is required if HistoricalEntries param > 0

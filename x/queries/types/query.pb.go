@@ -200,48 +200,246 @@ func (m *QuerySpendableResponse) GetBalance() github_com_cosmos_cosmos_sdk_types
 	return nil
 }
 
+type QueryMissedBlocksRequest struct {
+	// cons_address is the address to query the missed blocks signing info
+	ConsAddress string `protobuf:"bytes,1,opt,name=cons_address,json=consAddress,proto3" json:"cons_address,omitempty"`
+}
+
+func (m *QueryMissedBlocksRequest) Reset()         { *m = QueryMissedBlocksRequest{} }
+func (m *QueryMissedBlocksRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryMissedBlocksRequest) ProtoMessage()    {}
+func (*QueryMissedBlocksRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2c8a9303ec3ad728, []int{4}
+}
+func (m *QueryMissedBlocksRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryMissedBlocksRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryMissedBlocksRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryMissedBlocksRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryMissedBlocksRequest.Merge(m, src)
+}
+func (m *QueryMissedBlocksRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryMissedBlocksRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryMissedBlocksRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryMissedBlocksRequest proto.InternalMessageInfo
+
+func (m *QueryMissedBlocksRequest) GetConsAddress() string {
+	if m != nil {
+		return m.ConsAddress
+	}
+	return ""
+}
+
+type QueryMissedBlocksResponse struct {
+	// val_signing_info is the signing info of requested val cons address
+	MissedBlocksInfo MissedBlocksInfo `protobuf:"bytes,1,opt,name=missed_blocks_info,json=missedBlocksInfo,proto3" json:"missed_blocks_info"`
+}
+
+func (m *QueryMissedBlocksResponse) Reset()         { *m = QueryMissedBlocksResponse{} }
+func (m *QueryMissedBlocksResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryMissedBlocksResponse) ProtoMessage()    {}
+func (*QueryMissedBlocksResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2c8a9303ec3ad728, []int{5}
+}
+func (m *QueryMissedBlocksResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryMissedBlocksResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryMissedBlocksResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryMissedBlocksResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryMissedBlocksResponse.Merge(m, src)
+}
+func (m *QueryMissedBlocksResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryMissedBlocksResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryMissedBlocksResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryMissedBlocksResponse proto.InternalMessageInfo
+
+func (m *QueryMissedBlocksResponse) GetMissedBlocksInfo() MissedBlocksInfo {
+	if m != nil {
+		return m.MissedBlocksInfo
+	}
+	return MissedBlocksInfo{}
+}
+
+// ValidatorSigningInfo defines a validator's missed blocks info.
+type MissedBlocksInfo struct {
+	ConsAddress string `protobuf:"bytes,1,opt,name=cons_address,json=consAddress,proto3" json:"cons_address,omitempty"`
+	// missed blocks counter (to avoid scanning the array every time)
+	MissedBlocksCounter int64 `protobuf:"varint,2,opt,name=missed_blocks_counter,json=missedBlocksCounter,proto3" json:"missed_blocks_counter,omitempty" yaml:"missed_blocks_counter"`
+	TotalBlocksCounter  int64 `protobuf:"varint,3,opt,name=total_blocks_counter,json=totalBlocksCounter,proto3" json:"total_blocks_counter,omitempty" yaml:"total_blocks_counter"`
+}
+
+func (m *MissedBlocksInfo) Reset()         { *m = MissedBlocksInfo{} }
+func (m *MissedBlocksInfo) String() string { return proto.CompactTextString(m) }
+func (*MissedBlocksInfo) ProtoMessage()    {}
+func (*MissedBlocksInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2c8a9303ec3ad728, []int{6}
+}
+func (m *MissedBlocksInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MissedBlocksInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MissedBlocksInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MissedBlocksInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MissedBlocksInfo.Merge(m, src)
+}
+func (m *MissedBlocksInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *MissedBlocksInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_MissedBlocksInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MissedBlocksInfo proto.InternalMessageInfo
+
+func (m *MissedBlocksInfo) GetConsAddress() string {
+	if m != nil {
+		return m.ConsAddress
+	}
+	return ""
+}
+
+func (m *MissedBlocksInfo) GetMissedBlocksCounter() int64 {
+	if m != nil {
+		return m.MissedBlocksCounter
+	}
+	return 0
+}
+
+func (m *MissedBlocksInfo) GetTotalBlocksCounter() int64 {
+	if m != nil {
+		return m.TotalBlocksCounter
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*QueryCirculatingRequest)(nil), "em.queries.v1.QueryCirculatingRequest")
 	proto.RegisterType((*QueryCirculatingResponse)(nil), "em.queries.v1.QueryCirculatingResponse")
 	proto.RegisterType((*QuerySpendableRequest)(nil), "em.queries.v1.QuerySpendableRequest")
 	proto.RegisterType((*QuerySpendableResponse)(nil), "em.queries.v1.QuerySpendableResponse")
+	proto.RegisterType((*QueryMissedBlocksRequest)(nil), "em.queries.v1.QueryMissedBlocksRequest")
+	proto.RegisterType((*QueryMissedBlocksResponse)(nil), "em.queries.v1.QueryMissedBlocksResponse")
+	proto.RegisterType((*MissedBlocksInfo)(nil), "em.queries.v1.MissedBlocksInfo")
 }
 
 func init() { proto.RegisterFile("em/queries/v1/query.proto", fileDescriptor_2c8a9303ec3ad728) }
 
 var fileDescriptor_2c8a9303ec3ad728 = []byte{
-	// 482 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x4d, 0x6f, 0x13, 0x31,
-	0x10, 0x8d, 0x8b, 0x4a, 0x55, 0x17, 0x38, 0x58, 0x7c, 0x34, 0x51, 0xb5, 0x5b, 0xad, 0x42, 0xc9,
-	0x21, 0xb1, 0x95, 0x72, 0xe3, 0x84, 0x52, 0xc1, 0x9d, 0x70, 0xe3, 0xe6, 0xdd, 0x1d, 0x16, 0xab,
-	0x6b, 0x7b, 0xb3, 0xf6, 0x06, 0x22, 0xc4, 0x05, 0x21, 0x6e, 0x48, 0x20, 0x0e, 0xfc, 0x07, 0x7e,
-	0x49, 0x8f, 0x95, 0xb8, 0x70, 0x0a, 0x28, 0xe1, 0x17, 0xf4, 0x17, 0xa0, 0x78, 0x9d, 0x2a, 0xb4,
-	0xa0, 0x88, 0xd3, 0x7a, 0xf5, 0x9e, 0xe7, 0xbd, 0x37, 0x33, 0xc6, 0x4d, 0x90, 0x6c, 0x54, 0x41,
-	0x29, 0xc0, 0xb0, 0x71, 0xdf, 0x1d, 0x27, 0xb4, 0x28, 0xb5, 0xd5, 0xe4, 0x3a, 0x48, 0xea, 0x21,
-	0x3a, 0xee, 0xb7, 0x6e, 0x66, 0x3a, 0xd3, 0x0e, 0x61, 0x8b, 0x53, 0x4d, 0x6a, 0x05, 0x89, 0x36,
-	0x52, 0x1b, 0x16, 0x73, 0x03, 0x6c, 0xdc, 0x8f, 0xc1, 0xf2, 0x3e, 0x4b, 0xb4, 0x50, 0x1e, 0xdf,
-	0xcb, 0xb4, 0xce, 0x72, 0x60, 0xbc, 0x10, 0x8c, 0x2b, 0xa5, 0x2d, 0xb7, 0x42, 0x2b, 0xe3, 0xd1,
-	0xd0, 0xa3, 0xee, 0x2f, 0xae, 0x9e, 0x33, 0x2b, 0x24, 0x18, 0xcb, 0x65, 0x51, 0x13, 0xa2, 0x26,
-	0xbe, 0xf3, 0x64, 0x61, 0xe9, 0x48, 0x94, 0x49, 0x95, 0x73, 0x2b, 0x54, 0x36, 0x84, 0x51, 0x05,
-	0xc6, 0x46, 0x1f, 0x10, 0xde, 0xbd, 0x8c, 0x99, 0x42, 0x2b, 0x03, 0x64, 0x84, 0x37, 0xad, 0xb6,
-	0x3c, 0xdf, 0x45, 0xfb, 0x57, 0x3a, 0x3b, 0x87, 0x4d, 0x5a, 0xdb, 0xa4, 0x0b, 0x9b, 0xd4, 0xdb,
-	0xa4, 0x47, 0x5a, 0xa8, 0xc1, 0xc3, 0x93, 0x69, 0xd8, 0x38, 0x9b, 0x86, 0xd7, 0x26, 0x5c, 0xe6,
-	0x0f, 0x22, 0x77, 0x2b, 0xfa, 0xfa, 0x23, 0xec, 0x64, 0xc2, 0xbe, 0xa8, 0x62, 0x9a, 0x68, 0xc9,
-	0x7c, 0xc6, 0xfa, 0xd3, 0x33, 0xe9, 0x31, 0xb3, 0x93, 0x02, 0x8c, 0x2b, 0x60, 0x86, 0xb5, 0x52,
-	0xf4, 0x08, 0xdf, 0x72, 0x76, 0x9e, 0x16, 0xa0, 0x52, 0x1e, 0xe7, 0xe0, 0x8d, 0x92, 0x2e, 0xde,
-	0xe2, 0x69, 0x5a, 0x82, 0x31, 0xbb, 0x68, 0x1f, 0x75, 0xb6, 0x07, 0xe4, 0x6c, 0x1a, 0xde, 0xa8,
-	0xe5, 0x3c, 0x10, 0x0d, 0x97, 0x94, 0xe8, 0x13, 0xc2, 0xb7, 0x2f, 0xd6, 0xf1, 0xa1, 0x5e, 0xe2,
-	0xad, 0x98, 0xe7, 0x5c, 0x25, 0xb0, 0x3e, 0xd6, 0xc0, 0xc7, 0xf2, 0x3a, 0xfe, 0xde, 0xff, 0x05,
-	0x5b, 0xaa, 0x1d, 0x7e, 0xd9, 0xc0, 0x9b, 0xce, 0x13, 0x79, 0x87, 0xf0, 0xce, 0x4a, 0xbf, 0xc9,
-	0x01, 0xfd, 0x63, 0x49, 0xe8, 0x3f, 0x86, 0xd5, 0xba, 0xb7, 0x96, 0x57, 0x67, 0x8c, 0xda, 0x6f,
-	0xbf, 0xfd, 0xfa, 0xbc, 0x11, 0x90, 0x3d, 0x06, 0x3d, 0xa9, 0x15, 0x4c, 0x58, 0xcc, 0xd5, 0xf1,
-	0x62, 0x35, 0x93, 0x15, 0xd9, 0xf7, 0x08, 0x6f, 0x9f, 0xf7, 0x87, 0xb4, 0xff, 0x56, 0xfc, 0xe2,
-	0x18, 0x5a, 0x77, 0xd7, 0xb0, 0xbc, 0x81, 0xae, 0x33, 0x70, 0x40, 0xda, 0x97, 0x0c, 0x98, 0x25,
-	0x97, 0xbd, 0xf6, 0xc3, 0x7a, 0x33, 0x78, 0x7c, 0x32, 0x0b, 0xd0, 0xe9, 0x2c, 0x40, 0x3f, 0x67,
-	0x01, 0xfa, 0x38, 0x0f, 0x1a, 0xa7, 0xf3, 0xa0, 0xf1, 0x7d, 0x1e, 0x34, 0x9e, 0x75, 0x57, 0xda,
-	0xbc, 0xac, 0x04, 0xb2, 0x97, 0x43, 0x9a, 0x41, 0xc9, 0x5e, 0x9d, 0x3f, 0x3a, 0xd7, 0xf0, 0xf8,
-	0xaa, 0x5b, 0xf7, 0xfb, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xaa, 0xb4, 0x15, 0x46, 0x8f, 0x03,
-	0x00, 0x00,
+	// 682 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xbf, 0x6f, 0xd3, 0x4e,
+	0x14, 0xcf, 0x35, 0xdf, 0x7e, 0x4b, 0x2f, 0x05, 0x55, 0x47, 0x0b, 0x49, 0xa8, 0xec, 0x60, 0x95,
+	0x92, 0xa1, 0xf5, 0x91, 0xb0, 0xa0, 0x4a, 0x48, 0xe0, 0x0a, 0x24, 0x06, 0x86, 0xa6, 0x4c, 0x2c,
+	0xd5, 0xd9, 0xb9, 0xba, 0x56, 0xed, 0x3b, 0x37, 0x77, 0x29, 0x44, 0x15, 0x0b, 0x42, 0x6c, 0x48,
+	0x20, 0x16, 0x24, 0x96, 0xce, 0xec, 0xfc, 0x0f, 0x1d, 0x2b, 0xb1, 0x30, 0x05, 0xd4, 0x32, 0x74,
+	0xce, 0x5f, 0x80, 0x7c, 0xbe, 0x54, 0xce, 0x0f, 0x14, 0x98, 0xe2, 0xbc, 0xf7, 0xb9, 0xcf, 0xfb,
+	0x7c, 0xde, 0xbd, 0x77, 0xb0, 0x44, 0x23, 0xbc, 0xdf, 0xa6, 0xad, 0x80, 0x0a, 0x7c, 0x50, 0x53,
+	0x9f, 0x1d, 0x3b, 0x6e, 0x71, 0xc9, 0xd1, 0x65, 0x1a, 0xd9, 0x3a, 0x65, 0x1f, 0xd4, 0xca, 0x0b,
+	0x3e, 0xf7, 0xb9, 0xca, 0xe0, 0xe4, 0x2b, 0x05, 0x95, 0x0d, 0x8f, 0x8b, 0x88, 0x0b, 0xec, 0x12,
+	0x41, 0xf1, 0x41, 0xcd, 0xa5, 0x92, 0xd4, 0xb0, 0xc7, 0x03, 0xa6, 0xf3, 0x4b, 0x3e, 0xe7, 0x7e,
+	0x48, 0x31, 0x89, 0x03, 0x4c, 0x18, 0xe3, 0x92, 0xc8, 0x80, 0x33, 0xa1, 0xb3, 0xa6, 0xce, 0xaa,
+	0x7f, 0x6e, 0x7b, 0x07, 0xcb, 0x20, 0xa2, 0x42, 0x92, 0x28, 0x4e, 0x01, 0x56, 0x09, 0x5e, 0xdf,
+	0x4c, 0x24, 0x6d, 0x04, 0x2d, 0xaf, 0x1d, 0x12, 0x19, 0x30, 0xbf, 0x41, 0xf7, 0xdb, 0x54, 0x48,
+	0xeb, 0x1d, 0x80, 0xc5, 0xd1, 0x9c, 0x88, 0x39, 0x13, 0x14, 0xed, 0xc3, 0x69, 0xc9, 0x25, 0x09,
+	0x8b, 0xa0, 0x92, 0xaf, 0x16, 0xea, 0x25, 0x3b, 0x95, 0x69, 0x27, 0x32, 0x6d, 0x2d, 0xd3, 0xde,
+	0xe0, 0x01, 0x73, 0x1e, 0x1c, 0x77, 0xcd, 0x5c, 0xaf, 0x6b, 0xce, 0x75, 0x48, 0x14, 0xae, 0x5b,
+	0xea, 0x94, 0xf5, 0xe5, 0x87, 0x59, 0xf5, 0x03, 0xb9, 0xdb, 0x76, 0x6d, 0x8f, 0x47, 0x58, 0x7b,
+	0x4c, 0x7f, 0xd6, 0x44, 0x73, 0x0f, 0xcb, 0x4e, 0x4c, 0x85, 0x22, 0x10, 0x8d, 0xb4, 0x92, 0xf5,
+	0x08, 0x2e, 0x2a, 0x39, 0x5b, 0x31, 0x65, 0x4d, 0xe2, 0x86, 0x54, 0x0b, 0x45, 0xab, 0x70, 0x86,
+	0x34, 0x9b, 0x2d, 0x2a, 0x44, 0x11, 0x54, 0x40, 0x75, 0xd6, 0x41, 0xbd, 0xae, 0x79, 0x25, 0x2d,
+	0xa7, 0x13, 0x56, 0xa3, 0x0f, 0xb1, 0x3e, 0x00, 0x78, 0x6d, 0x98, 0x47, 0x9b, 0x7a, 0x01, 0x67,
+	0x5c, 0x12, 0x12, 0xe6, 0xd1, 0xc9, 0xb6, 0x1c, 0x6d, 0x4b, 0xd7, 0xd1, 0xe7, 0xfe, 0xcd, 0x58,
+	0xbf, 0x9a, 0x75, 0x5f, 0x77, 0xfa, 0x69, 0x20, 0x04, 0x6d, 0x3a, 0x21, 0xf7, 0xf6, 0x44, 0xdf,
+	0xdd, 0x4d, 0x38, 0xe7, 0x71, 0x26, 0xb6, 0x07, 0x2c, 0x36, 0x0a, 0x49, 0xec, 0xa1, 0xb6, 0x14,
+	0xc3, 0xd2, 0x98, 0xe3, 0xda, 0xd4, 0x16, 0x44, 0x91, 0x8a, 0x6f, 0xbb, 0x2a, 0xb1, 0x1d, 0xb0,
+	0x1d, 0xae, 0x58, 0x0a, 0x75, 0xd3, 0x1e, 0x18, 0x41, 0x3b, 0x4b, 0xf0, 0x84, 0xed, 0x70, 0xe7,
+	0xbf, 0xc4, 0x65, 0x63, 0x3e, 0x1a, 0x8a, 0x5b, 0xe7, 0x00, 0xce, 0x0f, 0x83, 0xff, 0x42, 0x29,
+	0x7a, 0x06, 0x17, 0x07, 0xc5, 0x78, 0xbc, 0xcd, 0x24, 0x6d, 0x15, 0xa7, 0x2a, 0xa0, 0x9a, 0x77,
+	0x2a, 0xbd, 0xae, 0xb9, 0x94, 0x36, 0x74, 0x2c, 0xcc, 0x6a, 0x5c, 0xcd, 0x4a, 0xd9, 0x48, 0xa3,
+	0x68, 0x13, 0x2e, 0xa8, 0x11, 0x19, 0x26, 0xcd, 0x2b, 0x52, 0xb3, 0xd7, 0x35, 0x6f, 0x64, 0x86,
+	0x6f, 0x84, 0x13, 0xa9, 0xf0, 0x00, 0xe5, 0xfa, 0xa5, 0x4f, 0x47, 0x26, 0x38, 0x3f, 0x32, 0x41,
+	0xfd, 0x6b, 0x1e, 0x4e, 0xab, 0xee, 0xa2, 0x37, 0x00, 0x16, 0x32, 0xbb, 0x80, 0x56, 0x86, 0xba,
+	0xf7, 0x87, 0x45, 0x2a, 0xdf, 0x9e, 0x88, 0x4b, 0xaf, 0xca, 0x5a, 0x7e, 0xfd, 0xed, 0xd7, 0xc7,
+	0x29, 0x03, 0x2d, 0x61, 0xba, 0x16, 0x71, 0x46, 0x3b, 0xd8, 0x25, 0x6c, 0x2f, 0x79, 0x36, 0xbc,
+	0x4c, 0xd9, 0xcf, 0x00, 0xce, 0x65, 0x7b, 0x8f, 0xc6, 0xf2, 0x8f, 0x19, 0xa5, 0x72, 0x75, 0x32,
+	0x50, 0x2b, 0xb9, 0xa7, 0x94, 0xd4, 0xd1, 0x9d, 0x0b, 0x25, 0x22, 0x24, 0x62, 0x37, 0x60, 0x7e,
+	0xa2, 0x26, 0xbd, 0x83, 0xb4, 0x8d, 0xf8, 0x30, 0x7b, 0xe7, 0xaf, 0xd0, 0x5b, 0x00, 0x67, 0x2f,
+	0x36, 0x0b, 0x2d, 0x8f, 0xab, 0x38, 0xbc, 0xc0, 0xe5, 0x5b, 0x13, 0x50, 0x5a, 0xd4, 0xaa, 0x12,
+	0xb5, 0x82, 0x96, 0x47, 0xda, 0x23, 0xfa, 0x58, 0x7c, 0xd8, 0x17, 0xe2, 0x3c, 0x3e, 0x3e, 0x35,
+	0xc0, 0xc9, 0xa9, 0x01, 0x7e, 0x9e, 0x1a, 0xe0, 0xfd, 0x99, 0x91, 0x3b, 0x39, 0x33, 0x72, 0xdf,
+	0xcf, 0x8c, 0xdc, 0xf3, 0xd5, 0xcc, 0x82, 0xf6, 0x99, 0x68, 0xb4, 0x16, 0xd2, 0xa6, 0x4f, 0x5b,
+	0xf8, 0xe5, 0xc5, 0x73, 0xad, 0x56, 0xd5, 0xfd, 0x5f, 0x3d, 0x94, 0x77, 0x7f, 0x07, 0x00, 0x00,
+	0xff, 0xff, 0x53, 0x52, 0xe0, 0xfc, 0xc9, 0x05, 0x00, 0x00,
+}
+
+func (this *MissedBlocksInfo) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*MissedBlocksInfo)
+	if !ok {
+		that2, ok := that.(MissedBlocksInfo)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.ConsAddress != that1.ConsAddress {
+		return false
+	}
+	if this.MissedBlocksCounter != that1.MissedBlocksCounter {
+		return false
+	}
+	if this.TotalBlocksCounter != that1.TotalBlocksCounter {
+		return false
+	}
+	return true
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -257,6 +455,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryClient interface {
 	Circulating(ctx context.Context, in *QueryCirculatingRequest, opts ...grpc.CallOption) (*QueryCirculatingResponse, error)
+	MissedBlocks(ctx context.Context, in *QueryMissedBlocksRequest, opts ...grpc.CallOption) (*QueryMissedBlocksResponse, error)
 	Spendable(ctx context.Context, in *QuerySpendableRequest, opts ...grpc.CallOption) (*QuerySpendableResponse, error)
 }
 
@@ -277,6 +476,15 @@ func (c *queryClient) Circulating(ctx context.Context, in *QueryCirculatingReque
 	return out, nil
 }
 
+func (c *queryClient) MissedBlocks(ctx context.Context, in *QueryMissedBlocksRequest, opts ...grpc.CallOption) (*QueryMissedBlocksResponse, error) {
+	out := new(QueryMissedBlocksResponse)
+	err := c.cc.Invoke(ctx, "/em.queries.v1.Query/MissedBlocks", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) Spendable(ctx context.Context, in *QuerySpendableRequest, opts ...grpc.CallOption) (*QuerySpendableResponse, error) {
 	out := new(QuerySpendableResponse)
 	err := c.cc.Invoke(ctx, "/em.queries.v1.Query/Spendable", in, out, opts...)
@@ -289,6 +497,7 @@ func (c *queryClient) Spendable(ctx context.Context, in *QuerySpendableRequest, 
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	Circulating(context.Context, *QueryCirculatingRequest) (*QueryCirculatingResponse, error)
+	MissedBlocks(context.Context, *QueryMissedBlocksRequest) (*QueryMissedBlocksResponse, error)
 	Spendable(context.Context, *QuerySpendableRequest) (*QuerySpendableResponse, error)
 }
 
@@ -298,6 +507,9 @@ type UnimplementedQueryServer struct {
 
 func (*UnimplementedQueryServer) Circulating(ctx context.Context, req *QueryCirculatingRequest) (*QueryCirculatingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Circulating not implemented")
+}
+func (*UnimplementedQueryServer) MissedBlocks(ctx context.Context, req *QueryMissedBlocksRequest) (*QueryMissedBlocksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MissedBlocks not implemented")
 }
 func (*UnimplementedQueryServer) Spendable(ctx context.Context, req *QuerySpendableRequest) (*QuerySpendableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Spendable not implemented")
@@ -321,6 +533,24 @@ func _Query_Circulating_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).Circulating(ctx, req.(*QueryCirculatingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_MissedBlocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMissedBlocksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MissedBlocks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/em.queries.v1.Query/MissedBlocks",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MissedBlocks(ctx, req.(*QueryMissedBlocksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -350,6 +580,10 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Circulating",
 			Handler:    _Query_Circulating_Handler,
+		},
+		{
+			MethodName: "MissedBlocks",
+			Handler:    _Query_MissedBlocks_Handler,
 		},
 		{
 			MethodName: "Spendable",
@@ -487,6 +721,109 @@ func (m *QuerySpendableResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryMissedBlocksRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryMissedBlocksRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryMissedBlocksRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ConsAddress) > 0 {
+		i -= len(m.ConsAddress)
+		copy(dAtA[i:], m.ConsAddress)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.ConsAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryMissedBlocksResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryMissedBlocksResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryMissedBlocksResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.MissedBlocksInfo.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *MissedBlocksInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MissedBlocksInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MissedBlocksInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.TotalBlocksCounter != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.TotalBlocksCounter))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.MissedBlocksCounter != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.MissedBlocksCounter))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.ConsAddress) > 0 {
+		i -= len(m.ConsAddress)
+		copy(dAtA[i:], m.ConsAddress)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.ConsAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -546,6 +883,49 @@ func (m *QuerySpendableResponse) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovQuery(uint64(l))
 		}
+	}
+	return n
+}
+
+func (m *QueryMissedBlocksRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ConsAddress)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryMissedBlocksResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.MissedBlocksInfo.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *MissedBlocksInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ConsAddress)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.MissedBlocksCounter != 0 {
+		n += 1 + sovQuery(uint64(m.MissedBlocksCounter))
+	}
+	if m.TotalBlocksCounter != 0 {
+		n += 1 + sovQuery(uint64(m.TotalBlocksCounter))
 	}
 	return n
 }
@@ -835,6 +1215,291 @@ func (m *QuerySpendableResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryMissedBlocksRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryMissedBlocksRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryMissedBlocksRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ConsAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryMissedBlocksResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryMissedBlocksResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryMissedBlocksResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MissedBlocksInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MissedBlocksInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MissedBlocksInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MissedBlocksInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MissedBlocksInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ConsAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MissedBlocksCounter", wireType)
+			}
+			m.MissedBlocksCounter = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MissedBlocksCounter |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalBlocksCounter", wireType)
+			}
+			m.TotalBlocksCounter = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalBlocksCounter |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipQuery(dAtA[iNdEx:])
