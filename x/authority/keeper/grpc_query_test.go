@@ -14,7 +14,7 @@ import (
 
 func TestQueryGasPrices(t *testing.T) {
 	encConfig := MakeTestEncodingConfig()
-	ctx, keeper, _, _, _ := createTestComponentWithEncodingConfig(t, encConfig)
+	ctx, keeper, _, _ := createTestComponentWithEncodingConfig(t, encConfig)
 
 	myGasPrices, _ := sdk.ParseDecCoins("0.400000000000000000echf,0.400000000000000000eeur")
 	authority := mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
@@ -46,7 +46,7 @@ func TestQueryGasPrices(t *testing.T) {
 
 func TestQueryUpgradePlan(t *testing.T) {
 	encConfig := MakeTestEncodingConfig()
-	ctx, keeper, _, _, _ := createTestComponentWithEncodingConfig(t, encConfig)
+	ctx, keeper, _, _ := createTestComponentWithEncodingConfig(t, encConfig)
 
 	authority := mustParseAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	keeper.BootstrapAuthority(ctx, authority)
