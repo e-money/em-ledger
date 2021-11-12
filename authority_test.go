@@ -108,7 +108,7 @@ var _ = Describe("Authority", func() {
 
 			// set 22022120 bytes
 			vExpectedCnt += 1024
-			_, success, err := emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"baseapp","key":"BlockParams","value":{"max_bytes":"%d","max_gas":"100"}}]`,
+			_, success, err := emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"baseapp","key":"BlockParams","value":{"max_bytes":"%d","max_gas":"60000000"}}]`,
 				int(vExpectedCnt),
 			))
 			Expect(err).ToNot(HaveOccurred())
