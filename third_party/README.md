@@ -14,7 +14,7 @@ proto/\*
 
 *source*:
 proto/*
-[ibc-go/proto](https://github.com/cosmos/ibc-go/tree/v1.2.0/proto)
+[ibc-go/proto](https://github.com/cosmos/ibc-go/v2/tree/v1.2.0/proto)
 
 *dest*:
 ./third_party/proto/

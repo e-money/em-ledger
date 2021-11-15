@@ -7,7 +7,7 @@ cp -r $SDK_SRC/proto/cosmos/* ./proto/cosmos/
 cp -r $SDK_SRC/third_party/proto/* ./proto/
 
 #ibc-go repo
-SDK_SRC=$(go list -f '{{.Dir}}' -m github.com/cosmos/ibc-go)
+SDK_SRC=$(go list -f '{{.Dir}}' -m github.com/cosmos/ibc-go/v2)
 cp -r $SDK_SRC/proto/ibc/* ./proto/ibc/
 
 ls **/*.proto | xargs chmod 666
