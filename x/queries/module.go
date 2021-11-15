@@ -93,8 +93,8 @@ func (am AppModule) Route() sdk.Route {
 
 func (am AppModule) QuerierRoute() string { return types.QuerierRoute }
 
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return NewLegacyQuerier(am.ak, am.bk)
+func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
+	return nil
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {

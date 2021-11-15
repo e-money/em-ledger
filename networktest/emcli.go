@@ -466,6 +466,7 @@ func (cli Emcli) addTransactionFlags(arguments ...string) []string {
 		"--keyring-backend", "test",
 		"--broadcast-mode", "block",
 		"--yes",
+		"--output", "json",
 	)
 
 	return cli.addNetworkFlags(arguments)

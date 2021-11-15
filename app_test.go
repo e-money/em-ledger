@@ -20,8 +20,8 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibckeeper "github.com/cosmos/ibc-go/modules/core/keeper"
-	ibctesting "github.com/cosmos/ibc-go/testing"
+	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
+	ibctesting "github.com/cosmos/ibc-go/v2/testing"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority"
 	authtypes "github.com/e-money/em-ledger/x/authority/types"
@@ -156,7 +156,6 @@ func createIBCApp() (emIBCApp emIBCApp, genesis map[string]json.RawMessage) {
 	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
 
 	genesisState["authority"] = emIBCApp.encCfg.Marshaler.MustMarshalJSON(&authorityState)
-
 
 	return emIBCApp, genesisState
 }
@@ -468,7 +467,7 @@ func executePlan(
 // https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/feegrant/basic_fee_test.go
 func TestBasicFeeValidAllow(t *testing.T) {
 	configOnce.Do(apptypes.ConfigureSDK)
-	_, _, app, _  := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
+	_, _, app, _ := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
 
 	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
 	badTime := ctx.BlockTime().AddDate(0, 0, -1)
@@ -622,7 +621,7 @@ type TestAuthzSuite struct {
 
 func (s *TestAuthzSuite) SetupTest() {
 	configOnce.Do(apptypes.ConfigureSDK)
-	_, _, app, _  := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
+	_, _, app, _ := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
 	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
 	now := tmtime.Now()
 	ctx = ctx.WithBlockHeader(tmproto.Header{Time: now})
