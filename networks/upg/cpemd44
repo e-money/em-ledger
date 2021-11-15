@@ -8,7 +8,7 @@
 # │ └── bin
 # │     └── emd
 # └── upgrades
-#     └── test-upg-0.2.0
+#     └── v44-upg-test
 #         └── bin
 #             └── emd
 
@@ -35,17 +35,16 @@ rm -rf "$COSMOVISOR_HOME"/upgrades
 
 mkdir -p "$COSMOVISOR_HOME"/genesis/bin
 cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
-UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.2.0/bin
+UPG_LOC="$COSMOVISOR_HOME"/upgrades/v44-upg-test/bin
 
 mkdir -p "$UPG_LOC"
 if [ "$(uname)" = "Linux"  ]; then
-  cp "$EM_LEDGER_LOC"/build/emdupg-linux "$UPG_LOC"/emd
+  cp "$EM_LEDGER_LOC"/build/emdupg44-linux "$UPG_LOC"/emd
 else
-  cp "$EM_LEDGER_LOC"/build/emdupg "$UPG_LOC"/emd
+  cp "$EM_LEDGER_LOC"/build/emdupg44 "$UPG_LOC"/emd
 fi
 
 echo "legacy or current binary:"
 ls "$COSMOVISOR_HOME"/genesis/bin/emd
 echo "upgrade binary:"
 ls "$UPG_LOC"/emd
-echo "current version: $(cosmovisor version)"

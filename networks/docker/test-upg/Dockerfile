@@ -13,4 +13,4 @@ RUN cd /go/src && \
 
 # build MacOS binary
 WORKDIR /go/src/em-ledger
-RUN LEDGER_ENABLED=false GOOS=darwin GOARCH=amd64 make build
+RUN FAST_CONSENSUS=true LEDGER_ENABLED=false GOOS=darwin GOARCH=amd64 make build

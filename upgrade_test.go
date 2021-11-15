@@ -29,7 +29,7 @@ var _ = Describe("Upgrade", func() {
 			chainHeight, err := nt.GetHeight()
 			Expect(err).ToNot(HaveOccurred())
 
-			const upgDelta = 5
+			const upgDelta = 4
 			upgHeight := chainHeight + upgDelta
 
 			_, success, err := emcli.UpgSchedByHeight(Authority, name,
@@ -49,9 +49,9 @@ var _ = Describe("Upgrade", func() {
 			Expect(resUpgHeight).To(BeEquivalentTo(upgHeight))
 
 			// wait till the upgrade
-			newHeight, err := nt.IncChain(upgDelta + 1)
+			newHeight, err := nt.IncChain(upgDelta)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(newHeight > chainHeight+upgDelta).To(BeTrue())
+			Expect(newHeight >= upgHeight).To(BeTrue())
 
 			// if we made it here, the upgrade succeeded
 			bz, err = emcli.QueryUpgSched()

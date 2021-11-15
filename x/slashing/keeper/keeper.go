@@ -23,6 +23,8 @@ const (
 
 type Keeper struct {
 	sdkslashingkeeper.Keeper
+	StoreKey sdk.StoreKey
+
 	paramspace sdkslashingtypes.ParamSubspace
 
 	cdc        codec.BinaryCodec
@@ -44,6 +46,7 @@ func NewKeeper(
 ) Keeper {
 	return Keeper{
 		Keeper:        sdkslashingkeeper.NewKeeper(cdc, key, sk, paramspace),
+		StoreKey:      key,
 		paramspace:    paramspace,
 		cdc:           cdc,
 		sk:            sk,

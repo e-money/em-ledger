@@ -1,0 +1,18 @@
+#!/bin/sh
+# Run post the upgrade to confirm upgraded values
+set -e
+
+EMD=.emd/cosmovisor/current/bin/emd
+
+UPG_PLAN=test-upg-0.2.0
+
+$EMD version # UPG_PLAN
+
+$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
+
+if "$EMD" version 2>&1 > /dev/null | grep -q "$UPG_PLAN"; then
+    echo 'the chain upgrade succeeded!'
+else
+    echo 'the chain upgrade failed!'
+    exit 1;
+fi
