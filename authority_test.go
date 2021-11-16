@@ -37,6 +37,36 @@ var _ = Describe("Authority", func() {
 	Describe("Authority manages issuers", func() {
 		It("creates a new testnet", createNewTestnet)
 
+		It("Impostor attempts to change the number of validators", func() {
+			const validatorsCount = "validators.#"
+
+			var (
+				vCntParamValue = 4
+				vExpectedCnt   = 4
+			)
+
+			// starting with 4 active validators
+			validators, err := emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt := validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+
+			// Attempt to set 5 validators
+			vCntParamValue = 5
+			_, success, err := emcli.AuthoritySetParams(Issuer, fmt.Sprintf(`[{"subspace":"staking","key":"MaxValidators","value":%d}]`,
+				vCntParamValue,
+			))
+			Expect(err).To(HaveOccurred())
+			Expect(success).To(BeFalse())
+
+			// bummer, change max_gas or block size?
+			_, success, err = emcli.AuthoritySetParams(Issuer, fmt.Sprintf(`[{"subspace":"baseapp","key":"BlockParams","value":{"max_bytes":"%d","max_gas":"%d"}}]`,
+				1 /* block size */, 1, /* max_gas */
+			))
+			Expect(err).To(HaveOccurred())
+			Expect(success).To(BeFalse())
+		})
+
 		It("Authority changes the number of validators", func() {
 			const validatorsCount = "validators.#"
 
