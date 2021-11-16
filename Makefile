@@ -139,6 +139,9 @@ build-fast-consensus:
 build-docker:
 	$(MAKE) -C networks/docker/ all
 
+build-docker-f:
+	$(MAKE) -C networks/docker/ all-f
+
 run-single-node: clean
 	go run cmd/daemon/*.go init
 	go run cmd/daemon/*.go start
