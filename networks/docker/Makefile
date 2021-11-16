@@ -1,6 +1,6 @@
 # Makefile for the "em-ledger" docker images.
 
-all: emdnode cosmovisor test-upg v44
+all: emdnode cosmovisor test-upg
 
 # force rebuild when docker is caching images
 # use case: switching cosmos-sdk versions
