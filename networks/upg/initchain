@@ -46,11 +46,7 @@ rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
 rm -rf "$EMD_NODE"/cosmovisor/current
 
-if [ "$1" -eq 0 ]; then
-  ./cpemd
-else
-  ./cpemd"$1"
-fi
+./cpemd"$1"
 
 $EMD unsafe-reset-all --home=$EMD_NODE
 

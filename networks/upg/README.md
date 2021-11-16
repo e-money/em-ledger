@@ -22,12 +22,10 @@ Note these scripts at **em-ledger/networks/upg**:
 * `initchain` initializes genesis, authority for an em-legder chain.
 * `startcv` (starts emoney node with cosmovisor): `cosmovisor start --home=.emd`
 * `start-full-cv` runs `initchain && startcv` for testing the upgrade process to the chain with same sdk version without running migrations.
-* `start-upg-cv` runs `initchain && startcv` for testing the upgrade process to the v44 em-ledger chain by running the v42 to the v44 migrations. This is supported from the v44 branch.
 * `upg-sched` schedule an upgrade by passing the upgrade block height 
 * `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
 * `upgvfunc.txt` Go snippet text inserted for same chain upgrade in app.go. Enables the bdd upgrade test. No migration run.
-* `upgv44func.txt` Go snippet text inserted for a v42 chain to v44 upgrade in the app.go. Enables the start-upg-cv manual test.
-* `cpemd`, `cpemd44` Set up the cosmovisor upgrade file folder tree, the former with an upgrade binary of the same SDK and the latter with a v44 *upgrade* binary. 
+* `cpemd` Set up the cosmovisor upgrade file folder tree. 
 
 ### Components installation
 Build the revamped Docker, Linux artifacts
