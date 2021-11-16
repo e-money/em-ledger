@@ -1,17 +1,19 @@
-#!/bin/bash
-
+#!/bin/sh
+# Invoke to schedule an upgrade
 # $1 : choose a future block height to upgrade
 
 set -e
 
 EMD=.emd/cosmovisor/current/bin/emd
 
+UPG_PLAN=test-upg-0.2.0
+
 $EMD version
 $EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id test
 $EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test
 
 # schedule upgrade
-$EMD tx authority schedule-upgrade authoritykey test-upg-0.2.0 --upgrade-height "$1" --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id test --keyring-backend test
+$EMD tx authority schedule-upgrade authoritykey $UPG_PLAN --upgrade-height "$1" --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id test --keyring-backend test
 
 # confirm upg plan
 $EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test

@@ -1,4 +1,6 @@
 
+//--------------------  beginning of 42 upg test handler
+
 	/*
 	 * This is a test handler for trying out cosmovisor
 	 * Setting gas to One ungm
@@ -29,3 +31,6 @@
 			panic(fmt.Sprintf("expected Gas: %+v != store Gas: %+v", newGas, gasPrices))
 		}
 	})
+
+//--------------------  end of 42 upg test handler
+

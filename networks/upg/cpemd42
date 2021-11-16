@@ -1,0 +1,50 @@
+#!/bin/zsh
+
+# Copying the upgrade and present/soon to be legacy binary in the cosmovisor genesis folder
+# Note the cosmovisor folder structure before the upgrade
+# em-ledger/networks/upg/.emd/cosmovisor
+# ├── current -> /Users/user/go/src/github.com/e-money/em-ledger/networks/upg/.emd/cosmovisor/genesis/bin/emd
+# ├── genesis
+# │ └── bin
+# │     └── emd
+# └── upgrades
+#     └── test-upg-0.2.0
+#         └── bin
+#             └── emd
+
+set -e
+
+# cosmovisor constant
+export DAEMON_NAME=emd
+
+mkdir -p .emd
+export DAEMON_HOME=$PWD/.emd
+pushd -q ../../
+EM_LEDGER_LOC=$PWD
+popd -q
+
+echo "node home: $DAEMON_HOME"
+
+# copy soon to be the legacy binary
+COSMOVISOR_HOME="$EM_LEDGER_LOC"/networks/upg/.emd/cosmovisor
+
+# clean up previous sticky upgrade
+rm -f "$COSMOVISOR_HOME"/current
+rm -f "$COSMOVISOR_HOME"/genesis/bin/emd
+rm -rf "$COSMOVISOR_HOME"/upgrades
+
+mkdir -p "$COSMOVISOR_HOME"/genesis/bin
+cp "$EM_LEDGER_LOC"/build/emd "$COSMOVISOR_HOME"/genesis/bin
+UPG_LOC="$COSMOVISOR_HOME"/upgrades/test-upg-0.2.0/bin
+
+mkdir -p "$UPG_LOC"
+if [ "$(uname)" = "Linux"  ]; then
+  cp "$EM_LEDGER_LOC"/build/emdupg-linux "$UPG_LOC"/emd
+else
+  cp "$EM_LEDGER_LOC"/build/emdupg "$UPG_LOC"/emd
+fi
+
+echo "legacy or current binary:"
+ls "$COSMOVISOR_HOME"/genesis/bin/emd
+echo "upgrade binary:"
+ls "$UPG_LOC"/emd
