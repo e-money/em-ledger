@@ -290,8 +290,7 @@ func (m *QueryMissedBlocksResponse) GetMissedBlocksInfo() MissedBlocksInfo {
 	return MissedBlocksInfo{}
 }
 
-// ValidatorSigningInfo defines a validator's signing info for monitoring their
-// liveness activity.
+// ValidatorSigningInfo defines a validator's missed blocks info.
 type MissedBlocksInfo struct {
 	ConsAddress string `protobuf:"bytes,1,opt,name=cons_address,json=consAddress,proto3" json:"cons_address,omitempty"`
 	// missed blocks counter (to avoid scanning the array every time)

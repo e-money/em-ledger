@@ -439,7 +439,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		)))
 
 	gpk := new(mockGasPricesKeeper)
-	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK)
+	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK, pk)
 
 	return ctx, keeper, ik, gpk
 }
