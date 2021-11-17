@@ -2,12 +2,15 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
+//go:build bdd
 // +build bdd
 
 package emoney_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	nt "github.com/e-money/em-ledger/networktest"
@@ -33,6 +36,125 @@ var _ = Describe("Authority", func() {
 
 	Describe("Authority manages issuers", func() {
 		It("creates a new testnet", createNewTestnet)
+
+		It("Impostor attempts to change the number of validators", func() {
+			const validatorsCount = "validators.#"
+
+			var (
+				vCntParamValue = 4
+				vExpectedCnt   = 4
+			)
+
+			// starting with 4 active validators
+			validators, err := emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt := validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+
+			// Attempt to set 5 validators
+			vCntParamValue = 5
+			_, success, err := emcli.AuthoritySetParams(Issuer, fmt.Sprintf(`[{"subspace":"staking","key":"MaxValidators","value":%d}]`,
+				vCntParamValue,
+			))
+			Expect(err).To(HaveOccurred())
+			Expect(success).To(BeFalse())
+
+			// bummer, change max_gas or block size?
+			_, success, err = emcli.AuthoritySetParams(Issuer, fmt.Sprintf(`[{"subspace":"baseapp","key":"BlockParams","value":{"max_bytes":"%d","max_gas":"%d"}}]`,
+				1 /* block size */, 1, /* max_gas */
+			))
+			Expect(err).To(HaveOccurred())
+			Expect(success).To(BeFalse())
+		})
+
+		It("Authority changes the number of validators", func() {
+			const validatorsCount = "validators.#"
+
+			var (
+				vCntParamValue = 4
+				vExpectedCnt   = 4
+			)
+
+			// starting with 4 active validators
+			validators, err := emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt := validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+
+			// set 1 validator
+			vCntParamValue = 1
+			_, success, err := emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"staking","key":"MaxValidators","value":%d}]`,
+				vCntParamValue,
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			nt.IncChain(1)
+
+			// 1 validator is active
+			vExpectedCnt = 1
+			validators, err = emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt = validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+
+			// set validator count to 10 but 4 are available
+			vCntParamValue = 10
+			_, success, err = emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"staking","key":"MaxValidators","value":%d}]`,
+				vCntParamValue,
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			nt.IncChain(1)
+
+			vExpectedCnt = 4
+			validators, err = emcli.QueryActiveValidators()
+			Expect(err).ToNot(HaveOccurred())
+			validatorCnt = validators.Get(validatorsCount).Num
+			Expect(validatorCnt).To(Equal(float64(vExpectedCnt)))
+		})
+
+		It("Authority changes the block size", func() {
+			type blockParamsType struct {
+				MaxBytesStr string `json:"max_bytes"`
+				MaxGasStr   string `json:"max_gas"`
+			}
+			var (
+				vExpectedCnt float64
+				blockParams  blockParamsType
+			)
+
+			// starting with 22020096 bytes
+			blockParamsGJson, err := emcli.QueryBlockParams()
+			Expect(err).ToNot(HaveOccurred())
+			blockBytesStr := blockParamsGJson.Get("value").Str
+			// gjson responds with nil for "value.max_bytes"
+			// so employing partial json's unmarshalling
+			err = json.Unmarshal([]byte(blockBytesStr), &blockParams)
+			Expect(err).ToNot(HaveOccurred())
+			vExpectedCnt, err = strconv.ParseFloat(blockParams.MaxBytesStr, 64)
+			Expect(err).ToNot(HaveOccurred())
+
+			// set 22022120 bytes
+			vExpectedCnt += 1024
+			_, success, err := emcli.AuthoritySetParams(Authority, fmt.Sprintf(`[{"subspace":"baseapp","key":"BlockParams","value":{"max_bytes":"%d","max_gas":"60000000"}}]`,
+				int(vExpectedCnt),
+			))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(success).To(BeTrue())
+
+			nt.IncChain(1)
+
+			blockParamsGJson, err = emcli.QueryBlockParams()
+			Expect(err).ToNot(HaveOccurred())
+			blockBytesStr = blockParamsGJson.Get("value").Str
+			err = json.Unmarshal([]byte(blockBytesStr), &blockParams)
+			Expect(err).ToNot(HaveOccurred())
+			updMaxBytes, err := strconv.ParseFloat(blockParams.MaxBytesStr, 64)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(vExpectedCnt).To(Equal(updMaxBytes))
+		})
 
 		It("creates an issuer", func() {
 			// denomination metadata are not set before a new issuer
