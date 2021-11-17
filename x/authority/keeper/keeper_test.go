@@ -441,7 +441,7 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 			sdk.NewCoin("eeur", sdk.NewInt(5000))))
 
 	gpk := new(mockGasPricesKeeper)
-	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK)
+	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK, pk)
 
 	return ctx, keeper, ik, gpk
 }

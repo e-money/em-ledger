@@ -5,12 +5,19 @@
 package cli
 
 import (
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"strings"
 
+	"github.com/tendermint/tendermint/libs/os"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/params/client/utils"
 	upgtypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -30,6 +37,7 @@ func GetTxCmd() *cobra.Command {
 		getCmdSetGasPrices(),
 		GetCmdReplaceAuthority(),
 		GetCmdScheduleUpgrade(),
+		getCmdSetParameters(),
 	)
 
 	return authorityCmds
@@ -267,4 +275,101 @@ func validateUpgFlags(upgHeight string, upgHeightVal int64) error {
 	}
 
 	return nil
+}
+
+func getCmdSetParameters() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set-params [authority_key_or_address] <path/to/changes.json -- OR -- JSON snippet> --from <authority-key>",
+		Short: "Set a parameter change with a JSON file or JSON snippet",
+		Example: `emd tx authority set-params ./params.json --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t
+emd tx authority set-params '[{"subspace":"staking","key":"MaxValidators","value":10}]' --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t`,
+		Long: strings.TrimSpace(`
+The parameter details must be supplied via a JSON file or JSON snippet. For values that contain
+objects, only non-empty fields will be updated.
+Any "value" change should be valid (ie. correct type and within bounds)
+for its respective parameter, eg. "MaxValidators" should be an integer and not a 
+decimal.
+
+Where proposal.json contains:
+
+[
+  {
+    "subspace": "staking",
+    "key": "MaxValidators",
+    "value": 10
+  }
+]
+
+-- OR JSON fragment e.g. [{"subspace":"staking","key":"MaxValidators","value":10}]
+
+`),
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var paramsFilename string
+
+			if len(args) == 2 {
+				if err := cmd.Flags().Set(flags.FlagFrom, args[0]); err != nil {
+					return err
+				}
+
+				paramsFilename = args[1]
+			} else {
+				paramsFilename = args[0]
+			}
+
+			if !os.FileExists(paramsFilename) && !json.Valid([]byte(paramsFilename)) {
+				return fmt.Errorf("%s is not the name of an existing file nor valid json", paramsFilename)
+			}
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			paramChanges, err := parseParamChangesJSON(clientCtx.LegacyAmino, paramsFilename)
+			if err != nil {
+				return err
+			}
+
+			msg := &types.MsgSetParameters{
+				Authority: clientCtx.GetFromAddress().String(),
+				Changes:   paramChanges.ToParamChanges(),
+			}
+
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+
+}
+
+// parseParamChangesJSON reads and parses a ParamChangesJSON from file.
+func parseParamChangesJSON(cdc *codec.LegacyAmino, jsonFile string) (utils.ParamChangesJSON, error) {
+	params := utils.ParamChangesJSON{}
+
+	var paramsJson = []byte(jsonFile)
+	if json.Valid(paramsJson) {
+		return getParsedParams(cdc, paramsJson)
+	}
+
+	paramsJson, err := ioutil.ReadFile(jsonFile)
+	if err != nil {
+		return params, err
+	}
+
+	return getParsedParams(cdc, paramsJson)
+}
+
+func getParsedParams(cdc *codec.LegacyAmino, contents []byte) (utils.ParamChangesJSON, error) {
+	var params utils.ParamChangesJSON
+	err := cdc.UnmarshalJSON(contents, &params)
+	err = json.Unmarshal(contents, &params)
+
+	return params, err
 }
