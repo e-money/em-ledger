@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/tendermint/tendermint/libs/os"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -22,6 +21,7 @@ import (
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
+	"github.com/tendermint/tendermint/libs/os"
 )
 
 func GetTxCmd() *cobra.Command {
@@ -368,8 +368,7 @@ func parseParamChangesJSON(cdc *codec.LegacyAmino, jsonFile string) (utils.Param
 
 func getParsedParams(cdc *codec.LegacyAmino, contents []byte) (utils.ParamChangesJSON, error) {
 	var params utils.ParamChangesJSON
-	err := cdc.UnmarshalJSON(contents, &params)
-	err = json.Unmarshal(contents, &params)
+	err := json.Unmarshal(contents, &params)
 
 	return params, err
 }

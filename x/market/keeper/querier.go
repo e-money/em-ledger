@@ -7,8 +7,9 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/x/market/types"
 	"sort"
+
+	"github.com/e-money/em-ledger/x/market/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -70,7 +71,7 @@ func queryByAccount(ctx sdk.Context, k *Keeper, path []string, req abci.RequestQ
 
 	sort.Slice(
 		orders, func(i, j int) bool {
-			return orders[i].ID < orders[i].ID
+			return orders[i].ID < orders[j].ID
 		})
 
 	resp := types.QueryByAccountResponse{Orders: orders}
