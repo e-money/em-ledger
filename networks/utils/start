@@ -14,5 +14,4 @@ else
   exit 1
 fi
 
-./init
 $EMD start --home="$EMD_NODE"
