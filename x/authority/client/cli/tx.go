@@ -371,8 +371,7 @@ func parseParamChangesJSON(cdc *codec.LegacyAmino, jsonFile string) (utils.Param
 
 func getParsedParams(cdc *codec.LegacyAmino, contents []byte) (utils.ParamChangesJSON, error) {
 	var params utils.ParamChangesJSON
-	err := cdc.UnmarshalJSON(contents, &params)
-	err = json.Unmarshal(contents, &params)
+	err := json.Unmarshal(contents, &params)
 
 	return params, err
 }
