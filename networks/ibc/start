@@ -19,12 +19,12 @@ fi
 
 # Ensure gaiad is installed
 if ! [ -x "$(which gaiad)" ]; then
-  echo "Error: gaiad is not installed. Install v5.0.5+ or clone github.com/cosmos/gaia and 'make build-gaia'" >&2
+  echo "Error: gaiad is not installed. Install v5.0.8+ or clone github.com/cosmos/gaia and 'make build-gaia'" >&2
   exit 1
 fi
 
 # Display software version
-echo "Requiring v5.0.5+, checking..."
+echo "Requiring v5.0.8+, checking..."
 echo "GAIA VERSION INFO: $(gaiad version --log_level info)"
 
 # Ensure user understands what will be deleted
@@ -63,10 +63,10 @@ $GM hermes keys
 
 ./emkey-2-hermes.sh ./emoney-config.toml localnet_reuse
 
+#----------------------- ibc primitives creation functions
 GAIA_ID="gaia"
 EMONEY_CHAIN_ID="localnet_reuse"
 
-#----------------------- ibc primitives creation functions
 CLIENT_ID="07-tendermint-0"
 CONNECTION_ID="connection-0"
 
