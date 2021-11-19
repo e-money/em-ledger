@@ -11,7 +11,7 @@ This will get you a fully synced node, very quickly.
 ```bash
 git clone https://github.com/e-money/em-ledger.git
 cd em-ledger
-git checkout v1.1.3
+git checkout v1.1.4
 make install
 emd init choose-a-cool-name
 wget -O ~/.emd/config/genesis.json https://github.com/e-money/networks/raw/master/emoney-3/genesis.json
