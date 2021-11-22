@@ -5,6 +5,8 @@ import (
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	channelkeeper "github.com/cosmos/cosmos-sdk/x/ibc/core/04-channel/keeper"
+	ibcante "github.com/cosmos/cosmos-sdk/x/ibc/core/ante"
 )
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
@@ -14,6 +16,7 @@ import (
 func NewAnteHandler(
 	ak sdkante.AccountKeeper, bankKeeper types.BankKeeper, stakingKeeper StakingKeeper,
 	signModeHandler signing.SignModeHandler,
+	channelKeeper channelkeeper.Keeper,
 ) sdk.AnteHandler {
 	sigGasConsumer := sdkante.DefaultSigVerificationGasConsumer
 
@@ -32,5 +35,6 @@ func NewAnteHandler(
 		sdkante.NewSigGasConsumeDecorator(ak, sigGasConsumer),
 		sdkante.NewSigVerificationDecorator(ak, signModeHandler),
 		sdkante.NewIncrementSequenceDecorator(ak),
+		ibcante.NewAnteDecorator(channelKeeper),
 	)
 }

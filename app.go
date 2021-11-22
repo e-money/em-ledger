@@ -412,6 +412,7 @@ func NewApp(
 		ante.NewAnteHandler(
 			app.accountKeeper, app.bankKeeper, app.stakingKeeper,
 			encodingConfig.TxConfig.SignModeHandler(),
+			app.ibcKeeper.ChannelKeeper,
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)
