@@ -23,6 +23,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -68,6 +69,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v2/modules/core/03-connection/types"
 	channelkeeper "github.com/cosmos/ibc-go/v2/modules/core/04-channel/keeper"
 	porttypes "github.com/cosmos/ibc-go/v2/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
@@ -302,13 +304,68 @@ func NewApp(
 	)
 	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp)
 
+	{
+		/*
+		 * This is a test v44 handler
+		 */
+		const upg44Plan = "v44-upg-test"
+
+		app.upgradeKeeper.SetUpgradeHandler(
+			upg44Plan,
+			func(
+				ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap,
+			) (module.VersionMap, error) {
+				// set max expected block time parameter. Replace the default with your expected value
+				// https://github.com/cosmos/ibc-go/blob/release/v1.0.x/docs/ibc/proto-docs.md#params-2
+				// set max block time to 30 seconds
+				app.ibcKeeper.ConnectionKeeper.SetParams(
+					ctx, ibcconnectiontypes.DefaultParams(),
+				)
+
+				fromVM := make(map[string]uint64)
+				for moduleName := range app.mm.Modules {
+					// v40 state is version 1
+					// v43 state is version 2
+					// v45 state is likely v3
+					fromVM[moduleName] = 1
+				}
+
+				// override versions for _new_ modules as to not skip InitGenesis
+				fromVM[authz.ModuleName] = 0
+				fromVM[feegrant.ModuleName] = 0
+
+				ctx.Logger().Info("Upgrading to " + upg44Plan)
+
+				return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+			},
+		)
+
+		upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+		if err != nil {
+			panic(err)
+		}
+
+		if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+			storeUpgrades := store.StoreUpgrades{
+				// TODO why comment?
+				//Added: []string{authz.ModuleName, feegrant.ModuleName},
+			}
+
+			// configure store loader that checks if version == upgradeHeight and applies store upgrades
+			app.SetStoreLoader(
+				upgradetypes.UpgradeStoreLoader(
+					upgradeInfo.Height, &storeUpgrades,
+				),
+			)
+		}
+	}
+
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
 		stakingtypes.NewMultiStakingHooks(app.distrKeeper.Hooks(), app.slashingKeeper.Hooks()),
 	)
 
-	// TODO is IBC relying on upgrade keeper's state?
 	app.ibcKeeper = ibckeeper.NewKeeper(
 		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName),
 		app.historykeeper, app.upgradeKeeper, scopedIBCKeeper)
