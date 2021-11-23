@@ -2,7 +2,7 @@
 
 # Specify the verbosity for the relayer logging output. Default: 'info'
 # Valid options are 'error', 'warn', 'info', 'debug', 'trace'.
-log_level = 'info'
+log_level = 'trace'
 
 # Specify the mode to be used by the relayer. [Required]
 [mode]
@@ -19,12 +19,12 @@ misbehaviour = true
 # Specify the connections mode.
 [mode.connections]
 # Whether or not to enable the connection workers. [Required]
-enabled = false
+enabled = true
 
 # Specify the channels mode.
 [mode.channels]
 # Whether or not to enable the channel workers. [Required]
-enabled = false
+enabled = true
 
 # Specify the packets mode.
 [mode.packets]
