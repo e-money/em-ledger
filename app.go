@@ -347,8 +347,7 @@ func NewApp(
 
 		if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 			storeUpgrades := store.StoreUpgrades{
-				// TODO why comment?
-				//Added: []string{authz.ModuleName, feegrant.ModuleName},
+				Added: []string{authz.ModuleName, feegrant.ModuleName},
 			}
 
 			// configure store loader that checks if version == upgradeHeight and applies store upgrades
