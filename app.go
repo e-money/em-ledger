@@ -308,7 +308,7 @@ func NewApp(
 		/*
 		 * This is a test v44 handler
 		 */
-		const upg44Plan = "v44-upg-test"
+		const upg44Plan = "v44-upg-test-sample"
 
 		app.upgradeKeeper.SetUpgradeHandler(
 			upg44Plan,
@@ -319,6 +319,7 @@ func NewApp(
 				// https://github.com/cosmos/ibc-go/blob/release/v1.0.x/docs/ibc/proto-docs.md#params-2
 				// set max block time to 30 seconds
 				app.ibcKeeper.ConnectionKeeper.SetParams(
+					// should 3-5 minutes in mainnet
 					ctx, ibcconnectiontypes.DefaultParams(),
 				)
 
