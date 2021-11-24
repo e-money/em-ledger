@@ -63,10 +63,10 @@ $GM hermes keys
 
 ./emkey-2-hermes.sh ./emoney-config.toml localnet_reuse
 
-#----------------------- ibc primitives creation functions
 GAIA_ID="gaia"
 EMONEY_CHAIN_ID="localnet_reuse"
 
+#----------------------- ibc primitives creation functions
 CLIENT_ID="07-tendermint-0"
 CONNECTION_ID="connection-0"
 
@@ -102,7 +102,19 @@ function try_conn() {
   local dst="$1"
   local src="$2"
 
-  hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID
+  # try 4 times to establish a connection
+  tries=4
+  sleep 7
+
+  for (( i = 0; i < tries; i++ )); do
+    echo attempt "$i" to conn-try
+    if ! hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID ; then
+      sleep 7
+      continue
+    fi
+
+    break
+  done
 }
 
 function chan_init() {
@@ -126,7 +138,7 @@ client_update $GAIA_ID
 conn_init $EMONEY_CHAIN_ID $GAIA_ID
 
 #----------------- connection try
-hermes -c ./emoney-config.toml tx raw conn-try $GAIA_ID $EMONEY_CHAIN_ID $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID
+try_conn $GAIA_ID $EMONEY_CHAIN_ID
 
 #----------------- connection ack
 hermes -c ./emoney-config.toml tx raw conn-ack $EMONEY_CHAIN_ID $GAIA_ID $CLIENT_ID $CLIENT_ID -d $CONNECTION_ID -s $CONNECTION_ID
