@@ -50,10 +50,12 @@ rm -rf "$EMD_NODE"/cosmovisor/current
 
 $EMD unsafe-reset-all --home=$EMD_NODE
 
-$EMD init test --chain-id=test --home="$EMD_NODE" --overwrite
+REUSE_CHAIN_ID=localnet_reuse
+
+$EMD init "$REUSE_CHAIN_ID" --chain-id="$REUSE_CHAIN_ID" --home="$EMD_NODE" --overwrite
 $EMD keys add validator --keyring-backend=test --home="$EMD_NODE"
 $EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home=$EMD_NODE
-$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id=test
+$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id="$REUSE_CHAIN_ID"
 
 # create genesis emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t to set the authority later
 AUTH_SEED="fuel public electric luxury short upper quit edge ginger need olive gesture time useful stadium exhaust since team pond wool type flat focus narrow"
