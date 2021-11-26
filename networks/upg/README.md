@@ -19,6 +19,7 @@ Two new docker images defined in em-ledger/networks/docker:
 
 Note these scripts at **em-ledger/networks/upg**:
 * `README.md` (this doc)
+* `create-zip` initializes a v42 emd node, schedules an upgrade for a handler named `v44-upg-test` at block height 8, kills the node and zips the genesis, config files. 
 * `initchain` initializes genesis, authority for an em-legder chain.
 * `startcv` (starts emoney node with cosmovisor): `cosmovisor start --home=.emd`
 * `start-full-cv` runs `initchain && startcv` for testing the upgrade process to the chain with same sdk version without running migrations.

@@ -3,7 +3,7 @@
 # ensure ../../build/emd is the binary you want to generate the intended sdk
 # genesis versioned config files and db and build args i.e. fast-consensus
 
-set -ev
+set -e
 
 rm -rf .emd
 
@@ -13,18 +13,22 @@ rm -rf .emd
 # generate ~2 blocks
 sleep 5
 
+EMD=$PWD/.emd/cosmovisor/current/bin/emd
+
+$EMD tx authority schedule-upgrade authoritykey v44-upg-test --upgrade-height 8 --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id localnet_reuse --keyring-backend test
+
+sleep 1
+
 # stop emd to back it up
 killall -q emd
 
-SDK_VERSION=$(../../build/emd version --long | sed -rn 's/cosmos_sdk_version:\s+(\S+)/\1/p')
-
-ZIP_FILE=/tmp/"$SDK_VERSION".zip
+ZIP_FILE=/tmp/v0.42.zip
 
 zip "$ZIP_FILE" -r .emd
 
 # delete binary files from the zip
 zip --delete "$ZIP_FILE" ".emd/cosmovisor/genesis/bin/emd"
-zip --delete "$ZIP_FILE" ".emd/cosmovisor/current/bin/emd"
+zip --delete "$ZIP_FILE" ".emd/cosmovisor/current/*"
 zip --delete "$ZIP_FILE" ".emd/cosmovisor/upgrades/test-upg-0.2.0/bin/emd"
 
-echo created "$ZIP_FILE".
+printf "Created %s\n" "$ZIP_FILE"
