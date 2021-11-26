@@ -23,7 +23,6 @@ Note these scripts at **em-ledger/networks/upg**:
 * `startcv` (starts emoney node with cosmovisor): `cosmovisor start --home=.emd`
 * `start-full-cv` runs `initchain && startcv` for testing the upgrade process to the chain with same sdk version without running migrations.
 * `upg-sched` schedule an upgrade by passing the upgrade block height 
-* `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
 * `upgvfunc.txt` Go snippet text inserted for same chain upgrade in app.go. Enables the bdd upgrade test. No migration run.
 * `cpemd` Set up the cosmovisor upgrade file folder tree. 
 
