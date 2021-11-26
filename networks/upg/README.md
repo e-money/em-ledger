@@ -6,8 +6,9 @@ Please note if you'd rather test the upgrade module within the **e-money local-t
 
 ```shell
 cd em-ledger
-make build-docker
-make build-all
+make build-docker # use make build-docker-f if changing sdk versions
+make clean
+make build-fast-consensus
 go test -v --tags="bdd" bdd_test.go upgrade_test.go
 ```
 

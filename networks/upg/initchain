@@ -45,6 +45,7 @@ rm -rf "$EMD_NODE"/config
 rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
 rm -rf "$EMD_NODE"/cosmovisor/current
+rm -rf "$EMD_NODE"/cosmovisor/upgrades
 
 ./cpemd"$1"
 
@@ -52,7 +53,7 @@ $EMD unsafe-reset-all --home=$EMD_NODE
 
 REUSE_CHAIN_ID=localnet_reuse
 
-$EMD init "$REUSE_CHAIN_ID" --chain-id="$REUSE_CHAIN_ID" --home="$EMD_NODE" --overwrite
+$EMD init test --chain-id="$REUSE_CHAIN_ID" --home="$EMD_NODE" --overwrite
 $EMD keys add validator --keyring-backend=test --home="$EMD_NODE"
 $EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home=$EMD_NODE
 $EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id="$REUSE_CHAIN_ID"
