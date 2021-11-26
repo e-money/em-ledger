@@ -22,7 +22,7 @@ cosmovisor start --home="$DAEMON_HOME" &
 
 sleep 10
 
-# killall -q cosmovisor
+killall -q cosmovisor
 
 echo ''
 echo ''
