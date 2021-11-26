@@ -30,12 +30,6 @@ export DAEMON_NAME=emd
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export DAEMON_RESTART_AFTER_UPGRADE=true
 
-# optionally uncomment to copy future upgrade binary in location if
-# auto-downloading is not available as a primary or none at all
-# by default we assume it is on and the upgrade binary is not available
-# locally: DAEMON_RESTART_AFTER_UPGRADE=true
-#./cpupgemd
-
 EMD_NODE=$PWD/.emd
 EMD=../../build/emd
 
@@ -52,12 +46,14 @@ else
   ./cpemd"$1"
 fi
 
-$EMD unsafe-reset-all --home=$EMD_NODE
+$EMD unsafe-reset-all --home="$EMD_NODE"
 
-$EMD init test --chain-id=test --home="$EMD_NODE" --overwrite
+REUSE_CHAIN_ID=localnet_reuse
+
+$EMD init "$REUSE_CHAIN_ID" --chain-id="$REUSE_CHAIN_ID" --home="$EMD_NODE" --overwrite
 $EMD keys add validator --keyring-backend=test --home="$EMD_NODE"
-$EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home=$EMD_NODE
-$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id=test
+$EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home="$EMD_NODE"
+$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id="$REUSE_CHAIN_ID"
 
 # create genesis emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t to set the authority later
 AUTH_SEED="fuel public electric luxury short upper quit edge ginger need olive gesture time useful stadium exhaust since team pond wool type flat focus narrow"
