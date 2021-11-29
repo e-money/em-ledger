@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ev
+set -ex
 
 usage() {
   echo "Usage: $0 chain-arg"
@@ -38,7 +38,6 @@ EMD=../../build/emd
 rm -rf "$EMD_NODE"/config
 rm -rf "$EMD_NODE"/data
 rm -rf "$EMD_NODE"/keyring-test
-rm -rf "$EMD_NODE"/cosmovisor/current
 
 if [ "$1" -eq 0 ]; then
   ./cpemd
