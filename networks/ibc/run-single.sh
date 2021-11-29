@@ -9,4 +9,4 @@ set -xe
 killall -q cosmovisor || echo > /dev/null 2>&1
 ./gm stop
 
-echo "The relay test completed successfully!"
+echo "$(tput setaf 6)The relay test completed successfully!$(tput sgr 0)"
