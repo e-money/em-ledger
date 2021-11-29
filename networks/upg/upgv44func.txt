@@ -10,7 +10,7 @@
 			func(ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
                 // set max expected block time parameter. Replace the default with your expected value
                 // https://github.com/cosmos/ibc-go/blob/release/v1.0.x/docs/ibc/proto-docs.md#params-2
-				app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.DefaultParams())
+				app.ibcKeeper.ConnectionKeeper.SetParams(ctx, ibcconnectiontypes.NewParams(uint64(time.Minute))
 
 				fromVM := make(map[string]uint64)
 				for moduleName := range app.mm.Modules {
