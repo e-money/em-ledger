@@ -1,59 +1,42 @@
-#!/bin/bash
+#!/bin/sh
 
 # This resets the .emd/chain genesis, configuration files i.e., app.toml to v42
 #
 # Instructions to test v42 upgrade to v44
 #
 # modify emd
-# cd networks/docker
-# docker build test-upg --build-arg branch=v44-upgrade --build-arg version=v44-upg-test --tag emoney/test-upg --no-cache
+# make build-docker-f
 # cd -
 # make clean
 # make build-fast-consensus
 
-# cd networks/upg
-# ./resetv42
-# ./startcv
 # an upgrade should take place immediately
-set -ev
+set -ex
+
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
 
 EMD_NODE=$PWD/.emd
+EMD=../../build/emd
 
-./initchain "44"
+# do not do this in production
+# do not delete cosmovisor if it exists
+rm -rf "$EMD_NODE"/config
+rm -rf "$EMD_NODE"/data
+rm -rf "$EMD_NODE"/keyring-test
+
+./cpemd44
 
 # v42 chain state files scheduled to upgrade to v44
 unzip -o ../upg/v42-v44.zip
 
 # Check platform
-UNAME_STR=$(uname)
-
-if [ "$UNAME_STR" = 'Linux' ]; then
-  sed -i 's#"172800"#"200"#g' $EMD_NODE/config/genesis.json
-  sed -i 's/timeout_commit = "500ms"/timeout_commit = "1s"/g' $EMD_NODE/config/config.toml
-  sed -i 's/timeout_propose = "2s"/timeout_propose = "1s"/g' $EMD_NODE/config/config.toml
-  sed -i 's/index_all_keys = false/index_all_keys = true/g' $EMD_NODE/config/config.toml
-else
-  sed -i '' 's#"172800"#"200"#g' $EMD_NODE/config/genesis.json
-  sed -i '' 's/timeout_commit = "500ms"/timeout_commit = "1s"/g' $EMD_NODE/config/config.toml
-  sed -i '' 's/timeout_propose = "2s"/timeout_propose = "1s"/g' $EMD_NODE/config/config.toml
-  sed -i '' 's/index_all_keys = false/index_all_keys = true/g' $EMD_NODE/config/config.toml
-fi
-
+#unamestr=$(uname)
 # copy the v44 upgrade build binary
-if [ "$UNAME_STR" = 'Linux' ]; then
-  cp ../../build/emdupg-linux ./.emd/cosmovisor/upgrades/v44-upg-test/bin
-else
-  cp ../../build/emdupg ./.emd/cosmovisor/upgrades/v44-upg-test/bin
-fi
-
-# e-money node 0 ports
-#      - "26656-26657:26656-26657"
-#      - "1317:1317" # rest legacy
-#      - "9090:9090" # grpc query
-
-export DAEMON_NAME=emd
-export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
-export DAEMON_RESTART_AFTER_UPGRADE=true
-export DAEMON_HOME=$PWD/.emd
-
-cosmovisor start --home="$DAEMON_HOME" || echo > /dev/null 2>&1
+#if [ "$unamestr" = 'Linux' ]; then
+#  cp ../../build/emdupg-linux ./.emd/cosmovisor/upgrades/v44-upg-test/bin
+#else
+#  cp ../../build/emdupg ./.emd/cosmovisor/upgrades/v44-upg-test/bin
+#fi

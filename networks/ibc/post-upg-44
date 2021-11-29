@@ -1,0 +1,18 @@
+#!/bin/bash
+# Run post the upgrade to confirm upgraded values
+set -e
+
+EMD=.emd/cosmovisor/current/bin/emd
+
+UPG_PLAN="44-upg-test"
+
+echo ''
+
+if "$EMD" version 2>&1 > /dev/null | grep -q "$UPG_PLAN"; then
+    # font of blue color
+    echo "the v42 to v44 chain upgrade $(tput setaf 9)succeeded!$(tput sgr 0)"
+else
+    # font of red color
+    echo "the chain upgrade $(tput setaf 9)failed!$(tput sgr 0)"
+    exit 1;
+fi
