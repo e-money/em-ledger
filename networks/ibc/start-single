@@ -38,6 +38,7 @@ fi
 
 # Nuclear Reset of Gaia
 killall -q gaiad || echo > /dev/null 2>&1
+sleep 1
 rm -rf $GAIA_DATA
 
 $GM reset
@@ -52,7 +53,7 @@ $GM hermes keys
 #      - "9090:9090" # grpc query
 
 # start emd
-killall -q cosmovisor
+killall -q cosmovisor || echo > /dev/null 2>&1
 ./start-upg-cv
 ./emkey-2-hermes.sh ./emoney-config.toml localnet_reuse
 
@@ -95,14 +96,17 @@ function try_conn() {
   local dst="$1"
   local src="$2"
 
-  # try 4 times to establish a connection
-  tries=4
-  sleep 7
+  sec_sleep=10
+
+  # try x times to establish a connection
+  tries=20
+  sleep $sec_sleep
+
 
   for (( i = 0; i < tries; i++ )); do
-    echo attempt "$i" to conn-try
+    echo "$(tput setaf 9)attempt $i to conn-try$(tput sgr 0)"
     if ! hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID ; then
-      sleep 7
+      sleep $sec_sleep
       continue
     fi
 

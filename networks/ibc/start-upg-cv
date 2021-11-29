@@ -11,7 +11,7 @@ export DAEMON_HOME=$PWD/.emd
 # reset chain genesis, app.toml etc to v42
 ./resetv42
 
-cosmovisor start --home="$DAEMON_HOME" --log_level error &
+cosmovisor start --home="$DAEMON_HOME" --log_level panic &
 
 sleep 10
 
