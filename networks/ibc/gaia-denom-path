@@ -28,4 +28,4 @@ if [ "$#" -gt 1 ]; then
   usage
 fi
 
-gaiad q ibc-transfer denom-trace "$1" --node tcp://localhost:26757
+gaiad q ibc-transfer denom-trace "$1" --node tcp://localhost:26657 --home ./gaia
