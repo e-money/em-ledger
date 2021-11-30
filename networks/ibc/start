@@ -19,12 +19,12 @@ fi
 
 # Ensure gaiad is installed
 if ! [ -x "$(which gaiad)" ]; then
-  echo "Error: gaiad is not installed. Install v5.0.5+ or clone github.com/cosmos/gaia and 'make build-gaia'" >&2
+  echo "Error: gaiad is not installed. Install v5.0.8+ or clone github.com/cosmos/gaia and 'make build-gaia'" >&2
   exit 1
 fi
 
 # Display software version
-echo "Requiring v5.0.5+, checking..."
+echo "Requiring v5.0.8+, checking..."
 echo "GAIA VERSION INFO: $(gaiad version --log_level info)"
 
 # Ensure user understands what will be deleted
@@ -102,7 +102,19 @@ function try_conn() {
   local dst="$1"
   local src="$2"
 
-  hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID
+  # try 4 times to establish a connection
+  tries=4
+  sleep 7
+
+  for (( i = 0; i < tries; i++ )); do
+    echo attempt "$i" to conn-try
+    if ! hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID ; then
+      sleep 7
+      continue
+    fi
+
+    break
+  done
 }
 
 function chan_init() {
@@ -126,7 +138,7 @@ client_update $GAIA_ID
 conn_init $EMONEY_CHAIN_ID $GAIA_ID
 
 #----------------- connection try
-hermes -c ./emoney-config.toml tx raw conn-try $GAIA_ID $EMONEY_CHAIN_ID $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID
+try_conn $GAIA_ID $EMONEY_CHAIN_ID
 
 #----------------- connection ack
 hermes -c ./emoney-config.toml tx raw conn-ack $EMONEY_CHAIN_ID $GAIA_ID $CLIENT_ID $CLIENT_ID -d $CONNECTION_ID -s $CONNECTION_ID

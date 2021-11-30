@@ -7,9 +7,12 @@ SCRIPT_0="${0:-$HOME/.gm/bin/gm}"
 export SCRIPT_DIR="${SCRIPT_0%%gm}"
 export LOCAL_LIB_GM="${SCRIPT_DIR}lib-gm"
 if [ -f "$LOCAL_LIB_GM" ]; then
+  # shellcheck source=lib-gm
   . "$LOCAL_LIB_GM"
 elif [ -f "$HOME/.gm/bin/lib-gm" ]; then
   . "$HOME/.gm/bin/lib-gm"
+elif [ -f "${LIB_GM:-}" ]; then
+  . "$LIB_GM"
 else
   echo "ERROR: could not find lib-gm, exiting..."
   exit 1
@@ -32,13 +35,12 @@ install     install the script for the local user
 keys        print the keys of validator nodes
 log         print the log of a node
 ports       print the ports of a (running) node
-conf        generate the node bootstrapping genesis and metadata configuration files for one or more nodes (configures all nodes if no parameter is given)
 start       start one or more nodes (starts all nodes if no parameter is given)
 status      print the status of nodes
 stop        stop one or more nodes (stops all nodes if no parameter is given)
-reset       reset one or more nodes' database (resets all nodes if no parameter is given)"
-rm          delete the configuration of a node"
-version     print the application version"
+reset       reset one or more nodes' database (resets all nodes if no parameter is given)
+rm          delete the configuration of a node
+version     print the application version
 
 EOF
 }
@@ -59,6 +61,19 @@ keys         add keys to $HOME/.hermes
 
 EOF
 }
+
+if [ "${OUTPUT:-}" == "json" ]; then
+  case "${1:-version}" in
+    version)
+      version
+      exit 0
+      ;;
+    *)
+      exit_with_error "not implemented"
+      exit 1
+      ;;
+  esac
+fi
 
 case "${1:-help}" in
   help)
@@ -94,7 +109,7 @@ case "${1:-help}" in
         ;;
       *)
         hermes_usage
-        exit_with_error "could not understand the command hermes \"$1\""
+        exit_with_error "could not understand the command hermes '$1'"
         ;;
     esac
     ;;
@@ -174,27 +189,7 @@ case "${1:-help}" in
     ;;
   ss)
     # For debug purposes
-    # Todo: either make this a supported command or remove it
-    lsof -i4:27000-28000 -P
-    ;;
-  conf)
-    parse_config_file
-    if [ $# -eq 1 ]; then
-      NODES_TO_START="$ALL_NODES"
-    else
-      shift
-      NODES_TO_START="$*"
-    fi
-    for i in $NODES_TO_START
-    do
-      warn_unknown_node "$i" || continue
-      if [ ! -d "$(get_home_dir "$i")" ]; then
-        create "$i" || continue
-      fi
-      if get_auto_maintain_config "$i"; then
-        configure "$i"
-      fi
-    done
+    (which lsof && lsof -i:27000-28000 -P) || (which ss && ss -tulpn sport '>=' :27000 '&&' sport '<=' :28000) || (which netstat && netstat -tulpn) || echo "ERROR: no app found to list open ports"
     ;;
   start)
     parse_config_file
@@ -270,6 +265,6 @@ case "${1:-help}" in
     ;;
   *)
     usage
-    exit_with_error "could not understand the command \"$1\""
+    exit_with_error "could not understand the command '$1'"
     ;;
 esac
