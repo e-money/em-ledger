@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# This resets the .emd/chain genesis, configuration files i.e., app.toml to v42
+#
+
+# an upgrade should take place immediately
+set -ex
+
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+
+EMD_NODE=$PWD/.emd
+EMD=../../build/emd
+
+# do not do this in production
+# do not delete cosmovisor if it exists
+rm -rf "$EMD_NODE"/config
+rm -rf "$EMD_NODE"/data
+rm -rf "$EMD_NODE"/keyring-test
+
+./cpemd42
+
+# v42 chain state files scheduled to upgrade to v44
+unzip -o ../ibc/v42-v42.zip
+
+# Check platform
+#unamestr=$(uname)
+# copy the v42 upgrade build binary
+#if [ "$unamestr" = 'Linux' ]; then
+#  cp ../../build/emdupg-linux ./.emd/cosmovisor/upgrades/test-upg-0.2.0/bin
+#else
+#  cp ../../build/emdupg ./.emd/cosmovisor/upgrades/test-upg-0.2.0/bin
+#fi

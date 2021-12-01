@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e
+
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+export DAEMON_RESTART_AFTER_UPGRADE=true
+export DAEMON_HOME=$PWD/.emd
+
+# reset chain genesis, app.toml etc to v42
+./resetv42
+
+cosmovisor start --home="$DAEMON_HOME" --log_level panic &
+
+sleep 10
+
+echo ''
+echo ''
+echo ''
+echo '------------------------------------------------'
+echo 'Check for the final success message that follows'
+echo '------------------------------------------------'
+echo ''
+echo ''
+./post-upg
