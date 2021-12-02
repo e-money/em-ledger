@@ -331,15 +331,29 @@ func NewApp(
 					fromVM[moduleName] = 1
 				}
 
+				// EXCEPT Auth needs to run _after_ staking (https://github.com/cosmos/cosmos-sdk/issues/10591),
+				// and it seems bank as well (https://github.com/provenance-io/provenance/blob/407c89a7d73854515894161e1526f9623a94c368/app/upgrades.go#L86-L122).
+				// So we do this by making auth run last.
+				// This is done by setting auth's consensus version to 2, running RunMigrations,
+				// then setting it back to 1, and then running migrations again.
+				fromVM[authtypes.ModuleName] = 2
+
 				// override versions for _new_ modules as to not skip InitGenesis
 				fromVM[authz.ModuleName] = 0
 				fromVM[feegrant.ModuleName] = 0
 
 				ctx.Logger().Info("Upgrading to " + upg44Plan)
 
-				return app.mm.RunMigrations(ctx, app.configurator, fromVM)
-			},
-		)
+				newVM, err := app.mm.RunMigrations(ctx, app.configurator, fromVM)
+				if err != nil {
+					return nil, err
+				}
+
+				// now update auth version back to v1, to run auth migration last
+				newVM[authtypes.ModuleName] = 1
+
+				return app.mm.RunMigrations(ctx, app.configurator, newVM)
+			})
 
 		upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
 		if err != nil {
