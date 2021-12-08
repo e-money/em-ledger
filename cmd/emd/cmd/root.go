@@ -59,9 +59,12 @@ func NewRootCmd() (*cobra.Command, emoney.EncodingConfig) {
 		Use:   "emd",
 		Short: "e-money app",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			initClientCtx = client.ReadHomeFlag(initClientCtx, cmd)
+			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
 
-			initClientCtx, err := createDefaultConfig(initClientCtx)
+			initClientCtx, err = createDefaultConfig(initClientCtx)
 			if err != nil {
 				return err
 			}
