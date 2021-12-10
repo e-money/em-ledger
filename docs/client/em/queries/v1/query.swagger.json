@@ -22,7 +22,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
@@ -44,7 +44,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
@@ -53,6 +53,37 @@
         "parameters": [
           {
             "name": "address",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/e-money/slashing/v1/missedblocks/{cons_address}": {
+      "get": {
+        "operationId": "MissedBlocks",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/em.queries.v1.QueryMissedBlocksResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cons_address",
+            "description": "cons_address is the address to query the missed blocks signing info",
             "in": "path",
             "required": true,
             "type": "string"
@@ -77,6 +108,24 @@
       },
       "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
     },
+    "em.queries.v1.MissedBlocksInfo": {
+      "type": "object",
+      "properties": {
+        "cons_address": {
+          "type": "string"
+        },
+        "missed_blocks_counter": {
+          "type": "string",
+          "format": "int64",
+          "title": "missed blocks counter (to avoid scanning the array every time)"
+        },
+        "total_blocks_counter": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "ValidatorSigningInfo defines a validator's missed blocks info."
+    },
     "em.queries.v1.QueryCirculatingResponse": {
       "type": "object",
       "properties": {
@@ -85,6 +134,15 @@
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           }
+        }
+      }
+    },
+    "em.queries.v1.QueryMissedBlocksResponse": {
+      "type": "object",
+      "properties": {
+        "missed_blocks_info": {
+          "$ref": "#/definitions/em.queries.v1.MissedBlocksInfo",
+          "title": "val_signing_info is the signing info of requested val cons address"
         }
       }
     },
