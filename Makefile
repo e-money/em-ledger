@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf:1.0.0-rc8
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/e-money/em-ledger.git
 PROJECT_NAME = $(shell git remote get-url origin | xargs basename -s .git)
 
@@ -102,7 +102,7 @@ build:
 	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
 
 cosmovisor:
-	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
+	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0
 
 lint:
 	golangci-lint run
