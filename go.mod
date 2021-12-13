@@ -3,12 +3,8 @@ module github.com/e-money/em-ledger
 go 1.15
 
 require (
-<<<<<<< HEAD
-	github.com/cosmos/cosmos-sdk v0.42.9
-=======
 	github.com/containerd/continuity v0.1.0 // indirect
 	github.com/cosmos/cosmos-sdk v0.42.11
->>>>>>> e7b13c3 (Upgrade Cosmos SDK to v42.11)
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
@@ -27,15 +23,10 @@ require (
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tidwall/gjson v1.9.3
 	github.com/tidwall/sjson v1.0.4
-<<<<<<< HEAD
-	google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f
-	google.golang.org/grpc v1.37.0
-	google.golang.org/protobuf v1.26.0
-=======
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
 	google.golang.org/grpc v1.42.0
+	google.golang.org/protobuf v1.27.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
->>>>>>> e7b13c3 (Upgrade Cosmos SDK to v42.11)
 )
 
 // https://docs.cosmos.network/v0.41/core/grpc_rest.html#grpc-server
@@ -43,9 +34,4 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
-<<<<<<< HEAD
-replace github.com/cosmos/cosmos-sdk => github.com/e-money/cosmos-sdk v0.42.10-rc1
-
-=======
->>>>>>> e7b13c3 (Upgrade Cosmos SDK to v42.11)
 // replace github.com/e-money/bep3 => ../bep3
