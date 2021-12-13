@@ -1,8 +1,30 @@
+#!/usr/bin/make -f
+
+DOCKER := $(shell which docker)
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+HTTPS_GIT := https://github.com/e-money/em-ledger.git
+PROJECT_NAME = $(shell git remote get-url origin | xargs basename -s .git)
+
 export GO111MODULE=on
 
-VERSION = $(shell echo $(shell git describe --tags) | sed 's/^v//')
-COMMIT  = $(shell git log -1 --format='%H')
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT  := $(shell git log -1 --format='%H')
+
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --exact-match 2>/dev/null)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
 LEDGER_ENABLED ?= true
+SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
+TM_VERSION := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::') # grab everything after the space
+DOCKER := $(shell which docker)
+SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
+BUILDDIR ?= $(CURDIR)/build
 FAST_CONSENSUS ?= false
 
 # process build tags
@@ -30,6 +52,9 @@ ifeq ($(LEDGER_ENABLED),true)
   endif
 endif
 
+ifeq (cleveldb,$(findstring cleveldb,$(EM_BUILD_OPTIONS)))
+  build_tags += gcc cleveldb
+endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 
@@ -43,14 +68,35 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=e-money \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=emd \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
-
+		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
+		  -X github.com/tendermint/tendermint/version.TMCoreSemVer=$(TM_VERSION)
 
 ifeq ($(FAST_CONSENSUS),true)
 	ldflags += -X github.com/e-money/em-ledger/cmd/emd/cmd.CreateEmptyBlocksInterval=2s
 endif
 
+ifeq (cleveldb,$(findstring cleveldb,$(EM_BUILD_OPTIONS)))
+  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
+endif
+ifeq (,$(findstring nostrip,$(EM_BUILD_OPTIONS)))
+  ldflags += -w -s
+endif
+ldflags += $(LDFLAGS)
+ldflags := $(strip $(ldflags))
+
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
+# check for nostrip option
+ifeq (,$(findstring nostrip,$(EM_BUILD_OPTIONS)))
+  BUILD_FLAGS += -trimpath
+endif
+
+#Print flags when needed
+#$(info $$BUILD_FLAGS -> [$(BUILD_FLAGS)])
+#$(info )
+#$(info $$ldflags -> [$(ldflags)])
+#$(info )
+#$(info $$EM_BUILD_OPTIONS -> [$(EM_BUILD_OPTIONS)])
+#$(info )
 
 build:
 	go build $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
@@ -71,6 +117,18 @@ imp:
 
 install:
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/emd
+
+build-reproducible: go.sum
+	$(DOCKER) pull tendermintdev/rbuilder:latest
+	$(DOCKER) rm latest-build || true
+	$(DOCKER) run --volume=$(CURDIR):/sources:ro \
+        --env TARGET_PLATFORMS='linux/amd64 darwin/amd64 linux/arm64' \
+        --env APP=emd \
+        --env VERSION=$(VERSION) \
+        --env COMMIT=$(COMMIT) \
+        --env LEDGER_ENABLED=$(LEDGER_ENABLED) \
+        --name latest-build tendermintdev/rbuilder:latest
+	$(DOCKER) cp -a latest-build:/home/builder/artifacts/ $(CURDIR)/
 
 build-linux:
 	# Linux images for docker-compose
@@ -94,7 +152,7 @@ run-single-node: clean
 	go run cmd/daemon/*.go start
 
 test:
-	go test ./...
+	go test -mod=readonly ./...
 
 bdd-test:
 	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go market_test.go buyback_test.go capacity_test.go staking_test.go upgrade_test.go
@@ -113,7 +171,7 @@ local-testnet-reset:
 	./build/emd unsafe-reset-all --home build/node3/
 
 clean:
-	rm -rf ./build ./data ./config
+	rm -rf $(BUILDDIR)/ artifacts/
 
 ##################### upgrade artifacts
 build/cosmovisor:
@@ -145,14 +203,20 @@ license:
 ###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
-DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+
+protoVer=v0.2
+protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
+containerProtoGen=$(PROJECT_NAME)-proto-gen-$(protoVer)
+containerProtoGenAny=$(PROJECT_NAME)-proto-gen-any-$(protoVer)
+containerProtoGenSwagger=$(PROJECT_NAME)-proto-gen-swagger-$(protoVer)
+containerProtoFmt=$(PROJECT_NAME)-proto-fmt-$(protoVer)
 
 proto-all: proto-format proto-lint proto-gen proto-swagger-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen sh ./scripts/protocgen.sh
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protocgen.sh; fi
 
 proto-format:
 	@echo "Formatting Protobuf files"
@@ -161,7 +225,9 @@ proto-format:
 	find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 
 proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
+	@echo "Generating Protobuf Swagger"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGenSwagger}$$"; then docker start -a $(containerProtoGenSwagger); else docker run --name $(containerProtoGenSwagger) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protoc-swagger-gen.sh; fi
 
 proto-lint:
 	@$(DOCKER_BUF) lint --error-format=json
