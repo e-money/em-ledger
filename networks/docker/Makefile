@@ -25,7 +25,7 @@ test-upg-f:
 	docker build test-upg --build-arg branch=$$(git rev-parse --abbrev-ref HEAD) --build-arg version=test-upg-0.2.0 --tag emoney/test-upg --no-cache
 
 v44:
-	docker build test-v44 --build-arg branch=v44 --build-arg version=v44-upg-test --tag emoney/test-v44
+	docker build test-v44 --build-arg branch=v44 --build-arg version=v44-upg-test --tag emoney/test-v44 --no-cache
 
 # todo (reviewer): please note the rest-server is not a command anymore. Please enable `api` section in `app.toml` instead
 
