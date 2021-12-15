@@ -103,8 +103,8 @@ function try_conn() {
   local src="$2"
 
   # try 4 times to establish a connection
-  tries=4
-  sleep 7
+  tries=10
+  sleep 10
 
   for (( i = 0; i < tries; i++ )); do
     echo attempt "$i" to conn-try
