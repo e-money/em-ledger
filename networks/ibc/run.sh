@@ -8,4 +8,4 @@ set -xe
 
 ./gm stop
 
-echo "The relay test completed successfully!"
+echo "$(tput setaf 6)The relay test completed successfully!$(tput sgr 0)"

@@ -102,14 +102,14 @@ function try_conn() {
   local dst="$1"
   local src="$2"
 
-  # try 4 times to establish a connection
+  # try enough times to establish a connection
   tries=10
   sleep 10
 
   for (( i = 0; i < tries; i++ )); do
     echo attempt "$i" to conn-try
     if ! hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID ; then
-      sleep 7
+      sleep 10
       continue
     fi
 
