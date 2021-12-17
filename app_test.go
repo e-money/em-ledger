@@ -8,9 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -20,9 +17,13 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	typescli "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	"github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
 	ibctesting "github.com/cosmos/ibc-go/v2/testing"
 	apptypes "github.com/e-money/em-ledger/types"
@@ -104,41 +105,12 @@ func mustGetEmApp(authorityAcc sdk.AccAddress) (
 }
 
 func init() {
-	ibctesting.DefaultTestingAppInit = getIBCApp
-}
-
-type emIBCApp struct {
-	*EMoneyApp
-	encCfg EncodingConfig
+	ibctesting.DefaultTestingAppInit = createIBCApp
 }
 
 var tempDirs = make([]string, 0, 2)
 
-func (app emIBCApp) GetBaseApp() *baseapp.BaseApp {
-	return app.BaseApp
-}
-
-func (app emIBCApp) GetStakingKeeper() stakingkeeper.Keeper {
-	return app.stakingKeeper
-}
-
-func (app emIBCApp) GetIBCKeeper() *ibckeeper.Keeper {
-	return app.ibcKeeper
-}
-
-func (app emIBCApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
-	return app.scopedIBCKeeper
-}
-
-func (app emIBCApp) GetTxConfig() client.TxConfig {
-	return app.encCfg.TxConfig
-}
-
-func (app emIBCApp) AppCodec() codec.Codec {
-	return app.appCodec
-}
-
-func createIBCApp() (emIBCApp emIBCApp, genesis map[string]json.RawMessage) {
+func createIBCApp() (emIBCApp ibctesting.TestingApp, genesis map[string]json.RawMessage) {
 	var _ ibctesting.TestingApp = emIBCApp
 
 	//configOnce.Do(apptypes.ConfigureSDK)
@@ -146,7 +118,7 @@ func createIBCApp() (emIBCApp emIBCApp, genesis map[string]json.RawMessage) {
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 
-	emIBCApp.encCfg = MakeEncodingConfig()
+	encCfg := MakeEncodingConfig()
 	db := dbm.NewMemDB()
 	homeDir, err := os.MkdirTemp("/tmp", "chain-")
 	if err != nil {
@@ -155,22 +127,17 @@ func createIBCApp() (emIBCApp emIBCApp, genesis map[string]json.RawMessage) {
 	tempDirs = append(tempDirs, homeDir)
 	logger.Info(fmt.Sprintf("home dir:%s", homeDir))
 
-	emIBCApp.EMoneyApp = NewApp(
+	app := NewApp(
 		log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true,
-		map[int64]bool{}, homeDir, 5, emIBCApp.encCfg, EmptyAppOptions{},
+		map[int64]bool{}, homeDir, 5, encCfg, EmptyAppOptions{},
 	)
 
-	genesisState := ModuleBasics.DefaultGenesis(emIBCApp.encCfg.Marshaler)
+	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
 	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
 
-	genesisState["authority"] = emIBCApp.encCfg.Marshaler.MustMarshalJSON(&authorityState)
+	genesisState["authority"] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
 
-	return emIBCApp, genesisState
-}
-
-// Bridge the concrete type returning function with the interface returning func
-func getIBCApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
-	return createIBCApp()
+	return app, genesisState
 }
 
 // IBCTestSuite is a testing suite to test keeper functions.
@@ -212,6 +179,86 @@ func (suite *IBCTestSuite) TestTransfer() {
 	//suite.coordinator.Setup(path)
 	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
 
+}
+
+// GetBaseApp implements the TestingApp interface.
+func (app EMoneyApp) GetBaseApp() *baseapp.BaseApp {
+	return app.BaseApp
+}
+
+// GetStakingKeeper implements the TestingApp interface.
+func (app EMoneyApp) GetStakingKeeper() stakingkeeper.Keeper {
+	return app.stakingKeeper
+}
+
+// GetIBCKeeper implements the TestingApp interface.
+func (app *EMoneyApp) GetIBCKeeper() *ibckeeper.Keeper {
+	return app.ibcKeeper
+}
+
+// GetScopedIBCKeeper implements the TestingApp interface.
+func (app *EMoneyApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
+	return app.scopedIBCKeeper
+}
+
+// GetTxConfig implements the TestingApp interface.
+func (app EMoneyApp) GetTxConfig() client.TxConfig {
+	return app.txConfig
+}
+
+func init() {
+	ibctesting.DefaultTestingAppInit = createIBCApp
+}
+
+func (suite *IBCTestSuite) PathRelay() {
+	path := NewTransferPath(suite.chainA, suite.chainB) // clientID, connectionID, channelID empty
+	suite.coordinator.Setup(path)                       // clientID, connectionID, channelID filled
+	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
+	suite.Require().Equal("connection-0", path.EndpointA.ClientID)
+	suite.Require().Equal("channel-0", path.EndpointA.ClientID)
+
+	timeoutHeight := typescli.NewHeight(0, 100)
+	timeoutTimestamp := uint64(100)
+
+	// create packet 1
+	packet1 := types.NewPacket([]byte("packet1"), 1, ibctesting.TransferPort, path.EndpointA.ChannelID, ibctesting.TransferPort, path.EndpointB.ChannelID, timeoutHeight, timeoutTimestamp)
+
+	// send on endpointA
+	err := path.EndpointA.SendPacket(packet1)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// receive on endpointB
+	err = path.EndpointB.RecvPacket(packet1)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// acknowledge the receipt of the packet
+	err = path.EndpointA.AcknowledgePacket(packet1, []byte("Ack"))
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// we can also relay
+	packet2 := types.NewPacket([]byte("packet2"), 2, ibctesting.TransferPort, path.EndpointB.ChannelID, ibctesting.TransferPort, path.EndpointA.ChannelID, timeoutHeight, timeoutTimestamp)
+
+	err = path.EndpointA.SendPacket(packet2)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	err = path.RelayPacket(packet2, []byte("Ack"))
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// if needed we can update our clients
+	err = path.EndpointB.UpdateClient()
+	if err != nil {
+		suite.Require().NoError(err)
+	}
 }
 
 // TestIBCTestSuite runs all the tests within this package.
