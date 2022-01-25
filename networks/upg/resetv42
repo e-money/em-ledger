@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# This resets the .emd/chain genesis, configuration files i.e., app.toml to v42
+#
+# Instructions to test v42 upgrade to v44
+#
+# modify emd
+# cd networks/docker
+# docker build test-upg --build-arg branch=v44-upgrade --build-arg version=v44-upg-test --tag emoney/test-upg --no-cache
+# cd -
+# make clean
+# make build-fast-consensus
+
+# cd networks/upg
+# ./resetv42
+# ./startcv
+# an upgrade should take place immediately
+set -ev
+
+EMD_NODE=$PWD/.emd
+
+./initchain "44"
+
+# v42 chain state files scheduled to upgrade to v44
+unzip -o ./v42-v44.zip
+
+# Check platform
+unamestr=$(uname)
+# copy the v44 upgrade build binary
+if [ "$unamestr" = 'Linux' ]; then
+  cp ../../build/emdupg-linux ./.emd/cosmovisor/upgrades/v44-upg-test/bin
+else
+  cp ../../build/emdupg ./.emd/cosmovisor/upgrades/v44-upg-test/bin
+fi

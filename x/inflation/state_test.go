@@ -5,6 +5,8 @@
 package inflation
 
 import (
+	"github.com/cosmos/cosmos-sdk/types/query"
+	"math"
 	"testing"
 	"time"
 
@@ -37,7 +39,7 @@ func TestModule1(t *testing.T) {
 
 	initialEurAmount, _ := sdk.ParseCoinNormalized("1000000000eur")
 
-	bankKeeper.SetSupply(ctx, banktypes.NewSupply(sdk.Coins{initialEurAmount}))
+	mintBalance(t, ctx, bankKeeper, sdk.Coins{initialEurAmount})
 
 	currentTime := time.Now()
 	ctx = ctx.WithBlockTime(currentTime).WithBlockHeight(55)
@@ -52,7 +54,7 @@ func TestModule1(t *testing.T) {
 		BeginBlocker(ctx, keeper)
 
 		// Inflation of 1% per year on EUR1.000.000.000, each minute should add approximately 19 euro in interest.
-		total := bankKeeper.GetSupply(ctx).GetTotal()
+		total := getTotalSupply(t, ctx, bankKeeper)
 		minted := total.AmountOf("eur").Sub(initialEurAmount.Amount)
 		require.True(t, minted.LT(sdk.NewInt(20).MulRaw(i)))
 	}
@@ -62,7 +64,7 @@ func TestModule1(t *testing.T) {
 func TestModuleDestinations(t *testing.T) {
 	ctx, keeper, bankKeeper, accountKeeper := createTestComponents(t)
 
-	bankKeeper.SetSupply(ctx, banktypes.NewSupply(coins("400000000eur,400000000chf,100000000ungm")))
+	mintBalance(t, ctx, bankKeeper, coins("400000000eur,400000000chf,100000000ungm"))
 
 	currentTime := time.Now()
 	ctx = ctx.WithBlockTime(currentTime).WithBlockHeight(55)
@@ -102,7 +104,7 @@ func TestStartTimeInFuture(t *testing.T) {
 	ctx, keeper, bankKeeper, _ := createTestComponents(t)
 
 	initialEurAmount, _ := sdk.ParseCoinNormalized("1000000000eur")
-	bankKeeper.SetSupply(ctx, banktypes.NewSupply(sdk.NewCoins(initialEurAmount)))
+	mintBalance(t, ctx, bankKeeper, sdk.Coins{initialEurAmount})
 
 	ctx = ctx.WithBlockTime(time.Now()).WithBlockHeight(55)
 
@@ -120,19 +122,19 @@ func TestStartTimeInFuture(t *testing.T) {
 
 	// Inflation should not have started yet.
 	BeginBlocker(ctx, keeper)
-	total := bankKeeper.GetSupply(ctx).GetTotal()
+	total := getTotalSupply(t, ctx, bankKeeper)
 	require.Equal(t, initialEurAmount.Amount.String(), total.AmountOf("eur").String())
 
 	// Not yet
 	ctx = ctx.WithBlockTime(time.Now().Add(time.Hour)).WithBlockHeight(60)
 	BeginBlocker(ctx, keeper)
-	total = bankKeeper.GetSupply(ctx).GetTotal()
+	total = getTotalSupply(t, ctx, bankKeeper)
 	require.Equal(t, initialEurAmount.Amount.String(), total.AmountOf("eur").String())
 
 	// Now it should have started increasing the total supply
 	ctx = ctx.WithBlockTime(time.Now().Add(3 * time.Hour)).WithBlockHeight(65)
 	BeginBlocker(ctx, keeper)
-	total = bankKeeper.GetSupply(ctx).GetTotal()
+	total = getTotalSupply(t, ctx, bankKeeper)
 	require.True(t, initialEurAmount.Amount.LT(total.AmountOf("eur")))
 }
 
@@ -234,4 +236,18 @@ type mockStakingKeeper struct{}
 
 func (m mockStakingKeeper) GetParams(_ sdk.Context) stakingtypes.Params {
 	return stakingtypes.NewParams(5*time.Minute, 40, 50, 0, "ungm")
+}
+
+func getTotalSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper) sdk.Coins {
+	totalSupply, _, err := bk.GetPaginatedTotalSupply(
+		ctx, &query.PageRequest{Limit: math.MaxUint64},
+	)
+	require.NoError(t, err)
+
+	return totalSupply
+}
+
+func mintBalance(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) {
+	err := bk.MintCoins(ctx, ModuleName, supply.Sub(getTotalSupply(t, ctx, bk)))
+	require.NoError(t, err)
 }

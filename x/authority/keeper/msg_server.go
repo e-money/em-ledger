@@ -127,10 +127,9 @@ func (m msgServer) ScheduleUpgrade(
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "authority")
 	}
 
-	if msg.Plan.Time.Unix() != 0 {
+	if err := msg.ValidateBasic(); err != nil {
 		return nil, sdkerrors.Wrap(
-			types.ErrPlanTimeIsSet,
-			fmt.Sprintf("Plan time: %s", msg.Plan.Time.String()),
+			sdkerrors.ErrInvalidRequest, fmt.Sprintf("%v", err),
 		)
 	}
 

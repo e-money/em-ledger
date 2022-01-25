@@ -28,7 +28,7 @@ const (
 )
 
 type Keeper struct {
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 	storeKey sdk.StoreKey
 	lpKeeper lp.Keeper
 	ik       types.InflationKeeper
@@ -36,7 +36,7 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, lpk lp.Keeper,
+	cdc codec.Codec, storeKey sdk.StoreKey, lpk lp.Keeper,
 	ik types.InflationKeeper, bk types.BankKeeper,
 ) Keeper {
 	return Keeper{
@@ -166,13 +166,13 @@ func (k Keeper) GetIssuers(ctx sdk.Context) []types.Issuer {
 	}
 
 	var state types.Issuers
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &state)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &state)
 	return state.Issuers
 }
 
 func (k Keeper) setIssuers(ctx sdk.Context, issuers []types.Issuer) {
 	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&types.Issuers{Issuers: issuers})
+	bz := k.cdc.MustMarshalLengthPrefixed(&types.Issuers{Issuers: issuers})
 	store.Set([]byte(keyIssuerList), bz)
 }
 

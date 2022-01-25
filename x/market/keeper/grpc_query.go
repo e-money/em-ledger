@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/market/types"
@@ -31,7 +32,11 @@ func (k Keeper) Instruments(c context.Context, req *types.QueryInstrumentsReques
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 	ctx := sdk.UnwrapSDKContext(c)
-	return queryInstruments(ctx, &k), nil
+	res, err := queryInstruments(ctx, &k)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrIO, fmt.Sprintf("queryInstruments failed: %v", err))
+	}
+	return res, nil
 }
 
 func (k Keeper) Instrument(c context.Context, req *types.QueryInstrumentRequest) (*types.QueryInstrumentResponse, error) {
@@ -55,7 +60,7 @@ func (k Keeper) Instrument(c context.Context, req *types.QueryInstrumentRequest)
 
 	for it.Valid() {
 		order := new(types.Order)
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
+		k.cdc.MustUnmarshal(it.Value(), order)
 
 		orders = append(orders, types.QueryOrderResponse{
 			ID:              order.ID,
@@ -75,8 +80,11 @@ func (k Keeper) Instrument(c context.Context, req *types.QueryInstrumentRequest)
 	}, nil
 }
 
-func queryInstruments(ctx sdk.Context, k *Keeper) *types.QueryInstrumentsResponse {
-	instruments := k.GetAllInstruments(ctx)
+func queryInstruments(ctx sdk.Context, k *Keeper) (*types.QueryInstrumentsResponse, error) {
+	instruments, err := k.GetAllInstruments(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	response := make([]types.QueryInstrumentsResponse_Element, len(instruments))
 	for i, v := range instruments {
@@ -89,5 +97,5 @@ func queryInstruments(ctx sdk.Context, k *Keeper) *types.QueryInstrumentsRespons
 		}
 	}
 
-	return &types.QueryInstrumentsResponse{Instruments: response}
+	return &types.QueryInstrumentsResponse{Instruments: response}, nil
 }

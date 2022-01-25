@@ -38,7 +38,7 @@ func TestHistoricalInfo(t *testing.T) {
 		validators[i] = teststaking.NewValidator(t, sdk.ValAddress(fmt.Sprintf("validator%v", i)), secp256k1.GenPrivKey().PubKey())
 	}
 
-	hi := types.NewHistoricalInfo(ctx.BlockHeader(), validators)
+	hi := types.NewHistoricalInfo(ctx.BlockHeader(), validators, sdk.DefaultPowerReduction)
 	historyKeeper.SetHistoricalInfo(ctx, 2, &hi)
 
 	batch.WriteSync()
@@ -48,11 +48,15 @@ func TestHistoricalInfo(t *testing.T) {
 	recv, found := historyKeeper.GetHistoricalInfo(ctx, 2)
 	require.True(t, found, "HistoricalInfo not found after set")
 	require.Equal(t, hi, recv, "HistoricalInfo not equal")
-	require.True(t, sort.IsSorted(types.ValidatorsByVotingPower(recv.Valset)), "HistoricalInfo validators is not sorted")
+	valset := validatorSet{
+		Set: types.ValidatorsByVotingPower(recv.Valset),
+	}
+	require.True(t, sort.IsSorted(valset), "HistoricalInfo validators is not sorted")
 
 	historyKeeper.DeleteHistoricalInfo(ctx, 2)
 
-	batch.WriteSync()
+	err := batch.WriteSync()
+	require.NoError(t, err)
 
 	recv, found = historyKeeper.GetHistoricalInfo(ctx, 2)
 	require.False(t, found, "HistoricalInfo found after delete")
@@ -89,6 +93,7 @@ func TestGetAllHistoricalInfo(t *testing.T) {
 }
 
 func setup(t *testing.T) (sdk.Context, db.Batch, db.DB, keeper.HistoryKeeper) {
+	sdk.DefaultPowerReduction = sdk.OneInt()
 	ms := store.NewCommitMultiStore(dbm.NewMemDB())
 	err := ms.LoadLatestVersion()
 	require.NoError(t, err)
@@ -123,4 +128,20 @@ func (m mockStakingKeeper) HistoricalEntries(ctx sdk.Context) uint32 {
 
 func (m mockStakingKeeper) UnbondingTime(ctx sdk.Context) time.Duration {
 	return 24 * 21 * time.Hour
+}
+
+type validatorSet struct {
+	Set types.ValidatorsByVotingPower
+}
+
+func (v validatorSet) Less(i, j int) bool {
+	return v.Set.Less(i, j, sdk.DefaultPowerReduction)
+}
+
+func (v validatorSet) Len() int  {
+	return v.Set.Len()
+}
+
+func (v validatorSet) Swap(i, j int)  {
+	v.Set.Swap(i, j)
 }

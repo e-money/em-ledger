@@ -99,7 +99,7 @@ endif
 #$(info )
 
 build:
-	go build -mod=readonly $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
+	go build $(BUILD_FLAGS) -o build/emd$(BIN_PREFIX) ./cmd/emd
 
 cosmovisor:
 	go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0

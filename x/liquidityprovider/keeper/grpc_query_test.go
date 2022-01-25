@@ -11,6 +11,8 @@ import (
 	"testing"
 )
 
+const legacyAddrLen = 20
+
 func TestQueryList(t *testing.T) {
 	var req = &types.QueryListRequest{}
 
@@ -21,10 +23,10 @@ func TestQueryList(t *testing.T) {
 	)
 	ctx, _, _, keeper := createTestComponents(t, initialSupply)
 
-	accAddr1 := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+	accAddr1 := sdk.AccAddress(rand.Bytes(legacyAddrLen))
 	addr1 := accAddr1.String()
 
-	accAddr2 := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+	accAddr2 := sdk.AccAddress(rand.Bytes(legacyAddrLen))
 	addr2 := accAddr2.String()
 
 	mintable1 := sdk.NewCoins(
@@ -106,7 +108,7 @@ func TestQueryMintable(t *testing.T) {
 	)
 	ctx, _, _, keeper := createTestComponents(t, initialSupply)
 
-	accAddr1 := sdk.AccAddress(rand.Bytes(sdk.AddrLen))
+	accAddr1 := sdk.AccAddress(rand.Bytes(legacyAddrLen))
 	addr := accAddr1.String()
 
 	defaultMintable := sdk.NewCoins(
@@ -141,7 +143,7 @@ func TestQueryMintable(t *testing.T) {
 		},
 		"non existent provider": {
 			req:   &types.QueryMintableRequest{
-				Address: sdk.AccAddress(rand.Bytes(sdk.AddrLen)).String(),
+				Address: sdk.AccAddress(rand.Bytes(legacyAddrLen)).String(),
 			},
 			expMintable: sdk.Coins(nil),
 		},

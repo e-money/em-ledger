@@ -8,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/queries/types"
@@ -23,10 +22,12 @@ func newQServer() (context.Context, sdk.Context, types.QueryClient, bankKeeperMo
 	enc := simapp.MakeTestEncodingConfig()
 	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, enc.InterfaceRegistry)
 	accountKeeper := accountKeeperMock{}
+
+	const legAddrLen = 20
 	var (
-		acc1 sdk.AccAddress = rand.Bytes(sdk.AddrLen)
-		acc2 sdk.AccAddress = rand.Bytes(sdk.AddrLen)
-		acc3 sdk.AccAddress = rand.Bytes(sdk.AddrLen)
+		acc1 sdk.AccAddress = rand.Bytes(legAddrLen)
+		acc2 sdk.AccAddress = rand.Bytes(legAddrLen)
+		acc3 sdk.AccAddress = rand.Bytes(legAddrLen)
 	)
 
 	bkMock := bankKeeperMock{
@@ -61,12 +62,13 @@ func TestCirculating(t *testing.T) {
 	ctx, sdkCtx, queryClient, bkMock := newQServer()
 
 	// Test that supply has been initialized as expected
-	require.Equal(t, "453", bkMock.GetSupply(sdkCtx).GetTotal().AmountOf(stakingDenom).String())
-	require.Equal(t, "154", bkMock.GetSupply(sdkCtx).GetTotal().AmountOf("blx").String())
+
+	require.Equal(t, "453", bkMock.GetSupply(sdkCtx, stakingDenom).Amount.String())
+	require.Equal(t, "154", bkMock.GetSupply(sdkCtx, "blx").Amount.String())
 
 	gotRsp, err := queryClient.Circulating(ctx, &types.QueryCirculatingRequest{})
 	require.NoError(t, err)
-	assert.Equal(t, mustParseCoins("154blx,3"+stakingDenom), gotRsp.Total)
+	assert.Equal(t, mustParseCoins("154blx,3"+stakingDenom).String(), gotRsp.Total.String())
 }
 
 func TestMissedBlocks(t *testing.T) {
@@ -122,18 +124,36 @@ type bankKeeperMock struct {
 	vesting  sdk.Coins
 }
 
+func (b bankKeeperMock) IterateAllDenomMetaData(
+	ctx sdk.Context, cb func(banktypes.Metadata) bool,
+) {
+	panic("implement me")
+}
+
+func (b bankKeeperMock) GetAllDenomMetaData(_ sdk.Context) []banktypes.Metadata {
+	return []banktypes.Metadata{
+		{
+			Base: "blx",
+		},
+		{
+			Base: stakingDenom,
+		},
+	}
+}
+
 func (b bankKeeperMock) SpendableCoins(_ sdk.Context, addr sdk.AccAddress) sdk.Coins {
 	return b.balances[addr.String()]
 }
 
-func (b bankKeeperMock) GetSupply(_ sdk.Context) exported.SupplyI {
-	supply := sdk.NewCoins()
+func (b bankKeeperMock) GetSupply(_ sdk.Context, denom string) sdk.Coin {
+	var supply = sdk.NewCoin(denom, sdk.ZeroInt())
 	for _, balance := range b.balances {
-		supply = supply.Add(balance...)
+		amnt := balance.AmountOfNoDenomValidation(denom)
+		supply = supply.Add(sdk.NewCoin(denom, amnt))
 	}
 
-	supply = supply.Add(b.vesting...)
-	return banktypes.NewSupply(supply)
+	supply = supply.Add(sdk.NewCoin(denom, b.vesting.AmountOfNoDenomValidation(denom)))
+	return supply
 }
 
 func (b bankKeeperMock) IterateAllBalances(_ sdk.Context, cb func(sdk.AccAddress, sdk.Coin) bool) {

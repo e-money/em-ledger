@@ -8,30 +8,49 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
-
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	typescli "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	"github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
+	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
+	ibctesting "github.com/cosmos/ibc-go/v2/testing"
+
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority"
 	authtypes "github.com/e-money/em-ledger/x/authority/types"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 	dbm "github.com/tendermint/tm-db"
 )
 
 var configOnce sync.Once
 
+func mustGetAccAddress(addr string) sdk.AccAddress {
+	acc, err := sdk.AccAddressFromBech32(addr)
+	if err != nil {
+		panic(err)
+	}
+	return acc
+}
+
 func TestSimAppExportAndBlockedAddrs(t *testing.T) {
-	encCfg, db, app, _ := getEmSimApp(t, rand.Bytes(sdk.AddrLen))
+	encCfg, db, app, _ := mustGetEmApp(mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn"))
 	app.Commit()
 
 	// Making a new app object with the db, so that initchain hasn't been called
@@ -45,28 +64,20 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 	)
 }
 
-func getEmSimApp(
-	t *testing.T, authorityAcc sdk.AccAddress,
-) (encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string) {
-	t.Helper()
+func mustGetEmApp(authorityAcc sdk.AccAddress) (
+	encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string) {
 
 	encCfg = MakeEncodingConfig()
 	db := dbm.NewMemDB()
-	homeDir := t.TempDir()
-	t.Log("home dir:", homeDir)
+	homeDir, err := os.MkdirTemp("", "emapp")
+	if err != nil {
+		panic(err)
+	}
 
 	app := NewApp(
 		log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true,
 		map[int64]bool{}, homeDir, 0, encCfg, EmptyAppOptions{},
 	)
-
-	for acc := range maccPerms {
-		require.True(
-			t,
-			app.bankKeeper.BlockedAddr(app.accountKeeper.GetModuleAddress(acc)),
-			"ensure that blocked addresses are properly set in bank keeper",
-		)
-	}
 
 	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
 	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
@@ -74,7 +85,9 @@ func getEmSimApp(
 	genesisState["authority"] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	// Initialize the chain
 	app.InitChain(
@@ -90,6 +103,178 @@ func getEmSimApp(
 	)
 
 	return encCfg, db, app, homeFolder
+}
+
+func init() {
+	ibctesting.DefaultTestingAppInit = createIBCApp
+}
+
+var tempDirs = make([]string, 0, 2)
+
+func createIBCApp() (emIBCApp ibctesting.TestingApp, genesis map[string]json.RawMessage) {
+	var _ ibctesting.TestingApp = emIBCApp
+
+	//configOnce.Do(apptypes.ConfigureSDK)
+	authorityAcc := mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn")
+
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+
+	encCfg := MakeEncodingConfig()
+	db := dbm.NewMemDB()
+	homeDir, err := os.MkdirTemp("/tmp", "chain-")
+	if err != nil {
+		panic(err)
+	}
+	tempDirs = append(tempDirs, homeDir)
+	logger.Info(fmt.Sprintf("home dir:%s", homeDir))
+
+	app := NewApp(
+		log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true,
+		map[int64]bool{}, homeDir, 5, encCfg, EmptyAppOptions{},
+	)
+
+	genesisState := ModuleBasics.DefaultGenesis(encCfg.Marshaler)
+	authorityState := authtypes.GenesisState{AuthorityKey: authorityAcc.String(), MinGasPrices: sdk.NewDecCoins()}
+
+	genesisState["authority"] = encCfg.Marshaler.MustMarshalJSON(&authorityState)
+
+	return app, genesisState
+}
+
+// IBCTestSuite is a testing suite to test keeper functions.
+type IBCTestSuite struct {
+	suite.Suite
+
+	coordinator *ibctesting.Coordinator
+
+	// testing chains used for convenience and readability
+	chainA *ibctesting.TestChain
+	chainB *ibctesting.TestChain
+}
+
+// SetupTest creates a coordinator with 2 test chains.
+func (suite *IBCTestSuite) SetupTest() {
+	suite.coordinator = ibctesting.NewCoordinator(suite.T(), 2)
+
+	suite.Nil(suite.chainA)
+	suite.chainA = suite.coordinator.GetChain(ibctesting.GetChainID(0))
+	suite.NotNil(suite.chainA)
+
+	suite.Nil(suite.chainB)
+	suite.chainB = suite.coordinator.GetChain(ibctesting.GetChainID(1))
+	suite.NotNil(suite.chainB)
+}
+
+func NewTransferPath(chainA, chainB *ibctesting.TestChain) *ibctesting.Path {
+	path := ibctesting.NewPath(chainA, chainB)
+	path.EndpointA.ChannelConfig.PortID = ibctesting.TransferPort
+	path.EndpointB.ChannelConfig.PortID = ibctesting.TransferPort
+
+	return path
+}
+
+func (suite *IBCTestSuite) TestTransfer() {
+	// setup between chainA and chainB
+	path := NewTransferPath(suite.chainA, suite.chainB)
+	suite.coordinator.SetupClients(path)
+	//suite.coordinator.Setup(path)
+	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
+
+}
+
+// GetBaseApp implements the TestingApp interface.
+func (app EMoneyApp) GetBaseApp() *baseapp.BaseApp {
+	return app.BaseApp
+}
+
+// GetStakingKeeper implements the TestingApp interface.
+func (app EMoneyApp) GetStakingKeeper() stakingkeeper.Keeper {
+	return app.stakingKeeper
+}
+
+// GetIBCKeeper implements the TestingApp interface.
+func (app *EMoneyApp) GetIBCKeeper() *ibckeeper.Keeper {
+	return app.ibcKeeper
+}
+
+// GetScopedIBCKeeper implements the TestingApp interface.
+func (app *EMoneyApp) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
+	return app.scopedIBCKeeper
+}
+
+// GetTxConfig implements the TestingApp interface.
+func (app EMoneyApp) GetTxConfig() client.TxConfig {
+	return app.txConfig
+}
+
+func init() {
+	ibctesting.DefaultTestingAppInit = createIBCApp
+}
+
+func (suite *IBCTestSuite) PathRelay() {
+	path := NewTransferPath(suite.chainA, suite.chainB) // clientID, connectionID, channelID empty
+	suite.coordinator.Setup(path)                       // clientID, connectionID, channelID filled
+	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
+	suite.Require().Equal("connection-0", path.EndpointA.ClientID)
+	suite.Require().Equal("channel-0", path.EndpointA.ClientID)
+
+	timeoutHeight := typescli.NewHeight(0, 100)
+	timeoutTimestamp := uint64(100)
+
+	// create packet 1
+	packet1 := types.NewPacket([]byte("packet1"), 1, ibctesting.TransferPort, path.EndpointA.ChannelID, ibctesting.TransferPort, path.EndpointB.ChannelID, timeoutHeight, timeoutTimestamp)
+
+	// send on endpointA
+	err := path.EndpointA.SendPacket(packet1)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// receive on endpointB
+	err = path.EndpointB.RecvPacket(packet1)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// acknowledge the receipt of the packet
+	err = path.EndpointA.AcknowledgePacket(packet1, []byte("Ack"))
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// we can also relay
+	packet2 := types.NewPacket([]byte("packet2"), 2, ibctesting.TransferPort, path.EndpointB.ChannelID, ibctesting.TransferPort, path.EndpointA.ChannelID, timeoutHeight, timeoutTimestamp)
+
+	err = path.EndpointA.SendPacket(packet2)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	err = path.RelayPacket(packet2, []byte("Ack"))
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	// if needed we can update our clients
+	err = path.EndpointB.UpdateClient()
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+}
+
+// TestIBCTestSuite runs all the tests within this package.
+func TestIBCTestSuite(t *testing.T) {
+	suite.Run(t, new(IBCTestSuite))
+}
+
+func (s *IBCTestSuite) TearDownSuite() {
+	s.T().Log("tearing down ibc test suite")
+	for _, t := range tempDirs {
+		err := os.RemoveAll(t)
+		if err != nil {
+			s.T().Log(fmt.Sprintf("removing %s temp dir %v", t, err))
+		}
+	}
 }
 
 // EmptyAppOptions is a stub implementing AppOptions
@@ -114,7 +299,7 @@ func (et emAppTests) initEmApp(t *testing.T) emAppTests {
 	et.authority, err = sdk.AccAddressFromBech32("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0")
 	require.NoError(t, err)
 
-	_, _, app, homeDir := getEmSimApp(t, et.authority)
+	_, _, app, homeDir := mustGetEmApp(et.authority)
 
 	et.homeDir = homeDir
 	et.app = app
@@ -147,7 +332,8 @@ func Test_Upgrade(t *testing.T) {
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
 				plan.Time = simApp.ctx.BlockTime().Add(time.Hour)
 			},
-			expSchedPass: true,
+			// As of v44, time scheduled upgrades are deprecated
+			expSchedPass: false,
 		},
 		{
 			name: "successful height schedule",
@@ -266,7 +452,10 @@ func Test_Upgrade(t *testing.T) {
 				Height: 123450000,
 			},
 			setupUpgCond: func(simEmApp emAppTests, plan *upgradetypes.Plan) {
-				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, _ upgradetypes.Plan) {})
+				simEmApp.app.upgradeKeeper.SetUpgradeHandler("all-good", func(_ sdk.Context, upgradeHandler upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+					return vm, nil
+				})
+
 				simEmApp.app.upgradeKeeper.ApplyUpgrade(
 					simEmApp.ctx, upgradetypes.Plan{
 						Name:   "all-good",
@@ -315,104 +504,282 @@ func Test_Upgrade(t *testing.T) {
 	}
 }
 
-func Test_UpgradeByTime(t *testing.T) {
-
-	configOnce.Do(apptypes.ConfigureSDK)
-
-	tests := []struct {
-		suite        emAppTests
-		name         string
-		plan         upgradetypes.Plan
-		blockTimes   []time.Time
-		setupUpgCond func(simApp emAppTests, blockTimes []time.Time, plan *upgradetypes.Plan)
-		expPass      bool
-		qrySched     bool
-		qryApply     bool
-	}{
-		{
-			name: "successful time plan + 1minute",
-			plan: upgradetypes.Plan{
-				Name: "all-good",
-				Info: "some text here",
-			},
-			setupUpgCond: func(simApp emAppTests, blockTimes []time.Time, plan *upgradetypes.Plan) {
-				const duration = 10 * time.Minute
-				plan.Time = simApp.ctx.BlockTime().Add(duration)
-				blockTimes = []time.Time{
-					simApp.ctx.BlockTime(),
-					simApp.ctx.BlockTime().Add(time.Minute),
-					plan.Time.Add(-time.Nanosecond),
-				}
-			},
-			expPass: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(
-			tt.name, func(t *testing.T) {
-				tt.suite = emAppTests{}.initEmApp(t)
-
-				// setup test case
-				tt.setupUpgCond(tt.suite, tt.blockTimes, &tt.plan)
-
-				// schedule upgrade plan
-				var err error
-				_, err = tt.suite.app.authorityKeeper.ScheduleUpgrade(
-					tt.suite.ctx, tt.suite.authority, tt.plan,
-				)
-				schedPlan, hasPlan := tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
-
-				// validate plan side effect
-				if tt.expPass {
-					require.NoError(t, err, "Upgrade() error = %v, expSchedPass %v", err, tt.expPass)
-					require.Truef(
-						t, hasPlan, "hasPlan: %t there should be a plan",
-						hasPlan,
-					)
-					require.Equalf(
-						t, schedPlan, tt.plan, "queried %v != %v", schedPlan,
-						tt.plan,
-					)
-				} else {
-					require.Falsef(
-						t, hasPlan, "hasPlan: %t plan should not exist", hasPlan,
-					)
-					require.NotEqualf(
-						t, schedPlan, tt.plan, "queried %v == %v", schedPlan,
-						tt.plan,
-					)
-				}
-
-				// advance chain and confirm plan execution
-				tt.suite.app.authorityKeeper.GetUpgradePlan(tt.suite.ctx)
-				for _, blockTime := range tt.blockTimes {
-					tt.suite.ctx = tt.suite.ctx.WithBlockTime(blockTime)
-					require.Falsef(t, schedPlan.ShouldExecute(tt.suite.ctx), "premature timing for executing plan")
-				}
-				// move forward to execution time
-				tt.suite.ctx = tt.suite.ctx.WithBlockTime(schedPlan.Time)
-				require.Truef(t, schedPlan.ShouldExecute(tt.suite.ctx), "plan should be ripe for execution")
-
-				executePlan(
-					tt.suite.ctx, t, tt.suite.app.upgradeKeeper,
-					tt.suite.app.authorityKeeper, tt.plan,
-				)
-			},
-		)
-	}
-}
-
 func executePlan(
 	ctx sdk.Context, t *testing.T, uk upgradekeeper.Keeper, ak authority.Keeper,
 	plan upgradetypes.Plan,
 ) {
-	uk.SetUpgradeHandler(plan.Name, func(_ sdk.Context, _ upgradetypes.Plan) {})
+	uk.SetUpgradeHandler(plan.Name, func(_ sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		return vm, nil
+	})
 
 	uk.ApplyUpgrade(ctx, plan)
 
 	schedPlan, hasPlan := ak.GetUpgradePlan(ctx)
 	require.Falsef(t, hasPlan, "hasPlan: %t plan should not exist", hasPlan)
 	require.NotEqualf(t, schedPlan, plan, "queried %v == %v", schedPlan, plan)
+}
+
+// Migrated from the sdk and ran against the eMoneyApp
+// https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/feegrant/basic_fee_test.go
+func TestBasicFeeValidAllow(t *testing.T) {
+	configOnce.Do(apptypes.ConfigureSDK)
+	_, _, app, _ := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
+
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
+	badTime := ctx.BlockTime().AddDate(0, 0, -1)
+	allowace := &feegrant.BasicAllowance{
+		Expiration: &badTime,
+	}
+	require.Error(t, allowace.ValidateBasic())
+
+	ctx = app.BaseApp.NewContext(
+		false, tmproto.Header{
+			Time: time.Now(),
+		},
+	)
+	eth := sdk.NewCoins(sdk.NewInt64Coin("eth", 10))
+	atom := sdk.NewCoins(sdk.NewInt64Coin("atom", 555))
+	smallAtom := sdk.NewCoins(sdk.NewInt64Coin("atom", 43))
+	bigAtom := sdk.NewCoins(sdk.NewInt64Coin("atom", 1000))
+	leftAtom := sdk.NewCoins(sdk.NewInt64Coin("atom", 512))
+	now := ctx.BlockTime()
+	oneHour := now.Add(1 * time.Hour)
+
+	cases := map[string]struct {
+		allowance *feegrant.BasicAllowance
+		// all other checks are ignored if valid=false
+		fee       sdk.Coins
+		blockTime time.Time
+		valid     bool
+		accept    bool
+		remove    bool
+		remains   sdk.Coins
+	}{
+		"empty": {
+			allowance: &feegrant.BasicAllowance{},
+			accept:    true,
+		},
+		"small fee without expire": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+			},
+			fee:     smallAtom,
+			accept:  true,
+			remove:  false,
+			remains: leftAtom,
+		},
+		"all fee without expire": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: smallAtom,
+			},
+			fee:    smallAtom,
+			accept: true,
+			remove: true,
+		},
+		"wrong fee": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: smallAtom,
+			},
+			fee:    eth,
+			accept: false,
+		},
+		"non-expired": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+				Expiration: &oneHour,
+			},
+			valid:     true,
+			fee:       smallAtom,
+			blockTime: now,
+			accept:    true,
+			remove:    false,
+			remains:   leftAtom,
+		},
+		"expired": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+				Expiration: &now,
+			},
+			valid:     true,
+			fee:       smallAtom,
+			blockTime: oneHour,
+			accept:    false,
+			remove:    true,
+		},
+		"fee more than allowed": {
+			allowance: &feegrant.BasicAllowance{
+				SpendLimit: atom,
+				Expiration: &oneHour,
+			},
+			valid:     true,
+			fee:       bigAtom,
+			blockTime: now,
+			accept:    false,
+		},
+		"with out spend limit": {
+			allowance: &feegrant.BasicAllowance{
+				Expiration: &oneHour,
+			},
+			valid:     true,
+			fee:       bigAtom,
+			blockTime: now,
+			accept:    true,
+		},
+		"expired no spend limit": {
+			allowance: &feegrant.BasicAllowance{
+				Expiration: &now,
+			},
+			valid:     true,
+			fee:       bigAtom,
+			blockTime: oneHour,
+			accept:    false,
+		},
+	}
+
+	for name, stc := range cases {
+		tc := stc // to make scopelint happy
+		t.Run(
+			name, func(t *testing.T) {
+				err := tc.allowance.ValidateBasic()
+				require.NoError(t, err)
+
+				ctx := app.BaseApp.NewContext(
+					false, tmproto.Header{},
+				).WithBlockTime(tc.blockTime)
+
+				// now try to deduct
+				removed, err := tc.allowance.Accept(ctx, tc.fee, []sdk.Msg{})
+				if !tc.accept {
+					require.Error(t, err)
+					return
+				}
+				require.NoError(t, err)
+
+				require.Equal(t, tc.remove, removed)
+				if !removed {
+					require.Equal(t, tc.allowance.SpendLimit, tc.remains)
+				}
+			},
+		)
+	}
+}
+
+var bankSendAuthMsgType = banktypes.SendAuthorization{}.MsgTypeURL()
+
+type TestAuthzSuite struct {
+	suite.Suite
+
+	app         *EMoneyApp
+	ctx         sdk.Context
+	addrs       []sdk.AccAddress
+	queryClient authz.QueryClient
+}
+
+func (s *TestAuthzSuite) SetupTest() {
+	configOnce.Do(apptypes.ConfigureSDK)
+	_, _, app, _ := mustGetEmApp(mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"))
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
+	now := tmtime.Now()
+	ctx = ctx.WithBlockHeader(tmproto.Header{Time: now})
+	queryHelper := baseapp.NewQueryServerTestHelper(ctx, app.InterfaceRegistry())
+	authz.RegisterQueryServer(queryHelper, app.authzKeeper)
+	queryClient := authz.NewQueryClient(queryHelper)
+	s.queryClient = queryClient
+
+	s.app = app
+	s.ctx = ctx
+	s.queryClient = queryClient
+	s.addrs = []sdk.AccAddress{
+		mustGetAccAddress("emoney1kt0vh0ttget0xx77g6d3ttnvq2lnxx6vp3uyl0"),
+		mustGetAccAddress("emoney124f7ce4x7j3wsfctfzlggxluxjk9t0hl05rj5d"),
+		mustGetAccAddress("emoney1um0tg8zeg8y9qn9l5pz3sygq7q5xmhkqjrylak"),
+	}
+}
+
+// Migrated from the sdk and ran against the eMoneyApp
+// https://github.com/cosmos/cosmos-sdk/blob/v0.44.2/x/feegrant/basic_fee_test.go
+func (s *TestAuthzSuite) TestAuthzKeeper() {
+	app, ctx, addrs := s.app, s.ctx, s.addrs
+
+	granterAddr := addrs[0]
+	granteeAddr := addrs[1]
+	recipientAddr := addrs[2]
+
+	s.T().Log("verify that no authorization returns nil")
+	authorization, expiration := app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+	s.Require().Equal(expiration, time.Time{})
+	now := s.ctx.BlockHeader().Time
+	s.Require().NotNil(now)
+
+	newCoins := sdk.NewCoins(sdk.NewInt64Coin("steak", 100))
+	s.T().Log("verify if expired authorization is rejected")
+	x := &banktypes.SendAuthorization{SpendLimit: newCoins}
+	err := app.authzKeeper.SaveGrant(ctx, granterAddr, granteeAddr, x, now.Add(-1*time.Hour))
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify if authorization is accepted")
+	x = &banktypes.SendAuthorization{SpendLimit: newCoins}
+	err = app.authzKeeper.SaveGrant(ctx, granteeAddr, granterAddr, x, now.Add(time.Hour))
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().NotNil(authorization)
+	s.Require().Equal(authorization.MsgTypeURL(), bankSendAuthMsgType)
+
+	s.T().Log("verify fetching authorization with wrong msg type fails")
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, sdk.MsgTypeURL(&banktypes.MsgMultiSend{}))
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify fetching authorization with wrong grantee fails")
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, recipientAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify revoke fails with wrong information")
+	err = app.authzKeeper.DeleteGrant(ctx, recipientAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Error(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, recipientAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+	s.T().Log("verify revoke executes with correct information")
+	err = app.authzKeeper.DeleteGrant(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
+	s.Require().Nil(authorization)
+
+}
+
+func (s *TestAuthzSuite) TestAuthzKeeperIter() {
+	app, ctx, addrs := s.app, s.ctx, s.addrs
+
+	granterAddr := addrs[0]
+	granteeAddr := addrs[1]
+
+	s.T().Log("verify that no authorization returns nil")
+	authorization, expiration := app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, "Abcd")
+	s.Require().Nil(authorization)
+	s.Require().Equal(time.Time{}, expiration)
+	now := s.ctx.BlockHeader().Time
+	s.Require().NotNil(now)
+
+	newCoins := sdk.NewCoins(sdk.NewInt64Coin("steak", 100))
+	s.T().Log("verify if expired authorization is rejected")
+	x := &banktypes.SendAuthorization{SpendLimit: newCoins}
+	err := app.authzKeeper.SaveGrant(ctx, granteeAddr, granterAddr, x, now.Add(-1*time.Hour))
+	s.Require().NoError(err)
+	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, "abcd")
+	s.Require().Nil(authorization)
+
+	app.authzKeeper.IterateGrants(ctx, func(granter, grantee sdk.AccAddress, grant authz.Grant) bool {
+		s.Require().Equal(granter, granterAddr)
+		s.Require().Equal(grantee, granteeAddr)
+		return true
+	})
+}
+
+func TestTestSuite(t *testing.T) {
+	suite.Run(t, new(TestAuthzSuite))
 }
 
 func TestUpdatingChainParams(t *testing.T) {

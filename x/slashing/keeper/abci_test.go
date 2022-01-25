@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -35,6 +36,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+	"math"
 	"testing"
 	"time"
 )
@@ -50,7 +52,9 @@ var (
 		sdk.ValAddress(pks[1].Address()),
 		sdk.ValAddress(pks[2].Address()),
 	}
-	initTokens = sdk.TokensFromConsensusPower(200)
+
+
+	initTokens = sdk.TokensFromConsensusPower(200, sdk.OneInt())
 	initCoins  = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens))
 )
 
@@ -58,7 +62,7 @@ func TestBeginBlocker(t *testing.T) {
 	ctx, keeper, _, bankKeeper, stakingKeeper, database := createTestComponents(t)
 
 	power := int64(100)
-	amt := sdk.TokensFromConsensusPower(power)
+	amt := sdk.TokensFromConsensusPower(power, sdk.OneInt())
 	addr1, pk1 := addrs[2], pks[2]
 	addr2, pk2 := addrs[1], pks[1]
 
@@ -73,9 +77,9 @@ func TestBeginBlocker(t *testing.T) {
 		t, bankKeeper.GetAllBalances(ctx, sdk.AccAddress(addr1)),
 		sdk.NewCoins(sdk.NewCoin(stakingKeeper.GetParams(ctx).BondDenom, initTokens.Sub(amt))),
 	)
-	require.Equal(t, amt, stakingKeeper.Validator(ctx, addr1).GetBondedTokens())
+	require.Equal(t, amt.String(), stakingKeeper.Validator(ctx, addr1).GetBondedTokens().String())
 
-	totalSupplyBefore := bankKeeper.GetSupply(ctx).GetTotal().AmountOf("stake")
+	totalSupplyBefore := getTotalSupply(t, ctx, bankKeeper).AmountOf("stake")
 
 	val := abci.Validator{
 		Address: pk1.Address(),
@@ -191,7 +195,7 @@ func TestBeginBlocker(t *testing.T) {
 
 	// Verify that slashed tokens are burned
 	slashingPenalty := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).TruncateInt()
-	totalSupplyAfter := bankKeeper.GetSupply(ctx).GetTotal().AmountOf("stake")
+	totalSupplyAfter := getTotalSupply(t, ctx, bankKeeper).AmountOf("stake")
 	require.Equal(t, totalSupplyBefore.Sub(slashingPenalty), totalSupplyAfter)
 
 }
@@ -209,13 +213,13 @@ func TestOldGenesisTime(t *testing.T) {
 	addr2, pk2 := addrs[1], pks[1]
 
 	// bond the validators
-	_, err := staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr1, pk1, sdk.TokensFromConsensusPower(power1)))
+	_, err := staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr1, pk1, sdk.TokensFromConsensusPower(power1, sdk.OneInt())))
 	require.NoError(t, err)
-	_, err = staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr2, pk2, sdk.TokensFromConsensusPower(power2)))
+	_, err = staking.NewHandler(stakingKeeper)(ctx, NewTestMsgCreateValidator(addr2, pk2, sdk.TokensFromConsensusPower(power2, sdk.OneInt())))
 	require.NoError(t, err)
 
-	val1 := abci.Validator{pk1.Address(), power1}
-	val2 := abci.Validator{pk2.Address(), power2}
+	val1 := abci.Validator{Address: pk1.Address(), Power: power1}
+	val2 := abci.Validator{Address: pk2.Address(), Power: power2}
 
 	// Val2 fails to sign
 	req := abci.RequestBeginBlock{
@@ -282,6 +286,8 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountK
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 
+	sdk.DefaultPowerReduction = sdk.OneInt()
+
 	var (
 		authCapKey  = sdk.NewKVStoreKey("authCapKey")
 		keyParams   = sdk.NewKVStoreKey("params")
@@ -329,13 +335,12 @@ func createTestComponents(t *testing.T) (sdk.Context, Keeper, banktypes.AccountK
 	// fund test accounts
 	for _, addr := range addrs {
 		address := sdk.AccAddress(addr)
-		err = bk.SetBalances(ctx, address, initCoins)
+		fundAccount(t, ctx, address, bk, initCoins)
 		require.NoError(t, err)
 		ak.SetAccount(ctx, authtypes.NewBaseAccountWithAddress(address))
 	}
 	// set module address
-	totalSupply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens.MulRaw(int64(len(addrs)))))
-	bk.SetSupply(ctx, banktypes.NewSupply(totalSupply))
+	require.Equal(t, getAllBalances(ctx, addrs, bk).String(), getTotalSupply(t, ctx, bk).String())
 
 	keeper := NewKeeper(encConfig.Marshaler, slashingKey, sk, pk.Subspace(sdkslashingtypes.ModuleName), bk, db, authtypes.FeeCollectorName)
 	keeper.SetParams(ctx, types.DefaultParams())
@@ -385,4 +390,45 @@ func NewTestMsgCreateValidator(address sdk.ValAddress, pubKey cryptotypes.PubKey
 		panic(err)
 	}
 	return m
+}
+
+func getTotalSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper) sdk.Coins {
+	totalSupply, _, err := bk.GetPaginatedTotalSupply(
+		ctx, &query.PageRequest{Limit: math.MaxUint64},
+	)
+	require.NoError(t, err)
+
+	return totalSupply
+}
+
+func mintBalance(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) {
+	err := bk.MintCoins(ctx, sdkslashingtypes.ModuleName, supply)
+	require.NoError(t, err)
+}
+
+func setAccBalance(
+	t *testing.T, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
+	balance sdk.Coins,
+) {
+	err := bk.SendCoinsFromModuleToAccount(
+		ctx, sdkslashingtypes.ModuleName, acc, balance.Sub(bk.GetAllBalances(ctx, acc)),
+	)
+	require.NoError(t, err)
+}
+
+func fundAccount(t *testing.T, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
+	balance sdk.Coins) {
+	mintBalance(t, ctx, bk, balance)
+	setAccBalance(t, ctx, acc, bk, balance)
+}
+
+func getAllBalances(ctx sdk.Context, addresses []sdk.ValAddress, bk bankkeeper.Keeper) sdk.Coins {
+	totBalances := sdk.NewCoins()
+	for _, addr := range addresses {
+		act := sdk.AccAddress(addr)
+		coins := bk.GetAllBalances(ctx, act)
+		totBalances = totBalances.Add(coins...)
+	}
+
+	return totBalances
 }

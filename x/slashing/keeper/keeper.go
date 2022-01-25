@@ -24,9 +24,11 @@ const (
 
 type Keeper struct {
 	sdkslashingkeeper.Keeper
+	StoreKey sdk.StoreKey
+
 	paramspace sdkslashingtypes.ParamSubspace
 
-	cdc        codec.BinaryMarshaler
+	cdc        codec.BinaryCodec
 	sk         sdkslashingtypes.StakingKeeper
 	bankKeeper sdkslashingtypes.BankKeeper
 	// Alternative to IAVL KV storage. For data that should not be part of consensus.
@@ -35,7 +37,7 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc codec.BinaryMarshaler,
+	cdc codec.Codec,
 	key sdk.StoreKey,
 	sk sdkslashingtypes.StakingKeeper,
 	paramspace sdkslashingtypes.ParamSubspace,
@@ -45,6 +47,7 @@ func NewKeeper(
 ) Keeper {
 	return Keeper{
 		Keeper:        sdkslashingkeeper.NewKeeper(cdc, key, sk, paramspace),
+		StoreKey:      key,
 		paramspace:    paramspace,
 		cdc:           cdc,
 		sk:            sk,

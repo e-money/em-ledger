@@ -2,6 +2,7 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
+//go:build bdd
 // +build bdd
 
 package networktest
@@ -116,11 +117,11 @@ func writeGenesisFiles(newGenesisFile []byte) error {
 	})
 }
 
-func (t Testnet) Restart() (func() bool, error) {
+func (t *Testnet) Restart() (func() bool, error) {
 	return t.restart(nil)
 }
 
-func (t Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (func() bool, error) {
+func (t *Testnet) RestartWithModifications(genesisModifier func([]byte) []byte) (func() bool, error) {
 	return t.restart(genesisModifier)
 }
 
@@ -281,9 +282,8 @@ func IncChain(delta int64) (int64, error) {
 		height+delta,
 		// max seconds allowance for reaching the desired height
 		// increased again to accommodate an observed backup operation during the upgrade
-		// on catalina with docker
 		// `time taken to complete the backup: 442.204684ms12:00PM INF starting ABCI with Tendermint`
-		time.Duration(delta)*16*time.Second,
+		time.Duration(delta)*24*time.Second,
 	)
 }
 

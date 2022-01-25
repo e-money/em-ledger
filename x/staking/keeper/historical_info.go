@@ -1,12 +1,12 @@
 package keeper
 
 import (
-	dbm "github.com/tendermint/tm-db"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	dbm "github.com/tendermint/tm-db"
 
 	apptypes "github.com/e-money/em-ledger/types"
 	staking "github.com/e-money/em-ledger/x/staking/types"
@@ -22,8 +22,8 @@ var (
 )
 
 type HistoryKeeper struct {
-	storeKey      sdk.StoreKey
-	cdc           codec.BinaryMarshaler
+	StoreKey      sdk.StoreKey
+	cdc           codec.BinaryCodec
 	stakingKeeper staking.StakingKeeper
 	database      dbm.DB
 }
@@ -36,9 +36,9 @@ func getHistoricalInfoKey(height int64) []byte {
 }
 
 // NewKeeper creates a new staking Keeper instance
-func NewHistoryKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, stakingkeeper staking.StakingKeeper, db dbm.DB) HistoryKeeper {
+func NewHistoryKeeper(cdc codec.Codec, key sdk.StoreKey, stakingkeeper staking.StakingKeeper, db dbm.DB) HistoryKeeper {
 	return HistoryKeeper{
-		storeKey:      key,
+		StoreKey:      key,
 		cdc:           cdc,
 		stakingKeeper: stakingkeeper,
 		database:      db,
@@ -70,7 +70,7 @@ func (k HistoryKeeper) SetHistoricalInfo(ctx sdk.Context, height int64, hi *type
 	}
 
 	key := getHistoricalInfoKey(height)
-	value := k.cdc.MustMarshalBinaryBare(hi)
+	value := k.cdc.MustMarshal(hi)
 	batch.Set(key, value)
 }
 
@@ -143,7 +143,7 @@ func (k HistoryKeeper) TrackHistoricalInfo(ctx sdk.Context) {
 
 	// Create HistoricalInfo struct
 	lastVals := k.stakingKeeper.GetLastValidators(ctx)
-	historicalEntry := types.NewHistoricalInfo(ctx.BlockHeader(), lastVals)
+	historicalEntry := types.NewHistoricalInfo(ctx.BlockHeader(), lastVals, sdk.DefaultPowerReduction)
 
 	// Set latest HistoricalInfo at current height
 	k.SetHistoricalInfo(ctx, ctx.BlockHeight(), &historicalEntry)

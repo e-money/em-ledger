@@ -40,12 +40,12 @@ func (amb AppModuleBasic) Name() string { return types.ModuleName }
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 }
 
-func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	bz, _ := json.Marshal(struct{}{})
 	return bz
 }
 
-func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	return nil
 }
 
@@ -76,11 +76,14 @@ func NewAppModule(ak AccountKeeper, bk BankKeeper, sk SlashingKeeper) AppModule 
 	}
 }
 
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
+
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
 
-func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	return nil
 }
 
@@ -92,8 +95,8 @@ func (am AppModule) Route() sdk.Route {
 
 func (am AppModule) QuerierRoute() string { return types.QuerierRoute }
 
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return NewLegacyQuerier(am.ak, am.bk)
+func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
+	return nil
 }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {

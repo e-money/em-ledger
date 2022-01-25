@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+
+# optionally uncomment to copy future upgrade binary in location if
+# auto-downloading is not available as a primary or none at all
+# by default we assume it is on and the upgrade binary is not available
+# locally: DAEMON_RESTART_AFTER_UPGRADE=true
+#./cpupgemd
+
+export DAEMON_HOME=$PWD/.emd
+
+# reset chain genesis, app.toml etc to v42
+./resetv42
+
+cosmovisor start --home="$DAEMON_HOME" &
+
+sleep 3
+
+killall -q cosmovisor
+
+echo ''
+echo ''
+echo ''
+echo '------------------------------------------------'
+echo 'Check for the final success message that follows'
+echo '------------------------------------------------'
+echo ''
+echo ''
+./post-upg-44

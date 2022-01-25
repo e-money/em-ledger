@@ -350,11 +350,11 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_ByAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"e-money", "market", "v1", "account", "address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_ByAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"e-money", "market", "v1", "account", "address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Instruments_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"e-money", "market", "v1", "instruments"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Instruments_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"e-money", "market", "v1", "instruments"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Instrument_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"e-money", "market", "v1", "instrument", "source", "destination"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_Instrument_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"e-money", "market", "v1", "instrument", "source", "destination"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

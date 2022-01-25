@@ -4,10 +4,4 @@
 
 FROM golang:1.17-buster
 
-# after the SDK upgrade to 44.x+ we should change to @latest
-# Note ref https://github.com/cosmos/cosmos-sdk/tree/master/cosmovisor#cosmosvisor
-# If validators would like to enable the auto-download option, and they are
-# currently running an application using Cosmos SDK v0.42, they will need to use
-# Cosmovisor v0.1. Later versions of Cosmovisor do not support Cosmos SDK v0.42
-# or earlier if the auto-download option is enabled.
 RUN go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0

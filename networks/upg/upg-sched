@@ -7,19 +7,13 @@ set -e
 EMD=.emd/cosmovisor/current/bin/emd
 
 UPG_PLAN=test-upg-0.2.0
-REUSE_CHAIN_ID=localnet_reuse
 
 $EMD version
 $EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id "$REUSE_CHAIN_ID"
 $EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id "$REUSE_CHAIN_ID"
 
 # schedule upgrade
-$EMD tx authority schedule-upgrade authoritykey $UPG_PLAN --upgrade-height "$1" --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id "$REUSE_CHAIN_ID" --keyring-backend test
+$EMD tx authority schedule-upgrade authoritykey $UPG_PLAN --upgrade-height "$1" --yes --from authoritykey --home=".emd" --node tcp://localhost:26657 --chain-id test --keyring-backend test
 
 # confirm upg plan
-$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id "$REUSE_CHAIN_ID"
-
-# ---------- after upgrade --------->
-$EMD q authority gas-prices --home=.emd --node tcp://localhost:26657 --chain-id "$REUSE_CHAIN_ID"
-#$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id "$REUSE_CHAIN_ID" # is nil again
-$EMD version # test-upg-0.2.0
+$EMD q authority upgrade-plan --home=.emd --node tcp://localhost:26657 --chain-id test

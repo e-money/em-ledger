@@ -9,9 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	"time"
-
-	"github.com/tendermint/tendermint/libs/os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -24,6 +21,7 @@ import (
 	"github.com/e-money/em-ledger/util"
 	"github.com/e-money/em-ledger/x/authority/types"
 	"github.com/spf13/cobra"
+	"github.com/tendermint/tendermint/libs/os"
 )
 
 func GetTxCmd() *cobra.Command {
@@ -164,7 +162,7 @@ func GetCmdReplaceAuthority() *cobra.Command {
 		Use:     "replace [authority_key_or_address] new_authority_address",
 		Short:   "Replace the authority key",
 		Example: "emd tx authority replace emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv emoney1hq6tnhqg4t7358f3vd9crru93lv0cgekdxrtgv",
-		Long: `Replace the authority key with a new multisig address. 
+		Long: `Replace the authority key with a new multisig address.
 For a 24-hour grace period the former authority key is equivalent to the new one.`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -213,8 +211,8 @@ func GetCmdScheduleUpgrade() *cobra.Command {
 		Example: `emd tx authority schedule-upgrade someplan --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t 0.43
 emd tx authority schedule-upgrade sdk-v0.43.0 --upgrade-height 2001 --from emoney1xue7fm6es84jze49grm4slhlmr4ffz8a3u7g3t --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.2.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}'`,
 		Long: `Schedule a software upgrade by submitting a unique plan name that
- has not been used before with either an absolute block height or block time. An 
-upgrade handler should be defined at the upgraded binary. Optionally If you set DAEMON_ALLOW_DOWNLOAD_BINARIES=on pass 
+ has not been used before with either an absolute block height or block time. An
+upgrade handler should be defined at the upgraded binary. Optionally If you set DAEMON_ALLOW_DOWNLOAD_BINARIES=on pass
 the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-info '{"binaries":{"linux/amd64":"http://localhost:8765/test-upg-0.2.0/emd.zip?checksum=sha256:cadd5b52fe90a04e20b2cbb93291b0d1d0204f17b64b2215eb09f5dc78a127f1"}}'`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -236,7 +234,6 @@ the upgraded binary download url with the --upgrade-info flag i.e., --upgrade-in
 				Authority: clientCtx.GetFromAddress().String(),
 				Plan: upgtypes.Plan{
 					Name:   args[1],
-					Time:   time.Unix(0, 0),
 					Height: upgHeightVal,
 					Info:   upgInfoVal,
 				},
@@ -290,7 +287,7 @@ emd tx authority set-params '[{"subspace":"staking","key":"MaxValidators","value
 The parameter details must be supplied via a JSON file or JSON snippet. For values that contain
 objects, only non-empty fields will be updated.
 Any "value" change should be valid (ie. correct type and within bounds)
-for its respective parameter, eg. "MaxValidators" should be an integer and not a 
+for its respective parameter, eg. "MaxValidators" should be an integer and not a
 decimal.
 
 Where proposal.json contains:

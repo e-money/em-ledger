@@ -7,8 +7,9 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/e-money/em-ledger/x/market/types"
 	"sort"
+
+	"github.com/e-money/em-ledger/x/market/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -19,7 +20,10 @@ func NewQuerier(k *Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryInstruments:
-			result := queryInstruments(ctx, k)
+			result, err := queryInstruments(ctx, k)
+			if err != nil {
+				return nil, sdkerrors.Wrap(sdkerrors.ErrIO, "getting instruments() failed")
+			}
 			return json.Marshal(result)
 		case types.QueryInstrument:
 			return queryInstrument(ctx, k, path[1:], req)
@@ -96,7 +100,7 @@ func queryInstrument(ctx sdk.Context, k *Keeper, path []string, req abci.Request
 
 	for it.Valid() {
 		order := new(types.Order)
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
+		k.cdc.MustUnmarshal(it.Value(), order)
 
 		orders = append(orders, types.QueryOrderResponse{
 			ID:              order.ID,

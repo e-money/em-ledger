@@ -7,6 +7,7 @@ package market
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -40,12 +41,12 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	types.RegisterLegacyAminoCodec(cdc)
 }
 
-func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
+func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	bz, _ := json.Marshal(struct{}{})
 	return bz
 }
 
-func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxEncodingConfig, bz json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	return nil
 }
 
@@ -75,11 +76,14 @@ func NewAppModule(k *keeper.Keeper) AppModule {
 	}
 }
 
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+// ConsensusVersion implements AppModule/ConsensusVersion.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
+
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
 
-func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	return nil
 }
 

@@ -6,7 +6,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank/exported"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
@@ -17,7 +17,7 @@ type (
 	}
 
 	BankKeeper interface {
-		GetSupply(ctx sdk.Context) exported.SupplyI
+		GetPaginatedTotalSupply(ctx sdk.Context, pagination *query.PageRequest) (sdk.Coins, *query.PageResponse, error)
 	}
 
 	UpgradeKeeper interface {

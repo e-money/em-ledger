@@ -53,7 +53,7 @@ func GetByAccountCmd() *cobra.Command {
 				return err
 			}
 
-			return clientCtx.WithJSONMarshaler(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
+			return clientCtx.WithJSONCodec(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -80,7 +80,7 @@ func GetInstrumentCmd() *cobra.Command {
 				return err
 			}
 
-			return clientCtx.WithJSONMarshaler(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
+			return clientCtx.WithJSONCodec(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -104,7 +104,7 @@ func GetInstrumentsCmd() *cobra.Command {
 				return err
 			}
 
-			return clientCtx.WithJSONMarshaler(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
+			return clientCtx.WithJSONCodec(apptypes.NewMarshaller(clientCtx)).PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

@@ -1,6 +1,9 @@
 package ante_test
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
+	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"testing"
 	"time"
 
@@ -115,7 +118,7 @@ func (suite *AnteTestSuite) createAccount(ctx sdk.Context, balance sdk.Coins) au
 	_, _, addr1 := testdata.KeyTestPubAddr()
 	account := suite.ak.NewAccountWithAddress(ctx, addr1)
 	suite.ak.SetAccount(ctx, account)
-	suite.bk.SetBalances(ctx, addr1, balance)
+	fundAccount(suite, ctx, addr1, suite.bk, balance)
 
 	return account
 }
@@ -132,13 +135,15 @@ func (suite *AnteTestSuite) setup() {
 	encConfig := MakeTestEncodingConfig()
 
 	var (
-		keyAuthCap = sdk.NewKVStoreKey("authCapKey")
-		keyParams  = sdk.NewKVStoreKey("params")
-		keyBank    = sdk.NewKVStoreKey(banktypes.ModuleName)
-		tkeyParams = sdk.NewTransientStoreKey("transient_params")
+		keyAuthCap  = sdk.NewKVStoreKey("authCapKey")
+		keyParams   = sdk.NewKVStoreKey("params")
+		keyBank     = sdk.NewKVStoreKey(banktypes.ModuleName)
+		keyFeeGrant = sdk.NewKVStoreKey(feegrant.ModuleName)
+		tkeyParams  = sdk.NewTransientStoreKey("transient_params")
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
+			authtypes.ModuleName: {authtypes.Minter},
 			authtypes.FeeCollectorName: nil,
 			buyback.AccountName:        nil,
 		}
@@ -149,6 +154,7 @@ func (suite *AnteTestSuite) setup() {
 	ms.MountStoreWithDB(keyAuthCap, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyBank, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyFeeGrant, sdk.StoreTypeIAVL, db)
 
 	err := ms.LoadLatestVersion()
 	require.Nil(suite.T(), err)
@@ -163,8 +169,9 @@ func (suite *AnteTestSuite) setup() {
 	bk := bankkeeper.NewBaseKeeper(
 		encConfig.Marshaler, keyBank, ak, pk.Subspace(banktypes.ModuleName), blockedAddr,
 	)
+	fk := feegrantkeeper.NewKeeper(encConfig.Marshaler, keyFeeGrant, ak)
 
-	dfd := ante.NewDeductFeeDecorator(ak, bk, mockStakingKeeper{"ungm"})
+	dfd := ante.NewDeductFeeDecorator(ak, bk, mockStakingKeeper{"ungm"}, fk)
 
 	suite.anteHandler = sdk.ChainAnteDecorators(dfd)
 	suite.ak = ak
@@ -190,6 +197,7 @@ func MakeTestEncodingConfig() simappparams.EncodingConfig {
 		bank.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		feegrantmodule.AppModuleBasic{},
 	)
 
 	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
@@ -236,4 +244,22 @@ func (m mockFeeTX) FeeGranter() sdk.AccAddress {
 
 func (msk mockStakingKeeper) BondDenom(sdk.Context) string {
 	return msk.bondDenom
+}
+
+func setAccBalance(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,	balance sdk.Coins) {
+	err := bk.SendCoinsFromModuleToAccount(
+		ctx, authtypes.ModuleName, acc, balance.Sub(bk.GetAllBalances(ctx, acc)),
+	)
+	suite.NoError(err)
+}
+
+func mintBalance(suite *AnteTestSuite, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.Coins) {
+	err := bk.MintCoins(ctx, authtypes.ModuleName, supply)
+	suite.NoError(err)
+}
+
+func fundAccount(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
+	balance sdk.Coins) {
+	mintBalance(suite, ctx, bk, balance)
+	setAccBalance(suite, ctx, acc, bk, balance)
 }

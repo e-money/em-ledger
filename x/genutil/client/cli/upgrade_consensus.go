@@ -10,13 +10,13 @@ import (
 )
 
 // upgradeModuleParams modifies parameters between emoney-2 and emoney-3.
-func upgradeModuleParams(cdc codec.JSONMarshaler, appState types.AppMap) {
+func upgradeModuleParams(cdc codec.JSONCodec, appState types.AppMap) {
 	increaseValidatorSet(cdc, appState)
 	changeDowntimeJailing(cdc, appState)
 	updateBuybackInterval(cdc, appState)
 }
 
-func updateBuybackInterval(cdc codec.JSONMarshaler, appState types.AppMap) {
+func updateBuybackInterval(cdc codec.JSONCodec, appState types.AppMap) {
 	buybackGenesis := appState[buyback.ModuleName]
 	var genesis buyback.GenesisState
 	cdc.MustUnmarshalJSON(buybackGenesis, &genesis)
@@ -27,7 +27,7 @@ func updateBuybackInterval(cdc codec.JSONMarshaler, appState types.AppMap) {
 	appState[buyback.ModuleName] = cdc.MustMarshalJSON(&genesis)
 }
 
-func changeDowntimeJailing(cdc codec.JSONMarshaler, appState types.AppMap) {
+func changeDowntimeJailing(cdc codec.JSONCodec, appState types.AppMap) {
 	slashingGenesis := appState[slashing.ModuleName]
 	var genesis slashing.GenesisState
 	cdc.MustUnmarshalJSON(slashingGenesis, &genesis)
@@ -38,7 +38,7 @@ func changeDowntimeJailing(cdc codec.JSONMarshaler, appState types.AppMap) {
 	appState[slashing.ModuleName] = cdc.MustMarshalJSON(&genesis)
 }
 
-func increaseValidatorSet(cdc codec.JSONMarshaler, appState types.AppMap) {
+func increaseValidatorSet(cdc codec.JSONCodec, appState types.AppMap) {
 	stakingGenesis := appState[stakingtypes.ModuleName]
 	var genesis stakingtypes.GenesisState
 	cdc.MustUnmarshalJSON(stakingGenesis, &genesis)

@@ -13,19 +13,32 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	store "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
+	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/capability"
@@ -34,63 +47,58 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
+	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/evidence"
 	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
+	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
-	ibctransferkeeper "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
-	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
-	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/05-port/types"
-	ibchost "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
-	ibckeeper "github.com/cosmos/cosmos-sdk/x/ibc/core/keeper"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v2/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v2/modules/core"
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v2/modules/core/03-connection/types"
+	channelkeeper "github.com/cosmos/ibc-go/v2/modules/core/04-channel/keeper"
+	porttypes "github.com/cosmos/ibc-go/v2/modules/core/05-port/types"
+	ibchost "github.com/cosmos/ibc-go/v2/modules/core/24-host"
+	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
 	embank "github.com/e-money/em-ledger/hooks/bank"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/auth/ante"
-	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
-	"github.com/e-money/em-ledger/x/queries"
-	"github.com/e-money/em-ledger/x/upgrade"
-	"github.com/gorilla/mux"
-	"github.com/rakyll/statik/fs"
-	"github.com/spf13/cast"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
-
-	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/e-money/em-ledger/x/authority"
 	"github.com/e-money/em-ledger/x/buyback"
 	emdistr "github.com/e-money/em-ledger/x/distribution"
 	"github.com/e-money/em-ledger/x/inflation"
 	"github.com/e-money/em-ledger/x/issuer"
 	"github.com/e-money/em-ledger/x/liquidityprovider"
+	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/e-money/em-ledger/x/market"
+	"github.com/e-money/em-ledger/x/queries"
 	emslashing "github.com/e-money/em-ledger/x/slashing"
 	"github.com/e-money/em-ledger/x/staking"
 	historykeeper "github.com/e-money/em-ledger/x/staking/keeper"
+	"github.com/e-money/em-ledger/x/upgrade"
+	"github.com/gorilla/mux"
+	"github.com/rakyll/statik/fs"
+	"github.com/spf13/cast"
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
+	tmos "github.com/tendermint/tendermint/libs/os"
 	db "github.com/tendermint/tm-db"
+	dbm "github.com/tendermint/tm-db"
 )
 
 const (
@@ -111,6 +119,8 @@ var (
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		emslashing.AppModuleBasic{},
+		feegrantmodule.AppModuleBasic{},
+		authzmodule.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
@@ -153,7 +163,8 @@ var (
 type EMoneyApp struct {
 	*baseapp.BaseApp
 	legacyAmino       *codec.LegacyAmino
-	appCodec          codec.Marshaler
+	appCodec          codec.Codec
+	txConfig          client.TxConfig
 	interfaceRegistry types.InterfaceRegistry
 
 	database     db.DB
@@ -180,6 +191,8 @@ type EMoneyApp struct {
 	ibcKeeper        *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	evidenceKeeper   evidencekeeper.Keeper
 	transferKeeper   ibctransferkeeper.Keeper
+	feeGrantKeeper   feegrantkeeper.Keeper
+	authzKeeper      authzkeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	scopedIBCKeeper      capabilitykeeper.ScopedKeeper
@@ -195,6 +208,9 @@ type EMoneyApp struct {
 
 	// the module manager
 	mm *module.Manager
+
+	// simulation manager
+	configurator module.Configurator
 }
 
 func (app *EMoneyApp) LegacyAmino() *codec.LegacyAmino {
@@ -219,7 +235,7 @@ func NewApp(
 
 	bApp := baseapp.NewBaseApp(appName, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
-	bApp.SetAppVersion(version.Version)
+	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 
 	keys := sdk.NewKVStoreKeys(
@@ -229,7 +245,7 @@ func NewApp(
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
 		lptypes.StoreKey, issuer.StoreKey, authority.StoreKey,
 		market.StoreKey, market.StoreKeyIdx, buyback.StoreKey,
-		inflation.StoreKey,
+		inflation.StoreKey, feegrant.StoreKey, authzkeeper.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -239,6 +255,7 @@ func NewApp(
 		BaseApp:           bApp,
 		legacyAmino:       legacyAmino,
 		appCodec:          appCodec,
+		txConfig:          encodingConfig.TxConfig,
 		interfaceRegistry: interfaceRegistry,
 		invCheckPeriod:    invCheckPeriod,
 		keys:              keys,
@@ -270,6 +287,10 @@ func NewApp(
 		appCodec, keys[stakingtypes.StoreKey], app.accountKeeper, app.bankKeeper, app.GetSubspace(stakingtypes.ModuleName),
 	)
 
+	app.authzKeeper = authzkeeper.NewKeeper(keys[authzkeeper.StoreKey], appCodec, app.BaseApp.MsgServiceRouter())
+
+	app.feeGrantKeeper = feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], app.accountKeeper)
+
 	app.historykeeper = historykeeper.NewHistoryKeeper(appCodec, keys[historykeeper.StoreKey], stakingKeeper, app.database)
 
 	app.distrKeeper = distrkeeper.NewKeeper(
@@ -283,12 +304,77 @@ func NewApp(
 	app.crisisKeeper = crisiskeeper.NewKeeper(
 		app.GetSubspace(crisistypes.ModuleName), invCheckPeriod, app.bankKeeper, authtypes.FeeCollectorName,
 	)
-	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath)
+	app.upgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp)
 
-	// Used for lilmermaid-16
-	app.upgradeKeeper.SetUpgradeHandler("upgrade-plan-1", func(ctx sdk.Context, plan upgradetypes.Plan) {
-		ctx.Logger().Info("Upgraded to upgrade-plan-1")
-	})
+	{
+		/*
+		 * This is a test v44 handler
+		 */
+		const upg44Plan = "v44-upg-test-sample"
+
+		app.upgradeKeeper.SetUpgradeHandler(
+			upg44Plan,
+			func(
+				ctx sdk.Context, _ upgradetypes.Plan, _ module.VersionMap,
+			) (module.VersionMap, error) {
+				// set max expected block time parameter. Replace the default with your expected value
+				// https://github.com/cosmos/ibc-go/blob/release/v1.0.x/docs/ibc/proto-docs.md#params-2
+				// set max block time to 30 seconds
+				app.ibcKeeper.ConnectionKeeper.SetParams(
+					// should 3-5 minutes in mainnet
+					ctx, ibcconnectiontypes.DefaultParams(),
+				)
+
+				fromVM := make(map[string]uint64)
+				for moduleName := range app.mm.Modules {
+					// v40 state is version 1
+					// v43 state is version 2
+					// v45 state is likely v3
+					fromVM[moduleName] = 1
+				}
+
+				// EXCEPT Auth needs to run _after_ staking (https://github.com/cosmos/cosmos-sdk/issues/10591),
+				// and it seems bank as well (https://github.com/provenance-io/provenance/blob/407c89a7d73854515894161e1526f9623a94c368/app/upgrades.go#L86-L122).
+				// So we do this by making auth run last.
+				// This is done by setting auth's consensus version to 2, running RunMigrations,
+				// then setting it back to 1, and then running migrations again.
+				fromVM[authtypes.ModuleName] = 2
+
+				// override versions for _new_ modules as to not skip InitGenesis
+				fromVM[authz.ModuleName] = 0
+				fromVM[feegrant.ModuleName] = 0
+
+				ctx.Logger().Info("Upgrading to " + upg44Plan)
+
+				newVM, err := app.mm.RunMigrations(ctx, app.configurator, fromVM)
+				if err != nil {
+					return nil, err
+				}
+
+				// now update auth version back to v1, to run auth migration last
+				newVM[authtypes.ModuleName] = 1
+
+				return app.mm.RunMigrations(ctx, app.configurator, newVM)
+			})
+
+		upgradeInfo, err := app.upgradeKeeper.ReadUpgradeInfoFromDisk()
+		if err != nil {
+			panic(err)
+		}
+
+		if upgradeInfo.Name == upg44Plan && !app.upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+			storeUpgrades := store.StoreUpgrades{
+				Added: []string{authz.ModuleName, feegrant.ModuleName},
+			}
+
+			// configure store loader that checks if version == upgradeHeight and applies store upgrades
+			app.SetStoreLoader(
+				upgradetypes.UpgradeStoreLoader(
+					upgradeInfo.Height, &storeUpgrades,
+				),
+			)
+		}
+	}
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
@@ -296,10 +382,9 @@ func NewApp(
 		stakingtypes.NewMultiStakingHooks(app.distrKeeper.Hooks(), app.slashingKeeper.Hooks()),
 	)
 
-	// Create IBC Keeper
 	app.ibcKeeper = ibckeeper.NewKeeper(
-		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.historykeeper, scopedIBCKeeper,
-	)
+		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName),
+		app.historykeeper, app.upgradeKeeper, scopedIBCKeeper)
 
 	// Create Transfer Keepers
 	app.transferKeeper = ibctransferkeeper.NewKeeper(
@@ -343,6 +428,8 @@ func NewApp(
 		vesting.NewAppModule(app.accountKeeper, app.bankKeeper),
 		bank.NewAppModule(appCodec, app.bankKeeper, app.accountKeeper),
 		capability.NewAppModule(appCodec, *app.capabilityKeeper),
+		feegrantmodule.NewAppModule(appCodec, app.accountKeeper, app.bankKeeper, app.feeGrantKeeper, app.interfaceRegistry),
+		authzmodule.NewAppModule(appCodec, app.authzKeeper, app.accountKeeper, app.bankKeeper, interfaceRegistry),
 		crisis.NewAppModule(&app.crisisKeeper, skipGenesisInvariants),
 		emslashing.NewAppModule(appCodec, app.slashingKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
 		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper, app.historykeeper),
@@ -380,8 +467,8 @@ func NewApp(
 		//bep3.ModuleName, // <- TODO Forces app-state change in BeginBlock
 	)
 
-	// todo (reviewer): check which modules make sense
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, stakingtypes.ModuleName)
+	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, stakingtypes.ModuleName,
+		feegrant.ModuleName, authz.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -393,43 +480,55 @@ func NewApp(
 		emslashing.ModuleName, crisistypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
 		inflation.ModuleName, issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName,
-		liquidityprovider.ModuleName,
+		liquidityprovider.ModuleName, feegrant.ModuleName, authz.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
-	app.mm.RegisterServices(module.NewConfigurator(app.MsgServiceRouter(), app.GRPCQueryRouter()))
+
+	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	// TODO hack to initialize application
+	// from sdk.bank/module.go: AppModule RegisterServices
+	// 	m := keeper.NewMigrator(am.keeper.(keeper.BaseKeeper))
+	sdkBk := app.bankKeeper.GetBankKeeper()
+	bankMigModule := bank.NewAppModule(appCodec, *sdkBk, app.accountKeeper)
+	proxy := app.mm.Modules[banktypes.ModuleName]
+	app.mm.Modules[banktypes.ModuleName] = bankMigModule
+	app.mm.RegisterServices(app.configurator)
+
+	app.mm.Modules[banktypes.ModuleName] = proxy
 
 	// initialize stores
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
 	app.MountMemoryStores(memKeys)
 
+	anteHandler, err := ante.NewAnteHandler(
+		ante.EmAnteHandlerOptions{
+			AccountKeeper:    app.accountKeeper,
+			BankKeeper:       app.bankKeeper,
+			FeegrantKeeper:   app.feeGrantKeeper,
+			SignModeHandler:  encodingConfig.TxConfig.SignModeHandler(),
+			SigGasConsumer:   sdkante.DefaultSigVerificationGasConsumer,
+			StakingKeeper:    app.stakingKeeper,
+			IBCChannelkeeper: channelkeeper.Keeper{},
+		},
+	)
+	if err != nil {
+		panic(fmt.Errorf("failed to create AnteHandler: %s", err))
+	}
+
+	app.SetAnteHandler(anteHandler)
+
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
-	app.SetAnteHandler(
-		ante.NewAnteHandler(
-			app.accountKeeper, app.bankKeeper, app.stakingKeeper,
-			encodingConfig.TxConfig.SignModeHandler(),
-		),
-	)
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
-			tmos.Exit(err.Error())
+			tmos.Exit(fmt.Sprintf("failed to load latest version: %s", err))
 		}
-
-		// Initialize and seal the capability keeper so all persistent capabilities
-		// are loaded in-memory and prevent any further modules from creating scoped
-		// sub-keepers.
-		// This must be done during creation of baseapp rather than in InitChain so
-		// that in-memory capabilities get regenerated on app restart.
-		// Note that since this reads from the store, we can only perform it when
-		// `loadLatest` is set to true.
-		ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
-		app.capabilityKeeper.InitializeAndSeal(ctx)
 	}
 
 	app.scopedIBCKeeper = scopedIBCKeeper
@@ -489,12 +588,15 @@ func (app *EMoneyApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci
 	return response
 }
 
-// application update at chain initialization
+// InitChainer application update at chain initialization
 func (app *EMoneyApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
 	var genesisState GenesisState
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
+
+	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
@@ -511,7 +613,7 @@ func (app *EMoneyApp) ModuleAccountAddrs() map[string]bool {
 //
 // NOTE: This is solely to be used for testing purposes as it may be desirable
 // for modules to register their own custom testing types.
-func (app *EMoneyApp) AppCodec() codec.Marshaler {
+func (app *EMoneyApp) AppCodec() codec.Codec {
 	return app.appCodec
 }
 
@@ -602,7 +704,7 @@ func GetMaccs() map[string]bool {
 }
 
 // initParamsKeeper init params keeper and its subspaces
-func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
+func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
 	paramsKeeper.Subspace(authtypes.ModuleName)
@@ -627,5 +729,5 @@ func (app EMoneyApp) SetMinimumGasPrices(gasPricesStr string) (err error) {
 }
 
 func init() {
-	sdk.PowerReduction = sdk.OneInt()
+	sdk.DefaultPowerReduction = sdk.OneInt()
 }

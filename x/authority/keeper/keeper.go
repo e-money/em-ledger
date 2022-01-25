@@ -7,8 +7,12 @@ package keeper
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/libs/log"
+	"math"
 	"sync"
+
+	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -29,7 +33,7 @@ const (
 var _ authorityKeeper = Keeper{}
 
 type Keeper struct {
-	cdc           codec.BinaryMarshaler
+	cdc           codec.BinaryCodec
 	storeKey      sdk.StoreKey
 	ik            issuer.Keeper
 	bankKeeper    types.BankKeeper
@@ -41,7 +45,7 @@ type Keeper struct {
 }
 
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey,
+	cdc codec.Codec, storeKey sdk.StoreKey,
 	issuerKeeper issuer.Keeper, bankKeeper types.BankKeeper,
 	gasPricesKeeper types.GasPricesKeeper, upgradeKeeper types.UpgradeKeeper,
 	paramsKeeper types.ParamsKeeper,
@@ -77,7 +81,7 @@ func (k Keeper) saveAuthorities(
 ) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := k.cdc.MustMarshalBinaryBare(
+	bz := k.cdc.MustMarshal(
 		&types.Authority{
 			Address:       newAuthority.String(),
 			FormerAddress: formerAuthorityAddr,
@@ -110,7 +114,7 @@ func (k Keeper) GetAuthoritySet(ctx sdk.Context) types.Authority {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(keyAuthorityAccAddress))
 	var authoritySet types.Authority
-	k.cdc.MustUnmarshalBinaryBare(bz, &authoritySet)
+	k.cdc.MustUnmarshal(bz, &authoritySet)
 	return authoritySet
 }
 
@@ -141,7 +145,10 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrice
 	}
 
 	// Check that the denominations actually exist before setting the gas prices to avoid being "locked out" of the blockchain
-	supply := k.bankKeeper.GetSupply(ctx).GetTotal()
+	supply, _, err := k.bankKeeper.GetPaginatedTotalSupply(ctx, &query.PageRequest{Limit: math.MaxUint64})
+	if err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrGetTotalSupply, "%v", err)
+	}
 	for _, d := range newPrices {
 		if supply.AmountOf(d.Denom).IsZero() {
 			return nil, sdkerrors.Wrapf(types.ErrUnknownDenom, "%v", d.Denom)
@@ -149,7 +156,7 @@ func (k Keeper) SetGasPrices(ctx sdk.Context, authority sdk.AccAddress, newPrice
 	}
 
 	gasPrices := types.GasPrices{Minimum: newPrices}
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(&gasPrices)
+	bz := k.cdc.MustMarshalLengthPrefixed(&gasPrices)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(keyGasPrices), bz)
 
@@ -168,7 +175,7 @@ func (k Keeper) GetGasPrices(ctx sdk.Context) sdk.DecCoins {
 		return nil
 	}
 	var gasPrices types.GasPrices
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &gasPrices)
+	k.cdc.MustUnmarshalLengthPrefixed(bz, &gasPrices)
 	return gasPrices.Minimum
 }
 

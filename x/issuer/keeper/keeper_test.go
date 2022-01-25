@@ -85,12 +85,14 @@ func TestAddIssuer(t *testing.T) {
 }
 
 func denomNotFound(ctx sdk.Context, t *testing.T, bk types.BankKeeper, denom string) {
-	stateDenom := bk.GetDenomMetaData(ctx, denom)
+	stateDenom, ok := bk.GetDenomMetaData(ctx, denom)
+	require.False(t, ok)
 	require.Empty(t, stateDenom.Base)
 }
 
 func denomFound(ctx sdk.Context, t *testing.T, bk types.BankKeeper, denom string) {
-	stateDenom := bk.GetDenomMetaData(ctx, denom)
+	stateDenom, ok := bk.GetDenomMetaData(ctx, denom)
+	require.True(t, ok)
 	require.NotEmpty(t, stateDenom.Base)
 }
 
@@ -347,7 +349,14 @@ func createTestComponentsWithEncodingConfig(t *testing.T, encConfig simappparams
 	)
 
 	// Empty supply
-	bk.SetSupply(ctx, banktypes.NewSupply(sdk.NewCoins()))
+	bk.IterateTotalSupply(ctx, func(coin sdk.Coin) bool {
+		if !coin.Amount.IsZero() {
+			err = bk.BurnCoins(ctx, authtypes.Burner, sdk.NewCoins(coin))
+			require.NoError(t, err)
+		}
+
+		return false
+	})
 
 	lpk := liquidityprovider.NewKeeper(encConfig.Marshaler, lpKey, bk)
 

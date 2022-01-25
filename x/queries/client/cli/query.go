@@ -29,7 +29,7 @@ func GetQueryCmd() *cobra.Command {
 
 func GetQuerySpendableBalance() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "spendable",
+		Use:   "spendable [account_address]",
 		Short: "Display the vested balance of an account",
 		Args:  cobra.ExactArgs(1),
 

@@ -10,7 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/codec"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -29,7 +31,7 @@ var _ marketKeeper = &Keeper{}
 type Keeper struct {
 	key        sdk.StoreKey
 	keyIndices sdk.StoreKey
-	cdc        codec.BinaryMarshaler
+	cdc        codec.BinaryCodec
 	// instruments types.Instruments
 	ak types.AccountKeeper
 	bk types.BankKeeper
@@ -38,7 +40,7 @@ type Keeper struct {
 	appstateInit *sync.Once
 }
 
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
+func NewKeeper(cdc codec.Codec, key sdk.StoreKey, keyIndices sdk.StoreKey, authKeeper types.AccountKeeper, bankKeeper types.BankKeeper) *Keeper {
 	k := &Keeper{
 		cdc:        cdc,
 		key:        key,
@@ -357,8 +359,8 @@ func (k *Keeper) NewOrderSingle(ctx sdk.Context, aggressiveOrder types.Order) er
 
 // Check whether an asset even exists on the chain at the moment.
 func (k Keeper) assetExists(ctx sdk.Context, asset sdk.Coin) bool {
-	total := k.bk.GetSupply(ctx).GetTotal()
-	return total.AmountOf(asset.Denom).GT(sdk.ZeroInt())
+	instr := k.bk.GetSupply(ctx, asset.Denom)
+	return instr.Amount.GT(sdk.ZeroInt())
 }
 
 func (k *Keeper) CancelReplaceLimitOrder(ctx sdk.Context, newOrder types.Order, origClientOrderId string) error {
@@ -419,7 +421,7 @@ func (k *Keeper) GetOrderByOwnerAndClientOrderId(ctx sdk.Context, owner, clientO
 	}
 
 	o := &types.Order{}
-	err := k.cdc.UnmarshalBinaryBare(bz, o)
+	err := k.cdc.Unmarshal(bz, o)
 	if err != nil {
 		panic(err)
 	}
@@ -474,7 +476,7 @@ func (k Keeper) setOrder(ctx sdk.Context, order *types.Order) {
 		idxStore = ctx.KVStore(k.keyIndices)
 	)
 
-	orderbz := k.cdc.MustMarshalBinaryBare(order)
+	orderbz := k.cdc.MustMarshal(order)
 
 	ownerKey := types.GetOwnerKey(order.Owner, order.ClientOrderID)
 	store.Set(ownerKey, orderbz)
@@ -493,7 +495,7 @@ func (k Keeper) GetInstrument(ctx sdk.Context, src, dst string) *types.MarketDat
 	}
 
 	md := new(types.MarketData)
-	k.cdc.MustUnmarshalBinaryBare(bz, md)
+	k.cdc.MustUnmarshal(bz, md)
 	return md
 }
 
@@ -506,7 +508,7 @@ func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 
 	for ; it.Valid(); it.Next() {
 		md := types.MarketData{}
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &md)
+		k.cdc.MustUnmarshal(it.Value(), &md)
 
 		// Amino appears to serialize nil *time.Time entries as Unix epoch. Convert to nil.
 		if md.Timestamp != nil && md.Timestamp.Equal(time.Unix(0, 0)) {
@@ -522,8 +524,12 @@ func (k Keeper) GetInstruments(ctx sdk.Context) (instrs []types.MarketData) {
 // GetAllInstruments gets all instruments based on current order book. It
 // includes synthetic pairs, last order timestamp and calculates the best price
 // for the pair.
-func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
-	coins := k.bk.GetSupply(ctx).GetTotal().Sort()
+func (k Keeper) GetAllInstruments(ctx sdk.Context) ([]*types.MarketData, error) {
+	coins, _, err := k.bk.GetPaginatedTotalSupply(ctx, &query.PageRequest{Limit: math.MaxUint64})
+	if err != nil {
+		return nil, err
+	}
+	coins = coins.Sort()
 	n := len(coins)
 	// n instruments producing n*(n-1) pairs below
 	instrLst := make([]*types.MarketData, n*(n-1))
@@ -554,7 +560,7 @@ func (k Keeper) GetAllInstruments(ctx sdk.Context) []*types.MarketData {
 		}
 	}
 
-	return instrLst
+	return instrLst, nil
 }
 
 func (k *Keeper) deleteOrder(ctx sdk.Context, order *types.Order) {
@@ -579,7 +585,7 @@ func (k Keeper) getBestOrder(ctx sdk.Context, src, dst string) *types.Order {
 
 	if it.Valid() {
 		order := new(types.Order)
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), order)
+		k.cdc.MustUnmarshal(it.Value(), order)
 		return order
 	}
 
@@ -609,7 +615,7 @@ func (k Keeper) GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) (res []*
 
 	for ; it.Valid(); it.Next() {
 		o := &types.Order{}
-		err := k.cdc.UnmarshalBinaryBare(it.Value(), o)
+		err := k.cdc.Unmarshal(it.Value(), o)
 		if err != nil {
 			panic(err)
 		}
@@ -686,7 +692,7 @@ func (k Keeper) registerMarketData(ctx sdk.Context, src, dst string) {
 		Destination: dst,
 	}
 
-	bz := k.cdc.MustMarshalBinaryBare(&md)
+	bz := k.cdc.MustMarshal(&md)
 	idxStore.Set(key, bz)
 }
 
@@ -698,6 +704,6 @@ func (k Keeper) setMarketData(ctx sdk.Context, src, dst string, price sdk.Dec) {
 	md := types.MarketData{Source: src, Destination: dst, LastPrice: &price, Timestamp: &timestamp}
 	key := types.GetMarketDataKey(src, dst)
 
-	bz := k.cdc.MustMarshalBinaryBare(&md)
+	bz := k.cdc.MustMarshal(&md)
 	idxStore.Set(key, bz)
 }
