@@ -48,4 +48,3 @@ echo "legacy or current binary:"
 ls "$COSMOVISOR_HOME"/genesis/bin/emd
 echo "upgrade binary:"
 ls "$UPG_LOC"/emd
-echo "current version: $(cosmovisor version)"

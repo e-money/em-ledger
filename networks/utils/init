@@ -1,0 +1,42 @@
+#!/bin/zsh
+
+set -ev
+
+# locate emd binary
+if [[ -f $PWD/../../build/emd ]]; then
+  EMD_NODE=$PWD/.emd
+  pushd -q ../../build
+  # save absolute path of emd required by cosmovisor
+  EMD=$PWD/emd
+  popd -q
+else
+  echo "emd binary not found in $PWD. Please run make to create the emd binary"
+  exit 1
+fi
+
+# destructive
+# do not do this in production
+rm -rf "$EMD_NODE"/config
+rm -rf "$EMD_NODE"/data
+rm -rf "$EMD_NODE"/keyring-test
+# do not delete cosmovisor if it exists
+
+$EMD unsafe-reset-all --home=$EMD_NODE
+
+$EMD init test --chain-id=test --home="$EMD_NODE" --overwrite
+$EMD keys add validator --keyring-backend=test --home="$EMD_NODE"
+$EMD add-genesis-account "$($EMD keys show validator -a --keyring-backend=test --home="$EMD_NODE")" 1000000000stake,1000000000ungm --home=$EMD_NODE
+$EMD gentx validator 500000000stake --keyring-backend=test --home="$EMD_NODE" --chain-id=test
+
+# create genesis emoney1gjudpa2cmwd27cjzespu2khrvy2ukje6zfevk5 to set the authority later
+AUTH_SEED="document weekend believe whip diesel earth hope elder quiz pact assist quarter public deal height pulp roof organ animal health month holiday front pencil"
+(echo "$AUTH_SEED"; echo "$AUTH_SEED") | $EMD keys add authoritykey --recover --keyring-backend=test --home="$EMD_NODE"
+AUTHORITY_ADDR=$($EMD keys show authoritykey -a --keyring-backend=test --home="$EMD_NODE")
+$EMD add-genesis-account "$AUTHORITY_ADDR" 1000000000000ungm --home=$EMD_NODE
+
+$EMD collect-gentxs --home="$EMD_NODE"
+
+# set the auth address as the chain authority
+AUTHORITY_ADDR_VAL=".app_state.authority.key=\"$AUTHORITY_ADDR\""
+jq $AUTHORITY_ADDR_VAL < "$EMD_NODE"/config/genesis.json > "$EMD_NODE"/config/tmp_genesis.json
+mv "$EMD_NODE"/config/tmp_genesis.json "$EMD_NODE"/config/genesis.json

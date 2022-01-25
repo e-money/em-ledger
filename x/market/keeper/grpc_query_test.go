@@ -1,6 +1,10 @@
 package keeper
 
 import (
+	"testing"
+	"time"
+	"math"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -8,9 +12,6 @@ import (
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"math"
-	"testing"
-	"time"
 )
 
 func TestQueryByAccount(t *testing.T) {
@@ -33,7 +34,7 @@ func TestQueryByAccount(t *testing.T) {
 	k.setOrder(ctx, &o)
 
 	expectedPlusOne := o
-	expectedPlusOne.Created = expectedPlusOne.Created.Add(1*time.Second)
+	expectedPlusOne.Created = expectedPlusOne.Created.Add(1 * time.Second)
 
 	specs := map[string]struct {
 		req      *types.QueryByAccountRequest
@@ -47,8 +48,8 @@ func TestQueryByAccount(t *testing.T) {
 			expState: []*types.Order{&o},
 		},
 		"created plus a sec": {
-			req:      &types.QueryByAccountRequest{Address: myAddress.String()},
-			expState: []*types.Order{&expectedPlusOne},
+			req:            &types.QueryByAccountRequest{Address: myAddress.String()},
+			expState:       []*types.Order{&expectedPlusOne},
 			createdPlusOne: true,
 		},
 		"empty address": {
@@ -75,7 +76,7 @@ func TestQueryByAccount(t *testing.T) {
 			if spec.createdPlusOne {
 				assert.NotEqual(t, spec.expState, gotRsp.Orders)
 				// set equal
-				gotRsp.Orders[0].Created = gotRsp.Orders[0].Created.Add(1*time.Second)
+				gotRsp.Orders[0].Created = gotRsp.Orders[0].Created.Add(1 * time.Second)
 			}
 
 			assert.Equal(t, spec.expState, gotRsp.Orders)
@@ -131,13 +132,13 @@ func TestInstrument(t *testing.T) {
 	acc := createAccount(ctx, ak, bk, randomAddress(), "1000usd")
 
 	o := order(ctx.BlockTime(), acc, "100usd", "100chf")
-	_, err := k.NewOrderSingle(ctx, o)
+	err := k.NewOrderSingle(ctx, o)
 	require.NoError(t, err)
 
 	oPlusOne := order(
 		ctx.BlockTime().Add(time.Second), acc, "100usd", "100gbp",
 	)
-	_, err = k.NewOrderSingle(ctx, oPlusOne)
+	err = k.NewOrderSingle(ctx, oPlusOne)
 	require.NoError(t, err)
 
 	specs := map[string]struct {

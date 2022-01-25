@@ -1,0 +1,49 @@
+pull_request_rules:
+  - name: merge to master with label automerge and one PR approval
+    conditions:
+      - "#approved-reviews-by>=1"
+      - base=master
+      - label=automerge
+    actions:
+      merge:
+        method: squash
+  - name: backport master changes to develop
+    conditions:
+      - base=master
+    actions:
+      backport:
+        branches:
+          - develop
+        assignees:
+          - "{{ author }}"
+  - name: automerge to develop when a PR is approved or created by mergify
+    conditions:
+      - or:
+        - and:
+          - "#approved-reviews-by>=1"
+          - base=develop
+        - and:
+          - author=mergify[bot]
+          - base!=master
+    actions:
+      merge:
+        method: squash
+  - name: add label on conflict
+    conditions:
+       - conflict
+       - -closed
+    actions:
+      label:
+        add:
+          - conflict
+      comment:
+        message: Could you please fix the conflicts @{{author}}? 
+  - name: remove label on conflict
+    conditions:
+       - -conflict
+       - -closed
+    actions:
+      label:
+        remove:
+          - conflict
+        

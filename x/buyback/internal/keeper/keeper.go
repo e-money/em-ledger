@@ -1,12 +1,14 @@
 package keeper
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/buyback/internal/types"
 	market "github.com/e-money/em-ledger/x/market/types"
 	ptypes "github.com/gogo/protobuf/types"
-	"time"
 )
 
 type Keeper struct {
@@ -39,17 +41,20 @@ func (k Keeper) CancelCurrentModuleOrders(ctx sdk.Context) {
 	orders := k.marketKeeper.GetOrdersByOwner(ctx, buybackAccount)
 
 	for _, order := range orders {
-		result, err := k.marketKeeper.CancelOrder(ctx, buybackAccount, order.ClientOrderID)
-		if err != nil {
-			panic(err)
-		}
-		for _, ev := range result.Events {
-			ctx.EventManager().EmitEvent(sdk.Event(ev))
+		if err := k.marketKeeper.CancelOrder(ctx, buybackAccount, order.ClientOrderID); err != nil {
+			ctx.Logger().Error(
+				fmt.Sprintf(
+					"The buyback module could not create market order %s, error:%v",
+					order.String(), err,
+				),
+			)
+
+			return
 		}
 	}
 }
 
-func (k Keeper) SendOrderToMarket(ctx sdk.Context, order market.Order) (*sdk.Result, error) {
+func (k Keeper) SendOrderToMarket(ctx sdk.Context, order market.Order) error {
 	return k.marketKeeper.NewOrderSingle(ctx, order)
 }
 

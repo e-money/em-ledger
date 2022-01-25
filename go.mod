@@ -133,5 +133,4 @@ replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alp
 replace github.com/cosmos/cosmos-sdk => github.com/e-money/cosmos-sdk v0.44.5-em1
 
 // replace github.com/cosmos/cosmos-sdk => ../../cosmos/cosmos-sdk
-
 // replace github.com/e-money/bep3 => ../bep3

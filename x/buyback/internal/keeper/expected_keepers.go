@@ -7,10 +7,10 @@ import (
 
 type (
 	MarketKeeper interface {
-		NewOrderSingle(ctx sdk.Context, order market.Order) (*sdk.Result, error)
+		NewOrderSingle(ctx sdk.Context, order market.Order) error
 		GetOrdersByOwner(ctx sdk.Context, owner sdk.AccAddress) []*market.Order
 		GetBestPrice(ctx sdk.Context, src, dst string) *sdk.Dec
-		CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) (*sdk.Result, error)
+		CancelOrder(ctx sdk.Context, owner sdk.AccAddress, clientOrderId string) error
 	}
 
 	AccountKeeper interface {

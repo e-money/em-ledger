@@ -224,3 +224,4 @@ max_block_time = '10s'
 trusting_period = '14days'
 trust_threshold = { numerator = '1', denominator = '3' }
 address_type = { derivation = 'cosmos' }
+

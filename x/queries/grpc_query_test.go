@@ -62,6 +62,7 @@ func TestCirculating(t *testing.T) {
 	ctx, sdkCtx, queryClient, bkMock := newQServer()
 
 	// Test that supply has been initialized as expected
+
 	require.Equal(t, "453", bkMock.GetSupply(sdkCtx, stakingDenom).Amount.String())
 	require.Equal(t, "154", bkMock.GetSupply(sdkCtx, "blx").Amount.String())
 

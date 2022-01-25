@@ -6,6 +6,10 @@ all: emdnode cosmovisor test-upg v44
 # use case: switching cosmos-sdk versions
 all-f: emdnode-f cosmovisor-f test-upg-f
 
+# force rebuild when docker is caching images
+# use case: switching cosmos-sdk versions
+all-f: emdnode-f cosmovisor-f test-upg-f
+
 emdnode:
 	docker build --tag emoney/emdnode emdnode
 
@@ -23,6 +27,7 @@ test-upg:
 
 test-upg-f:
 	docker build test-upg --build-arg branch=$$(git rev-parse --abbrev-ref HEAD) --build-arg version=test-upg-0.2.0 --tag emoney/test-upg --no-cache
+<<<<<<< HEAD
 
 v44:
 	docker build test-v44 --build-arg branch=v44 --build-arg version=v44-upg-test --tag emoney/test-v44 --no-cache

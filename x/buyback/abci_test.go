@@ -137,7 +137,7 @@ func TestBuyback3(t *testing.T) {
 	// Generate some prices for the pesos <-> ungm instrument
 	acc2 := createAccount(t, ctx, accountKeeper, bankKeeper, randomAddress(), "10000ungm")
 
-	_, err := market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
+	err := market.NewOrderSingle(ctx, order(acc2, "1ungm", "4000000pesos"))
 	require.NoError(t, err)
 
 	// Attempt to create a position using the meager pesos balance of the module

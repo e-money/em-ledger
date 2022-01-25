@@ -23,7 +23,30 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/e-money/buyback/v1/time": {
+      "get": {
+        "summary": "Query for buyback time periods",
+        "operationId": "BuybackTime",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/em.buyback.v1.QueryBuybackTimeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/grpc.gateway.runtime.Error"
             }
@@ -56,6 +79,19 @@
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           }
+        }
+      }
+    },
+    "em.buyback.v1.QueryBuybackTimeResponse": {
+      "type": "object",
+      "properties": {
+        "last_run": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "next_run": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

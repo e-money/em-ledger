@@ -1,4 +1,3 @@
-
 // beginning of test upg handler insertion
 	/*
 	 * This is a test handler for trying out cosmovisor

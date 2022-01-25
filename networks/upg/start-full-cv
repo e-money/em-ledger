@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -ev
+
+##### em-ledger single node cosmovisor setup
+export DAEMON_NAME=emd
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+export DAEMON_RESTART_AFTER_UPGRADE=true
+
+# optionally uncomment to copy future upgrade binary in location if
+# auto-downloading is not available as a primary or none at all
+# by default we assume it is on and the upgrade binary is not available
+# locally: DAEMON_RESTART_AFTER_UPGRADE=true
+#./cpupgemd
+
+export DAEMON_HOME=$PWD/.emd
+
+./initchain "42"
+cosmovisor start --home="$DAEMON_HOME"

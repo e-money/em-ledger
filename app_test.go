@@ -26,6 +26,7 @@ import (
 	"github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
 	ibctesting "github.com/cosmos/ibc-go/v2/testing"
+
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority"
 	authtypes "github.com/e-money/em-ledger/x/authority/types"

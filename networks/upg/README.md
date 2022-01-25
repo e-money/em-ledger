@@ -1,12 +1,13 @@
 ## Guide for testing the upgrade module
 #### Overview
-This document is an interactive guide for testing the upgrade module with a single docker-less e-money node. 
+This document is an interactive guide for testing the upgrade module with a single docker-less e-money node.
 
 Please note if you'd rather test the upgrade module within the **e-money local-testnet** run:
 
 ```shell
 cd em-ledger
-make build-docker
+make build-docker # use make build-docker-f if changing sdk versions
+make clean
 make build-fast-consensus
 go test -v --tags="bdd" bdd_test.go upgrade_test.go
 ```
@@ -16,17 +17,17 @@ Three new docker images defined in em-ledger/networks/docker:
 1. `emoney/cosmovisor` which builds a linux cosmovisor binary for use within the e-money local-testnet.
 
 2. `emoney/test-upg` which builds a test upgrade binary with a trivial upgrade module handler changing the gas-fees as part of the upgrade migration process.
-3. 
+3.
 4. `emoney/test-v44` which builds a v44 test upgrade binary running v42-v44 migrations.
 
 Note these scripts at **em-ledger/networks/upg**:
 * `README.md` (this doc)
-* `initchain` initializes genesis, authority for an em-legder chain.
-* `resetv42` initializes genesis, authority for an em-legder chain from a zip containing the em-ledger v42 genesis files.
+* `initchain` initializes genesis, authority for an em-ledger chain.
+* `resetv42` initializes genesis, authority for an em-ledger chain from a zip containing the em-ledger v42 genesis files.
 * `startcv` (starts emoney node with cosmovisor): `cosmovisor start --home=.emd`
 * `start-upg-cv` runs `resetv42 && startcv` launches a v42 chain and immediately at block 9 launches the upgrade process to the v44 em-ledger chain from a v42 chain by running the v42 to the v44 migrations.
 * `start-full-cv` runs `initchain && startcv` for testing the upgrade process to the chain with same sdk version without running migrations.
-* `upg-sched` schedule an upgrade by passing the upgrade block height 
+* `upg-sched` schedule an upgrade by passing the upgrade block height
 * `upg-sched-srv` optional documentation setup and schedule command for upgrading with server downloaded binary
 * `upgvfunc.txt` Go snippet text inserted for same chain upgrade in app.go. Enables the bdd upgrade test. No migration run.
 * `upgv44func.txt` Go snippet text inserted for a v42 chain to v44 upgrade in the app.go. Enables the start-upg-cv manual test.

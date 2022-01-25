@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
 	"github.com/e-money/em-ledger/x/queries/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -90,6 +91,10 @@ func calcStakingSpendableSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeep
 			if stakingAccounts[address.String()] {
 				return false
 			}
+
+	// ctx := sdk.UnwrapSDKContext(c)
+	// total := calculateCirculatingSupply(ctx, k.accK, k.bk)
+
 
 			spendableCoins := bk.SpendableCoins(ctx, address)
 			ngmbalance = ngmbalance.Add(spendableCoins.AmountOf(stakingDenom))

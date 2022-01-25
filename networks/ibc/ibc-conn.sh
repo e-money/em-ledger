@@ -42,6 +42,7 @@ function try_conn() {
   tries=10
   sleep 10
 
+
   for (( i = 0; i < tries; i++ )); do
     echo attempt "$i" to conn-try
     if ! hermes -c ./emoney-config.toml tx raw conn-try "$dst" "$src" $CLIENT_ID $CLIENT_ID -s $CONNECTION_ID ; then
