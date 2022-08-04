@@ -7,3 +7,4 @@
 
 # Used for temporarily adding local dependencies during debugging.
 /tmpvendor
+.DS_Store
