@@ -556,6 +556,8 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 			t, ctx.BlockTime().Format(time.RFC3339),
 			createdValue,
 		)
+	} else {
+		require.Fail(t, "No matching timestamp found")
 	}
 
 	// Create a fill or kill order that cannot be satisfied by the current market
@@ -1606,7 +1608,7 @@ func getEventAttrValue(e abci.Event, eventAttrKey string) (string, bool) {
 	return "", false
 }
 
-// filterEvens filter events based on eventType and attributes
+// filterEvents filter events based on eventType and attributes
 // collection
 func filterEvents(ctx sdk.Context, eventType string, attrKey string, attrValue string) []abci.Event {
 	var results []abci.Event
