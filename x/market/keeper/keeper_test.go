@@ -7,6 +7,7 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"math"
 	"strings"
 	"testing"
@@ -547,10 +548,17 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, findEventAttr(ctx, "accept"))
 
-	require.Equal(
-		t, ctx.BlockTime().Format(time.RFC3339),
-		string(ctx.EventManager().Events()[0].Attributes[len(ctx.EventManager().Events()[0].Attributes)-1].GetValue()),
-	)
+	var acceptEvents = filterEvents(ctx, "market", "action", "accept")
+	var createdValue, found = getEventAttrValue(acceptEvents[0], "created")
+
+	if found {
+		require.Equal(
+			t, ctx.BlockTime().Format(time.RFC3339),
+			createdValue,
+		)
+	} else {
+		require.Fail(t, "No matching timestamp found")
+	}
 
 	// Create a fill or kill order that cannot be satisfied by the current market
 	srcDenom := "gbp"
@@ -1587,4 +1595,31 @@ func findEventAttr(ctx sdk.Context, eventAttr string) bool {
 		}
 	}
 	return false
+}
+
+// getEventAttrValue return value for a given attribute key
+// string
+func getEventAttrValue(e abci.Event, eventAttrKey string) (string, bool) {
+	for _, evAttr := range e.Attributes {
+		if string(evAttr.Key) == eventAttrKey {
+			return string(evAttr.Value), true
+		}
+	}
+	return "", false
+}
+
+// filterEvents filter events based on eventType and attributes
+// collection
+func filterEvents(ctx sdk.Context, eventType string, attrKey string, attrValue string) []abci.Event {
+	var results []abci.Event
+	for _, event := range ctx.EventManager().ABCIEvents() {
+		if event.Type == eventType {
+			for _, evAttr := range event.Attributes {
+				if string(evAttr.Key) == attrKey && string(evAttr.Value) == attrValue {
+					results = append(results, event)
+				}
+			}
+		}
+	}
+	return results
 }
