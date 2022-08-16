@@ -135,7 +135,7 @@ func (t *Testnet) restart(genesismodifier func([]byte) []byte) (func() bool, err
 	}
 
 	for i := 0; i < ContainerCount; i++ {
-		_, err := t.execCmdAndWait(EMD, "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
+		_, err := t.execCmdAndWait(EMD, "tendermint", "unsafe-reset-all", "--home", fmt.Sprintf("build/node%d", i))
 		if err != nil {
 			return nil, err
 		}

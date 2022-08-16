@@ -167,6 +167,14 @@ func (pk *ProxyKeeper) SetDenomMetaData(ctx sdk.Context, denomMetaData banktypes
 	pk.bk.SetDenomMetaData(ctx, denomMetaData)
 }
 
+func (pk *ProxyKeeper) HasSupply(ctx sdk.Context, denom string) bool {
+	return pk.bk.HasSupply(ctx, denom)
+}
+
+func (pk *ProxyKeeper) SpendableBalances(ctx context.Context, request *banktypes.QuerySpendableBalancesRequest) (*banktypes.QuerySpendableBalancesResponse, error) {
+	return pk.bk.SpendableBalances(ctx, request)
+}
+
 // GetAllDenomMetaData cloned here from the bank keeper as it is not exposed in
 // the bank keeper interface
 func (pk *ProxyKeeper) GetAllDenomMetaData(ctx sdk.Context) []banktypes.Metadata {

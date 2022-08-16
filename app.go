@@ -7,6 +7,8 @@ package emoney
 import (
 	"encoding/json"
 	"fmt"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"io"
 	"net/http"
 	"os"
@@ -86,6 +88,7 @@ import (
 	lptypes "github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/e-money/em-ledger/x/market"
 	"github.com/e-money/em-ledger/x/queries"
+	queriestypes "github.com/e-money/em-ledger/x/queries/types"
 	emslashing "github.com/e-money/em-ledger/x/slashing"
 	"github.com/e-money/em-ledger/x/staking"
 	historykeeper "github.com/e-money/em-ledger/x/staking/keeper"
@@ -450,7 +453,6 @@ func NewApp(
 
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
-		// todo (reviewer): check which modules make sense and which order
 		upgradetypes.ModuleName,
 		//// Cosmos #9800: capability module's begin blocker must come before any modules using capabilities (e.g. IBC)
 		capabilitytypes.ModuleName,
@@ -464,11 +466,49 @@ func NewApp(
 		emslashing.ModuleName,
 		emdistr.ModuleName,
 		buyback.ModuleName,
-		//bep3.ModuleName, // <- TODO Forces app-state change in BeginBlock
+
+		// Modules that don't seem to use BeginBlock but must now be included for completenes.
+		paramstypes.ModuleName,
+		banktypes.ModuleName,
+		genutiltypes.ModuleName,
+		crisistypes.ModuleName,
+		issuer.ModuleName,
+		vestingtypes.ModuleName,
+		feegrant.ModuleName,
+		liquidityprovider.ModuleName,
+		authtypes.ModuleName,
+		authz.ModuleName,
+		ibctransfertypes.ModuleName,
+		queriestypes.ModuleName,
 	)
 
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, stakingtypes.ModuleName,
-		feegrant.ModuleName, authz.ModuleName)
+	app.mm.SetOrderEndBlockers(
+		crisistypes.ModuleName,
+		stakingtypes.ModuleName,
+		feegrant.ModuleName,
+		authz.ModuleName,
+
+		// Modules that don't seem to use EndBlock but must now be included for completenes.
+		ibchost.ModuleName,
+		vestingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		market.ModuleName,
+		buyback.ModuleName,
+		capabilitytypes.ModuleName,
+		upgradetypes.ModuleName,
+		evidencetypes.ModuleName,
+		liquidityprovider.ModuleName,
+		genutiltypes.ModuleName,
+		banktypes.ModuleName,
+		paramstypes.ModuleName,
+		issuer.ModuleName,
+		authority.ModuleName,
+		inflation.ModuleName,
+		queriestypes.ModuleName,
+		authtypes.ModuleName,
+		slashingtypes.ModuleName,
+		distrtypes.ModuleName,
+	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -481,6 +521,9 @@ func NewApp(
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
 		inflation.ModuleName, issuer.ModuleName, authority.ModuleName, market.ModuleName, buyback.ModuleName,
 		liquidityprovider.ModuleName, feegrant.ModuleName, authz.ModuleName,
+
+		// Modules that don't seem to use Genesis initialization but must now be included for completenes.
+		upgradetypes.ModuleName, paramstypes.ModuleName, queriestypes.ModuleName, vestingtypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
