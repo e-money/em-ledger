@@ -3,7 +3,6 @@
 // Please contact partners@e-money.com for licensing related questions.
 
 //go:build bdd
-// +build bdd
 
 package emoney_test
 
