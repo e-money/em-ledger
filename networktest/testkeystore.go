@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -128,7 +127,7 @@ func NewKeystore(reusableLocation, reusableIsUp bool) (*KeyStore, error) {
 
 	// random tmp path
 	if !reusableIsUp && !reusableLocation {
-		path, err = ioutil.TempDir("", "")
+		path, err = os.MkdirTemp("", "")
 		if err != nil {
 			return nil, err
 		}
@@ -221,7 +220,7 @@ func (ks KeyStore) addDeputyKey() {
 func (ks KeyStore) addValidatorKeys(workDir string, numberNodes int) {
 	for i := 0; i < numberNodes; i++ {
 		fileName := filepath.Join(workDir, fmt.Sprintf("node%d", i), "key_seed.json")
-		bz, err := ioutil.ReadFile(fileName)
+		bz, err := os.ReadFile(fileName)
 		if err != nil {
 			panic(fmt.Sprintf("failed to load key see %q: %s", fileName, err))
 		}

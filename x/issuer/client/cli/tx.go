@@ -39,7 +39,10 @@ func getCmdSetInflation() *cobra.Command {
 		Short:   "Set the inflation rate for a denomination",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Flags().Set(flags.FlagFrom, args[0])
+			err := cmd.Flags().Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -77,7 +80,10 @@ func getCmdIncreaseMintableAmount() *cobra.Command {
 		Short: "Increase the amount mintable for a liquidity provider.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Flags().Set(flags.FlagFrom, args[0])
+			err := cmd.Flags().Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -115,7 +121,10 @@ func getCmdDecreaseMintableAmount() *cobra.Command {
 		Short: "Decrease the amount mintable for a liquidity provider. Result cannot be negative",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Flags().Set(flags.FlagFrom, args[0])
+			err := cmd.Flags().Set(flags.FlagFrom, args[0])
+			if err != nil {
+				return err
+			}
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err

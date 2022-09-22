@@ -65,8 +65,8 @@ func TestSimAppExportAndBlockedAddrs(t *testing.T) {
 }
 
 func mustGetEmApp(authorityAcc sdk.AccAddress) (
-	encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string) {
-
+	encCfg EncodingConfig, memDB *dbm.MemDB, eMoneyApp *EMoneyApp, homeFolder string,
+) {
 	encCfg = MakeEncodingConfig()
 	db := dbm.NewMemDB()
 	homeDir, err := os.MkdirTemp("", "emapp")
@@ -114,7 +114,7 @@ var tempDirs = make([]string, 0, 2)
 func createIBCApp() (emIBCApp ibctesting.TestingApp, genesis map[string]json.RawMessage) {
 	var _ ibctesting.TestingApp = emIBCApp
 
-	//configOnce.Do(apptypes.ConfigureSDK)
+	// configOnce.Do(apptypes.ConfigureSDK)
 	authorityAcc := mustGetAccAddress("cosmos1lagqmceycrfpkyu7y6ayrk6jyvru5mkrkp8vkn")
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
@@ -177,9 +177,8 @@ func (suite *IBCTestSuite) TestTransfer() {
 	// setup between chainA and chainB
 	path := NewTransferPath(suite.chainA, suite.chainB)
 	suite.coordinator.SetupClients(path)
-	//suite.coordinator.Setup(path)
+	// suite.coordinator.Setup(path)
 	suite.Require().Equal("07-tendermint-0", path.EndpointA.ClientID)
-
 }
 
 // GetBaseApp implements the TestingApp interface.
@@ -272,7 +271,7 @@ func (s *IBCTestSuite) TearDownSuite() {
 	for _, t := range tempDirs {
 		err := os.RemoveAll(t)
 		if err != nil {
-			s.T().Log(fmt.Sprintf("removing %s temp dir %v", t, err))
+			s.T().Logf("removing %s temp dir %v", t, err)
 		}
 	}
 }
@@ -352,9 +351,6 @@ func Test_Upgrade(t *testing.T) {
 				Info:   "some text here",
 				Height: 123450000,
 			},
-			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
-				plan.Time = simApp.ctx.BlockTime().Add(time.Hour)
-			},
 			expSchedPass: false,
 		},
 		{
@@ -365,7 +361,6 @@ func Test_Upgrade(t *testing.T) {
 				Height: 123450000,
 			},
 			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
-
 				_, err := simApp.app.authorityKeeper.ScheduleUpgrade(
 					simApp.ctx, simApp.authority, upgradetypes.Plan{
 						Name:   "alt-good",
@@ -428,9 +423,6 @@ func Test_Upgrade(t *testing.T) {
 			plan: upgradetypes.Plan{
 				Name: "all-good",
 				Info: "some text here",
-			},
-			setupUpgCond: func(simApp emAppTests, plan *upgradetypes.Plan) {
-				plan.Time = simApp.ctx.BlockTime()
 			},
 			expSchedPass: false,
 		},
@@ -747,7 +739,6 @@ func (s *TestAuthzSuite) TestAuthzKeeper() {
 	s.Require().NoError(err)
 	authorization, _ = app.authzKeeper.GetCleanAuthorization(ctx, granteeAddr, granterAddr, bankSendAuthMsgType)
 	s.Require().Nil(authorization)
-
 }
 
 func (s *TestAuthzSuite) TestAuthzKeeperIter() {

@@ -2,15 +2,14 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
+//go:build bdd && quiet
 // +build bdd,quiet
 
 package networktest
 
-import (
-	"io/ioutil"
-)
+import io
 
 func init() {
 	// Silence the output of the testnet component
-	output = ioutil.Discard
+	output = io.Discard
 }

@@ -6,15 +6,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-
-	"github.com/e-money/em-ledger/x/authority"
-	"github.com/e-money/em-ledger/x/buyback"
-	"github.com/e-money/em-ledger/x/inflation"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/e-money/em-ledger/x/authority"
+	"github.com/e-money/em-ledger/x/buyback"
+	"github.com/e-money/em-ledger/x/inflation"
 
 	"github.com/spf13/cobra"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -119,7 +119,7 @@ Example:
 	return cmd
 }
 
-const nodeDirPerm = 0755
+const nodeDirPerm = 0o755
 
 // Initialize the testnet
 func InitTestnet(clientCtx client.Context, cmd *cobra.Command, nodeConfig *tmconfig.Config, mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator, outputDir, chainID, minGasPrices, nodeDirPrefix, nodeDaemonHome, startingIPAddress, keyringBackend, algoStr string, numValidators int, authorityKey sdk.AccAddress, keybaseAccountPath string) error {
@@ -285,7 +285,6 @@ func initGenFiles(
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
 	genFiles []string, numValidators int, authorityKey sdk.AccAddress,
 ) error {
-
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONCodec)
 	appGenState["authority"] = createAuthorityGenesis(authorityKey)
 	appGenState["inflation"] = createInflationGenesis()
@@ -336,7 +335,6 @@ func collectGenFiles(
 	nodeIDs []string, valPubKeys []cryptotypes.PubKey, numValidators int,
 	outputDir, nodeDirPrefix, nodeDaemonHome string, genBalIterator banktypes.GenesisBalancesIterator,
 ) error {
-
 	var appState json.RawMessage
 	genTime := tmtime.Now()
 
@@ -405,12 +403,12 @@ func writeFile(name string, dir string, contents []byte) error {
 	writePath := filepath.Join(dir)
 	file := filepath.Join(writePath, name)
 
-	err := tmos.EnsureDir(writePath, 0755)
+	err := tmos.EnsureDir(writePath, 0o755)
 	if err != nil {
 		return err
 	}
 
-	err = tmos.WriteFile(file, contents, 0644)
+	err = tmos.WriteFile(file, contents, 0o644)
 	if err != nil {
 		return err
 	}

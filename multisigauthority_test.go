@@ -8,7 +8,6 @@ package emoney_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,7 +19,6 @@ import (
 )
 
 var _ = Describe("Authority", func() {
-
 	var (
 		keystore  = testnet.Keystore
 		emcli     = testnet.NewEmcli()
@@ -44,7 +42,7 @@ var _ = Describe("Authority", func() {
 		It("Same key signs twice", func() {
 			_, _ = nt.IncChain(1) // Avoid querying while block height is 1
 
-			jsonPath, err := ioutil.TempDir("", "")
+			jsonPath, err := os.MkdirTemp("", "")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(jsonPath)
 
@@ -55,21 +53,21 @@ var _ = Describe("Authority", func() {
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
-			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+			os.WriteFile(transactionPath, []byte(tx), 0777)
 
 			sigPaths := make([]string, 0)
 			// Sign twice with key1. Signature count is above threshold, but ...
 			for i := 0; i < 2; i++ {
 				tx, err = emcli.SignTranscation(transactionPath, key1.GetAddress(), authorityaddress)
 				signaturePath := fmt.Sprintf("%v/sign%v.json", jsonPath, i)
-				ioutil.WriteFile(signaturePath, []byte(tx), 0777)
+				os.WriteFile(signaturePath, []byte(tx), 0777)
 				sigPaths = append(sigPaths, signaturePath)
 			}
 
 			// Combine the two signatures
 			tx, err = emcli.CustomCommand("tx", "multisign", transactionPath, "multikey", sigPaths[0], sigPaths[1])
 			Expect(err).To(BeNil())
-			ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+			os.WriteFile(transactionPath, []byte(tx), 0777)
 
 			tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			Expect(err).NotTo(BeNil())
@@ -150,11 +148,9 @@ var _ = Describe("Authority", func() {
 
 // execAuthMSigTx signs and broadcasts a multisig trx using the emcli.CustomCommand.
 func execAuthMSigTx(authorityAddress string, keys []nt.Key, cmdArgs ...string) {
-	var (
-		emcli = testnet.NewEmcli()
-	)
+	emcli := testnet.NewEmcli()
 
-	jsonPath, err := ioutil.TempDir("", "")
+	jsonPath, err := os.TempDir("", "")
 	Expect(err).To(BeNil())
 	defer os.RemoveAll(jsonPath)
 
@@ -162,20 +158,20 @@ func execAuthMSigTx(authorityAddress string, keys []nt.Key, cmdArgs ...string) {
 	Expect(err).To(BeNil())
 
 	transactionPath := fmt.Sprintf("%v/transaction.json", jsonPath)
-	err = ioutil.WriteFile(transactionPath, []byte(cmdTx), 0777)
+	err = os.WriteFile(transactionPath, []byte(cmdTx), 0777)
 	Expect(err).To(BeNil())
 
 	tx, err := emcli.SignTranscation(
 		transactionPath, keys[0].GetAddress(), authorityAddress,
 	)
 	signaturePath1 := fmt.Sprintf("%v/sign%v.json", jsonPath, 0)
-	err = ioutil.WriteFile(signaturePath1, []byte(tx), 0777)
+	err = os.WriteFile(signaturePath1, []byte(tx), 0777)
 	Expect(err).To(BeNil())
 	tx, err = emcli.SignTranscation(
 		transactionPath, keys[1].GetAddress(), authorityAddress,
 	)
 	signaturePath2 := fmt.Sprintf("%v/sign%v.json", jsonPath, 1)
-	err = ioutil.WriteFile(signaturePath2, []byte(tx), 0777)
+	err = os.WriteFile(signaturePath2, []byte(tx), 0777)
 	Expect(err).To(BeNil())
 
 	// Combine the two signatures
@@ -184,7 +180,7 @@ func execAuthMSigTx(authorityAddress string, keys []nt.Key, cmdArgs ...string) {
 		signaturePath2,
 	)
 	Expect(err).To(BeNil())
-	err = ioutil.WriteFile(transactionPath, []byte(tx), 0777)
+	err = os.WriteFile(transactionPath, []byte(tx), 0777)
 	Expect(err).To(BeNil())
 
 	tx, err = emcli.CustomCommand("tx", "broadcast", transactionPath)

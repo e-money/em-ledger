@@ -84,7 +84,7 @@ $ %s migrate v0.9 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=20
 			migrationFunc := GetMigrationCallback(target)
 			if migrationFunc == nil {
 				migrations := make([]string, len(migrationMap))
-				for k, _ := range migrationMap {
+				for k := range migrationMap {
 					migrations = append(migrations, k)
 				}
 
@@ -99,7 +99,7 @@ $ %s migrate v0.9 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=20
 			if !noUpgrade {
 				genDoc.ConsensusParams.Evidence.MaxBytes = 4194304
 
-				upgradeModuleParams(clientCtx.JSONCodec, newGenState)
+				upgradeModuleParams(clientCtx.Codec, newGenState)
 			}
 
 			genDoc.AppState, err = json.Marshal(newGenState)

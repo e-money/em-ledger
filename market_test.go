@@ -8,7 +8,6 @@ package emoney_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -192,7 +191,7 @@ var _ = Describe("Market", func() {
 			Expect(success).To(BeTrue())
 
 			// Create one transaction that includes a market order and a lot transfers, which will make the tx run out of gas.
-			jsonPath, err := ioutil.TempDir("", "")
+			jsonPath, err := os.MkdirTemp("", "")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(jsonPath)
 
@@ -241,7 +240,7 @@ var _ = Describe("Market", func() {
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
-			ioutil.WriteFile(transactionPath, txBz, 0777)
+			os.WriteFile(transactionPath, txBz, 0777)
 
 			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			Expect(err).NotTo(BeNil())

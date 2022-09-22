@@ -41,8 +41,9 @@ func TestBuyback1(t *testing.T) {
 
 	// Add some ungm sell orders
 	acc1 := createAccount(t, ctx, accountKeeper, bankKeeper, randomAddress(), "50000ungm")
-	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
-	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
+	err := market.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
+	t.Require().NoError(err)
+	err = market.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
 
 	buybackAccount := accountKeeper.GetModuleAccount(ctx, ModuleName).GetAddress()
 	setAccBalance(t, ctx, buybackAccount, bankKeeper, coins("10000ungm"))
@@ -94,7 +95,7 @@ func TestBuyback2(t *testing.T) {
 	ctx = ctx.WithBlockHeight(1)
 
 	acc1 := createAccount(t, ctx, accountKeeper, bankKeeper, randomAddress(), "50000ungm")
-	//generateMarketActivity(ctx, market, accountKeeper, bankKeeper)
+	// generateMarketActivity(ctx, market, accountKeeper, bankKeeper)
 	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "10000eur"))
 	market.NewOrderSingle(ctx, order(acc1, "5000ungm", "20000chf"))
 
@@ -185,7 +186,7 @@ func createTestComponents(t *testing.T) (sdk.Context, keeper.Keeper, *market.Kee
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
-			AccountName: {authtypes.Burner},
+			AccountName:          {authtypes.Burner},
 			authtypes.ModuleName: {authtypes.Minter},
 		}
 	)
@@ -289,7 +290,8 @@ func mintBalance(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk
 }
 
 func setAccBalance(
-	t *testing.T, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper, balance sdk.Coins) {
+	t *testing.T, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper, balance sdk.Coins,
+) {
 	err := bk.SendCoinsFromModuleToAccount(ctx, authtypes.ModuleName, acc, balance)
 	require.NoError(t, err)
 }

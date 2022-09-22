@@ -7,11 +7,12 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"math"
 	"strings"
 	"testing"
 	"time"
+
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
@@ -359,7 +360,7 @@ func TestCancelReplaceMarketOrder100Slippage(t *testing.T) {
 
 	clientID := limitOrder.ClientOrderID
 
-	acc1b = bk.GetAllBalances(ctx, acc1.GetAddress())
+	_ = bk.GetAllBalances(ctx, acc1.GetAddress())
 
 	// Gave 1 gbp and gained a eur
 	acc1Bal := bk.GetAllBalances(ctx, acc1.GetAddress())
@@ -548,8 +549,8 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, findEventAttr(ctx, "accept"))
 
-	var acceptEvents = filterEvents(ctx, "market", "action", "accept")
-	var createdValue, found = getEventAttrValue(acceptEvents[0], "created")
+	acceptEvents := filterEvents(ctx, "market", "action", "accept")
+	createdValue, found := getEventAttrValue(acceptEvents[0], "created")
 
 	if found {
 		require.Equal(
@@ -1382,7 +1383,7 @@ func TestTimeInForceIO(t *testing.T) {
 	encodingConfig := MakeTestEncodingConfig()
 
 	clientCtx := client.Context{}.
-		WithJSONCodec(encodingConfig.Marshaler).
+		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithLegacyAmino(encodingConfig.Amino).
@@ -1424,7 +1425,6 @@ func TestTimeInForceIO(t *testing.T) {
 	require.NoError(t, err)
 	_, err = clientCtx.TxConfig.TxJSONDecoder()(txBz)
 	require.NoError(t, err)
-
 }
 
 func TestGetNextOrderNumber(t *testing.T) {
@@ -1557,6 +1557,7 @@ func cid() string {
 	return tmrand.Str(10)
 }
 
+//nolint:unused
 func dumpEvents(events sdk.Events) {
 	fmt.Println("Number of events:", len(events))
 	for _, evt := range events {

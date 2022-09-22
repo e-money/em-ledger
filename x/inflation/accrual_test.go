@@ -16,7 +16,6 @@ import (
 
 func TestYearHourlyAccrual(t *testing.T) {
 	accum := sdk.NewDec(0)
-	minted := sdk.ZeroInt()
 	supply := sdk.NewInt(2300000000)
 	annualInflation := sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2)
 
@@ -24,19 +23,17 @@ func TestYearHourlyAccrual(t *testing.T) {
 
 	totalMinted := sdk.ZeroInt()
 	for i := 0; i < 365*24; i++ {
-		accum, minted = calculateInflation(accum, supply, annualInflation, lastAccrual, lastAccrual.Add(time.Hour))
+		_, minted := calculateInflation(accum, supply, annualInflation, lastAccrual, lastAccrual.Add(time.Hour))
 		lastAccrual = lastAccrual.Add(time.Hour)
 		totalMinted = totalMinted.Add(minted)
 	}
 
 	assert.Equal(t, sdk.NewInt(23000000), totalMinted, "minted %v", totalMinted)
 	assert.True(t, sdk.NewDec(0).Equal(accum), "accum", accum.String())
-
 }
 
 func TestRandomBlockTimes(t *testing.T) {
 	accum := sdk.NewDec(0)
-	minted := sdk.ZeroInt()
 	supply := sdk.NewInt(2300000000)
 	annualInterest := sdk.NewDecFromIntWithPrec(sdk.NewInt(1), 2)
 
@@ -60,7 +57,7 @@ func TestRandomBlockTimes(t *testing.T) {
 
 		totalDuration = totalDuration + d
 
-		accum, minted = calculateInflation(accum, supply, annualInterest, lastAccrual, lastAccrual.Add(d))
+		_, minted := calculateInflation(accum, supply, annualInterest, lastAccrual, lastAccrual.Add(d))
 		lastAccrual = lastAccrual.Add(d)
 		totalMinted = totalMinted.Add(minted)
 
