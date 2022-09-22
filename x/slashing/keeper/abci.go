@@ -1,9 +1,10 @@
 package keeper
 
 import (
-	apptypes "github.com/e-money/em-ledger/types"
 	"sort"
 	"time"
+
+	apptypes "github.com/e-money/em-ledger/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -41,7 +42,6 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k Keeper) {
 }
 
 func truncateByWindow(blockTime time.Time, times []time.Time, signedBlocksWindow time.Duration) (bool, []time.Time) {
-
 	if len(times) > 0 && times[0].Add(signedBlocksWindow).Before(blockTime) {
 		// Remove timestamps outside of the time window we are watching
 		threshold := blockTime.Add(-signedBlocksWindow)

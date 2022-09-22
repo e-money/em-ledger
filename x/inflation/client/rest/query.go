@@ -6,10 +6,11 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/e-money/em-ledger/x/inflation/types"
-	"net/http"
 )
 
 func queryInflationHandlerFn(cliCtx client.Context) http.HandlerFunc {

@@ -108,7 +108,7 @@ func (t *Testnet) Setup() error {
 func writeGenesisFiles(newGenesisFile []byte) error {
 	return filepath.Walk(WorkingDir, func(path string, fileinfo os.FileInfo, err error) error {
 		if fileinfo.Name() == "genesis.json" {
-			err := ioutil.WriteFile(path, newGenesisFile, 0644)
+			err := ioutil.WriteFile(path, newGenesisFile, 0o644)
 			if err != nil {
 				return err
 			}
@@ -204,7 +204,6 @@ func (t *Testnet) makeTestnet() error {
 		"--commit-timeout", "1500ms",
 		"--v", strconv.Itoa(numNodes),
 		"--minimum-gas-prices", "")
-
 	if err != nil {
 		return err
 	}

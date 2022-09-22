@@ -7,6 +7,7 @@ package bank
 import (
 	"bytes"
 	"errors"
+	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -14,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/rand"
-	"testing"
 )
 
 func TestDeduplicate(t *testing.T) {

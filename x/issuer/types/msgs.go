@@ -23,7 +23,7 @@ func (msg MsgSetInflation) Type() string { return "set_inflation" }
 func (msg MsgSetInflation) ValidateBasic() error {
 	if msg.InflationRate.IsNegative() {
 		return sdkerrors.Wrap(ErrNegativeInflation, "cannot set negative inflation")
-		//return ErrNegativeInflation()
+		// return ErrNegativeInflation()
 	}
 
 	if _, err := sdk.AccAddressFromBech32(msg.Issuer); err != nil {
@@ -88,7 +88,7 @@ func (msg MsgDecreaseMintable) ValidateBasic() error {
 
 	if !msg.MintableDecrease.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "requested decrease is invalid: %v", msg.MintableDecrease.String())
-		//return sdk.ErrInvalidCoins("requested decrease is invalid: " + msg.MintableDecrease.String())
+		// return sdk.ErrInvalidCoins("requested decrease is invalid: " + msg.MintableDecrease.String())
 	}
 
 	return nil

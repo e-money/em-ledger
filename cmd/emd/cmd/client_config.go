@@ -75,5 +75,5 @@ func writeConfigToFile(configFilePath string, config *config.ClientConfig) error
 		return err
 	}
 
-	return ioutil.WriteFile(configFilePath, buffer.Bytes(), 0600)
+	return ioutil.WriteFile(configFilePath, buffer.Bytes(), 0o600)
 }

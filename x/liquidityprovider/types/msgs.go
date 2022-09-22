@@ -25,7 +25,7 @@ func (msg MsgBurnTokens) ValidateBasic() error {
 
 	if !msg.Amount.IsValid() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
-		//return sdk.ErrInvalidCoins(msg.Amount.String())
+		// return sdk.ErrInvalidCoins(msg.Amount.String())
 	}
 
 	return nil
@@ -54,7 +54,7 @@ func (msg MsgMintTokens) ValidateBasic() error {
 
 	if !msg.Amount.IsValid() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, msg.Amount.String())
-		//return sdk.ErrInvalidCoins(msg.Amount.String())
+		// return sdk.ErrInvalidCoins(msg.Amount.String())
 	}
 
 	return nil

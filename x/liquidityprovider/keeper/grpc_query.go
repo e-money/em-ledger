@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
@@ -30,7 +31,7 @@ func (k Keeper) Mintable(c context.Context, req *types.QueryMintableRequest) (*t
 
 	lqAcc, err := sdk.AccAddressFromBech32(req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:" + req.Address)
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider:"+req.Address)
 	}
 
 	lp := k.GetLiquidityProviderAccount(sdk.UnwrapSDKContext(c), lqAcc)

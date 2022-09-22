@@ -5,6 +5,8 @@
 package distribution
 
 import (
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -13,12 +15,9 @@ import (
 	apptypes "github.com/e-money/em-ledger/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
-	"time"
 )
 
-var (
-	previousProposerKey = []byte("emdistr/previousproposer")
-)
+var previousProposerKey = []byte("emdistr/previousproposer")
 
 const ModuleName = distrtypes.ModuleName
 

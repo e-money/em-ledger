@@ -346,14 +346,13 @@ Where proposal.json contains:
 
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
-
 }
 
 // parseParamChangesJSON reads and parses a ParamChangesJSON from file.
 func parseParamChangesJSON(cdc *codec.LegacyAmino, jsonFile string) (utils.ParamChangesJSON, error) {
 	params := utils.ParamChangesJSON{}
 
-	var paramsJson = []byte(jsonFile)
+	paramsJson := []byte(jsonFile)
 	if json.Valid(paramsJson) {
 		return getParsedParams(cdc, paramsJson)
 	}

@@ -2,6 +2,7 @@
 //
 // Please contact partners@e-money.com for licensing related questions.
 
+//go:build bdd && quiet
 // +build bdd,quiet
 
 package networktest

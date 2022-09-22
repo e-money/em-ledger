@@ -1,13 +1,13 @@
 package v040
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	v038auth "github.com/cosmos/cosmos-sdk/x/auth/legacy/v038"
 	v039auth "github.com/cosmos/cosmos-sdk/x/auth/legacy/v039"
 	"github.com/stretchr/testify/require"
-
-	"testing"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -66,11 +66,10 @@ func TestUnmarshal(t *testing.T) {
 	require.Equal(t, mpk.Threshold, uint32(2))
 	require.Len(t, mpk.PubKeys, 3)
 
-	//println("Multisig threshold", mpk.Threshold)
-	//println("Pubkey count", len(mpk.PubKeys))
+	// println("Multisig threshold", mpk.Threshold)
+	// println("Pubkey count", len(mpk.PubKeys))
 
 	// ERROR IS HERE:
 	// tmpvendor/cosmos-sdk/crypto/keys/multisig/amino.go:79
 	// The iteration at the bottom of the method iterates over an empty array.
-
 }

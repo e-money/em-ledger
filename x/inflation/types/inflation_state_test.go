@@ -45,5 +45,4 @@ func TestFindAndChangeAssetByDenom(t *testing.T) {
 	caps.Inflation, _ = sdk.NewDecFromStr("0.25")
 
 	assert.Equal(t, sdk.NewDecWithPrec(25, 2), is.FindByDenom("caps").Inflation)
-
 }

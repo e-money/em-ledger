@@ -146,7 +146,7 @@ func (b bankKeeperMock) SpendableCoins(_ sdk.Context, addr sdk.AccAddress) sdk.C
 }
 
 func (b bankKeeperMock) GetSupply(_ sdk.Context, denom string) sdk.Coin {
-	var supply = sdk.NewCoin(denom, sdk.ZeroInt())
+	supply := sdk.NewCoin(denom, sdk.ZeroInt())
 	for _, balance := range b.balances {
 		amnt := balance.AmountOfNoDenomValidation(denom)
 		supply = supply.Add(sdk.NewCoin(denom, amnt))

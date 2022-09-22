@@ -48,7 +48,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	slh := sdkslashing.NewHandler(keeper.Keeper)
 	_, err := sh(ctx, NewTestMsgCreateValidator(addr, val, amt))
 	require.NoError(t, err)
-	//require.True(t, got.IsOK())
+	// require.True(t, got.IsOK())
 	staking.EndBlocker(ctx, sk)
 
 	require.Equal(
@@ -97,7 +97,7 @@ func TestHandleAbsentValidator(t *testing.T) {
 	require.Equal(t, int64(len(keeper.getMissingBlocksForValidator(consAddr))), missedBlocksCntApi)
 	require.Equal(t, blockCount, totalBlockCountApi)
 
-	//for ; height < keeper.SignedBlocksWindow(ctx)+(keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx)); height++ {
+	// for ; height < keeper.SignedBlocksWindow(ctx)+(keeper.SignedBlocksWindow(ctx)-keeper.MinSignedPerWindow(ctx)); height++ {
 	// nextHeight := height + blockWindow - 3
 	nextBlockTime := ctx.BlockTime().Add(signedBlocksWindow).Add(-10 * time.Minute) // Approach the limit of missed signed blocks
 	missedBlocksCount := 0

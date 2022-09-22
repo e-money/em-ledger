@@ -1,12 +1,13 @@
 package liquidityprovider
 
 import (
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"testing"
 )
 
 func init() {

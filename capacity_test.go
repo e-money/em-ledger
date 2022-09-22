@@ -9,6 +9,11 @@ package emoney_test
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -22,24 +27,17 @@ import (
 	"github.com/spf13/pflag"
 	rpcclient "github.com/tendermint/tendermint/rpc/client/http"
 	"github.com/tidwall/gjson"
-	"os"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 var _ = Describe("Staking", func() {
-
-	var (
-		keys = []nt.Key{
-			testnet.Keystore.Key1,
-			testnet.Keystore.Key2,
-			testnet.Keystore.Key3,
-			testnet.Keystore.Key4,
-			testnet.Keystore.Key5,
-			testnet.Keystore.Key6,
-		}
-	)
+	keys := []nt.Key{
+		testnet.Keystore.Key1,
+		testnet.Keystore.Key2,
+		testnet.Keystore.Key3,
+		testnet.Keystore.Key4,
+		testnet.Keystore.Key5,
+		testnet.Keystore.Key6,
+	}
 
 	Describe("Blocks can hold many transactions", func() {
 		Context("", func() {
@@ -56,7 +54,6 @@ var _ = Describe("Staking", func() {
 				)
 
 				for i := 0; i < trxCount; i++ {
-
 					go func(from, to nt.Key) {
 						hash, err := sendTx(from, to, coin, chainID)
 						if err != nil {
@@ -88,7 +85,6 @@ func verifyTransactions(txhash chan string) (success, failure int32) {
 
 		case h := <-txhash:
 			bz, err := emcli.QueryTransaction(h)
-
 			if err != nil {
 				txhash <- h // Resubmit for retry
 				continue
@@ -109,7 +105,6 @@ func verifyTransactions(txhash chan string) (success, failure int32) {
 			return
 		}
 	}
-
 }
 
 type accountNoSequence struct {

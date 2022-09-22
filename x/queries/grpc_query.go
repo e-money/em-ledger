@@ -92,9 +92,8 @@ func calcStakingSpendableSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeep
 				return false
 			}
 
-	// ctx := sdk.UnwrapSDKContext(c)
-	// total := calculateCirculatingSupply(ctx, k.accK, k.bk)
-
+			// ctx := sdk.UnwrapSDKContext(c)
+			// total := calculateCirculatingSupply(ctx, k.accK, k.bk)
 
 			spendableCoins := bk.SpendableCoins(ctx, address)
 			ngmbalance = ngmbalance.Add(spendableCoins.AmountOf(stakingDenom))

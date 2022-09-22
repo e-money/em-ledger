@@ -8,15 +8,16 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/e-money/em-ledger/util"
 )
 
 const (
-	ModuleName   = "market"
-	StoreKey     = ModuleName
+	ModuleName = "market"
+	StoreKey   = ModuleName
 	// StoreKeyIdx 0.44 SDK forced rename: market_indices -> indices_market. A
 	// store key cannot use a shared prefix i.e. market.
 	StoreKeyIdx  = "indices_market"

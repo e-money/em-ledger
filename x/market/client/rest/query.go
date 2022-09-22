@@ -6,19 +6,19 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/e-money/em-ledger/x/market/types"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 func RegisterQueryRoutes(cliCtx client.Context, r *mux.Router) {
 	r.HandleFunc("/market/instruments", queryInstrumentsHandlerFn(cliCtx)).Methods("GET")
 	r.HandleFunc("/market/instrument/{src}/{dst}", queryInstrumentHandlerFn(cliCtx)).Methods("GET")
 	r.HandleFunc("/market/account/{address}", queryByAccountHandlerFn(cliCtx)).Methods("GET")
-
 }
 
 func queryByAccountHandlerFn(cliCtx client.Context) http.HandlerFunc {

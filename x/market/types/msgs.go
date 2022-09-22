@@ -50,7 +50,6 @@ func (m MsgAddMarketOrder) ValidateBasic() error {
 	}
 
 	return validateClientOrderID(m.ClientOrderId)
-
 }
 
 func (m MsgAddMarketOrder) GetSignBytes() []byte {

@@ -207,7 +207,6 @@ func TestDestroyIssuer(t *testing.T) {
 			assert.Equal(t, spec.expEvents, eventManager.Events())
 			assert.Equal(t, spec.req.Authority, gotAuthority.String())
 			assert.Equal(t, spec.req.Issuer, gotIssuer.String())
-
 		})
 	}
 }
@@ -552,7 +551,8 @@ func TestGrpcSetParams(t *testing.T) {
 						Subspace: "staking",
 						Key:      "MaxValidators",
 						Value:    "10",
-					}},
+					},
+				},
 			},
 			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
 				gotAuthority = authority
@@ -578,7 +578,8 @@ func TestGrpcSetParams(t *testing.T) {
 						Subspace: "staking",
 						Key:      "MaxValidators",
 						Value:    "Ten",
-					}},
+					},
+				},
 			},
 			mockFn: func(ctx sdk.Context, authority sdk.AccAddress, changes []proposal.ParamChange) (*sdk.Result, error) {
 				return nil, errors.New("testing")

@@ -5,6 +5,8 @@
 package types
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -12,7 +14,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestBasic(t *testing.T) {
@@ -79,10 +80,9 @@ func TestMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, src, &dest)
 	assert.Equal(t, myAddr.String(), dest.Address)
 }
+
 func TestValidate(t *testing.T) {
-	var (
-		randomAddress sdk.AccAddress = sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
-	)
+	var randomAddress sdk.AccAddress = sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")
 
 	specs := map[string]struct {
 		srcAccount  authtypes.AccountI
@@ -115,5 +115,4 @@ func TestValidate(t *testing.T) {
 			require.NoError(t, gotErr)
 		})
 	}
-
 }

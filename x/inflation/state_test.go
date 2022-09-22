@@ -5,10 +5,11 @@
 package inflation
 
 import (
-	"github.com/cosmos/cosmos-sdk/types/query"
 	"math"
 	"testing"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"

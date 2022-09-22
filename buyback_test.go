@@ -8,8 +8,9 @@ package emoney_test
 
 import (
 	"encoding/json"
-	"github.com/tidwall/sjson"
 	"time"
+
+	"github.com/tidwall/sjson"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	nt "github.com/e-money/em-ledger/networktest"
@@ -94,7 +95,6 @@ var _ = Describe("Buyback", func() {
 		ngmSupplyAfter, _ := sdk.NewIntFromString(gjson.GetBytes(supplyAfter, "supply.#(denom==\"ungm\").amount").Str)
 
 		Expect(ngmSupplyBefore.Sub(ngmSupplyAfter).String()).To(Equal(sdk.NewInt(4000).String()))
-
 	})
 
 	It("pays a fee using ejpy", func() {
@@ -109,5 +109,4 @@ var _ = Describe("Buyback", func() {
 		balance = queryBuybackBalance()
 		Expect(balance.AmountOf("ejpy")).To(Equal(sdk.NewInt(1000)))
 	})
-
 })

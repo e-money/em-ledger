@@ -46,7 +46,6 @@ func BeginBlocker(ctx sdk.Context, k Keeper, bk types.BankKeeper) {
 			account,
 			generateClientOrderId(ctx, balance),
 		)
-
 		if err != nil {
 			ctx.Logger().Error("Error creating buyback order", "err", err)
 			continue

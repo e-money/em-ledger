@@ -1,3 +1,4 @@
+//go:build chain
 // +build chain
 
 package cli_test
@@ -5,12 +6,11 @@ package cli_test
 import (
 	"fmt"
 	"strings"
+	"testing"
 
 	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
 	"github.com/e-money/em-ledger/x/authority/client/cli"
 	"github.com/e-money/em-ledger/x/authority/types"
-
-	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"

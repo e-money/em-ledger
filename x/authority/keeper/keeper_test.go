@@ -5,10 +5,11 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/cosmos/cosmos-sdk/types/query"
 	"math"
 	"testing"
+
+	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -183,7 +184,7 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	// no change for the new authority
 	CreateAndRevokeIssuer(ctx, t, keeper, accNewAuthority1, issuer1, issuer2, ik)
 
-	//the former authority is still in effect
+	// the former authority is still in effect
 	CreateAndRevokeIssuer(ctx, t, keeper, accAuthority, issuer1, issuer2, ik)
 
 	// make explicit who's the fallback authority
@@ -201,13 +202,13 @@ func TestReplaceAuthUseBothAuthorities(t *testing.T) {
 	)
 	require.Error(t, err)
 
-	//the former authority is still in effect during the transition period
+	// the former authority is still in effect during the transition period
 	CreateAndRevokeIssuer(ctx, t, keeper, fallbackAuth, issuer1, issuer2, ik)
 
 	// move forward but not enough to expire the former authority
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(types.AuthorityTransitionDuration / 2))
 
-	//the former authority is still in effect during the transition period
+	// the former authority is still in effect during the transition period
 	CreateAndRevokeIssuer(ctx, t, keeper, fallbackAuth, issuer1, issuer2, ik)
 
 	// move forward to expire the former authority
@@ -432,13 +433,13 @@ func createTestComponentWithEncodingConfig(t *testing.T, encConfig simappparams.
 		lpk = liquidityprovider.NewKeeper(encConfig.Marshaler, keyLp, bk)
 		ik  = issuer.NewKeeper(encConfig.Marshaler, keyIssuer, lpk, mockInflationKeeper{}, bk)
 
-		app = simapp.Setup(false)
+		app  = simapp.Setup(false)
 		upgK = upgradekeeper.NewKeeper(map[int64]bool{}, keyUpg, encConfig.Marshaler, t.TempDir(), app)
 	)
 
 	mintBalance(t, ctx, bk, sdk.NewCoins(
-			sdk.NewCoin("echf", sdk.NewInt(5000)),
-			sdk.NewCoin("eeur", sdk.NewInt(5000))))
+		sdk.NewCoin("echf", sdk.NewInt(5000)),
+		sdk.NewCoin("eeur", sdk.NewInt(5000))))
 
 	gpk := new(mockGasPricesKeeper)
 	keeper := NewKeeper(encConfig.Marshaler, authKey, ik, bk, gpk, upgK, pk)

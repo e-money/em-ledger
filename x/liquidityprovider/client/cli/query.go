@@ -14,11 +14,11 @@ import (
 
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                        types.ModuleName,
-		Short:                      "Querying commands for the liquidity provider module",
-		Aliases:                    []string{"lp"},
-		DisableFlagParsing:         true,
-		RunE:                       client.ValidateCmd,
+		Use:                types.ModuleName,
+		Short:              "Querying commands for the liquidity provider module",
+		Aliases:            []string{"lp"},
+		DisableFlagParsing: true,
+		RunE:               client.ValidateCmd,
 	}
 
 	cmd.AddCommand(

@@ -17,9 +17,7 @@ import (
 
 const StoreKey = "history"
 
-var (
-	historyKeyprefix = []byte("emstaking/hist")
-)
+var historyKeyprefix = []byte("emstaking/hist")
 
 type HistoryKeeper struct {
 	StoreKey      sdk.StoreKey
@@ -86,7 +84,9 @@ func (k HistoryKeeper) DeleteHistoricalInfo(ctx sdk.Context, height int64) {
 }
 
 // IterateHistoricalInfo provides an interator over all stored HistoricalInfo
-//  objects. For each HistoricalInfo object, cb will be called. If the cb returns
+//
+//	objects. For each HistoricalInfo object, cb will be called. If the cb returns
+//
 // true, the iterator will close and stop.
 func (k HistoryKeeper) IterateHistoricalInfo(ctx sdk.Context, cb func(types.HistoricalInfo) bool) {
 	iterator, err := k.database.Iterator(historyKeyprefix, sdk.PrefixEndBytes(historyKeyprefix))

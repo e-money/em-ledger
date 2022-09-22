@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
@@ -119,7 +120,6 @@ func (m msgServer) ReplaceAuthority(goCtx context.Context, msg *types.MsgReplace
 func (m msgServer) ScheduleUpgrade(
 	goCtx context.Context, msg *types.MsgScheduleUpgrade,
 ) (*types.MsgScheduleUpgradeResponse, error) {
-
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	authority, err := sdk.AccAddressFromBech32(msg.Authority)

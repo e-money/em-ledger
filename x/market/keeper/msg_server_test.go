@@ -257,6 +257,7 @@ func TestAddMarketOrder(t *testing.T) {
 		})
 	}
 }
+
 func TestCancelOrder(t *testing.T) {
 	var (
 		ownerAddr        = randomAccAddress()
@@ -334,6 +335,7 @@ func TestCancelOrder(t *testing.T) {
 		})
 	}
 }
+
 func TestCancelReplaceLimitOrder(t *testing.T) {
 	var (
 		ownerAddr            = randomAccAddress()

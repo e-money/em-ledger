@@ -31,7 +31,6 @@ func TestYearHourlyAccrual(t *testing.T) {
 
 	assert.Equal(t, sdk.NewInt(23000000), totalMinted, "minted %v", totalMinted)
 	assert.True(t, sdk.NewDec(0).Equal(accum), "accum", accum.String())
-
 }
 
 func TestRandomBlockTimes(t *testing.T) {

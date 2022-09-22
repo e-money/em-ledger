@@ -1,8 +1,9 @@
 package v09
 
 import (
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"sort"
+
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 // Migrate converts the slashing module state of the v0.9.x series to the genesis state of v1.0.x series
@@ -10,17 +11,17 @@ import (
 func Migrate(genState GenesisState) *slashingtypes.GenesisState {
 	// Note that the two following `for` loop over a map's keys, so are not
 	// deterministic.
-	var newSigningInfos = make([]slashingtypes.SigningInfo, 0, len(genState.SigningInfos))
+	newSigningInfos := make([]slashingtypes.SigningInfo, 0, len(genState.SigningInfos))
 	for address, signingInfo := range genState.SigningInfos {
 		newSigningInfos = append(newSigningInfos, slashingtypes.SigningInfo{
 			Address: address,
 			ValidatorSigningInfo: slashingtypes.ValidatorSigningInfo{
 				Address: signingInfo.Address.String(),
-				//StartHeight:         signingInfo.StartHeight,
-				//IndexOffset:         signingInfo.IndexOffset,
+				// StartHeight:         signingInfo.StartHeight,
+				// IndexOffset:         signingInfo.IndexOffset,
 				JailedUntil: signingInfo.JailedUntil,
 				Tombstoned:  signingInfo.Tombstoned,
-				//MissedBlocksCounter: signingInfo.MissedBlocksCounter,
+				// MissedBlocksCounter: signingInfo.MissedBlocksCounter,
 			},
 		})
 	}

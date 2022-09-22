@@ -24,6 +24,4 @@ type (
 	GenesisState         = types.GenesisState
 )
 
-var (
-	NewKeeper = keeper.NewKeeper
-)
+var NewKeeper = keeper.NewKeeper

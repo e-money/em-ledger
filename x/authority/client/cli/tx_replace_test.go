@@ -1,3 +1,4 @@
+//go:build chain
 // +build chain
 
 package cli_test
@@ -7,12 +8,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"testing"
 
 	bankcli "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
 	"github.com/e-money/em-ledger/x/authority/client/cli"
 	"github.com/e-money/em-ledger/x/authority/types"
-
-	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -40,7 +40,7 @@ func (s *ReplacementTestSuite) SetupSuite() {
 	cfg := network.DefaultConfig()
 	cfg.LegacyAmino.RegisterConcrete(&types.MsgReplaceAuthority{}, "MsgReplaceAuthority", nil)
 	cfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil), &types.MsgReplaceAuthority{})
-	//cfg.NumValidators = 2
+	// cfg.NumValidators = 2
 
 	s.cfg = cfg
 	s.network = network.New(s.T(), s.cfg)
