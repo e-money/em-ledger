@@ -1,11 +1,12 @@
 package ante_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
-	"testing"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -111,7 +112,6 @@ type AnteTestSuite struct {
 func (suite *AnteTestSuite) getModuleBalance(ctx sdk.Context, module string) sdk.Coins {
 	rewardsAccount := suite.ak.GetModuleAccount(ctx, module)
 	return suite.bk.GetAllBalances(ctx, rewardsAccount.GetAddress())
-
 }
 
 func (suite *AnteTestSuite) createAccount(ctx sdk.Context, balance sdk.Coins) authtypes.AccountI {
@@ -143,7 +143,7 @@ func (suite *AnteTestSuite) setup() {
 
 		blockedAddr = make(map[string]bool)
 		maccPerms   = map[string][]string{
-			authtypes.ModuleName: {authtypes.Minter},
+			authtypes.ModuleName:       {authtypes.Minter},
 			authtypes.FeeCollectorName: nil,
 			buyback.AccountName:        nil,
 		}
@@ -246,7 +246,7 @@ func (msk mockStakingKeeper) BondDenom(sdk.Context) string {
 	return msk.bondDenom
 }
 
-func setAccBalance(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,	balance sdk.Coins) {
+func setAccBalance(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper, balance sdk.Coins) {
 	err := bk.SendCoinsFromModuleToAccount(
 		ctx, authtypes.ModuleName, acc, balance.Sub(bk.GetAllBalances(ctx, acc)),
 	)
@@ -259,7 +259,8 @@ func mintBalance(suite *AnteTestSuite, ctx sdk.Context, bk bankkeeper.Keeper, su
 }
 
 func fundAccount(suite *AnteTestSuite, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
-	balance sdk.Coins) {
+	balance sdk.Coins,
+) {
 	mintBalance(suite, ctx, bk, balance)
 	setAccBalance(suite, ctx, acc, bk, balance)
 }

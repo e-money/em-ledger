@@ -138,10 +138,10 @@ func (v validatorSet) Less(i, j int) bool {
 	return v.Set.Less(i, j, sdk.DefaultPowerReduction)
 }
 
-func (v validatorSet) Len() int  {
+func (v validatorSet) Len() int {
 	return v.Set.Len()
 }
 
-func (v validatorSet) Swap(i, j int)  {
+func (v validatorSet) Swap(i, j int) {
 	v.Set.Swap(i, j)
 }

@@ -33,7 +33,6 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper, stakingKeeper types.StakingKeeper,
 	coinTokenDestination, stakingTokenDestination string,
 ) Keeper {
-
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the inflation module account has not been set")
 	}

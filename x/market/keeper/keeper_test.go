@@ -7,11 +7,12 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"math"
 	"strings"
 	"testing"
 	"time"
+
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
@@ -548,8 +549,8 @@ func TestFillOrKillMarketOrder1(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, findEventAttr(ctx, "accept"))
 
-	var acceptEvents = filterEvents(ctx, "market", "action", "accept")
-	var createdValue, found = getEventAttrValue(acceptEvents[0], "created")
+	acceptEvents := filterEvents(ctx, "market", "action", "accept")
+	createdValue, found := getEventAttrValue(acceptEvents[0], "created")
 
 	if found {
 		require.Equal(
@@ -1424,7 +1425,6 @@ func TestTimeInForceIO(t *testing.T) {
 	require.NoError(t, err)
 	_, err = clientCtx.TxConfig.TxJSONDecoder()(txBz)
 	require.NoError(t, err)
-
 }
 
 func TestGetNextOrderNumber(t *testing.T) {

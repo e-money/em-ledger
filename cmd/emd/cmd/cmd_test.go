@@ -2,8 +2,9 @@ package cmd_test
 
 import (
 	"fmt"
-	emoney "github.com/e-money/em-ledger"
 	"testing"
+
+	emoney "github.com/e-money/em-ledger"
 
 	"github.com/stretchr/testify/require"
 

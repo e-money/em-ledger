@@ -102,7 +102,7 @@ func TestFuzzing1(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	//dumpEvents(ctx.EventManager().ABCIEvents())
+	// dumpEvents(ctx.EventManager().ABCIEvents())
 	require.True(t, totalSupply.Sub(snapshotAccounts(ctx, bk)).IsZero())
 }
 
@@ -111,7 +111,8 @@ func generateOrders(
 	srcDenom, dstDenom string,
 	basePrice sdk.Dec,
 	seller authtypes.AccountI,
-	r *rand.Rand) (res []types.Order) {
+	r *rand.Rand,
+) (res []types.Order) {
 	priceGen := priceGenerator(basePrice, r)
 
 	for i := 0; i < 500; i++ {

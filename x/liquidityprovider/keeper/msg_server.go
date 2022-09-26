@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
@@ -28,7 +29,6 @@ func (m msgServer) MintTokens(c context.Context, msg *types.MsgMintTokens) (*typ
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "liquidity provider")
 	}
 	result, err := m.k.MintTokens(ctx, acc, msg.Amount)
-
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,6 @@ func (m msgServer) MintTokens(c context.Context, msg *types.MsgMintTokens) (*typ
 		ctx.EventManager().EmitEvent(sdk.Event(e))
 	}
 	return &types.MsgMintTokensResponse{}, nil
-
 }
 
 func (m msgServer) BurnTokens(c context.Context, msg *types.MsgBurnTokens) (*types.MsgBurnTokensResponse, error) {

@@ -1,20 +1,21 @@
 package keeper
 
 import (
+	"sort"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/rand"
-	"sort"
-	"testing"
 )
 
 const legacyAddrLen = 20
 
 func TestQueryList(t *testing.T) {
-	var req = &types.QueryListRequest{}
+	req := &types.QueryListRequest{}
 
 	encConfig := MakeTestEncodingConfig()
 	initialSupply := sdk.NewCoins(
@@ -48,16 +49,16 @@ func TestQueryList(t *testing.T) {
 	}{
 		"all good": {
 			setupFunc: func() {
-				_, err := keeper.CreateLiquidityProvider(ctx,accAddr1, mintable1)
+				_, err := keeper.CreateLiquidityProvider(ctx, accAddr1, mintable1)
 				assert.NoError(t, err)
 
-				lp1 := keeper.GetLiquidityProviderAccount(ctx,accAddr1)
+				lp1 := keeper.GetLiquidityProviderAccount(ctx, accAddr1)
 				assert.NotNil(t, lp1)
 
-				_, err = keeper.CreateLiquidityProvider(ctx,accAddr2, mintable2)
+				_, err = keeper.CreateLiquidityProvider(ctx, accAddr2, mintable2)
 				assert.NoError(t, err)
 
-				lp2 := keeper.GetLiquidityProviderAccount(ctx,accAddr2)
+				lp2 := keeper.GetLiquidityProviderAccount(ctx, accAddr2)
 				assert.NotNil(t, lp2)
 			},
 			expLps: []types.LiquidityProviderAccount{
@@ -73,7 +74,7 @@ func TestQueryList(t *testing.T) {
 		},
 		"empty list": {
 			setupFunc: func() {
-				keeper.RevokeLiquidityProviderAccount(ctx,accAddr1)
+				keeper.RevokeLiquidityProviderAccount(ctx, accAddr1)
 				keeper.RevokeLiquidityProviderAccount(ctx, accAddr2)
 			},
 			expLps: []types.LiquidityProviderAccount(nil),
@@ -131,18 +132,17 @@ func TestQueryMintable(t *testing.T) {
 		expErr      bool
 	}{
 		"all good": {
-			req:   &types.QueryMintableRequest{
+			req: &types.QueryMintableRequest{
 				Address: addr,
 			},
 			expMintable: defaultMintable,
 		},
 		"empty address": {
-			req:   &types.QueryMintableRequest{
-			},
+			req:    &types.QueryMintableRequest{},
 			expErr: true,
 		},
 		"non existent provider": {
-			req:   &types.QueryMintableRequest{
+			req: &types.QueryMintableRequest{
 				Address: sdk.AccAddress(rand.Bytes(legacyAddrLen)).String(),
 			},
 			expMintable: sdk.Coins(nil),

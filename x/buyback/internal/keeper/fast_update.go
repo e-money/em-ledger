@@ -1,3 +1,4 @@
+//go:build fast_consensus
 // +build fast_consensus
 
 package keeper

@@ -16,7 +16,7 @@ import (
 var _ = Describe("Upgrade", func() {
 	emcli := testnet.NewEmcli()
 
-	var Authority = testnet.Keystore.Authority
+	Authority := testnet.Keystore.Authority
 
 	Describe("Authority manages issuers", func() {
 		It("creates a new testnet", createNewTestnet)

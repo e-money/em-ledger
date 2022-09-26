@@ -5,6 +5,9 @@
 package keeper
 
 import (
+	"math"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
@@ -29,8 +32,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"math"
-	"testing"
 )
 
 var (
@@ -231,13 +232,13 @@ func createTestComponents(t *testing.T, initialSupply sdk.Coins) (sdk.Context, a
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 	var (
-		bankKey      = sdk.NewKVStoreKey(banktypes.ModuleName)
-		authCapKey   = sdk.NewKVStoreKey("authCapKey")
-		keyParams    = sdk.NewKVStoreKey("params")
-		stakingKey   = sdk.NewKVStoreKey("staking")
-		authKey      = sdk.NewKVStoreKey(authtypes.StoreKey)
-		lpKey        = sdk.NewKVStoreKey(types.StoreKey)
-		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
+		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
+		authCapKey = sdk.NewKVStoreKey("authCapKey")
+		keyParams  = sdk.NewKVStoreKey("params")
+		stakingKey = sdk.NewKVStoreKey("staking")
+		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
+		lpKey      = sdk.NewKVStoreKey(types.StoreKey)
+		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 
 		blockedAddrs = make(map[string]bool)
 	)

@@ -33,9 +33,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
-var (
-	CreateEmptyBlocksInterval = "60s"
-)
+var CreateEmptyBlocksInterval = "60s"
 
 // NewRootCmd creates a new root command for emd. It is called once in the
 // main function.
@@ -235,8 +233,8 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 // and exports state.
 func (a appCreator) appExport(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
-	appOpts servertypes.AppOptions) (servertypes.ExportedApp, error) {
-
+	appOpts servertypes.AppOptions,
+) (servertypes.ExportedApp, error) {
 	var emApp *emoney.EMoneyApp
 	homePath, ok := appOpts.Get(flags.FlagHome).(string)
 	if !ok || homePath == "" {

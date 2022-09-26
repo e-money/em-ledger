@@ -150,7 +150,6 @@ Example:
 	flags.AddTxFlagsToCmd(cmd)
 	cmd.Flags().String(flag_TimeInForce, "GTC", flag_TimeInForceDescription)
 	return cmd
-
 }
 
 func CancelOrderCmd() *cobra.Command {

@@ -6,6 +6,7 @@ package keeper
 
 import (
 	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/e-money/em-ledger/x/authority/types"
@@ -21,7 +22,6 @@ func NewQuerier(k Keeper) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown authority query endpoint")
 		}
 	}
-
 }
 
 func queryGasPrices(ctx sdk.Context, k Keeper) ([]byte, error) {

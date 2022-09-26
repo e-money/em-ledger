@@ -60,9 +60,9 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Basic creation of simple orders", func() {
-			//bz, err := emcli.QueryAccountJson(acc1.GetAddress())
-			//fmt.Println(string(bz))
-			//Expect(err).ShouldNot(HaveOccurred())
+			// bz, err := emcli.QueryAccountJson(acc1.GetAddress())
+			// fmt.Println(string(bz))
+			// Expect(err).ShouldNot(HaveOccurred())
 
 			for i := 0; i < 10; i++ {
 				output, success, err := emcli.MarketAddLimitOrder(acc1, "120000eeur", fmt.Sprintf("%dechf", 90000-i*100), tmrand.Str(10))
@@ -110,9 +110,7 @@ var _ = Describe("Market", func() {
 		})
 
 		It("Crashing validator can catch up", func() {
-			var (
-				err error
-			)
+			var err error
 			_, success, err := emcli.MarketAddLimitOrder(acc2, "5000eeur", "100000ejpy", "acc2cid1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
@@ -142,9 +140,9 @@ var _ = Describe("Market", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(success).To(BeTrue())
 
-			//bz, err := emcli.QueryMarketInstruments()
-			//Expect(err).ToNot(HaveOccurred())
-			//fmt.Println("Order book:\n", string(bz))
+			// bz, err := emcli.QueryMarketInstruments()
+			// Expect(err).ToNot(HaveOccurred())
+			// fmt.Println("Order book:\n", string(bz))
 
 			_, err = networktest.IncChain(2)
 			Expect(err).ToNot(HaveOccurred())
@@ -241,7 +239,7 @@ var _ = Describe("Market", func() {
 			Expect(err).To(BeNil())
 
 			transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
-			ioutil.WriteFile(transactionPath, txBz, 0777)
+			ioutil.WriteFile(transactionPath, txBz, 0o777)
 
 			s, err = emcli.CustomCommand("tx", "broadcast", transactionPath)
 			Expect(err).NotTo(BeNil())

@@ -6,6 +6,10 @@ package keeper
 
 import (
 	"encoding/hex"
+	"math"
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -36,9 +40,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"math"
-	"testing"
-	"time"
 )
 
 var (
@@ -52,7 +53,6 @@ var (
 		sdk.ValAddress(pks[1].Address()),
 		sdk.ValAddress(pks[2].Address()),
 	}
-
 
 	initTokens = sdk.TokensFromConsensusPower(200, sdk.OneInt())
 	initCoins  = sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens))
@@ -197,7 +197,6 @@ func TestBeginBlocker(t *testing.T) {
 	slashingPenalty := amt.ToDec().Mul(keeper.SlashFractionDowntime(ctx)).TruncateInt()
 	totalSupplyAfter := getTotalSupply(t, ctx, bankKeeper).AmountOf("stake")
 	require.Equal(t, totalSupplyBefore.Sub(slashingPenalty), totalSupplyAfter)
-
 }
 
 func TestOldGenesisTime(t *testing.T) {
@@ -417,7 +416,8 @@ func setAccBalance(
 }
 
 func fundAccount(t *testing.T, ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
-	balance sdk.Coins) {
+	balance sdk.Coins,
+) {
 	mintBalance(t, ctx, bk, balance)
 	setAccBalance(t, ctx, acc, bk, balance)
 }

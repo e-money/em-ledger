@@ -3,13 +3,14 @@ package keeper
 import (
 	"context"
 	"errors"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/liquidityprovider/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/rand"
-	"testing"
 )
 
 func TestMintTokens(t *testing.T) {

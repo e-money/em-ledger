@@ -1,9 +1,9 @@
 package keeper
 
 import (
+	"math"
 	"testing"
 	"time"
-	"math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +18,7 @@ func TestQueryByAccount(t *testing.T) {
 	enc := MakeTestEncodingConfig()
 	ctx, k, _, _ := createTestComponentsWithEncoding(t, enc)
 
-	var myAddress = randomAccAddress()
+	myAddress := randomAccAddress()
 
 	queryHelper := baseapp.NewQueryServerTestHelper(ctx, enc.InterfaceRegistry)
 	types.RegisterQueryServer(queryHelper, k)
@@ -121,6 +121,7 @@ func TestInstruments(t *testing.T) {
 		})
 	}
 }
+
 func TestInstrument(t *testing.T) {
 	enc := MakeTestEncodingConfig()
 	ctx, k, ak, bk := createTestComponentsWithEncoding(t, enc)
@@ -225,14 +226,16 @@ func setSupply(t *testing.T, ctx sdk.Context, bk bankkeeper.Keeper, supply sdk.C
 }
 
 func setAccBalance(ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
-	balance sdk.Coins) error {
+	balance sdk.Coins,
+) error {
 	return bk.SendCoinsFromModuleToAccount(
 		ctx, types.ModuleName, acc, balance.Sub(bk.GetAllBalances(ctx, acc)),
 	)
 }
 
 func fundAccount(ctx sdk.Context, acc sdk.AccAddress, bk bankkeeper.Keeper,
-	balance sdk.Coins) error {
+	balance sdk.Coins,
+) error {
 	if err := mintBalance(ctx, bk, balance); err != nil {
 		return err
 	}

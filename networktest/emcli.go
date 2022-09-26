@@ -517,7 +517,7 @@ func execCmdCollectOutput(arguments []string, input string, checkTxRes bool) (st
 	var b bytes.Buffer
 	cmd.Stderr = &b
 
-	//bz, err := cmd.Output()
+	// bz, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}

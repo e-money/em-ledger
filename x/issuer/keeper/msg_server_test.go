@@ -3,12 +3,13 @@ package keeper
 import (
 	"context"
 	"errors"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/e-money/em-ledger/x/issuer/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"testing"
 )
 
 var accAddress = sdk.AccAddress("emoney1n5ggspeff4fxc87dvmg0ematr3qzw5l4v20mdv")

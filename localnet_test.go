@@ -8,13 +8,13 @@ package emoney_test
 
 import (
 	"fmt"
+
 	"github.com/e-money/em-ledger/networktest"
 	. "github.com/onsi/ginkgo"
 )
 
 // Setup a testnet and leave it running for local experimentation
 var _ = Describe("Local Testnet", func() {
-
 	tearDownAfterTests = false
 
 	Describe("Authority manages issuers", func() {
@@ -34,7 +34,7 @@ var _ = Describe("Local Testnet", func() {
 			fmt.Println("Local net chain-id", chainid)
 			fmt.Println("Node address", node)
 			// todo (reviewer) : rest server must be enabled in config/app.toml
-			//fmt.Println("Lite client interface available at http://localhost:1317/swagger-ui/")
+			// fmt.Println("Lite client interface available at http://localhost:1317/swagger-ui/")
 
 			fmt.Println("Command-line flags for testnet:")
 			fmt.Printf("--home %v --node %v --chain-id %v\n", keystore, node, chainid)

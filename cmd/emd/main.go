@@ -1,11 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	emoney "github.com/e-money/em-ledger"
 	"github.com/e-money/em-ledger/cmd/emd/cmd"
-	"os"
 )
 
 func main() {

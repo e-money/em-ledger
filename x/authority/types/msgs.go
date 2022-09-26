@@ -52,7 +52,7 @@ func (msg MsgCreateIssuer) ValidateBasic() error {
 
 	if len(msg.Denominations) == 0 {
 		return sdkerrors.Wrap(ErrNoDenomsSpecified, "No denomination specified")
-		//return ErrNoDenomsSpecified()
+		// return ErrNoDenomsSpecified()
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (msg MsgSetGasPrices) ValidateBasic() error {
 
 	if !msg.GasPrices.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidCoins, "%v", msg.GasPrices)
-		//return sdk.ErrInvalidCoins(msg.GasPrices.String())
+		// return sdk.ErrInvalidCoins(msg.GasPrices.String())
 	}
 
 	return nil

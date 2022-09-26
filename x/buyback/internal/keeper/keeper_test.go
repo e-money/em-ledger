@@ -1,6 +1,9 @@
 package keeper
 
 import (
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -9,8 +12,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"testing"
-	"time"
 )
 
 func TestUpdateBuybackMarket(t *testing.T) {
@@ -27,9 +28,7 @@ func TestUpdateBuybackMarket(t *testing.T) {
 }
 
 func setupKeeper(t *testing.T) (sdk.Context, Keeper) {
-	var (
-		buybackKey = sdk.NewKVStoreKey("buyback")
-	)
+	buybackKey := sdk.NewKVStoreKey("buyback")
 
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)

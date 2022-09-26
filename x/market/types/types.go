@@ -6,9 +6,10 @@ package types
 
 import (
 	"fmt"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"strings"
 	"time"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -130,8 +131,8 @@ func NewOrder(
 	timeInForce TimeInForce,
 	src, dst sdk.Coin,
 	seller sdk.AccAddress,
-	clientOrderId string) (Order, error) {
-
+	clientOrderId string,
+) (Order, error) {
 	if src.Amount.LTE(sdk.ZeroInt()) || dst.Amount.LTE(sdk.ZeroInt()) {
 		return Order{}, sdkerrors.Wrapf(ErrInvalidPrice, "Order price is invalid: %s -> %s", src.Amount, dst.Amount)
 	}
