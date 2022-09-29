@@ -68,11 +68,7 @@ func TestCirculating(t *testing.T) {
 
 	gotRsp, err := queryClient.Circulating(ctx, &types.QueryCirculatingRequest{})
 	require.NoError(t, err)
-<<<<<<< HEAD
-	assert.Equal(t, mustParseCoins("154blx,3"+stakingDenom).String(), gotRsp.Total.String())
-=======
 	assert.Equal(t, mustParseCoins("154blx,153"+stakingDenom), gotRsp.Total)
->>>>>>> 33cd69b (Fix test of circulating supply query)
 }
 
 func TestMissedBlocks(t *testing.T) {
@@ -128,7 +124,18 @@ type bankKeeperMock struct {
 	vesting  sdk.Coins
 }
 
-<<<<<<< HEAD
+func (b bankKeeperMock) GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	if bal, found := b.balances[addr.String()]; found {
+		for _, b := range bal {
+			if b.Denom == denom {
+				return b
+			}
+		}
+	}
+
+	return sdk.NewCoin(denom, sdk.ZeroInt())
+}
+
 func (b bankKeeperMock) IterateAllDenomMetaData(
 	ctx sdk.Context, cb func(banktypes.Metadata) bool,
 ) {
@@ -144,18 +151,6 @@ func (b bankKeeperMock) GetAllDenomMetaData(_ sdk.Context) []banktypes.Metadata 
 			Base: stakingDenom,
 		},
 	}
-=======
-func (b bankKeeperMock) GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-	if bal, found := b.balances[addr.String()]; found {
-		for _, b := range bal {
-			if b.Denom == denom {
-				return b
-			}
-		}
-	}
-
-	return sdk.NewCoin(denom, sdk.ZeroInt())
->>>>>>> 33cd69b (Fix test of circulating supply query)
 }
 
 func (b bankKeeperMock) SpendableCoins(_ sdk.Context, addr sdk.AccAddress) sdk.Coins {
