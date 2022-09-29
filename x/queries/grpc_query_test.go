@@ -66,7 +66,7 @@ func TestCirculating(t *testing.T) {
 
 	gotRsp, err := queryClient.Circulating(ctx, &types.QueryCirculatingRequest{})
 	require.NoError(t, err)
-	assert.Equal(t, mustParseCoins("154blx,3"+stakingDenom), gotRsp.Total)
+	assert.Equal(t, mustParseCoins("154blx,153"+stakingDenom), gotRsp.Total)
 }
 
 func TestMissedBlocks(t *testing.T) {
@@ -122,6 +122,18 @@ type bankKeeperMock struct {
 	vesting  sdk.Coins
 }
 
+func (b bankKeeperMock) GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	if bal, found := b.balances[addr.String()]; found {
+		for _, b := range bal {
+			if b.Denom == denom {
+				return b
+			}
+		}
+	}
+
+	return sdk.NewCoin(denom, sdk.ZeroInt())
+}
+
 func (b bankKeeperMock) SpendableCoins(_ sdk.Context, addr sdk.AccAddress) sdk.Coins {
 	return b.balances[addr.String()]
 }
@@ -134,21 +146,6 @@ func (b bankKeeperMock) GetSupply(_ sdk.Context) exported.SupplyI {
 
 	supply = supply.Add(b.vesting...)
 	return banktypes.NewSupply(supply)
-}
-
-func (b bankKeeperMock) IterateAllBalances(_ sdk.Context, cb func(sdk.AccAddress, sdk.Coin) bool) {
-	for address, balance := range b.balances {
-		addr, err := sdk.AccAddressFromBech32(address)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, coin := range balance {
-			if cb(addr, coin) {
-				return
-			}
-		}
-	}
 }
 
 var (
