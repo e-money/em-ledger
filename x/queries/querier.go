@@ -42,37 +42,25 @@ func querySpendableBalance(ctx sdk.Context, k BankKeeper, path []string) (res []
 }
 
 func calculateCirculatingSupply(ctx sdk.Context, accK AccountKeeper, bk BankKeeper) (circSupply sdk.Coins) {
-	total := bk.GetSupply(ctx).GetTotal()
-
-	stakingAccounts := map[string]bool{
-		accK.GetModuleAccount(ctx, stakingtypes.NotBondedPoolName).GetAddress().String(): true,
-		accK.GetModuleAccount(ctx, stakingtypes.BondedPoolName).GetAddress().String():    true,
+	stakingAccounts := []sdk.AccAddress{
+		accK.GetModuleAccount(ctx, stakingtypes.NotBondedPoolName).GetAddress(),
+		accK.GetModuleAccount(ctx, stakingtypes.BondedPoolName).GetAddress(),
 	}
 
-	ngmbalance := sdk.ZeroInt()
+	bondedAndUnbondingBalance := sdk.ZeroInt()
+	for _, acc := range stakingAccounts {
+		bal := bk.GetBalance(ctx, acc, "ungm")
+		bondedAndUnbondingBalance = bondedAndUnbondingBalance.Add(bal.Amount)
+	}
 
-	bk.IterateAllBalances(ctx, func(address sdk.AccAddress, coin sdk.Coin) bool {
-		if coin.Denom != stakingDenom {
-			return false
-		}
-
-		if _, exists := stakingAccounts[address.String()]; exists {
-			return false
-		}
-
-		spendableCoins := bk.SpendableCoins(ctx, address)
-		ngmbalance = ngmbalance.Add(spendableCoins.AmountOf("ungm"))
-
-		return false
-	})
-
-	// Replace staking token balance with the one calculated above, which omits vesting and staked tokens.
+	total := bk.GetSupply(ctx).GetTotal()
+	// Replace staking token balance with the one calculated above, which omits staked tokens.
 	for i, c := range total {
 		if c.Denom != stakingDenom {
 			continue
 		}
 
-		total[i] = sdk.NewCoin(stakingDenom, ngmbalance)
+		total[i] = total[i].Sub(sdk.NewCoin("ungm", bondedAndUnbondingBalance))
 		break
 	}
 
