@@ -584,7 +584,7 @@ func NewApp(
 
 func createApplicationDatabase(rootDir string) db.DB {
 	datadirectory := filepath.Join(rootDir, "data")
-	emoneydb, err := db.NewGoLevelDB("emoney", datadirectory)
+	emoneydb, err := sdk.NewLevelDB("emoney", datadirectory)
 	if err != nil {
 		panic(err)
 	}
