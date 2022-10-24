@@ -3,7 +3,7 @@ module github.com/e-money/em-ledger
 go 1.18
 
 require (
-	github.com/cosmos/cosmos-sdk v0.45.8
+	github.com/cosmos/cosmos-sdk v0.45.9
 	github.com/cosmos/ibc-go/v2 v2.0.2
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
@@ -45,7 +45,7 @@ require (
 	github.com/cosmos/btcutil v1.0.4 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
-	github.com/cosmos/iavl v0.19.1 // indirect
+	github.com/cosmos/iavl v0.19.3 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/cosmos/ledger-go v0.9.2 // indirect
 	github.com/creachadair/taskgroup v0.3.2 // indirect
@@ -130,10 +130,13 @@ require (
 	nhooyr.io/websocket v1.8.6 // indirect
 )
 
+// Dragonberry https://forum.cosmos.network/t/ibc-security-advisory-dragonberry/7702/2
+replace github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
+
 // https://docs.cosmos.network/v0.41/core/grpc_rest.html#grpc-server
 replace (
-	// use the correct version of grpc
-	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 	// use cosmos flavored protocol buffers
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	// use the correct version of grpc
+	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
