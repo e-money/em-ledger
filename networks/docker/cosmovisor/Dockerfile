@@ -2,7 +2,7 @@
 #
 # Please contact partners@e-money.com for licensing related questions.
 
-FROM golang:1.18-buster AS build-env
+FROM golang:1.19-bullseye AS build-env
 
 RUN git clone https://github.com/cosmos/cosmos-sdk.git
 WORKDIR cosmos-sdk/cosmovisor
