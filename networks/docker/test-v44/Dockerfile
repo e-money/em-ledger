@@ -1,4 +1,6 @@
-FROM golang:1.17-buster
+# syntax=docker/dockerfile:1
+
+FROM golang:1.19-bullseye as build-env
 
 ARG version
 ARG branch
@@ -15,3 +17,6 @@ RUN    FAST_CONSENSUS=true BIN_PREFIX=-linux LEDGER_ENABLED=false GOOS=linux GOA
 
 # build MacOS binary
 RUN FAST_CONSENSUS=true LEDGER_ENABLED=false GOOS=darwin GOARCH=amd64 make build
+
+FROM ubuntu:18.04
+COPY --from=build-env /go/src/em-ledger/build/* /go/src/em-ledger/build/
