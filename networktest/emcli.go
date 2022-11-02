@@ -52,22 +52,18 @@ func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
 func (cli Emcli) SendOnBehalf(from Key, to Key, signer Key, amount string) (string, error) {
 
 	//CREATE UNSIGNED TRANSACTION
-	msg, error1 := cli.CustomCommand("tx", "bank", "send", from.GetAddress(), to.GetAddress(), amount, "--generate-only")
-
-	if error1 != nil {
-		fmt.Println("ERROR!!")
-		fmt.Printf("%+v\n", error1)
+	msg, err := cli.CustomCommand("tx", "bank", "send", from.GetAddress(), to.GetAddress(), amount, "--generate-only")
+	if err != nil {
+		return msg, err
 	}
 
 	//CREATE TEMP FILE DIR
 	jsonPath, _ := os.MkdirTemp("", "")
 	defer os.RemoveAll(jsonPath)
 	transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
-	fileError := os.WriteFile(transactionPath, []byte(msg), 0o777)
-
-	if fileError != nil {
-		fmt.Println("fileError")
-		fmt.Printf("%+v\n", fileError)
+	err = os.WriteFile(transactionPath, []byte(msg), 0o777)
+	if err != nil {
+		return "", err
 	}
 
 	//EXECUTE TRANSACTION (SIGNED BY SIGNER) AND RETURN RESULTS

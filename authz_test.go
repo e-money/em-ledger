@@ -26,30 +26,30 @@ var _ = Describe("Authz", func() {
 		It("creates a new testnet", createNewTestnet)
 
 		It("Let Issuee sign for Issuer (fail)", func() {
-			var msg, error = emcli.SendOnBehalf(grantee, recipient, granter, "4000ungm")
-			Expect(error).Should(HaveOccurred())
+			var msg, err = emcli.SendOnBehalf(grantee, recipient, granter, "4000ungm")
+			Expect(err).Should(HaveOccurred())
 			ir := gjson.ParseBytes([]byte(msg))
 			Expect(ir.Get("code").String()).To(Equal("4"))
 		})
 
 		It("Let Issuee grant auth access for Issuer", func() {
-			var _, _, error = emcli.AuthzGrantAuthority(granter, grantee)
-			Expect(error).ShouldNot(HaveOccurred())
+			var _, _, err = emcli.AuthzGrantAuthority(granter, grantee)
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Let IssueE sign for IssueR", func() {
-			var _, error = emcli.SendOnBehalf(grantee, recipient, granter, "4000ungm")
-			Expect(error).ShouldNot(HaveOccurred())
+			var _, err = emcli.SendOnBehalf(grantee, recipient, granter, "4000ungm")
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Let's revoke that grant", func() {
-			var _, _, error = emcli.AuthzRevokeAuthority(grantee, granter)
-			Expect(error).ShouldNot(HaveOccurred())
+			var _, _, err = emcli.AuthzRevokeAuthority(grantee, granter)
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Let Issuee sign for Issuer (fail)", func() {
-			var msg, error = emcli.SendOnBehalf(grantee, recipient, granter, "4000ungm")
-			Expect(error).Should(HaveOccurred())
+			var msg, err = emcli.SendOnBehalf(grantee, recipient, granter, "4000ungm")
+			Expect(err).Should(HaveOccurred())
 			ir := gjson.ParseBytes([]byte(msg))
 			Expect(ir.Get("code").String()).To(Equal("4"))
 		})
