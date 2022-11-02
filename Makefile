@@ -157,6 +157,9 @@ test:
 bdd-test:
 	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go multisigauthority_test.go authority_test.go market_test.go buyback_test.go capacity_test.go staking_test.go upgrade_test.go
 
+authz-bdd-test:
+	go test -mod=readonly -v -p 1 -timeout 1h --tags="bdd" bdd_test.go authz_test.go
+
 github-ci: build-linux
 	$(MAKE) test
 	$(MAKE) proto-lint

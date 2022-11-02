@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -48,6 +49,31 @@ func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) SendOnBehalf(from Key, to Key, signer Key, amount string) (string, error) {
+
+	//CREATE UNSIGNED TRANSACTION
+	msg, error1 := cli.CustomCommand("tx", "bank", "send", from.GetAddress(), to.GetAddress(), amount, "--generate-only")
+
+	if error1 != nil {
+		fmt.Println("ERROR!!")
+		fmt.Printf("%+v\n", error1)
+	}
+
+	//CREATE TEMP FILE DIR
+	jsonPath, _ := os.MkdirTemp("", "")
+	defer os.RemoveAll(jsonPath)
+	transactionPath := fmt.Sprintf("%v/tx.json", jsonPath)
+	fileError := os.WriteFile(transactionPath, []byte(msg), 0o777)
+
+	if fileError != nil {
+		fmt.Println("fileError")
+		fmt.Printf("%+v\n", fileError)
+	}
+
+	//EXECUTE TRANSACTION (SIGNED BY SIGNER) AND RETURN RESULTS
+	return cli.CustomCommand("tx", "authz", "exec", jsonPath+"/tx.json", "--from", signer.GetAddress())
+}
+
 func (cli Emcli) AuthorityCreateIssuer(authority, issuer Key, denoms ...string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "create-issuer", authority.name, issuer.GetAddress())
 
@@ -73,6 +99,23 @@ func (cli Emcli) UpgSchedByHeight(authority Key, planName string, height int64) 
 
 func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authority", "destroy-issuer", authority.name, issuer.GetAddress())
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthzGrantAuthority(granter Key, grantee Key) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authz", "grant", granter.GetAddress(), "send",
+		"--from", grantee.GetAddress(), "--spend-limit", "10000000ungm")
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthzRevokeAuthority(granter Key, grantee Key) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authz", "revoke", grantee.GetAddress(),
+		"/cosmos.bank.v1beta1.MsgSend", "--from", granter.GetAddress())
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) AuthzExec(granter Key, grantee Key) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "authz", "exec", granter.name, grantee.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
 }
 
