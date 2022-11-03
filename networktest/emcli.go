@@ -98,9 +98,9 @@ func (cli Emcli) AuthorityDestroyIssuer(authority, issuer Key) (string, bool, er
 	return execCmdWithInput(args, KeyPwd)
 }
 
-func (cli Emcli) AuthzGrantAuthority(granter Key, grantee Key) (string, bool, error) {
+func (cli Emcli) AuthzGrantAuthority(granter Key, grantee Key, spendLimit string) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authz", "grant", granter.GetAddress(), "send",
-		"--from", grantee.GetAddress(), "--spend-limit", "10000000ungm")
+		"--from", grantee.GetAddress(), "--spend-limit", spendLimit)
 	return execCmdWithInput(args, KeyPwd)
 }
 
