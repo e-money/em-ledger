@@ -49,6 +49,12 @@ func (cli Emcli) Send(from, to Key, amount string) (string, bool, error) {
 	return execCmdWithInput(args, KeyPwd)
 }
 
+func (cli Emcli) SendGrantfee(from, to Key, feeAccount Key, amount string, fees string) (string, error) {
+	args := cli.addTransactionFlags("tx", "bank", "send", from.name, to.GetAddress(), amount,
+		"--fee-account", feeAccount.GetAddress(), "--fees", fees)
+	return execCmdCollectOutput(args, KeyPwd, false)
+}
+
 func (cli Emcli) SendOnBehalf(from Key, to Key, signer Key, amount string) (string, error) {
 
 	//CREATE UNSIGNED TRANSACTION
@@ -113,6 +119,22 @@ func (cli Emcli) AuthzRevokeAuthority(granter Key, grantee Key) (string, bool, e
 func (cli Emcli) AuthzExec(granter Key, grantee Key) (string, bool, error) {
 	args := cli.addTransactionFlags("tx", "authz", "exec", granter.name, grantee.GetAddress())
 	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) FeegrantGrant(granter Key, grantee Key, spendLimit string, fees string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "feegrant", "grant", granter.name, grantee.GetAddress(),
+		"--spend-limit", spendLimit, "--fees", fees)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) FeegrantRevoke(granter Key, grantee Key, fees string) (string, bool, error) {
+	args := cli.addTransactionFlags("tx", "feegrant", "revoke", granter.name, grantee.GetAddress(), "--fees", fees)
+	return execCmdWithInput(args, KeyPwd)
+}
+
+func (cli Emcli) FeegrantQuery(grantee Key) ([]byte, error) {
+	args := cli.addQueryFlags("query", "feegrant", "grants", grantee.GetAddress())
+	return execCmdAndCollectResponse(args)
 }
 
 func (cli Emcli) CustomCommand(params ...string) (string, error) {
