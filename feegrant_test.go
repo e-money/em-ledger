@@ -48,8 +48,8 @@ var _ = Describe("FeeGrant", func() {
 			Expect(success).To(BeTrue())
 			Expect(err).ToNot(HaveOccurred())
 
-			var _, err3 = emcli.QueryMinGasPrices()
-			Expect(err3).ShouldNot(HaveOccurred())
+			_, err = emcli.QueryMinGasPrices()
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Let's check some initial balances", func() {
@@ -63,7 +63,7 @@ var _ = Describe("FeeGrant", func() {
 		})
 
 		It("Let's make a grant", func() {
-			var _, _, err = emcli.FeegrantGrant(granter, grantee, strconv.Itoa(spendLimit)+denom, strconv.Itoa(feeAmount)+denom)
+			_, _, err := emcli.FeegrantGrant(granter, grantee, strconv.Itoa(spendLimit)+denom, strconv.Itoa(feeAmount)+denom)
 			totalGasSpent += feeAmount
 			Expect(err).ShouldNot(HaveOccurred())
 		})
@@ -71,7 +71,7 @@ var _ = Describe("FeeGrant", func() {
 		It("Let's check that the grant is there", func() {
 			var msg, err = emcli.FeegrantQuery(grantee)
 			Expect(err).ShouldNot(HaveOccurred())
-			ir := gjson.ParseBytes([]byte(msg))
+			ir := gjson.ParseBytes(msg)
 			Expect(len(ir.Get("allowances").Array())).To(Equal(1))
 		})
 
@@ -112,7 +112,7 @@ var _ = Describe("FeeGrant", func() {
 		It("Let's check that the grant is gone", func() {
 			var msg, err = emcli.FeegrantQuery(grantee)
 			Expect(err).ShouldNot(HaveOccurred())
-			ir := gjson.ParseBytes([]byte(msg))
+			ir := gjson.ParseBytes(msg)
 			Expect(len(ir.Get("allowances").Array())).To(Equal(0))
 		})
 	})
