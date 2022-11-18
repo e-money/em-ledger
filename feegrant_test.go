@@ -17,17 +17,17 @@ import (
 var _ = Describe("FeeGrant", func() {
 
 	var (
-		emcli         = testnet.NewEmcli()
-		authority     = testnet.Keystore.Authority
-		granter       = testnet.Keystore.Key1
-		grantee       = testnet.Keystore.Key2
-		reciever      = testnet.Keystore.Key3
-		initialValue  = 0 // toBeOverridden
-		sendValue     = 2500000
-		spendLimit    = 1000000
-		feeAmount     = 5000
-		totalGasSpent = 0
-		denom         = "ungm"
+		emcli          = testnet.NewEmcli()
+		authority      = testnet.Keystore.Authority
+		granter        = testnet.Keystore.Key1
+		grantee        = testnet.Keystore.Key2
+		reciever       = testnet.Keystore.Key3
+		initialBalance = 0 // toBeOverridden
+		sendValue      = 2500000
+		spendLimit     = 1000000
+		feeAmount      = 5000
+		totalGasSpent  = 0
+		denom          = "ungm"
 	)
 
 	Describe("Let's Test This FeeGrant Module", func() {
@@ -36,7 +36,7 @@ var _ = Describe("FeeGrant", func() {
 
 		It("Let's get the initial funds value", func() {
 			var err error
-			initialValue, err = emcli.QueryBalanceDenom(granter.GetAddress(), denom)
+			initialBalance, err = emcli.QueryBalanceDenom(granter.GetAddress(), denom)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -55,11 +55,11 @@ var _ = Describe("FeeGrant", func() {
 		It("Let's check some initial balances", func() {
 			var granterBalance, err = emcli.QueryBalanceDenom(granter.GetAddress(), denom)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(granterBalance).To(Equal(initialValue))
+			Expect(granterBalance).To(Equal(initialBalance))
 
 			var granteeBalance, err2 = emcli.QueryBalanceDenom(grantee.GetAddress(), denom)
 			Expect(err2).ShouldNot(HaveOccurred())
-			Expect(granteeBalance).To(Equal(initialValue))
+			Expect(granteeBalance).To(Equal(initialBalance))
 		})
 
 		It("Let's make a grant", func() {
@@ -78,11 +78,11 @@ var _ = Describe("FeeGrant", func() {
 		It("Let's check some balances", func() {
 			var granterBalance, err = emcli.QueryBalanceDenom(granter.GetAddress(), denom)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(granterBalance).To(Equal(initialValue - feeAmount))
+			Expect(granterBalance).To(Equal(initialBalance - feeAmount))
 
 			granteeBalance, err := emcli.QueryBalanceDenom(grantee.GetAddress(), denom)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(granteeBalance).To(Equal(initialValue))
+			Expect(granteeBalance).To(Equal(initialBalance))
 		})
 
 		It("Let grantee send message and let granter pay fee", func() {
@@ -97,11 +97,11 @@ var _ = Describe("FeeGrant", func() {
 		It("Let's check some balances after send", func() {
 			var granteeBalance, err = emcli.QueryBalanceDenom(grantee.GetAddress(), denom)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(granteeBalance).To(Equal(initialValue - sendValue))
+			Expect(granteeBalance).To(Equal(initialBalance - sendValue))
 
 			granterBalance, err := emcli.QueryBalanceDenom(granter.GetAddress(), denom)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(granterBalance).To(Equal(initialValue - totalGasSpent))
+			Expect(granterBalance).To(Equal(initialBalance - totalGasSpent))
 		})
 
 		It("Let's revoke that grant", func() {
