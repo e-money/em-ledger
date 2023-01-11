@@ -1,7 +1,3 @@
-// This software is Copyright (c) 2019-2020 e-Money A/S. It is not offered under an open source license.
-//
-// Please contact partners@e-money.com for licensing related questions.
-
 package keeper
 
 import (
@@ -229,13 +225,13 @@ func createTestComponents(t *testing.T, initialSupply sdk.Coins) (sdk.Context, a
 	t.Helper()
 	encConfig := MakeTestEncodingConfig()
 	var (
-		bankKey      = sdk.NewKVStoreKey(banktypes.ModuleName)
-		authCapKey   = sdk.NewKVStoreKey("authCapKey")
-		keyParams    = sdk.NewKVStoreKey("params")
-		stakingKey   = sdk.NewKVStoreKey("staking")
-		authKey      = sdk.NewKVStoreKey(authtypes.StoreKey)
-		lpKey        = sdk.NewKVStoreKey(types.StoreKey)
-		tkeyParams   = sdk.NewTransientStoreKey("transient_params")
+		bankKey    = sdk.NewKVStoreKey(banktypes.ModuleName)
+		authCapKey = sdk.NewKVStoreKey("authCapKey")
+		keyParams  = sdk.NewKVStoreKey("params")
+		stakingKey = sdk.NewKVStoreKey("staking")
+		authKey    = sdk.NewKVStoreKey(authtypes.StoreKey)
+		lpKey      = sdk.NewKVStoreKey(types.StoreKey)
+		tkeyParams = sdk.NewTransientStoreKey("transient_params")
 
 		blockedAddrs = make(map[string]bool)
 	)
