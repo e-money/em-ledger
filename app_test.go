@@ -22,10 +22,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	typescli "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
-	"github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
-	ibckeeper "github.com/cosmos/ibc-go/v2/modules/core/keeper"
-	ibctesting "github.com/cosmos/ibc-go/v2/testing"
+	typescli "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	"github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
+	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
+	ibctesting "github.com/cosmos/ibc-go/v3/testing"
 
 	apptypes "github.com/e-money/em-ledger/types"
 	"github.com/e-money/em-ledger/x/authority"
@@ -249,7 +249,7 @@ func (suite *IBCTestSuite) PathRelay() {
 		suite.Require().NoError(err)
 	}
 
-	err = path.RelayPacket(packet2, []byte("Ack"))
+	err = path.RelayPacket(packet2)
 	if err != nil {
 		suite.Require().NoError(err)
 	}
